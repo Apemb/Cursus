@@ -1,0 +1,33 @@
+# .NET build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+
+# .NET / Rider / VS
+*.user
+*.suo
+.vs/
+.idea/
+project.lock.json
+artifacts/
+
+# Restore / publish
+*.nupkg
+*.snupkg
+publish/
+[Pp]ublish[Pp]rofiles/
+
+# Rider / Avalonia designer temp
+*.DotSettings.user
+*.axaml.cs.designer
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs & misc
+*.log

@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="Cursus.App.MainWindow"
+        Width="520" Height="360"
+        Title="Cursus">
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
+        <TextBlock Text="Cursus"
+                   FontSize="34" FontWeight="Bold"
+                   HorizontalAlignment="Center" />
+        <TextBlock Text="Validation de la chaîne de build macOS"
+                   Opacity="0.6"
+                   HorizontalAlignment="Center" />
+        <TextBlock x:Name="CounterText"
+                   Text="Compteur : 0"
+                   FontSize="22"
+                   HorizontalAlignment="Center" />
+        <Button x:Name="IncrementButton"
+                Content="Incrémenter"
+                Padding="20,10"
+                HorizontalAlignment="Center"
+                Click="OnIncrementClick" />
+    </StackPanel>
+</Window>
