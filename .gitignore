@@ -31,3 +31,6 @@ publish/
 
 # Logs & misc
 *.log
+
+# Claude Code (settings locaux/perso)
+.claude/settings.local.json
