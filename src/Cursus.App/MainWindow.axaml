@@ -2,25 +2,65 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:vm="using:Cursus.App.ViewModels"
+        xmlns:sessions="using:Cursus.Core.Sessions"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
         x:Class="Cursus.App.MainWindow"
-        Width="520" Height="360"
+        x:DataType="vm:MainViewModel"
+        Width="1000" Height="640"
         Title="Cursus">
-    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
-        <TextBlock Text="Cursus"
-                   FontSize="34" FontWeight="Bold"
-                   HorizontalAlignment="Center" />
-        <TextBlock Text="Validation de la chaîne de build macOS"
-                   Opacity="0.6"
-                   HorizontalAlignment="Center" />
-        <TextBlock x:Name="CounterText"
-                   Text="Compteur : 0"
-                   FontSize="22"
-                   HorizontalAlignment="Center" />
-        <Button x:Name="IncrementButton"
-                Content="Incrémenter"
-                Padding="20,10"
-                HorizontalAlignment="Center"
-                Click="OnIncrementClick" />
-    </StackPanel>
+
+    <Grid ColumnDefinitions="260,4,*">
+
+        <!-- Barre latérale : sessions -->
+        <DockPanel Grid.Column="0" Background="#1E1E24">
+            <Border DockPanel.Dock="Top" Padding="16,14" BorderBrush="#33FFFFFF" BorderThickness="0,0,0,1">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Cursus" FontSize="20" FontWeight="Bold" Foreground="#F0F0F0" />
+                    <Button Content="＋  Nouvelle session"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Padding="0,8"
+                            Command="{Binding AddSessionCommand}" />
+                </StackPanel>
+            </Border>
+
+            <ListBox ItemsSource="{Binding Workspace.Sessions}"
+                     SelectedItem="{Binding Workspace.SelectedSession, Mode=TwoWay}"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Padding="6">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="sessions:TerminalSession">
+                        <Grid ColumnDefinitions="*,Auto" MinHeight="34">
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Title}" Foreground="#EDEDED" />
+                                <TextBlock Text="{Binding ShellPath}" FontSize="11" Opacity="0.5" Foreground="#EDEDED" />
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Content="✕"
+                                    VerticalAlignment="Center"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="8,2"
+                                    Command="{Binding $parent[ListBox].((vm:MainViewModel)DataContext).CloseSessionCommand}"
+                                    CommandParameter="{Binding}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </DockPanel>
+
+        <GridSplitter Grid.Column="1" Background="#33FFFFFF" ResizeDirection="Columns" />
+
+        <!-- Panneau terminal : rempli par le code-behind -->
+        <Panel Grid.Column="2" Name="TerminalHost" Background="#111114">
+            <TextBlock Name="EmptyPlaceholder"
+                       Text="Aucune session — crée-en une pour ouvrir un terminal."
+                       Foreground="#777"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+        </Panel>
+
+    </Grid>
 </Window>

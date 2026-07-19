@@ -15,5 +15,13 @@
       <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="RoyalApps.RoyalTerminal.Avalonia" Version="0.4.0" />
+    <PackageReference Include="RoyalApps.RoyalTerminal.GhosttySharp.Native.OSX" Version="0.4.0" />
+    <PackageReference Include="RoyalApps.RoyalTerminal.Terminal.Vt.Ghostty" Version="0.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cursus.Core\Cursus.Core.csproj" />
   </ItemGroup>
 </Project>
