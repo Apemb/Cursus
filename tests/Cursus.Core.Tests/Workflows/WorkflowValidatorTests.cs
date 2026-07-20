@@ -197,7 +197,7 @@ public class WorkflowValidatorTests
         // reproductible.
         Assert.False(report.IsValid);
         Assert.Equal(
-            new[]
+            new (ValidationIssueKind, string?)[]
             {
                 (ValidationIssueKind.UnknownEdgeTarget, "A"),
                 (ValidationIssueKind.NonPositiveMaxVisits, "B"),

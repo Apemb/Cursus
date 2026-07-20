@@ -35,4 +35,47 @@ public class WorkflowExecutionTests
         static StepDefinition Step(string id, string script, params Edge[] edges) =>
             new(id, id, new ScriptSpec("/bin/sh", ["-c", script]), MaxVisits: 1, edges);
     }
+
+    [Fact(DisplayName = "étant donné un workflow décrit en JSON et un workspace, quand on le charge puis qu'on l'exécute, alors la trajectoire est parcourue et les fichiers atterrissent dans les bons sous-répertoires")]
+    public async Task A_workflow_declared_in_a_document_runs_end_to_end()
+    {
+        // arrange — plus une seule ligne de C# ne déclare le graphe.
+        var workspace = new RunContext(Directory.CreateTempSubdirectory("cursus-json-").FullName);
+        Directory.CreateDirectory(Path.Combine(workspace.WorkspaceRoot, "backend"));
+
+        const string document = """
+            {
+              "entryStep": "preparer",
+              "steps": [
+                { "id": "preparer", "name": "Préparer", "maxVisits": 1,
+                  "workingSubdirectory": "backend",
+                  "script": { "fileName": "/bin/sh", "arguments": ["-c", "echo bonjour > artefact.txt"] },
+                  "edges": [ { "guard": "success", "target": "tester" } ] },
+
+                { "id": "tester", "name": "Tester", "maxVisits": 1,
+                  "workingSubdirectory": "backend",
+                  "script": { "fileName": "/bin/sh", "arguments": ["-c", "echo 2 tests en echec >&2; exit 3"] },
+                  "edges": [ { "guard": "exit:3", "target": "rapporter" } ] },
+
+                { "id": "rapporter", "name": "Rapporter", "maxVisits": 1,
+                  "script": { "fileName": "/bin/sh", "arguments": ["-c", "echo rapport ecrit > rapport.txt"] },
+                  "edges": [] }
+              ]
+            }
+            """;
+
+        // act
+        var loaded = WorkflowSerializer.Read(document);
+        var run = await new WorkflowEngine(new ProcessRunner()).ExecuteAsync(loaded.Definition!, workspace);
+
+        // assert
+        Assert.True(loaded.Report.IsValid);
+        Assert.Equal(new[] { "preparer", "tester", "rapporter" }, run.History.Select(s => s.StepId));
+        Assert.Equal(RunState.Completed, run.State);
+        Assert.Contains("2 tests en echec", run.History[1].Result.Stderr);
+
+        // le sous-chemin déclaré est bien celui où le script a travaillé
+        Assert.True(File.Exists(Path.Combine(workspace.WorkspaceRoot, "backend", "artefact.txt")));
+        Assert.True(File.Exists(Path.Combine(workspace.WorkspaceRoot, "rapport.txt")));
+    }
 }

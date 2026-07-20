@@ -23,6 +23,12 @@ public enum ValidationIssueKind
 
     /// <summary>Aucun chemin depuis le point d'entrée ne mène à cette étape.</summary>
     UnreachableStep,
+
+    /// <summary>Une arête du document déclare une garde que le modèle ne connaît pas.</summary>
+    UnknownGuard,
+
+    /// <summary>Le document n'est pas un JSON décrivant un workflow.</summary>
+    MalformedDocument,
 }
 
 /// <summary>Un problème relevé, désigné par sa nature et, quand c'est pertinent, l'étape concernée.</summary>
