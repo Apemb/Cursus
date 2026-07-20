@@ -12,7 +12,7 @@ public class WorkflowExecutionTests
     public async Task A_real_graph_of_scripts_runs_end_to_end_through_its_failure_edge()
     {
         // arrange — quatre scripts partageant un répertoire de travail
-        var workspace = Directory.CreateTempSubdirectory("cursus-workflow-").FullName;
+        var workspace = new RunContext(Directory.CreateTempSubdirectory("cursus-workflow-").FullName);
         var definition = new WorkflowDefinition("preparer", new[]
         {
             Step("preparer", "echo bonjour > artefact.txt", new Edge(Guard.OnSuccess, "verifier")),
@@ -22,17 +22,17 @@ public class WorkflowExecutionTests
         });
 
         // act
-        var run = await new WorkflowEngine(new ProcessRunner()).ExecuteAsync(definition);
+        var run = await new WorkflowEngine(new ProcessRunner()).ExecuteAsync(definition, workspace);
 
         // assert
         Assert.Equal(new[] { "preparer", "verifier", "tester", "rapporter" }, run.History.Select(s => s.StepId));
         Assert.Equal(RunState.Completed, run.State);
         Assert.Contains("2 tests en echec", run.History[2].Result.Stderr);
         Assert.Contains("rapport ecrit", run.History[3].Result.Stdout);
-        Assert.True(File.Exists(Path.Combine(workspace, "artefact.txt")));
+        Assert.True(File.Exists(Path.Combine(workspace.WorkspaceRoot, "artefact.txt")));
 
         // --- helpers locaux ---
-        StepDefinition Step(string id, string script, params Edge[] edges) =>
-            new(id, id, new ScriptSpec("/bin/sh", ["-c", script], workspace), MaxVisits: 1, edges);
+        static StepDefinition Step(string id, string script, params Edge[] edges) =>
+            new(id, id, new ScriptSpec("/bin/sh", ["-c", script]), MaxVisits: 1, edges);
     }
 }

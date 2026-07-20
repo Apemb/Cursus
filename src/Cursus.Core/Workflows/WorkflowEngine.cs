@@ -14,6 +14,7 @@ public sealed class WorkflowEngine
 
     public async Task<WorkflowRun> ExecuteAsync(
         WorkflowDefinition definition,
+        RunContext context,
         CancellationToken cancellationToken = default)
     {
         var history = new List<StepRun>();
@@ -31,7 +32,11 @@ public sealed class WorkflowEngine
             ScriptResult result;
             try
             {
-                result = await _runner.RunAsync(step.Script, cancellationToken);
+                // La définition déclare un sous-chemin relatif, le runner attend
+                // un répertoire absolu : le moteur est le seul à connaître le
+                // contexte, donc le seul à pouvoir traduire.
+                var script = step.Script with { WorkingDirectory = context.Resolve(step.WorkingSubdirectory) };
+                result = await _runner.RunAsync(script, cancellationToken);
             }
             catch (OperationCanceledException)
             {
