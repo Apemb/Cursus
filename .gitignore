@@ -18,6 +18,9 @@ artifacts/
 *.nupkg
 *.snupkg
 publish/
+
+# Bundle macOS produit par build/package-macos.sh
+build/out/
 [Pp]ublish[Pp]rofiles/
 
 # Rider / Avalonia designer temp

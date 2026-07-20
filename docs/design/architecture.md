@@ -65,12 +65,13 @@ Trois faits non triviaux, le reste se lit dans les `.csproj` :
 ### 1.3 Faire tourner
 
 ```bash
-dotnet build      # attendu : 0 warning
-dotnet test       # attendu : 81 verts (le chiffre de référence de ce document)
-dotnet run --project src/Cursus.App
+dotnet build                          # attendu : 0 warning
+dotnet test                           # attendu : 81 verts (chiffre de référence de ce document)
+dotnet run --project src/Cursus.App   # développement
+build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
 
-Prérequis : SDK .NET 10, macOS pour l'app. **Aucun épinglage versionné du toolchain** : ni `global.json`, ni `.tool-versions`, ni `Directory.Packages.props`, ni `NuGet.config` (le README évoque asdf `dotnet-core 10.0.302`, mais rien ne le fixe dans le dépôt). Pas de CI, pas de LICENSE, pas d'histoire de packaging.
+Prérequis : SDK .NET 10, macOS pour l'app. Le SDK est **épinglé** par `global.json` (10.0.302, `rollForward: latestFeature`) depuis qu'un build produit un artefact installable — tolérable en `dotnet run`, beaucoup moins quand on distribue. Toujours absents : `Directory.Packages.props`, `NuGet.config`, CI, LICENSE.
 
 ### 1.4 Hygiène de dépôt
 
@@ -433,6 +434,23 @@ RoyalTerminal étant livré **sans aucune documentation**, cette connaissance a 
 
 ⚠️ Ce document est valide **pour la version 0.4.0 seulement**, sans contrat de compatibilité : toute montée de version impose de re-sonder.
 
+### 6.6 Le bundle macOS, et ce qu'il a mesuré — CONSTRUIT (jalon 0)
+
+`build/package-macos.sh` produit `Cursus.app` (~123 Mo) : publication `osx-arm64` self-contained dans `Contents/MacOS`, `build/Info.plist` recopié, signature **ad-hoc**. `--install` copie en plus dans `/Applications`.
+
+Trois choix à connaître : **pas de trimming** (il casse régulièrement Avalonia, qui résout contrôles et convertisseurs par réflexion) ; **signature ad-hoc et non notarisée**, suffisante sur la machine qui construit, refusée par Gatekeeper ailleurs — la distribution exigerait un compte développeur Apple ; et un **garde-fou qui échoue le build** si `libghostty-vt.dylib`, `libAvaloniaNative.dylib` ou `libSkiaSharp.dylib` manquent du bundle. Ce dernier existe parce que l'absence de la native VT est **silencieuse** : l'app se lance parfaitement et retombe sur le moteur managé, avec le bug DECCKM des flèches (§6.3).
+
+**Ce que le jalon 0 a mesuré.** Il existait pour observer quatre risques d'environnement anticipés dans ce document sans preuve. Résultats sur Darwin 25.5.0 / Apple Silicon :
+
+| Risque anticipé | Verdict |
+|---|---|
+| Natives absentes du bundle | **Infirmé** — `libghostty-vt.dylib` est bien publiée. Garde-fou ajouté quand même : la panne serait muette |
+| `PATH` tronqué en GUI | **CONFIRMÉ** — `launchctl getenv PATH` est **vide**, donc une app lancée depuis le Finder hérite du défaut système. ⚠️ Piège de mesure : `open` depuis un terminal **propage le `PATH` du shell** et donne un faux négatif |
+| `SSH_AUTH_SOCK` absent | **Infirmé** — défini au niveau launchd (`/var/run/com.apple.launchd.*/Listeners`), donc présent même depuis le Finder |
+| cwd hérité = `/Applications` | **Corrigé** : le cwd d'une app GUI est **`/`**, pas `/Applications`. La conclusion tient et se renforce — hériter ce cwd est encore plus absurde que prévu (§7.3) |
+
+**Conséquence non refermée, et c'est la trouvaille du jalon.** Le `PATH` tronqué ne gêne pas le terminal, dont le `-l` demande un shell de login qui le ré-enrichit — mais `ProcessRunner` ne lance **aucun shell** : il exécute directement, avec l'environnement hérité. Une étape déclarant `node`, `npm` ou un binaire d'`asdf` fonctionnera en `dotnet run` et **échouera en `LaunchFailed` une fois l'app installée**. Le mécanisme est déjà là (127, §4.4), le diagnostic sera clair ; la question de conception ne l'est pas : ré-enrichir le `PATH` dans `ProcessRunner` (au prix d'un shell de login par étape), le faire déclarer par `project.json`, ou exiger des chemins absolus dans les définitions. **À trancher au jalon 6**, où le dogfooding le rendra immédiat.
+
 ---
 
 ## 7. Décisions structurantes
@@ -625,7 +643,9 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 12. **Aucune interface d'abstraction du terminal** malgré l'annonce du README ; couplage direct au type concret de RoyalTerminal.
 13. **L'app est de fait macOS-only** (provider VT natif OSX) alors que le cross-platform est revendiqué comme différenciateur (§1.2).
 14. **Pas de politique de concurrence** documentée ni testée pour `WorkflowEngine`.
-15. Hygiène : `README.md` périmé, plan de jalons de `landscape.md` caduc, aucun remote git, aucun épinglage de toolchain, pas de CI ni de LICENSE (§1.3-1.4).
+15. **Le `PATH` d'une app installée est tronqué**, et `ProcessRunner` ne le ré-enrichit pas : une étape utilisant un binaire d'`asdf` ou de Homebrew échoue en `LaunchFailed` hors développement (§6.6). À trancher au jalon 6.
+16. **Le bundle n'est pas notarisé** (signature ad-hoc) : installable sur la machine qui le construit, refusé par Gatekeeper ailleurs (§6.6).
+17. Hygiène : `README.md` périmé, plan de jalons de `landscape.md` caduc, aucun remote git, pas de CI ni de LICENSE, pas d'icône d'application (§1.3-1.4).
 
 ### 9.3 Questions ouvertes
 
@@ -661,7 +681,7 @@ Le plan d'origine en cinq jalons ne tient plus : les décisions du §7.10 ajoute
 
 | # | Jalon | Ce qu'il rend possible |
 |---|---|---|
-| **0** | **Packaging `.app` macOS** | rien de fonctionnel — il valide l'**environnement d'exécution réel** |
+| ~~**0**~~ | ~~**Packaging `.app` macOS**~~ — **FAIT**, résultats au §6.6 | rien de fonctionnel — il a validé l'**environnement d'exécution réel**, et confirmé le piège du `PATH` |
 | **4** | **Journal & persistance** | un run survit au process ; on peut relire ce qui s'est passé |
 | **5** | **Le projet, minimal** | `project.json` (id + racine) et des workflows lus **depuis le disque** |
 | **6** | **La jonction UI** | un humain choisit un workflow, le lance, voit le run avancer |
