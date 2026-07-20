@@ -28,7 +28,18 @@ public sealed class WorkflowEngine
             if (iteration > step.MaxVisits)
                 return new WorkflowRun(RunState.Aborted, history, AbortReason.LoopNotConverging);
 
-            var result = await _runner.RunAsync(step.Script, cancellationToken);
+            ScriptResult result;
+            try
+            {
+                result = await _runner.RunAsync(step.Script, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // L'annulation interrompt le run mais ne l'efface pas : la
+                // trajectoire déjà parcourue reste observable.
+                return new WorkflowRun(RunState.Aborted, history, AbortReason.Canceled);
+            }
+
             history.Add(new StepRun(cursor, iteration, result));
 
             var edge = step.OutEdges.FirstOrDefault(e => e.Guard.Matches(result));

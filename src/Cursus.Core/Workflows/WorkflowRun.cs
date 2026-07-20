@@ -18,6 +18,9 @@ public enum AbortReason
 {
     /// <summary>Une étape a dépassé son <see cref="StepDefinition.MaxVisits"/>.</summary>
     LoopNotConverging,
+
+    /// <summary>L'appelant a annulé le run en cours de route.</summary>
+    Canceled,
 }
 
 /// <summary>

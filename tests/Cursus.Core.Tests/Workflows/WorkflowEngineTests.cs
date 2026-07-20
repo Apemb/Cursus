@@ -252,6 +252,45 @@ public class WorkflowEngineTests
             async () => await new WorkflowEngine(runner).ExecuteAsync(definition));
     }
 
+    [Fact(DisplayName = "étant donné un jeton annulé après la première étape, quand on exécute le workflow, alors le run est interrompu pour annulation")]
+    public async Task A_cancelled_run_is_aborted()
+    {
+        // arrange
+        using var cancellation = new CancellationTokenSource();
+        var runner = new StubProcessRunner(Exit(0)) { CancelAfterRun = cancellation };
+        var definition = new WorkflowDefinition("A", new[]
+        {
+            Step("A", new Edge(Guard.OnSuccess, "B")),
+            Step("B"),
+        });
+
+        // act
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, cancellation.Token);
+
+        // assert
+        Assert.Equal(RunState.Aborted, run.State);
+        Assert.Equal(AbortReason.Canceled, run.AbortReason);
+    }
+
+    [Fact(DisplayName = "étant donné un jeton annulé après la première étape, quand on exécute le workflow, alors l'historique conserve les étapes déjà exécutées")]
+    public async Task A_cancelled_run_keeps_the_steps_already_executed()
+    {
+        // arrange
+        using var cancellation = new CancellationTokenSource();
+        var runner = new StubProcessRunner(Exit(0)) { CancelAfterRun = cancellation };
+        var definition = new WorkflowDefinition("A", new[]
+        {
+            Step("A", new Edge(Guard.OnSuccess, "B")),
+            Step("B"),
+        });
+
+        // act
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, cancellation.Token);
+
+        // assert
+        Assert.Equal(new[] { "A" }, run.History.Select(s => s.StepId));
+    }
+
     // --- helpers ---
 
     private static readonly ScriptSpec AnyScript = new("/usr/bin/true", []);
@@ -276,10 +315,16 @@ file sealed class StubProcessRunner : IProcessRunner
 
     public StubProcessRunner(params ScriptResult[] results) => _results = results;
 
+    /// <summary>Si fourni, s'annule une fois l'exécution rendue — comme une annulation survenant pendant le run.</summary>
+    public CancellationTokenSource? CancelAfterRun { get; init; }
+
     public Task<ScriptResult> RunAsync(ScriptSpec spec, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var result = _results[Math.Min(_index, _results.Count - 1)];
         _index++;
+        CancelAfterRun?.Cancel();
         return Task.FromResult(result);
     }
 }
