@@ -77,9 +77,9 @@ Prérequis : SDK .NET 10, macOS pour l'app. Le SDK est **épinglé** par `global
 
 Branche `main`, seule branche, 15 commits (HEAD = `09acb70`). **Aucun remote configuré** : dépôt strictement local, sans sauvegarde hors machine — c'est le risque le plus concret du dépôt aujourd'hui.
 
-**`README.md` est périmé** : il décrit une arborescence sans `Cursus.Core`, annonce RoyalTerminal comme « à intégrer », l'état comme « scaffolding validé avec un compteur », et ignore les tests, `Workflows/` et le pivot. Tâche : le réduire à cinq lignes — nom, prérequis, `dotnet test`, `dotnet run`, renvoi ici.
+**`README.md` a été refait** (jalon 0) : réduit à ce qu'il est seul à devoir dire — prérequis, commandes de développement, commande d'installation, et les deux pièges de l'application installée (signature ad-hoc, `PATH` tronqué). Il renvoie ici pour tout le reste, plutôt que de dupliquer un état qui se périmerait.
 
-Périmé aussi : le « Premier jalon recommandé » qui clôt `docs/research/agentic-workflows-landscape.md` (jalon 1 = détection d'état, jalon 2 = worktree…). Ce plan est **antérieur au pivot** et ne fait plus foi ; la trajectoire courante est celle du §9.
+Périmé encore : le « Premier jalon recommandé » qui clôt `docs/research/agentic-workflows-landscape.md` (jalon 1 = détection d'état, jalon 2 = worktree…). Ce plan est **antérieur au pivot** et ne fait plus foi ; la trajectoire courante est celle du §9.
 
 **Convention de langue** : code (classes, méthodes, identifiants) en **anglais**, prose, commentaires, messages de test et documentation en **français**, avec diacritiques complets. Seul écart du dépôt : les commentaires de template Avalonia restés en anglais dans `src/Cursus.App/Program.cs`.
 
