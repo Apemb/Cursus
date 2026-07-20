@@ -655,13 +655,29 @@ Les autres (nommage `Session`/`Conversation`, où vit `Paused`, où se définit 
 - **Gotcha Darwin 25.x** : des échecs d'initialisation Seatbelt sont rapportés (issues Claude Code #55849, #26095) — à tester sur la machine cible avant de compter sur le confinement.
 - **`TryExportSnapshot`** doit pouvoir exporter **toute la plage de scrollback**, pas seulement le viewport. Question d'API d'export, pas de faisabilité : l'émulateur détient les lignes.
 
-### 9.4 Prochaines étapes plausibles — non ordonnées, non tranchées
+### 9.4 Trajectoire — TRANCHÉE
 
-**Jalon 4, décidé** — la persistance du journal (couche C) : le manque le plus visible du noyau, et le préalable des identités et du versionnement de définition. Contient l'`IClock` injectable délibérément reporté au jalon 2, dont le journal est le premier vrai consommateur. Contraint par §7.10.4 (payload discriminé, pas de colonne `exit_code`) et §7.10.5 (les deux colonnes de déclenchement).
+Le plan d'origine en cinq jalons ne tient plus : les décisions du §7.10 ajoutent un socle (projet, tracker, trousseau) qu'il ignorait, et éclatent son « jalon 5 — visualisation » en trois écrans distincts.
 
-Ensuite, non ordonné :
+| # | Jalon | Ce qu'il rend possible |
+|---|---|---|
+| **0** | **Packaging `.app` macOS** | rien de fonctionnel — il valide l'**environnement d'exécution réel** |
+| **4** | **Journal & persistance** | un run survit au process ; on peut relire ce qui s'est passé |
+| **5** | **Le projet, minimal** | `project.json` (id + racine) et des workflows lus **depuis le disque** |
+| **6** | **La jonction UI** | un humain choisit un workflow, le lance, voit le run avancer |
+| **7** | **Tracker & `TaskStep`** | l'écran des actions disponibles ; un workflow tire et annote une carte |
+| **8+** | Éditeur de graphe · auto-déclenchement · `AgentStep` | |
 
-- **Le point de jonction UI ↔ noyau** (§2.2) : la seule chose qui rendrait le moteur utilisable par un humain, et la question de conception ouverte la plus lourde.
-- **Un point d'entrée qui lise un fichier** (+ un exemple commité) : quelques lignes, mais c'est ce qui rend le jalon 3 réellement livré.
-- **`TaskStep` et l'intégration du tracker** (§7.10) : le premier StepKind, et le cobaye de la recette du §5.
-- **L'`AgentStep`** : le test réel du pari central, dont la recette et le garde-fou sont au §5.
+**Pourquoi le packaging passe en premier, alors qu'il n'apporte aucune fonction.** Quatre risques d'environnement sont déjà écrits dans ce document sans avoir jamais été observés : les binaires natifs de RoyalTerminal arrivent-ils dans le bundle (sinon retombée silencieuse sur le moteur managé et le bug DECCKM, §6.3) ; le `PATH` tronqué en GUI, ré-enrichi par le `-l` du terminal mais **pas** par `ProcessRunner` qui ne lance aucun shell de login ; `SSH_AUTH_SOCK` absent ; et le cwd hérité de `/Applications` — l'argument même qui a rendu `RunContext` obligatoire (§7.3). Les découvrir sur une app qui ne fait rien coûte moins cher que de les découvrir au jalon 6, mêlés à trois nouveautés. Ce chantier est **hors TDD** : aucune logique métier, donc script et vérification manuelle.
+
+**Le jalon 5 est nouveau et rembourse la dette du §9.1** (personne ne lit un fichier depuis le disque). Il fusionne cette couture avec le projet minimal plutôt que d'en faire un patch isolé : sinon on écrit un « ouvrir un fichier » qu'il faudrait refaire en « ouvrir un projet ». Le registre machine et le trousseau (§7.10.1) **n'y entrent pas** — ils n'ont aucun consommateur avant le tracker.
+
+**Deux coûts cachés du jalon 6.** Le runner ne sait pas streamer (`ReadToEndAsync` ne rend la sortie qu'à la mort du process, §4.4) : voir un run avancer exige un second contrat ou une évolution de l'existant, et c'est là que se repose la couture PTY du §2.2. Et le **layout de graphe** est un algorithme, pas un contrôle Avalonia : recommandation retenue, une **liste chronologique de `StepRun`** au jalon 6 — 80 % de la valeur pour 10 % du coût, directement construite sur le journal — le graphe devenant un jalon à lui seul, partagé avec l'éditeur dont il est le vrai coût.
+
+**Ordre interne du jalon 7** : l'écran des actions **avant** `TaskStep`. Il ne fait que lire, valide le client et les prédicats sans rien mutiler en cas d'erreur, et rend `TaskStep` presque gratuit — c'est l'argument même qui a écarté `cursus-task` (§7.10.4).
+
+**Écartés, avec leur raison :**
+
+- **`Cursus.Cli`** — une centaine de lignes qui auraient permis de faire tourner de vrais workflows sur ce dépôt dès le jalon 5, sans attendre l'UI. Écarté par l'utilisateur : pas assez d'urgence pour justifier un **second point d'entrée à maintenir** en parallèle de l'interface. Le dogfooding attend donc le jalon 6.
+- **Le tracker avant l'UI** — on empilerait quatre jalons de plomberie sans qu'un humain ait jamais lancé un workflow depuis Cursus, alors que le moteur n'est appelé que par les tests depuis trois jalons.
+- **L'éditeur de graphe avant le jalon 7** — l'éditeur suppose de savoir ce qu'on édite ; les workflows d'équipe écrits au jalon 7 diront quelles formes il doit rendre faciles.
