@@ -5,7 +5,8 @@
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
 > - `docs/design/modele-metier.md` — le modèle cible orienté agents (couches, entités, machines à états) ;
-> - `docs/research/agentic-workflows-landscape.md` — les preuves externes (comparatifs, sandboxing, PTY, sonde RoyalTerminal) ;
+> - `docs/research/agentic-workflows-landscape.md` — les preuves externes (comparatifs, sandboxing, PTY) ;
+> - `docs/reference/royalterminal-0.4.0.md` — l'API RoyalTerminal sondée, faute de documentation éditeur ;
 > - `CLAUDE.md` (racine) — le contrat de travail, qui désigne le présent fichier comme référence et impose son entretien (§8).
 >
 > Trois registres tenus partout : **CONSTRUIT** / **TRANCHÉ, NON CONSTRUIT** / **QUESTION OUVERTE**.
@@ -426,7 +427,9 @@ Persistance, détach/rattach, layouts/splits, renommage, choix du shell ou du r�
 
 Les quatre dépendances dures de la future détection d'état sont couvertes par `TerminalControl` 0.4.0 : écran rendu (`TryExportSnapshot`), titre OSC, événement d'octets, PID enfant. Bonus : OSC 133, injection de frappes (`SendInput`), persistance intégrée.
 
-⚠️ **La preuve n'est pas dans le dépôt** : la sonde par réflexion vivait dans un scratchpad jetable, non commité, et l'inventaire d'API vit dans une mémoire projet hors git. RoyalTerminal étant livré **sans documentation**, c'est une dépendance à une connaissance non versionnée : à re-sonder ou à consigner dans `docs/` avant le câblage, sous peine de la perdre à la prochaine montée de version.
+RoyalTerminal étant livré **sans aucune documentation**, cette connaissance a été obtenue par inspection des assemblies et lecture de la source. Elle est désormais **versionnée** dans `docs/reference/royalterminal-0.4.0.md` : méthode de re-sondage, API du contrôle, les quatre signaux de détection, l'injection d'environnement, et le fait que le PTY est lancé par `forkpty()` + `execvp()` direct — ce qui autorise à mettre `srt` ou `sandbox-exec` en process de PTY pour le confinement (§7.6).
+
+⚠️ Ce document est valide **pour la version 0.4.0 seulement**, sans contrat de compatibilité : toute montée de version impose de re-sonder.
 
 ---
 
