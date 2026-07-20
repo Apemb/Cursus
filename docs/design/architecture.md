@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `ab1dc4e` (*format de fichier JSON bidirectionnel, jalon 3*). Suite de tests : **81 verts**, build 0 warning.
+> **Statut** : document vivant, à jour du commit `09acb70`. Dernier jalon de code : `ab1dc4e` (*format de fichier JSON bidirectionnel, jalon 3*). Suite de tests : **81 verts**, build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -74,7 +74,7 @@ Prérequis : SDK .NET 10, macOS pour l'app. **Aucun épinglage versionné du too
 
 ### 1.4 Hygiène de dépôt
 
-Branche `main`, seule branche, 12 commits au moment de la rédaction (HEAD = `ab1dc4e`). **Aucun remote configuré** : dépôt strictement local, sans sauvegarde hors machine — c'est le risque le plus concret du dépôt aujourd'hui.
+Branche `main`, seule branche, 15 commits (HEAD = `09acb70`). **Aucun remote configuré** : dépôt strictement local, sans sauvegarde hors machine — c'est le risque le plus concret du dépôt aujourd'hui.
 
 **`README.md` est périmé** : il décrit une arborescence sans `Cursus.Core`, annonce RoyalTerminal comme « à intégrer », l'état comme « scaffolding validé avec un compteur », et ignore les tests, `Workflows/` et le pivot. Tâche : le réduire à cinq lignes — nom, prérequis, `dotnet test`, `dotnet run`, renvoi ici.
 
@@ -365,7 +365,9 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 
 ## 5. Ajouter un StepKind : la recette
 
-Le pari central promet que greffer un `AgentStep` sera une extension, pas une refonte. Voici ce que cela veut dire concrètement — **rien de ceci n'est construit** ; c'est le contrat que le prochain contributeur doit tenir.
+Le pari central promet que greffer un nouveau type d'étape sera une extension, pas une refonte. Voici ce que cela veut dire concrètement — **rien de ceci n'est construit** ; c'est le contrat que le prochain contributeur doit tenir.
+
+> **Trois kinds sont désormais prévus, et l'ordre a changé** : `ScriptStep` (implicite aujourd'hui), puis **`TaskStep`** (§7.10), puis `AgentStep`. `TaskStep` passe devant parce qu'il est le cobaye idéal de cette recette : synchrone, au résultat binaire, sans PTY ni streaming. Éprouver l'extension sur lui avant d'affronter l'agent, c'est découvrir les frottements sur le cas facile.
 
 **Ce qui bouge :**
 1. `StepDefinition` — introduction d'un discriminant `StepKind` (aujourd'hui implicite et unique : script).
@@ -480,10 +482,10 @@ Rien de ce qui suit n'existe en code. Le raisonnement complet, les preuves exter
 | **Isolation** | git worktree local, **pas de container par agent** (validation externe : Sculptor/Imbue a fait machine arrière) ; container éventuel = l'app **entière**, en opt-in global. Injection de port déterministe par hash du chemin de worktree — ⚠️ pas `string.GetHashCode()`, randomisé par run | `landscape.md`, Vague 2 |
 | **Confinement OS** | `srt` (`@anthropic-ai/sandbox-runtime`) comme implémentation par défaut de `IProcessConfinement`, SBPL maison en échappatoire, no-op en fallback. **Règle d'or : ne jamais double-sandboxer** (Seatbelt ne s'imbrique pas ; laisser le sandbox interne de Claude Code OFF). Posture : defense-in-depth, **pas** frontière de sécurité forte | `landscape.md` + `modele-metier.md` |
 | **Détection d'état** | Hooks d'abord, OSC 133 en bonus, moteur screen-manifest pur (~300 l., candidat TDD) en fallback. **Jamais de scraping du flux brut** ; ⚠️ `AlternateScreen` n'est pas un signal fiable | `landscape.md` |
-| **Persistance** | Event-sourcing léger : snapshot par step + journal append-only sur SQLite local-first. Le replay déterministe de Temporal est **inapplicable** à un PTY. Capture en deux phases : scrollback rendu, puis transcript JSONL via les hooks | `modele-metier.md` §7 |
+| **Persistance** | Event-sourcing léger : journal append-only sur SQLite local-first, **écrit en synchrone** (une transaction par événement : négligeable devant un lancement de process, et un crash laisse alors un journal exploitable jusqu'au dernier instant). Emplacement et découpage : §7.10.1. Le replay déterministe de Temporal est **inapplicable** à un PTY. Capture en deux phases : scrollback rendu, puis transcript JSONL via les hooks | `modele-metier.md` §7, §7.10 |
 | **HITL** | Suspension durable + reprise par injection de valeur, charges typées, approbations collantes, trois canaux façon Temporal | `modele-metier.md` |
 | **Multi-provider** | Plugin à capacités typées ; deux constructeurs d'env : `BuildTerminalEnv` (hérite tout) vs `BuildAgentEnv` (**allowlist stricte**) | `landscape.md` |
-| **Tracker / MCP / remote** | SQLite interne = source de vérité, `IIssueSource` en adaptateur ; MCP délégué à l'agent host ; `IExecutionContext` prévu tôt, SSH plus tard | `modele-metier.md` |
+| **Tracker / MCP / remote** | ⚠️ **révisé par §7.10.2** : le tracker est désormais la source de vérité de l'état des tâches, Cursus ne le réplique pas. MCP délégué à l'agent host ; `IExecutionContext` prévu tôt, SSH plus tard | `modele-metier.md`, §7.10 |
 | **Stack .NET** | `Microsoft.Extensions.AI` pour les appels que **Cursus lui-même** fait ; MAF Workflows comme référence de conception, backend optionnel. Écartés : SK Process Framework, `AgentGroupChat`, AutoGen | `landscape.md` |
 | **Serveur détaché** | Reporté : v1 mono-process Avalonia. Cible de trajectoire : la primitive `wait agent-status` qui transforme Cursus de *viewer* en *orchestrateur* | `landscape.md` |
 | **Versionnement de définition** | `version` + `contentHash`, un run s'exécute contre une **version figée** ; identités stables `RunId`/`StepRunId`, et `StartedAt` sur le résultat. **Rien de tout cela n'existe dans le code** — ce sont les préalables de la couche de persistance | `noyau-deterministe.md` §2-3, `modele-metier.md` §4 |
@@ -491,6 +493,85 @@ Rien de ce qui suit n'existe en code. Le raisonnement complet, les preuves exter
 **Explicitement écarté du produit** : scale distribuée (Kafka/Cassandra/RBAC), replay déterministe pur, couplage fort à un SaaS de tracking, Mac-only comme parti pris, télémétrie non opt-in. **Positionnement** : Cursus **orchestre** les frameworks de swarms autonomes, il ne les remplace pas ; jumeau conceptuel désigné : Herdr.
 
 **Couches du modèle cible** (`modele-metier.md` §1) : A (définition) et B (exécution) existent partiellement dans `Workflows/` ; **C (état & journal) n'existe pas du tout** — l'historique d'un run vit dans `WorkflowRun.History`, en mémoire, et disparaît avec le process.
+
+### 7.10 Le projet, le tableau de tâches et les trois niveaux de stockage — TRANCHÉ, NON CONSTRUIT
+
+Conception issue de la conversation préparatoire au jalon 4. **Aucune ligne n'existe** ; seul le crochet du §7.10.5 entre dans ce jalon. Consigné ici parce que ces arbitrages contraignent le journal qu'on est sur le point d'écrire.
+
+#### 7.10.1 Trois niveaux de stockage, distingués par ce qui les rend inaptes aux autres
+
+| Niveau | Où | Quoi | Pourquoi pas ailleurs |
+|---|---|---|---|
+| **Projet** | `.cursus/project.json` + `.cursus/workflows/*.json`, **versionnés** | racine du workspace, provider de tracker, board/équipe, prédicats de disponibilité, les définitions | c'est l'intention d'une équipe : elle doit se partager et se relire dans une PR |
+| **Machine** | `~/Library/Application Support/Cursus/registry.json` | la liste des projets importés | dépend de cet ordinateur ; n'a aucun sens pour un collègue |
+| **Trousseau** | Keychain macOS, libsecret ailleurs | les tokens Linear/Jira | un secret ne s'écrit pas sur disque en clair, même hors dépôt |
+
+Le journal (`.cursus/cursus.db`) et les artefacts (`.cursus/runs/<runId>/`) vivent **dans le projet mais hors de git**. Base et sorties au même endroit, sauvegardées ou détruites ensemble : un journal qui référence des artefacts disparus est pire qu'un journal absent, parce qu'il prétend être complet. La coupe versionné / ignoré passe entre l'**intention** (configuration, définitions) et l'**observation** (ce qui s'est passé sur une machine) — les mélanger dans git rendrait tout merge conflictuel.
+
+Conséquence structurante : **une base = un projet**, donc **aucune table `projects`** et aucune colonne `project_id`. L'identité d'un projet est l'emplacement de son `.cursus/`. Aucune requête ne peut mélanger deux projets.
+
+Deux pièges à ne pas rater le jour venu :
+
+- **Le registre ne peut pas indexer par chemin seul** : déplacer le dossier casserait le lien en silence. D'où un `id` stable dans `project.json`, le registre portant `(id, chemin, dernière ouverture)` — c'est ce qui permet de distinguer « projet déplacé » de « projet supprimé », deux situations qui appellent des réponses opposées. « Importer » se réduit alors à ajouter une ligne au registre, et « retirer de Cursus » ne touche jamais le dépôt.
+- **Le token appartient au compte, pas au projet** : clé `cursus:<provider>:<workspace>`. Cinq dépôts pilotés depuis le même Linear partagent une seule saisie. L'indexer par projet multiplierait les copies du même secret et imposerait une ressaisie à chaque import.
+
+**Écarté** : mettre le registre en SQLite (une poignée d'entrées, aucune requête à faire) ; un repli sur fichier en clair quand le trousseau est indisponible — un fallback silencieux est exactement la façon dont les secrets finissent commités. L'implémentation s'adossera à `/usr/bin/security` et `secret-tool`, cohérent avec la convention d'adosser les I/O aux binaires POSIX du système.
+
+#### 7.10.2 Le déclenchement est un état observé, pas une transition
+
+Modèle **pull** : on lit le tableau, et `(colonne, étiquettes)` détermine par prédicat les workflows proposés pour une tâche. L'écran « tâches et actions disponibles » est une **projection pure**, calculée à la lecture — le tableau est la source, on ne le duplique pas.
+
+Ce choix vient de l'observation du terrain (les tickets ne vont que dans un sens, l'information de complétion est portée par des étiquettes comme `Done` / `Comments`) et il fait disparaître trois problèmes d'un coup : pas de webhooks à recevoir, donc ni serveur ni garantie de livraison ; pas de journal de transitions à tenir, puisque l'état courant suffit ; et pas d'ordonnancement d'événements à reconstituer.
+
+**Écarté** : le modèle *push* par transitions `(type, état source, état cible) → workflows`. Plus expressif — il distinguerait « entrer en revue depuis le développement » de « y revenir depuis un rejet » — mais sans objet ici, puisque le tableau ne recule pas.
+
+⚠️ **Révise une décision antérieure.** `modele-metier.md` posait « SQLite interne = source de vérité, `IIssueSource` en adaptateur ». C'est l'inverse ici : **le tracker est la source de vérité de l'état des tâches**, Cursus ne le réplique pas. Seuls les *runs* sont à nous.
+
+#### 7.10.3 Un workflow tire la carte, et il le fait par des étapes
+
+Le cycle a **trois moments**, et le premier est le seul à rester hors du graphe :
+
+1. **Disponibilité** — prédicat sur `(colonne, étiquettes)`. Précède le run, donc ne peut pas en être une étape : c'est ce qui reste dans `project.json`.
+2. **Entrée** — une **étape** qui déplace la carte (« En cours de dev » → « En cours de review »).
+3. **Sortie** — une **étape** qui appose l'étiquette d'issue (`Done` ou `Comments`), rendant la carte éligible au workflow suivant.
+
+Faire des effets 2 et 3 des **étapes ordinaires** plutôt qu'une couche d'orchestration au-dessus du run est la décision centrale, et elle résout deux problèmes sans écrire une ligne :
+
+- **L'ordre n'a plus à être garanti par du code.** Le déplacement est la première étape : si elle échoue, le graphe ne va pas plus loin. Un run ne peut pas commencer sans que la carte ait bougé.
+- **La rejouabilité de l'effet final cesse d'être un sujet.** Une étape qui échoue est visible dans le journal, routable par une arête de secours, bornée par `maxVisits`, et affichée à l'écran. Tout ce mécanisme existe déjà et il est testé.
+
+Formulation à ne pas confondre : ce n'est pas le *workflow* qui ignore le tableau — il nomme une colonne. C'est le **moteur**. La connaissance du tableau descend dans les *données* d'une étape au lieu de monter dans le *code* d'une couche ; c'est la thèse du noyau déterministe, et sa première mise à l'épreuve.
+
+Contrepartie **assumée** : une définition contenant « déplacer vers En review » n'est plus exécutable sans tracker. La portabilité protégée au §7.3 l'était vis-à-vis du **workspace**, pas du monde extérieur.
+
+Vertu émergente, à préserver : entre l'entrée et la sortie, **la carte affiche le travail en cours** — bonne colonne, aucune étiquette. Si la machine meurt, cet état reste visible de toute l'équipe et signale qu'il faut reprendre. L'absence d'étiquette est un statut, pas un trou.
+
+Contrainte qui en découle : **ces étapes doivent être idempotentes**. Relancer un workflow dont la carte est déjà déplacée doit réussir, sinon toute reprise après incident est bloquée par sa propre première étape.
+
+#### 7.10.4 `TaskStep` natif plutôt qu'un exécutable `cursus-task` — TRANCHÉ
+
+Un binaire externe piloté comme un script ordinaire ne coûterait **rien** au noyau : le code de sortie route déjà, le contexte de tâche s'injecterait par variable d'environnement. Argument séduisant, et **écarté** — parce qu'il compte le coût du `StepKind` sans compter celui-là :
+
+le client Linear/Jira **existe de toute façon**, puisque calculer l'écran des actions disponibles impose d'interroger le tableau. Le binaire serait donc une *seconde* implémentation du même client, à distribuer, à mettre dans le `PATH`, et à qui il faudrait rouvrir l'accès au trousseau depuis un process séparé. Le `StepKind` natif réutilise le client, la résolution de secret et la configuration déjà présents — et offre en prime une visualisation de résultat propre à son type, là où un script ne rend que du texte.
+
+**Conséquence directe sur le jalon 4** : le journal ne doit **pas** promouvoir `exit_code` en colonne dédiée. Les colonnes communes portent ce que tout type d'étape observe (issue, durée) ; le payload JSON porte le spécifique — code de sortie et tailles de sortie pour un script, ticket et colonne cible pour une tâche. Sinon la première étape non-script imposerait de migrer une table déjà remplie. Même ligne pour les gardes : `success`, `failure`, `default` valent pour tous les kinds, `exit:<n>` reste propre au script.
+
+#### 7.10.5 Ce que tout cela impose au jalon 4 : deux colonnes
+
+Le noyau n'apprend rien du kanban, à une exception près :
+
+```
+runs.trigger_kind      -- 'manual' | 'task'
+runs.trigger_task_key  -- 'ENG-1234', ou NULL
+```
+
+Nullables, aujourd'hui toujours `'manual'` / `NULL`. Les ajouter maintenant est gratuit ; les ajouter après coup rendrait tous les runs antérieurs orphelins de leur cause, sans moyen de la reconstituer. L'événement `RunStarted` embarque en outre le **snapshot de la colonne et des étiquettes** au moment du déclenchement — même raison que le snapshot de la définition : relire un run six mois plus tard doit dire pourquoi il était disponible, pas ce que le tableau est devenu depuis.
+
+#### 7.10.6 Questions ouvertes de cette section
+
+- **Auto-déclenchement** — cible acceptée, **reportée**. Configuration *par workflow* (jamais globale), par un cron de sondage de l'ordre de 5 minutes, ajouté en surcharge du manuel une fois celui-ci éprouvé. Ce qui empêche aujourd'hui toute boucle carte → run → carte n'est pas une propriété du modèle mais **le fait que le déclenchement soit humain** : c'est la garantie, pas une commodité d'interface. Le jour où elle tombe, il faudra un invariant explicite (un workflow auto-déclenché doit déplacer vers une colonne strictement postérieure, sinon il se rend éligible à lui-même). Atténuation naturelle déjà en place : les étiquettes sont effacées au passage d'une colonne à la suivante, donc une carte qui avance perd ce qui la rendait éligible.
+- **Forme des prédicats de disponibilité** dans `project.json` — non conçue.
+- **Un journal ou deux ?** Si un historique de board apparaît un jour, ses durées de vie divergent de celles des runs : un run est purgeable après quelques semaines, l'historique d'un projet est sa mémoire. Deux tables reliées par `trigger_task_key`, pour ne pas amputer l'un en nettoyant l'autre.
 
 ---
 
@@ -560,6 +641,8 @@ Le détail et les alternatives vivent dans les documents de conception ; ceci es
 | Nœuds terminaux typés (`Success`/`Failure`) ou garde `Default` obligatoire ? | **Ouvert** (§4.3) — soulevé par le comportement actuel de `RunState` |
 | Câblage de données entre étapes (`${step.output}`, variables de run) | **Reporté, non écarté** (§4.8) — se rouvrira avec l'`AgentStep` |
 
+**Projet, tracker et déclenchement** — trois questions ouvertes, argumentées au **§7.10.6** : l'auto-déclenchement par cron (cible acceptée, reportée, et ce qui devra le rendre sûr), la forme des prédicats de disponibilité, et l'unification ou non du journal des runs avec un futur historique de board.
+
 **Modèle métier étendu** (`modele-metier.md` §8) — 15 questions, dont trois structurantes pour la suite :
 
 - **Cardinalité `Task`–`Workspace`–`Session`** — marquée « à trancher, ça change tout le reste ». Inclination : `Task → N Workspace` (tentatives parallèles = branches/PR séparées), `Workspace → N Session` séquentielles ; alternative plus simple façon Emdash : `Task → N Conversation`, Workspace en attribut.
@@ -574,7 +657,11 @@ Les autres (nommage `Session`/`Conversation`, où vit `Paused`, où se définit 
 
 ### 9.4 Prochaines étapes plausibles — non ordonnées, non tranchées
 
+**Jalon 4, décidé** — la persistance du journal (couche C) : le manque le plus visible du noyau, et le préalable des identités et du versionnement de définition. Contient l'`IClock` injectable délibérément reporté au jalon 2, dont le journal est le premier vrai consommateur. Contraint par §7.10.4 (payload discriminé, pas de colonne `exit_code`) et §7.10.5 (les deux colonnes de déclenchement).
+
+Ensuite, non ordonné :
+
 - **Le point de jonction UI ↔ noyau** (§2.2) : la seule chose qui rendrait le moteur utilisable par un humain, et la question de conception ouverte la plus lourde.
 - **Un point d'entrée qui lise un fichier** (+ un exemple commité) : quelques lignes, mais c'est ce qui rend le jalon 3 réellement livré.
-- **La persistance du journal** (couche C) : le manque le plus visible du noyau, et le préalable des identités et du versionnement de définition.
+- **`TaskStep` et l'intégration du tracker** (§7.10) : le premier StepKind, et le cobaye de la recette du §5.
 - **L'`AgentStep`** : le test réel du pari central, dont la recette et le garde-fou sont au §5.
