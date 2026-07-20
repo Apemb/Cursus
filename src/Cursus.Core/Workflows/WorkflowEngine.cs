@@ -12,7 +12,9 @@ public sealed class WorkflowEngine
 
     public WorkflowEngine(IProcessRunner runner) => _runner = runner;
 
-    public WorkflowRun Execute(WorkflowDefinition definition)
+    public async Task<WorkflowRun> ExecuteAsync(
+        WorkflowDefinition definition,
+        CancellationToken cancellationToken = default)
     {
         var history = new List<StepRun>();
         var visits = new Dictionary<string, int>();
@@ -26,7 +28,7 @@ public sealed class WorkflowEngine
             if (iteration > step.MaxVisits)
                 return new WorkflowRun(RunState.Aborted, history, AbortReason.LoopNotConverging);
 
-            var result = _runner.Run(step.Script);
+            var result = await _runner.RunAsync(step.Script, cancellationToken);
             history.Add(new StepRun(cursor, iteration, result));
 
             var edge = step.OutEdges.FirstOrDefault(e => e.Guard.Matches(result));

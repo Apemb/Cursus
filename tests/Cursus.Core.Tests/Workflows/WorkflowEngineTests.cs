@@ -5,7 +5,7 @@ namespace Cursus.Core.Tests.Workflows;
 public class WorkflowEngineTests
 {
     [Fact(DisplayName = "étant donné un graphe A→B→C relié en succès et un runner qui réussit, quand on exécute le workflow, alors l'historique est A, B, C et le run est terminé avec succès")]
-    public void Sequential_success_path_visits_all_steps_in_order()
+    public async Task Sequential_success_path_visits_all_steps_in_order()
     {
         // arrange
         var runner = new StubProcessRunner(Exit(0));
@@ -18,7 +18,7 @@ public class WorkflowEngineTests
         var engine = new WorkflowEngine(runner);
 
         // act
-        var run = engine.Execute(definition);
+        var run = await engine.ExecuteAsync(definition);
 
         // assert
         Assert.Equal(new[] { "A", "B", "C" }, run.History.Select(s => s.StepId));
@@ -26,7 +26,7 @@ public class WorkflowEngineTests
     }
 
     [Fact(DisplayName = "étant donné les arêtes succès→B puis échec→C et un runner qui réussit, quand on route l'étape, alors la cible retenue est B")]
-    public void Routing_takes_the_success_edge_when_the_step_succeeds()
+    public async Task Routing_takes_the_success_edge_when_the_step_succeeds()
     {
         // arrange
         var runner = new StubProcessRunner(Exit(0));
@@ -38,14 +38,14 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = new WorkflowEngine(runner).Execute(definition);
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition);
 
         // assert
         Assert.Equal(new[] { "A", "B" }, run.History.Select(s => s.StepId));
     }
 
     [Fact(DisplayName = "étant donné les arêtes succès→B puis échec→C et un runner qui échoue, quand on route l'étape, alors la cible retenue est C")]
-    public void Routing_takes_the_failure_edge_when_the_step_fails()
+    public async Task Routing_takes_the_failure_edge_when_the_step_fails()
     {
         // arrange
         var runner = new StubProcessRunner(Exit(1));
@@ -57,14 +57,14 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = new WorkflowEngine(runner).Execute(definition);
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition);
 
         // assert
         Assert.Equal(new[] { "A", "C" }, run.History.Select(s => s.StepId));
     }
 
     [Fact(DisplayName = "étant donné les arêtes code 2→B puis défaut→C et un runner qui sort en code 2, quand on route l'étape, alors la cible retenue est B")]
-    public void Routing_takes_the_matching_exit_code_edge()
+    public async Task Routing_takes_the_matching_exit_code_edge()
     {
         // arrange
         var runner = new StubProcessRunner(Exit(2));
@@ -76,14 +76,14 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = new WorkflowEngine(runner).Execute(definition);
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition);
 
         // assert
         Assert.Equal(new[] { "A", "B" }, run.History.Select(s => s.StepId));
     }
 
     [Fact(DisplayName = "étant donné les arêtes code 2→B puis défaut→C et un runner qui sort en code 5, quand on route l'étape, alors la cible de repli est C")]
-    public void Routing_falls_back_to_the_default_edge_when_no_exit_code_matches()
+    public async Task Routing_falls_back_to_the_default_edge_when_no_exit_code_matches()
     {
         // arrange
         var runner = new StubProcessRunner(Exit(5));
@@ -95,21 +95,21 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = new WorkflowEngine(runner).Execute(definition);
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition);
 
         // assert
         Assert.Equal(new[] { "A", "C" }, run.History.Select(s => s.StepId));
     }
 
     [Fact(DisplayName = "étant donné une étape terminale atteinte en succès, quand on exécute, alors le run est terminé avec succès sur cette étape")]
-    public void A_terminal_step_reached_on_success_completes_the_run()
+    public async Task A_terminal_step_reached_on_success_completes_the_run()
     {
         // arrange
         var runner = new StubProcessRunner(Exit(0));
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        var run = new WorkflowEngine(runner).Execute(definition);
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition);
 
         // assert
         Assert.Equal(new[] { "A" }, run.History.Select(s => s.StepId));
@@ -117,21 +117,21 @@ public class WorkflowEngineTests
     }
 
     [Fact(DisplayName = "étant donné une étape qui échoue sans arête applicable, quand on exécute, alors le run est en échec sur cette étape")]
-    public void A_failing_step_without_a_matching_edge_fails_the_run()
+    public async Task A_failing_step_without_a_matching_edge_fails_the_run()
     {
         // arrange
         var runner = new StubProcessRunner(Exit(1));
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        var run = new WorkflowEngine(runner).Execute(definition);
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition);
 
         // assert
         Assert.Equal(RunState.Failed, run.State);
     }
 
     [Fact(DisplayName = "étant donné deux arêtes dont les gardes matchent toutes les deux, quand on route, alors la première déclarée l'emporte")]
-    public void Routing_prefers_the_first_declared_matching_edge()
+    public async Task Routing_prefers_the_first_declared_matching_edge()
     {
         // arrange
         var runner = new StubProcessRunner(Exit(0));
@@ -143,14 +143,14 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = new WorkflowEngine(runner).Execute(definition);
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition);
 
         // assert
         Assert.Equal(new[] { "A", "B" }, run.History.Select(s => s.StepId));
     }
 
     [Fact(DisplayName = "étant donné une boucle échec→soi avec maxVisits 3 et un runner qui échoue toujours, quand on exécute, alors 3 visites ont lieu puis le run est interrompu pour boucle non convergente")]
-    public void A_never_converging_loop_is_aborted_at_max_visits()
+    public async Task A_never_converging_loop_is_aborted_at_max_visits()
     {
         // arrange
         var runner = new StubProcessRunner(Exit(1));
@@ -160,7 +160,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = new WorkflowEngine(runner).Execute(definition);
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition);
 
         // assert
         Assert.Equal(new[] { 1, 2, 3 }, run.History.Select(s => s.Iteration));
@@ -169,7 +169,7 @@ public class WorkflowEngineTests
     }
 
     [Fact(DisplayName = "étant donné une boucle échec→soi et un runner qui échoue puis réussit, quand on exécute, alors 2 visites ont lieu et le run est terminé avec succès")]
-    public void A_loop_that_converges_stops_and_completes()
+    public async Task A_loop_that_converges_stops_and_completes()
     {
         // arrange
         var runner = new StubProcessRunner(Exit(1), Exit(0));
@@ -179,7 +179,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = new WorkflowEngine(runner).Execute(definition);
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition);
 
         // assert
         Assert.Equal(new[] { 1, 2 }, run.History.Select(s => s.Iteration));
@@ -187,7 +187,7 @@ public class WorkflowEngineTests
     }
 
     [Fact(DisplayName = "étant donné une boucle échec→soi et un runner qui réussit d'emblée, quand on exécute, alors une seule visite a lieu et le run n'est pas interrompu")]
-    public void A_loop_that_converges_on_the_first_try_runs_once()
+    public async Task A_loop_that_converges_on_the_first_try_runs_once()
     {
         // arrange
         var runner = new StubProcessRunner(Exit(0));
@@ -197,7 +197,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = new WorkflowEngine(runner).Execute(definition);
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition);
 
         // assert
         Assert.Single(run.History);
@@ -205,7 +205,7 @@ public class WorkflowEngineTests
     }
 
     [Fact(DisplayName = "étant donné une étape avec arêtes succès/échec et un runner qui dépasse le délai, quand on route, alors l'arête d'échec est retenue")]
-    public void A_timed_out_step_routes_through_the_failure_edge()
+    public async Task A_timed_out_step_routes_through_the_failure_edge()
     {
         // arrange
         var runner = new StubProcessRunner(new ScriptResult(-1, ScriptOutcome.TimedOut));
@@ -217,28 +217,28 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = new WorkflowEngine(runner).Execute(definition);
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition);
 
         // assert
         Assert.Equal(new[] { "A", "C" }, run.History.Select(s => s.StepId));
     }
 
     [Fact(DisplayName = "étant donné une étape dont le lancement échoue et sans arête applicable, quand on exécute, alors le run est en échec")]
-    public void A_launch_failure_fails_the_run()
+    public async Task A_launch_failure_fails_the_run()
     {
         // arrange
         var runner = new StubProcessRunner(new ScriptResult(127, ScriptOutcome.LaunchFailed));
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        var run = new WorkflowEngine(runner).Execute(definition);
+        var run = await new WorkflowEngine(runner).ExecuteAsync(definition);
 
         // assert
         Assert.Equal(RunState.Failed, run.State);
     }
 
     [Fact(DisplayName = "étant donné une arête qui pointe une étape absente du graphe, quand on exécute, alors une erreur d'étape inconnue est levée")]
-    public void Routing_to_an_unknown_step_raises_a_named_error()
+    public async Task Routing_to_an_unknown_step_raises_a_named_error()
     {
         // arrange
         var runner = new StubProcessRunner(Exit(0));
@@ -248,7 +248,8 @@ public class WorkflowEngineTests
         });
 
         // act / assert
-        Assert.Throws<UnknownStepException>(() => new WorkflowEngine(runner).Execute(definition));
+        await Assert.ThrowsAsync<UnknownStepException>(
+            async () => await new WorkflowEngine(runner).ExecuteAsync(definition));
     }
 
     // --- helpers ---
@@ -275,10 +276,10 @@ file sealed class StubProcessRunner : IProcessRunner
 
     public StubProcessRunner(params ScriptResult[] results) => _results = results;
 
-    public ScriptResult Run(ScriptSpec spec)
+    public Task<ScriptResult> RunAsync(ScriptSpec spec, CancellationToken cancellationToken = default)
     {
         var result = _results[Math.Min(_index, _results.Count - 1)];
         _index++;
-        return result;
+        return Task.FromResult(result);
     }
 }

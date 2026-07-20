@@ -3,10 +3,14 @@ namespace Cursus.Core.Workflows;
 /// <summary>
 /// Abstraction du lancement d'un process. Le moteur délègue ici et ne fait
 /// jamais de <c>Process.Start</c> lui-même — ce qui le rend entièrement
-/// testable sur un double renvoyant des résultats programmés. L'implémentation
-/// réelle (System.Diagnostics.Process) arrive au jalon 2.
+/// testable sur un double renvoyant des résultats programmés.
 /// </summary>
 public interface IProcessRunner
 {
-    ScriptResult Run(ScriptSpec spec);
+    /// <summary>
+    /// Lance le process décrit et attend sa fin. Une annulation tue le process
+    /// et lève <see cref="OperationCanceledException"/> : elle n'est pas une
+    /// issue d'exécution mais une interruption du run.
+    /// </summary>
+    Task<ScriptResult> RunAsync(ScriptSpec spec, CancellationToken cancellationToken = default);
 }
