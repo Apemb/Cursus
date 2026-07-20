@@ -21,13 +21,25 @@ public enum AbortReason
 
     /// <summary>L'appelant a annulé le run en cours de route.</summary>
     Canceled,
+
+    /// <summary>
+    /// Un invariant a été violé et l'exception remonte à l'appelant. Cette
+    /// raison n'apparaît que dans le journal : elle sert à clore un run que
+    /// personne ne clôturerait, jamais à convertir l'exception en résultat.
+    /// </summary>
+    Faulted,
 }
 
 /// <summary>
-/// Résultat d'une exécution : l'état terminal et la trajectoire complète
-/// (la séquence des StepRun visités, dans l'ordre).
+/// Résultat d'une exécution : son identité, l'état terminal et la trajectoire
+/// complète (la séquence des StepRun visités, dans l'ordre).
 /// </summary>
+/// <param name="RunId">
+/// L'identifiant sous lequel le run a été journalisé — le seul moyen, pour
+/// l'appelant, de retrouver plus tard ce que le journal en a gardé.
+/// </param>
 public sealed record WorkflowRun(
+    string RunId,
     RunState State,
     IReadOnlyList<StepRun> History,
     AbortReason? AbortReason = null);

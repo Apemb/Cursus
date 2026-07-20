@@ -1,5 +1,7 @@
 using Cursus.Core.Workflows;
 
+using static Cursus.Core.Tests.Workflows.WorkflowFixtures;
+
 namespace Cursus.Core.Tests.Workflows;
 
 public class WorkflowEngineTests
@@ -15,7 +17,7 @@ public class WorkflowEngineTests
             Step("B", new Edge(Guard.OnSuccess, "C")),
             Step("C"),
         });
-        var engine = new WorkflowEngine(runner);
+        var engine = Engine(runner);
 
         // act
         var run = await engine.ExecuteAsync(definition, Workspace);
@@ -38,7 +40,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(new[] { "A", "B" }, run.History.Select(s => s.StepId));
@@ -57,7 +59,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(new[] { "A", "C" }, run.History.Select(s => s.StepId));
@@ -76,7 +78,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(new[] { "A", "B" }, run.History.Select(s => s.StepId));
@@ -95,7 +97,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(new[] { "A", "C" }, run.History.Select(s => s.StepId));
@@ -109,7 +111,7 @@ public class WorkflowEngineTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(new[] { "A" }, run.History.Select(s => s.StepId));
@@ -124,7 +126,7 @@ public class WorkflowEngineTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(RunState.Failed, run.State);
@@ -143,7 +145,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(new[] { "A", "B" }, run.History.Select(s => s.StepId));
@@ -160,7 +162,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(new[] { 1, 2, 3 }, run.History.Select(s => s.Iteration));
@@ -179,7 +181,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(new[] { 1, 2 }, run.History.Select(s => s.Iteration));
@@ -197,7 +199,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Single(run.History);
@@ -217,7 +219,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(new[] { "A", "C" }, run.History.Select(s => s.StepId));
@@ -231,7 +233,7 @@ public class WorkflowEngineTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(RunState.Failed, run.State);
@@ -249,7 +251,7 @@ public class WorkflowEngineTests
 
         // act / assert
         await Assert.ThrowsAsync<UnknownStepException>(
-            async () => await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace));
+            async () => await Engine(runner).ExecuteAsync(definition, Workspace));
     }
 
     [Fact(DisplayName = "étant donné un jeton annulé après la première étape, quand on exécute le workflow, alors le run est interrompu pour annulation")]
@@ -265,7 +267,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace, cancellation.Token);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, cancellationToken: cancellation.Token);
 
         // assert
         Assert.Equal(RunState.Aborted, run.State);
@@ -285,7 +287,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace, cancellation.Token);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, cancellationToken: cancellation.Token);
 
         // assert
         Assert.Equal(new[] { "A" }, run.History.Select(s => s.StepId));
@@ -299,7 +301,7 @@ public class WorkflowEngineTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(Workspace.WorkspaceRoot, runner.Executed.Single().WorkingDirectory);
@@ -317,7 +319,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        await new WorkflowEngine(runner).ExecuteAsync(definition, Workspace);
+        await Engine(runner).ExecuteAsync(definition, Workspace);
 
         // assert
         Assert.Equal(
@@ -329,48 +331,4 @@ public class WorkflowEngineTests
             runner.Executed.Select(s => s.WorkingDirectory));
     }
 
-    // --- helpers ---
-
-    /// <summary>Un workspace neuf, partagé : aucun test de cette classe n'écrit dedans.</summary>
-    private static readonly RunContext Workspace =
-        new(Directory.CreateTempSubdirectory("cursus-engine-").FullName);
-
-    private static readonly ScriptSpec AnyScript = new("/usr/bin/true", []);
-
-    private static StepDefinition Step(string id, params Edge[] edges) =>
-        new(id, id, AnyScript, MaxVisits: 1, edges);
-
-    private static StepDefinition Step(string id, int maxVisits, params Edge[] edges) =>
-        new(id, id, AnyScript, maxVisits, edges);
-
-    private static ScriptResult Exit(int code) => new(code, ScriptOutcome.Completed);
-}
-
-/// <summary>
-/// Double de test : renvoie des résultats programmés, dans l'ordre ; répète le
-/// dernier une fois la liste épuisée (pratique pour « le runner réussit toujours »).
-/// </summary>
-file sealed class StubProcessRunner : IProcessRunner
-{
-    private readonly IReadOnlyList<ScriptResult> _results;
-    private int _index;
-
-    public StubProcessRunner(params ScriptResult[] results) => _results = results;
-
-    /// <summary>Si fourni, s'annule une fois l'exécution rendue — comme une annulation survenant pendant le run.</summary>
-    public CancellationTokenSource? CancelAfterRun { get; init; }
-
-    /// <summary>Les specs effectivement reçues, dans l'ordre — le moteur les compose avant de les transmettre.</summary>
-    public List<ScriptSpec> Executed { get; } = [];
-
-    public Task<ScriptResult> RunAsync(ScriptSpec spec, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        Executed.Add(spec);
-
-        var result = _results[Math.Min(_index, _results.Count - 1)];
-        _index++;
-        CancelAfterRun?.Cancel();
-        return Task.FromResult(result);
-    }
 }

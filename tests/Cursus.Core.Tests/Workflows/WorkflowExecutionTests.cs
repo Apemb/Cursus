@@ -22,7 +22,7 @@ public class WorkflowExecutionTests
         });
 
         // act
-        var run = await new WorkflowEngine(new ProcessRunner()).ExecuteAsync(definition, workspace);
+        var run = await new WorkflowEngine(new ProcessRunner(), new InMemoryRunJournal()).ExecuteAsync(definition, workspace);
 
         // assert
         Assert.Equal(new[] { "preparer", "verifier", "tester", "rapporter" }, run.History.Select(s => s.StepId));
@@ -66,7 +66,7 @@ public class WorkflowExecutionTests
 
         // act
         var loaded = WorkflowSerializer.Read(document);
-        var run = await new WorkflowEngine(new ProcessRunner()).ExecuteAsync(loaded.Definition!, workspace);
+        var run = await new WorkflowEngine(new ProcessRunner(), new InMemoryRunJournal()).ExecuteAsync(loaded.Definition!, workspace);
 
         // assert
         Assert.True(loaded.Report.IsValid);

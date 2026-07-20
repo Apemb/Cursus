@@ -9,13 +9,43 @@ namespace Cursus.Core.Workflows;
 public sealed class WorkflowEngine
 {
     private readonly IProcessRunner _runner;
+    private readonly IRunJournal _journal;
 
-    public WorkflowEngine(IProcessRunner runner) => _runner = runner;
+    public WorkflowEngine(IProcessRunner runner, IRunJournal journal)
+    {
+        _runner = runner;
+        _journal = journal;
+    }
 
     public async Task<WorkflowRun> ExecuteAsync(
         WorkflowDefinition definition,
         RunContext context,
+        RunTrigger? trigger = null,
         CancellationToken cancellationToken = default)
+    {
+        var runId = Guid.NewGuid().ToString();
+        _journal.Append(runId, new WorkflowEvent.RunStarted(
+            definition, context.WorkspaceRoot, trigger ?? RunTrigger.Manual));
+
+        try
+        {
+            return await TraverseAsync(definition, context, runId, cancellationToken);
+        }
+        catch
+        {
+            // Les invariants (étape inconnue, évasion de chemin) remontent tels
+            // quels — mais le run doit être clos avant, sinon il resterait « en
+            // cours » à jamais dans le journal, indiscernable d'un crash machine.
+            _journal.Append(runId, new WorkflowEvent.RunFinished(RunState.Aborted, AbortReason.Faulted));
+            throw;
+        }
+    }
+
+    private async Task<WorkflowRun> TraverseAsync(
+        WorkflowDefinition definition,
+        RunContext context,
+        string runId,
+        CancellationToken cancellationToken)
     {
         var history = new List<StepRun>();
         var visits = new Dictionary<string, int>();
@@ -27,7 +57,13 @@ public sealed class WorkflowEngine
 
             var iteration = visits[cursor] = visits.GetValueOrDefault(cursor) + 1;
             if (iteration > step.MaxVisits)
-                return new WorkflowRun(RunState.Aborted, history, AbortReason.LoopNotConverging);
+            {
+                _journal.Append(runId, new WorkflowEvent.RunFinished(
+                    RunState.Aborted, AbortReason.LoopNotConverging));
+                return new WorkflowRun(runId, RunState.Aborted, history, AbortReason.LoopNotConverging);
+            }
+
+            _journal.Append(runId, new WorkflowEvent.StepStarted(cursor, iteration));
 
             ScriptResult result;
             try
@@ -42,15 +78,23 @@ public sealed class WorkflowEngine
             {
                 // L'annulation interrompt le run mais ne l'efface pas : la
                 // trajectoire déjà parcourue reste observable.
-                return new WorkflowRun(RunState.Aborted, history, AbortReason.Canceled);
+                _journal.Append(runId, new WorkflowEvent.RunFinished(
+                    RunState.Aborted, AbortReason.Canceled));
+                return new WorkflowRun(runId, RunState.Aborted, history, AbortReason.Canceled);
             }
 
             history.Add(new StepRun(cursor, iteration, result));
+            _journal.Append(runId, new WorkflowEvent.StepFinished(cursor, iteration, result));
 
             var edge = step.OutEdges.FirstOrDefault(e => e.Guard.Matches(result));
             if (edge is null)
-                return new WorkflowRun(result.IsSuccess ? RunState.Completed : RunState.Failed, history);
+            {
+                var state = result.IsSuccess ? RunState.Completed : RunState.Failed;
+                _journal.Append(runId, new WorkflowEvent.RunFinished(state));
+                return new WorkflowRun(runId, state, history);
+            }
 
+            _journal.Append(runId, new WorkflowEvent.EdgeChosen(cursor, edge.Target));
             cursor = edge.Target;
         }
     }
