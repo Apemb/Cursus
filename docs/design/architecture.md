@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `09acb70`. Dernier jalon de code : `ab1dc4e` (*format de fichier JSON bidirectionnel, jalon 3*). Suite de tests : **81 verts**, build 0 warning.
+> **Statut** : document vivant, à jour du commit `2b08819`. Dernier jalon de code : `2b08819` (*journal & persistance, jalon 4*). Suite de tests : **116 verts** (102 noyau + 14 persistance), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -33,32 +33,36 @@
 
 | Moitié | Emplacement | État |
 |---|---|---|
-| Noyau déterministe | `src/Cursus.Core/Workflows/` (20 fichiers) | Moteur de traversée, runner de process réel, contexte de run, validateur de graphe, format de fichier JSON bidirectionnel. **68 tests.** Fonctionne bout en bout, sans UI. |
+| Noyau déterministe | `src/Cursus.Core/Workflows/` (28 fichiers) | Moteur de traversée, runner de process réel, contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal. **89 tests.** Fonctionne bout en bout, sans UI. |
+| Persistance | `src/Cursus.Persistence/` (3 fichiers) | Journal SQLite et magasin d'artefacts sur disque. **14 tests.** Un run survit au process. |
 | Sessions / PTY | `src/Cursus.Core/Sessions/` (5 fichiers) + `src/Cursus.App/` | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal ; logique de sessions testée (**13 tests**). Antérieure au pivot. |
 
-Ces deux moitiés **ne se connaissent pas** (§2).
+Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2), et **`Cursus.App` ne référence pas encore `Cursus.Persistence`**.
 
 ### 1.2 Solution, projets, dépendances
 
-`Cursus.slnx` (format XML .NET 10) regroupe `src/Cursus.App` (Avalonia, `OutputType=WinExe`), `src/Cursus.Core` (bibliothèque) et `tests/Cursus.Core.Tests` (xUnit). Tous en `net10.0`, `Nullable` activé partout, `ImplicitUsings` sur Core et Tests mais pas sur App.
+`Cursus.slnx` (format XML .NET 10) regroupe `src/Cursus.App` (Avalonia, `OutputType=WinExe`), `src/Cursus.Core` (bibliothèque), `src/Cursus.Persistence` (bibliothèque) et deux projets de tests xUnit. Tous en `net10.0`, `Nullable` activé partout, `ImplicitUsings` sur tout sauf App.
 
 ```mermaid
 graph TD
     subgraph CoreLib["Cursus.Core"]
-        Sessions["Sessions/<br/>TerminalSession, SessionWorkspace,<br/>ShellResolver, ShellEnvironment"]
-        Workflows["Workflows/<br/>WorkflowEngine, ProcessRunner,<br/>Validator, Serializer, RunContext"]
+        Sessions["Sessions/<br/>TerminalSession, SessionWorkspace,<br/>ShellResolver, ShellEnvironment<br/><i>(CommunityToolkit.Mvvm)</i>"]
+        Workflows["Workflows/<br/>WorkflowEngine, ProcessRunner, Validator,<br/>Serializer, RunContext, WorkflowEvent,<br/>IRunJournal, InMemoryRunJournal"]
     end
+    Persistence["Cursus.Persistence<br/>SqliteRunJournal, RunEventCodec,<br/>RunArtifactStore<br/><i>(Microsoft.Data.Sqlite)</i>"] --> CoreLib
     App["Cursus.App<br/>(Avalonia, RoyalTerminal)"] --> CoreLib
-    Tests["Cursus.Core.Tests<br/>(xUnit)"] --> CoreLib
+    App -. "PAS encore<br/>de référence" .- Persistence
     Sessions -. "aucune référence,<br/>dans aucun sens" .- Workflows
 
     style Workflows fill:#1f6f4a,color:#fff
+    style Persistence fill:#1f6f4a,color:#fff
     style Sessions fill:#5a4b8a,color:#fff
 ```
 
-Trois faits non triviaux, le reste se lit dans les `.csproj` :
+Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
-- **Le noyau déterministe a zéro dépendance externe** — `System.Text.Json` et `System.Diagnostics.Process` sont dans le framework. C'est un argument explicite du choix JSON (§7.4).
+- **Le noyau déterministe a zéro dépendance externe** — mais c'est une propriété de `Workflows/`, **pas du projet `Cursus.Core`**, qui référence `CommunityToolkit.Mvvm` pour `Sessions/` (voir plus bas). `System.Text.Json` et `System.Diagnostics.Process` sont dans le framework. C'est un argument explicite du choix JSON (§7.4), et la raison pour laquelle SQLite vit dans un projet séparé (§7.11).
+- **`Cursus.Persistence` épingle `SQLitePCLRaw.bundle_e_sqlite3` en 2.1.12**, au-dessus de la 2.1.11 que tire `Microsoft.Data.Sqlite` 10.0.10 : c'est le **binaire natif** de cette 2.1.11 qui porte une faille de sévérité haute (NU1903). La raison et la condition de sortie sont dans le `.csproj`. C'est le standard « 0 warning » qui l'a fait apparaître.
 - `CommunityToolkit.Mvvm` est référencé par `Cursus.Core` mais **utilisé uniquement par `SessionWorkspace`**, jamais par `Workflows/`.
 - Le provider VT natif est `RoyalApps.RoyalTerminal.GhosttySharp.Native.OSX` : **`Cursus.App` ne tourne aujourd'hui que sur macOS**. `Cursus.Core` et les tests sont portables POSIX (macOS/Linux) ; le cross-platform revendiqué comme différenciateur est une **cible, pas un acquis** — il exigera un `INativeVtProcessorProvider` par OS.
 
@@ -66,7 +70,7 @@ Trois faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 81 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 116 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -75,7 +79,7 @@ Prérequis : SDK .NET 10, macOS pour l'app. Le SDK est **épinglé** par `global
 
 ### 1.4 Hygiène de dépôt
 
-Branche `main`, seule branche, 15 commits (HEAD = `09acb70`). **Aucun remote configuré** : dépôt strictement local, sans sauvegarde hors machine — c'est le risque le plus concret du dépôt aujourd'hui.
+Branche `main`, seule branche, 23 commits (HEAD = `2b08819`). **Aucun remote configuré** : dépôt strictement local, sans sauvegarde hors machine — c'est le risque le plus concret du dépôt aujourd'hui.
 
 **`README.md` a été refait** (jalon 0) : réduit à ce qu'il est seul à devoir dire — prérequis, commandes de développement, commande d'installation, et les deux pièges de l'application installée (signature ad-hoc, `PATH` tronqué). Il renvoie ici pour tout le reste, plutôt que de dupliquer un état qui se périmerait.
 
@@ -169,6 +173,9 @@ Namespace unique `Cursus.Core.Workflows`. Le code est court et commenté : cette
 | `WorkflowValidator.cs` · `ValidationReport.cs` | Validité du graphe · `ValidationIssueKind` (9 valeurs), `ValidationIssue`, `ValidationReport` |
 | `WorkflowSerializer.cs` · `WorkflowDocument.cs` | JSON ⟷ modèle, `LoadResult` · les DTO `internal` |
 | `UnknownStepException.cs` · `PathEscapesWorkspaceException.cs` · `UnknownGuardException.cs` | Voir §4.6 |
+| `WorkflowEvent.cs` · `JournalEntry.cs` | Les 5 événements (variantes imbriquées) · l'enveloppe `RunId`/`Seq`/`At` |
+| `IRunJournal.cs` · `IRunJournalReader.cs` · `InMemoryRunJournal.cs` | Écrire · relire · l'implémentation volatile. Voir §4.10 |
+| `RunSummary.cs` · `RunTrigger.cs` · `IClock.cs` | Un run listé · la cause d'un run · l'heure injectable |
 
 Deux subtilités que les signatures ne disent pas :
 
@@ -238,8 +245,10 @@ Règles du format, non devinables :
 
 ### 4.3 La traversée
 
-`WorkflowEngine` : classe scellée, `ctor(IProcessRunner)`, une seule méthode publique
-`Task<WorkflowRun> ExecuteAsync(WorkflowDefinition, RunContext, CancellationToken = default)`.
+`WorkflowEngine` : classe scellée, `ctor(IProcessRunner, IRunJournal)`, une seule méthode publique
+`Task<WorkflowRun> ExecuteAsync(WorkflowDefinition, RunContext, RunTrigger? = null, CancellationToken = default)`.
+
+Le schéma ci-dessous montre la **traversée** ; ce que chaque étape émet au journal est en §4.10.
 
 ```mermaid
 flowchart TD
@@ -283,7 +292,7 @@ Convention : un binaire introuvable (`Win32Exception` au `Start`) rend `ScriptRe
 - **Résolution de `FileName` non contrainte** : avec `UseShellExecute = false`, un nom sans séparateur est cherché dans le `PATH` et un chemin relatif n'est **pas** résolu contre le `WorkingDirectory` calculé par `RunContext` — le soin pris à absolutiser le cwd est donc contournable. `noyau-deterministe.md` §3 exige un chemin **absolu** ; ni `ScriptSpec`, ni `ProcessRunner`, ni le validateur ne l'imposent (le validateur ne vérifie même pas que `fileName` est non vide : une étape sans script ne se voit qu'à l'exécution, en `LaunchFailed`).
 - **Course non gardée au kill** : `Kill` peut lever une `InvalidOperationException` si le process meurt entre le réveil et l'appel.
 - **Aucune politique de concurrence documentée** : `WorkflowEngine` est sans état d'instance, mais rien ne spécifie ni ne teste plusieurs runs simultanés — première question au moment du câblage UI.
-- **Aucune observabilité** : pas d'`ILogger`, pas d'événement pendant le run. Un run n'émet rien avant de rendre son `WorkflowRun`.
+- **Aucune observabilité *dans le runner*** : pas d'`ILogger`. Le run, lui, émet désormais des événements (§4.10) — mais seulement aux frontières d'étape, jamais pendant qu'un script tourne.
 
 ### 4.5 Résolution des chemins et confinement
 
@@ -345,7 +354,7 @@ flowchart LR
 5. **Le compteur de visites précède l'exécution** : dépasser `MaxVisits` n'ajoute aucun `StepRun`.
 6. **La définition reste portable** : aucun chemin absolu ; `RunContext` n'en fait pas partie.
 7. **L'annulation n'est pas une issue d'exécution**, c'est une interruption du run — et elle **conserve l'historique**.
-8. **Le moteur ne connaît que `StepDefinition` + `IProcessRunner`.** C'est le pari central du pivot ; §5 en donne le garde-fou vérifiable.
+8. **Le moteur ne connaît que `StepDefinition` + `IProcessRunner` + `IRunJournal`.** C'est le pari central du pivot ; §5 en donne le garde-fou vérifiable. Le journal n'y déroge pas : le moteur *émet*, il ne *lit* jamais — d'où deux interfaces séparées (§4.10).
 9. **Aucune donnée ne circule d'une étape à l'autre** : aucune sortie de `StepRun` n'alimente le `ScriptSpec` suivant, il n'existe ni variables de run ni câblage de références. La seule mémoire partagée d'un run est **le système de fichiers du workspace** (c'est ce que fait le test d'assemblage avec `artefact.txt`). Le câblage par références façon Conductor (`${taskRef.output.champ}`) est relevé dans `landscape.md` comme vocabulaire à emprunter : **reporté, non écarté**. Il faudra le rouvrir pour l'`AgentStep`, dont le prompt voudra dépendre de la sortie de l'étape précédente.
 
 ### 4.9 Ce que seuls les tests spécifient
@@ -361,6 +370,50 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 | `Workflows/RunContextTests.cs` (10) | Les **justifications absentes du code** du refus d'une racine relative ou inexistante. |
 | `Workflows/WorkflowValidatorTests.cs` (11) | La motivation de chaque règle et l'**ordre exact** d'un rapport multi-issues. |
 | `SessionWorkspaceTests` · `ShellResolverTests` · `TerminalSessionTests` (13) | La politique de sélection après fermeture (`min(index, count-1)`, sinon `null`), la numérotation « Session N », la cascade `$SHELL` → `/bin/zsh` → `/bin/bash` avec prédicat d'existence injecté. |
+| `Workflows/WorkflowJournalTests.cs` (15) · `Workflows/InMemoryRunJournalTests.cs` (6) | Ce que le moteur émet et dans quel ordre · l'enveloppe posée par le journal. |
+| `Cursus.Persistence.Tests/` (14) | Le magasin d'artefacts, le journal SQLite, et l'assemblage — tous les tests de durabilité **referment puis rouvrent** le journal avant de relire. |
+
+### 4.10 Le journal — CONSTRUIT (jalon 4)
+
+Le moteur **raconte** désormais ce qu'il fait. `WorkflowEngine(IProcessRunner, IRunJournal)` : le journal est un paramètre **obligatoire**, jamais optionnel — un défaut muet rendrait le silence accidentel, alors que c'est précisément le trou qu'on referme ; un run qu'on ne veut pas relire prend simplement un `InMemoryRunJournal` qu'on ignore.
+
+Cinq événements, **imbriqués dans `WorkflowEvent`** comme les variantes de `Guard` le sont dans `Guard` : leurs noms sont trop courants pour occuper le namespace.
+
+```mermaid
+sequenceDiagram
+    participant E as WorkflowEngine
+    participant J as IRunJournal
+    E->>J: RunStarted(Definition, WorkspaceRoot, Trigger)
+    loop chaque visite
+        E->>J: StepStarted(StepId, Iteration)
+        E->>J: StepFinished(StepId, Iteration, ScriptResult)
+        opt une arête matche
+            E->>J: EdgeChosen(FromStepId, ToStepId)
+        end
+    end
+    E->>J: RunFinished(State, AbortReason?)
+```
+
+Ce que la lecture du code ne donne pas d'emblée :
+
+- **`Seq` et `At` sont posés par le journal**, jamais par l'émetteur. `Seq` est propre à chaque run et c'est **lui** qui fait foi sur l'ordre — jamais `At`, parce qu'une horloge peut reculer.
+- **`RunStarted` emporte la définition entière**, figée. Relire un run six mois plus tard doit dire ce qui a tourné, pas ce que le fichier est devenu depuis. Même raison que le snapshot de colonne et d'étiquettes prévu au §7.10.5.
+- **`EdgeChosen` est distinct de `StepFinished`** : c'est la seule *décision* du moteur, tout le reste est de l'observation. Une étape terminale n'en émet aucun.
+- **`AbortReason.Faulted` n'apparaît que dans le journal.** Quand un invariant saute (`UnknownStepException`, `PathEscapesWorkspaceException`), le moteur clôt le run puis **laisse l'exception remonter inchangée** — la raison sert à ne pas laisser un run « en cours » à jamais, jamais à convertir une exception en résultat. `ExecuteAsync` enveloppe pour cela une `TraverseAsync` privée.
+- **Dépasser `MaxVisits` n'émet aucun `StepStarted`** — corollaire de l'invariant 5 (§4.8), désormais observable.
+
+`ExecuteAsync(definition, context, trigger = null, cancellationToken = default)` : le `RunTrigger` (§7.10.5) précède le jeton, qui reste en dernier par convention .NET. Le `RunId` est engendré **par le moteur, un par exécution**, et remonte dans `WorkflowRun.RunId` — le porter dans `RunContext` a été écarté, un contexte étant réutilisable d'un run à l'autre (deux runs auraient partagé une clé primaire).
+
+**Côté persistance** (`src/Cursus.Persistence/`) : `run_events` est la source, `runs` une **projection dénormalisée** entretenue à l'écriture — sans elle, lister les runs exigerait de rejouer toute la base. Une transaction par événement, sans tampon ; `journal_mode=WAL` pour que l'interface puisse relire pendant qu'un run écrit.
+
+`RunEventCodec` traduit vers des **DTO de payload, un par kind**, pour la même raison qu'au §7.5 — mais ici c'était aussi une obligation : les gardes d'une `WorkflowDefinition` sont des types abstraits que `System.Text.Json` ne sait pas reconstruire. La définition transite donc par `WorkflowSerializer` dans la colonne `definition_json`, et le codec l'y récupère à la relecture.
+
+> **Trois conséquences à ne pas découvrir en production.**
+> 1. **Un `StepFinished` relu a ses sorties vides.** Elles vivent dans `RunArtifactStore`, pas en base ; le payload n'en garde que les tailles. C'est au magasin qu'il faut aller les chercher.
+> 2. **La définition figée repasse par le validateur à la relecture** (`WorkflowSerializer.Read` valide). Un durcissement futur des règles rendrait d'anciens runs **illisibles**.
+> 3. **`state` à `NULL` = run non clos**, ce qui confond « en cours » et « tué par un crash machine ». La reprise après incident est hors v0 (§9.3).
+
+**Aucun versionnement de schéma** : les tables se créent en `CREATE TABLE IF NOT EXISTS` et rien ne gère une évolution destructrice. Dette assumée, à traiter à la première migration réelle.
 
 ---
 
@@ -375,6 +428,7 @@ Le pari central promet que greffer un nouveau type d'étape sera une extension, 
 2. `WorkflowDocument.cs` + le mapping de `WorkflowSerializer` — un champ `kind` dans le document, avec sa retombée par défaut sur le script pour ne pas casser les fichiers existants.
 3. Un **exécuteur** dédié, derrière une abstraction analogue à `IProcessRunner`, et le point de dispatch qui choisit l'exécuteur selon le `StepKind`.
 4. `WorkflowValidator` — les règles propres au nouveau kind.
+5. `RunEventCodec` — le payload de `StepFinished` est aujourd'hui celui d'un script (code de sortie, issue, tailles de sortie). Un `TaskStep` en voudra un autre (ticket, colonne cible). C'est **exactement pour cela** qu'aucun `exit_code` n'a été promu en colonne (§7.10.4) : le nouveau kind ajoute une branche au codec, il ne migre pas une table remplie.
 
 **Ce qui ne doit PAS bouger :**
 - la boucle de `WorkflowEngine.ExecuteAsync` (compteur de visites, sélection d'arête, états terminaux) ;
@@ -424,13 +478,13 @@ var vtFactory = new DefaultVtProcessorFactory(
 
 ### 6.4 Absent côté sessions
 
-Persistance, détach/rattach, layouts/splits, renommage, choix du shell ou du répertoire à la création, tout ce qui touche aux agents. L'`ITerminalSession` annoncée par le README **n'existe pas** : il n'y a **aucune interface d'abstraction du terminal**, `Cursus.App` parle directement au type concret de RoyalTerminal. Et il n'existe **aucun projet de tests pour `Cursus.App`** — le point de contact session ↔ terminal, le moins abstrait du dépôt, est le moins couvert.
+Persistance, détach/rattach, layouts/splits, renommage, choix du shell ou du répertoire à la création, tout ce qui touche aux agents. Il n'y a **aucune interface d'abstraction du terminal** — l'`ITerminalSession` que le principe d'architecture appelait (abstraire le terminal pour ne pas se coupler dur à RoyalTerminal) n'a jamais été écrite, `Cursus.App` parle directement au type concret de RoyalTerminal. Et il n'existe **aucun projet de tests pour `Cursus.App`** — le point de contact session ↔ terminal, le moins abstrait du dépôt, est le moins couvert.
 
 ### 6.5 Sonde RoyalTerminal
 
 Les quatre dépendances dures de la future détection d'état sont couvertes par `TerminalControl` 0.4.0 : écran rendu (`TryExportSnapshot`), titre OSC, événement d'octets, PID enfant. Bonus : OSC 133, injection de frappes (`SendInput`), persistance intégrée.
 
-RoyalTerminal étant livré **sans aucune documentation**, cette connaissance a été obtenue par inspection des assemblies et lecture de la source. Elle est désormais **versionnée** dans `docs/reference/royalterminal-0.4.0.md` : méthode de re-sondage, API du contrôle, les quatre signaux de détection, l'injection d'environnement, et le fait que le PTY est lancé par `forkpty()` + `execvp()` direct — ce qui autorise à mettre `srt` ou `sandbox-exec` en process de PTY pour le confinement (§7.6).
+RoyalTerminal étant livré **sans aucune documentation**, cette connaissance a été obtenue par inspection des assemblies et lecture de la source. Elle est désormais **versionnée** dans `docs/reference/royalterminal-0.4.0.md` : méthode de re-sondage, API du contrôle, les quatre signaux de détection, l'injection d'environnement, et le fait que le PTY est lancé par `forkpty()` + `execvp()` direct — ce qui autorise à mettre `srt` ou `sandbox-exec` en process de PTY pour le confinement (§7.9).
 
 ⚠️ Ce document est valide **pour la version 0.4.0 seulement**, sans contrat de compatibilité : toute montée de version impose de re-sonder.
 
@@ -500,17 +554,17 @@ Rien de ce qui suit n'existe en code. Le raisonnement complet, les preuves exter
 | **Isolation** | git worktree local, **pas de container par agent** (validation externe : Sculptor/Imbue a fait machine arrière) ; container éventuel = l'app **entière**, en opt-in global. Injection de port déterministe par hash du chemin de worktree — ⚠️ pas `string.GetHashCode()`, randomisé par run | `landscape.md`, Vague 2 |
 | **Confinement OS** | `srt` (`@anthropic-ai/sandbox-runtime`) comme implémentation par défaut de `IProcessConfinement`, SBPL maison en échappatoire, no-op en fallback. **Règle d'or : ne jamais double-sandboxer** (Seatbelt ne s'imbrique pas ; laisser le sandbox interne de Claude Code OFF). Posture : defense-in-depth, **pas** frontière de sécurité forte | `landscape.md` + `modele-metier.md` |
 | **Détection d'état** | Hooks d'abord, OSC 133 en bonus, moteur screen-manifest pur (~300 l., candidat TDD) en fallback. **Jamais de scraping du flux brut** ; ⚠️ `AlternateScreen` n'est pas un signal fiable | `landscape.md` |
-| **Persistance** | Event-sourcing léger : journal append-only sur SQLite local-first, **écrit en synchrone** (une transaction par événement : négligeable devant un lancement de process, et un crash laisse alors un journal exploitable jusqu'au dernier instant). Emplacement et découpage : §7.10.1. Le replay déterministe de Temporal est **inapplicable** à un PTY. Capture en deux phases : scrollback rendu, puis transcript JSONL via les hooks | `modele-metier.md` §7, §7.10 |
+| **Persistance** | ✅ **CONSTRUIT au jalon 4** pour la partie déterministe (§4.10, §7.11) : journal append-only SQLite, écriture synchrone, artefacts sur disque. Reste non construit et propre au monde agent : le replay (**inapplicable** à un PTY) et la capture en deux phases — scrollback rendu, puis transcript JSONL via les hooks | `modele-metier.md` §7, §4.10 |
 | **HITL** | Suspension durable + reprise par injection de valeur, charges typées, approbations collantes, trois canaux façon Temporal | `modele-metier.md` |
 | **Multi-provider** | Plugin à capacités typées ; deux constructeurs d'env : `BuildTerminalEnv` (hérite tout) vs `BuildAgentEnv` (**allowlist stricte**) | `landscape.md` |
 | **Tracker / MCP / remote** | ⚠️ **révisé par §7.10.2** : le tracker est désormais la source de vérité de l'état des tâches, Cursus ne le réplique pas. MCP délégué à l'agent host ; `IExecutionContext` prévu tôt, SSH plus tard | `modele-metier.md`, §7.10 |
 | **Stack .NET** | `Microsoft.Extensions.AI` pour les appels que **Cursus lui-même** fait ; MAF Workflows comme référence de conception, backend optionnel. Écartés : SK Process Framework, `AgentGroupChat`, AutoGen | `landscape.md` |
 | **Serveur détaché** | Reporté : v1 mono-process Avalonia. Cible de trajectoire : la primitive `wait agent-status` qui transforme Cursus de *viewer* en *orchestrateur* | `landscape.md` |
-| **Versionnement de définition** | `version` + `contentHash`, un run s'exécute contre une **version figée** ; identités stables `RunId`/`StepRunId`, et `StartedAt` sur le résultat. **Rien de tout cela n'existe dans le code** — ce sont les préalables de la couche de persistance | `noyau-deterministe.md` §2-3, `modele-metier.md` §4 |
+| **Versionnement de définition** | ⚠️ **partiellement construit.** `RunId` et la **version figée** existent (la définition entière est snapshotée dans `RunStarted`, §4.10) ; `StartedAt` aussi, porté par le journal. Restent absents : `version`, `contentHash`, et `StepRunId` | `noyau-deterministe.md` §2-3, §4.10 |
 
 **Explicitement écarté du produit** : scale distribuée (Kafka/Cassandra/RBAC), replay déterministe pur, couplage fort à un SaaS de tracking, Mac-only comme parti pris, télémétrie non opt-in. **Positionnement** : Cursus **orchestre** les frameworks de swarms autonomes, il ne les remplace pas ; jumeau conceptuel désigné : Herdr.
 
-**Couches du modèle cible** (`modele-metier.md` §1) : A (définition) et B (exécution) existent partiellement dans `Workflows/` ; **C (état & journal) n'existe pas du tout** — l'historique d'un run vit dans `WorkflowRun.History`, en mémoire, et disparaît avec le process.
+**Couches du modèle cible** (`modele-metier.md` §1) : A (définition) et B (exécution) existent partiellement dans `Workflows/` ; **C (état & journal) est ouverte depuis le jalon 4** (§4.10) — un run survit au process et se relit. Ce qui manque encore à C : la reprise après incident, la purge, et tout ce qui touche au monde agent (transcripts, scrollback).
 
 ### 7.10 Le projet, le tableau de tâches et les trois niveaux de stockage — TRANCHÉ, NON CONSTRUIT
 
@@ -574,22 +628,40 @@ le client Linear/Jira **existe de toute façon**, puisque calculer l'écran des 
 
 **Conséquence directe sur le jalon 4** : le journal ne doit **pas** promouvoir `exit_code` en colonne dédiée. Les colonnes communes portent ce que tout type d'étape observe (issue, durée) ; le payload JSON porte le spécifique — code de sortie et tailles de sortie pour un script, ticket et colonne cible pour une tâche. Sinon la première étape non-script imposerait de migrer une table déjà remplie. Même ligne pour les gardes : `success`, `failure`, `default` valent pour tous les kinds, `exit:<n>` reste propre au script.
 
-#### 7.10.5 Ce que tout cela impose au jalon 4 : deux colonnes
+#### 7.10.5 Ce que tout cela imposait au jalon 4 : deux colonnes — CONSTRUIT
 
-Le noyau n'apprend rien du kanban, à une exception près :
+Le noyau n'apprend rien du kanban, à une exception près, désormais en place :
 
 ```
-runs.trigger_kind      -- 'manual' | 'task'
+runs.trigger_kind      -- 'Manual' | 'Task'
 runs.trigger_task_key  -- 'ENG-1234', ou NULL
 ```
 
-Nullables, aujourd'hui toujours `'manual'` / `NULL`. Les ajouter maintenant est gratuit ; les ajouter après coup rendrait tous les runs antérieurs orphelins de leur cause, sans moyen de la reconstituer. L'événement `RunStarted` embarque en outre le **snapshot de la colonne et des étiquettes** au moment du déclenchement — même raison que le snapshot de la définition : relire un run six mois plus tard doit dire pourquoi il était disponible, pas ce que le tableau est devenu depuis.
+Portées côté modèle par `RunTrigger`, passé à `ExecuteAsync` et embarqué dans `RunStarted`. Aujourd'hui toujours `Manual`/`NULL` faute de tracker. Les ajouter maintenant a coûté deux champs ; les ajouter après coup aurait rendu tous les runs antérieurs orphelins de leur cause, sans moyen de la reconstituer.
+
+⚠️ **Reporté** : le **snapshot de la colonne et des étiquettes** au moment du déclenchement. Il n'y a rien à snapshoter tant qu'aucun client de tracker n'existe (jalon 7) ; l'ajouter demandera un champ de plus dans `RunStarted` et son payload — extension propre, pas migration.
 
 #### 7.10.6 Questions ouvertes de cette section
 
 - **Auto-déclenchement** — cible acceptée, **reportée**. Configuration *par workflow* (jamais globale), par un cron de sondage de l'ordre de 5 minutes, ajouté en surcharge du manuel une fois celui-ci éprouvé. Ce qui empêche aujourd'hui toute boucle carte → run → carte n'est pas une propriété du modèle mais **le fait que le déclenchement soit humain** : c'est la garantie, pas une commodité d'interface. Le jour où elle tombe, il faudra un invariant explicite (un workflow auto-déclenché doit déplacer vers une colonne strictement postérieure, sinon il se rend éligible à lui-même). Atténuation naturelle déjà en place : les étiquettes sont effacées au passage d'une colonne à la suivante, donc une carte qui avance perd ce qui la rendait éligible.
 - **Forme des prédicats de disponibilité** dans `project.json` — non conçue.
 - **Un journal ou deux ?** Si un historique de board apparaît un jour, ses durées de vie divergent de celles des runs : un run est purgeable après quelques semaines, l'historique d'un projet est sa mémoire. Deux tables reliées par `trigger_task_key`, pour ne pas amputer l'un en nettoyant l'autre.
+
+### 7.11 SQLite dans un projet séparé plutôt que dans le noyau — TRANCHÉ (`7f86a74`)
+
+`Workflows/` revendique le **zéro dépendance externe** (§1.2) et le journal du jalon 4 avait besoin de SQLite. Deux façons d'en sortir : faire tomber la propriété, ou déplacer l'implémentation.
+
+Retenu : **`Cursus.Persistence`**, qui référence le noyau et implémente ses contrats. Le noyau définit `IRunJournal` / `IRunJournalReader` et embarque `InMemoryRunJournal` ; lui seul est nécessaire pour exécuter un workflow. Trois gains concrets, dans l'ordre où ils comptent :
+
+- **La frontière devient vérifiable par le compilateur** au lieu d'être une convention. Une régression qui ferait fuiter du SQL dans le moteur ne compile pas.
+- **Le noyau reste testable sans base** — aucun test de `Cursus.Core.Tests` ne touche un fichier `.db`, ce qui les garde rapides et sans nettoyage.
+- Un futur consommateur du noyau (un `Cursus.Cli`, un test d'intégration, un service) peut l'embarquer sans traîner un binaire natif.
+
+**Écarté** : SQLite directement dans `Cursus.Core`. Un projet de moins, mais le zéro-dépendance de `Workflows/` tombait, et avec lui l'argument qui avait fait choisir `System.Text.Json` contre YAML (§7.4) — on aurait perdu la cohérence d'un principe pour économiser un `.csproj`.
+
+> ⚠️ **Nuance à ne pas confondre.** `Cursus.Core` *en tant que projet* n'a jamais eu zéro dépendance : `CommunityToolkit.Mvvm` y est référencé pour `Sessions/`. La propriété protégée ici est celle de `Workflows/`, et le découpage en projets ne la rend vérifiable qu'entre projets — **rien n'empêche aujourd'hui `Workflows/` d'utiliser `CommunityToolkit.Mvvm`**, sinon la discipline. La séparation `Sessions/` ⟷ `Workflows/` en deux projets distincts n'a pas été faite ; elle deviendra pertinente au moment de la jonction (§2.2).
+
+**Coût assumé** : deux projets de plus (bibliothèque + tests), et une native `e_sqlite3` que le bundle macOS devra embarquer le jour où `Cursus.App` référencera la persistance — même piège que `libghostty-vt` (§6.3, §6.6). Le contrôle correspondant dans `build/package-macos.sh` est **volontairement absent** tant que cette référence n'existe pas : il échouerait sur un faux positif.
 
 ---
 
@@ -609,7 +681,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **81 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **116 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 
@@ -624,15 +696,17 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 | **Pivot + jalon 1** | Moteur de traversée testable sur double : routage par code de sortie, boucles bornées. |
 | **Jalon 2 — exécution réelle** | Contrat async + annulation, `ProcessRunner` sur `System.Diagnostics.Process`, test d'assemblage sans double. **Terminé.** |
 | **Jalon 3 — déclaration hors du C#** | `RunContext`, `WorkflowValidator` + `ValidationReport`, `WorkflowSerializer` + DTO JSON. Un workflow **peut désormais se décrire en JSON**, lu depuis une chaîne. |
+| **Jalon 0 — packaging** | Bundle `.app` macOS installable, et les quatre mesures d'environnement qu'il a permises (§6.6). |
+| **Jalon 4 — journal & persistance** | `WorkflowEvent` + `IRunJournal` dans le noyau, `Cursus.Persistence` (SQLite + artefacts disque), `IClock`, `RunTrigger`, `RunId`. **Un run survit au process et se relit.** |
 
-⚠️ **Personne ne lit encore un fichier depuis le disque** : `WorkflowSerializer` travaille sur des `string`, aucun `File.ReadAllText` de workflow n'existe dans `src/`, il n'y a ni CLI ni UI de chargement, et le seul document JSON du dépôt est une chaîne littérale dans `WorkflowExecutionTests`. C'est la couture restante du jalon 3.
+⚠️ **Aucun workflow n'est encore lu depuis le disque** : `WorkflowSerializer` travaille sur des `string`, et aucun `File.ReadAllText` de workflow n'existe dans `src/` (le jalon 4 lit bien des fichiers, mais ce sont des artefacts et une base, jamais une définition) ; il n'y a ni CLI ni UI de chargement, et le seul document JSON du dépôt est une chaîne littérale dans `WorkflowExecutionTests`. C'est la couture restante du jalon 3.
 
 ### 9.2 Les trous, en un endroit unique
 
 1. **Les deux moitiés du dépôt ne sont pas reliées** (§2) : aucun adaptateur entre `StartPty` et `IProcessRunner`, aucune UI de workflow, `SessionKind.Agent` mort. La couture elle-même est une question ouverte (§2.2).
 2. **Aucun point d'entrée qui lise un fichier** ; **aucun exemple de workflow commité** (`examples/`) ; **aucun schéma JSON publié** pour outiller un éditeur.
-3. **Aucune persistance** : `WorkflowRun.History` vit en mémoire et meurt avec le process. La couche C n'existe pas, pas plus que les identités (`RunId`, `StepRunId`), le `StartedAt` et le `contentHash` qui en sont les préalables.
-4. **Aucune observabilité pendant un run** : pas de log, pas d'événement, pas de sortie incrémentale (§4.4). C'est le même trou que le précédent vu depuis l'UI.
+3. ~~**Aucune persistance**~~ — **refermé au jalon 4** (§4.10). Restent ouverts : pas de `StepRunId` ni de `contentHash`, **aucun versionnement de schéma**, aucune purge, et un `state` à `NULL` qui confond « en cours » et « tué par un crash ».
+4. **Aucune sortie incrémentale pendant un run** : le journal n'émet qu'aux **frontières d'étape** (§4.10), et `ReadToEndAsync` ne rend la sortie qu'à la mort du process (§4.4). Voir une étape avancer *pendant* qu'elle tourne reste hors d'atteinte — c'est le coût caché du jalon 6.
 5. **Aucun passage de données entre étapes** (§4.8, invariant 9) : la seule mémoire partagée est le disque.
 6. **Le refus d'évasion de chemin ne suit pas les symlinks** — garde-fou de déclaration, **pas** confinement OS (§4.5).
 7. **`RunContext.Resolve` ne crée pas les répertoires** : un `workingSubdirectory` déclaré doit préexister.
@@ -640,12 +714,14 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 9. **`RunState` ne reflète que la dernière étape** ; pas de nœud terminal typé, terminaison implicite indiscernable d'un oubli d'arête (§4.3).
 10. **L'agrégation des issues est court-circuitée** sur les gardes inconnues et le JSON malformé ; le message de `MalformedDocument` est en anglais (§4.6).
 11. **Aucun test sur `Cursus.App`** — le point de contact le moins abstrait du dépôt est le moins couvert.
-12. **Aucune interface d'abstraction du terminal** malgré l'annonce du README ; couplage direct au type concret de RoyalTerminal.
+12. **Aucune interface d'abstraction du terminal** alors que le principe d'architecture la prévoyait ; couplage direct au type concret de RoyalTerminal.
 13. **L'app est de fait macOS-only** (provider VT natif OSX) alors que le cross-platform est revendiqué comme différenciateur (§1.2).
 14. **Pas de politique de concurrence** documentée ni testée pour `WorkflowEngine`.
 15. **Le `PATH` d'une app installée est tronqué**, et `ProcessRunner` ne le ré-enrichit pas : une étape utilisant un binaire d'`asdf` ou de Homebrew échoue en `LaunchFailed` hors développement (§6.6). À trancher au jalon 6.
 16. **Le bundle n'est pas notarisé** (signature ad-hoc) : installable sur la machine qui le construit, refusé par Gatekeeper ailleurs (§6.6).
-17. Hygiène : `README.md` périmé, plan de jalons de `landscape.md` caduc, aucun remote git, pas de CI ni de LICENSE, pas d'icône d'application (§1.3-1.4).
+17. Hygiène : plan de jalons de `landscape.md` caduc, aucun remote git, pas de CI ni de LICENSE, pas d'icône d'application (§1.3-1.4).
+18. **La définition figée d'un run repasse par le validateur à la relecture** : durcir une règle de validation rendrait d'anciens runs illisibles (§4.10).
+19. **La native `e_sqlite3` n'est pas contrôlée dans le bundle macOS**, faute de référence de `Cursus.App` vers `Cursus.Persistence` (§7.11). À poser au jalon qui crée cette référence.
 
 ### 9.3 Questions ouvertes
 
@@ -657,7 +733,7 @@ Le détail et les alternatives vivent dans les documents de conception ; ceci es
 |---|---|
 | Expressivité des gardes : `OnStdoutMatch(regex)` pour les outils qui sortent 0 en imprimant `FAILED` ? | Inclination : non en v0 ; le préfixe `stdout:` est **déjà réservé** dans le format, `Guard` reste extensible |
 | `Fork`/`Join` (dont `DynamicFork`) et `SubWorkflow` comme `StepKind` | Tranché sur le principe (extension propre du routage), non construit, non planifié |
-| Idempotence et reprise après crash de Cursus | Hors v0 : journaliser d'abord, reprise avec les checkpoints |
+| Idempotence et reprise après crash de Cursus | « Journaliser d'abord » est **fait** (§4.10). La reprise reste ouverte, et le journal en montre le premier obstacle : un run non clos est indiscernable d'un run en cours |
 | Nœuds terminaux typés (`Success`/`Failure`) ou garde `Default` obligatoire ? | **Ouvert** (§4.3) — soulevé par le comportement actuel de `RunState` |
 | Câblage de données entre étapes (`${step.output}`, variables de run) | **Reporté, non écarté** (§4.8) — se rouvrira avec l'`AgentStep` |
 
@@ -682,7 +758,7 @@ Le plan d'origine en cinq jalons ne tient plus : les décisions du §7.10 ajoute
 | # | Jalon | Ce qu'il rend possible |
 |---|---|---|
 | ~~**0**~~ | ~~**Packaging `.app` macOS**~~ — **FAIT**, résultats au §6.6 | rien de fonctionnel — il a validé l'**environnement d'exécution réel**, et confirmé le piège du `PATH` |
-| **4** | **Journal & persistance** | un run survit au process ; on peut relire ce qui s'est passé |
+| ~~**4**~~ | ~~**Journal & persistance**~~ — **FAIT**, détails au §4.10 et §7.11 | un run survit au process ; on peut relire ce qui s'est passé |
 | **5** | **Le projet, minimal** | `project.json` (id + racine) et des workflows lus **depuis le disque** |
 | **6** | **La jonction UI** | un humain choisit un workflow, le lance, voit le run avancer |
 | **7** | **Tracker & `TaskStep`** | l'écran des actions disponibles ; un workflow tire et annote une carte |
