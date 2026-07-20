@@ -31,6 +31,23 @@ chronologie, le code raconte le comment. Le document raconte le **pourquoi** et 
 Y maintenir la distinction en trois registres : **construit** / **tranché mais pas encore construit** /
 **question ouverte**. Un « prévu » présenté comme un « fait » désoriente le lecteur suivant.
 
+### Avec quel dispositif
+
+Trois régimes, selon l'ampleur. Le critère qui les départage : **une relecture adversariale ne paie que
+s'il n'existe pas de source de vérité à laquelle se comparer.** Pour une mise à jour incrémentale, le
+diff du code *est* cette source ; pour une rédaction depuis zéro, il n'y a rien, et la critique croisée
+change tout.
+
+| Régime | Quand | Dispositif |
+|---|---|---|
+| **Inline** | Cas normal, la grande majorité | Mise à jour directe, dans le commit qui la rend nécessaire. Aucun agent. C'est le seul régime qui empêche le document de prendre du retard, puisqu'il ne peut pas en prendre. |
+| **Vérification** | Fin de jalon | **Un seul** agent en arrière-plan. Il ne réécrit pas : il relit le document contre le dépôt et **liste les divergences** (chiffres périmés, types renommés, trous refermés, registres qui ont glissé). Filet contre la myopie de celui qui vient d'écrire. |
+| **Refonte** | Une section entière devient fausse d'un coup | Orchestration multi-agents : lecteurs en parallèle → rédaction → critiques sur lentilles distinctes (exactitude vérifiée contre le code, complétude, utilité réelle) → révision. Réservé aux moments de re-création — jonction noyau ↔ sessions, arrivée d'un `AgentStep`, nouveau pivot. |
+
+Ne pas déclencher une refonte pour un changement incrémental : le coût est sans commune mesure avec le
+gain, et un document réécrit en entier perd les formulations que les relectures précédentes avaient
+affinées.
+
 ## Méthode de développement
 
 **TDD discipliné**, sans exception sur la logique métier :
