@@ -83,6 +83,24 @@ public class InMemoryRunJournalTests
         Assert.Equal(new[] { "run-2", "run-1" }, journal.ListRuns().Select(run => run.RunId));
     }
 
+    [Fact(DisplayName = "étant donné un run encore en cours et un run achevé, quand on liste les runs, alors seul le second porte un état terminal")]
+    public void A_run_still_going_is_listed_without_a_terminal_state()
+    {
+        // arrange
+        var journal = new InMemoryRunJournal();
+        journal.Append("en-cours", AnyStart);
+        journal.Append("acheve", AnyStart);
+
+        // act
+        journal.Append("acheve", new WorkflowEvent.RunFinished(RunState.Aborted, AbortReason.Canceled));
+
+        // assert
+        var runs = journal.ListRuns().ToDictionary(run => run.RunId);
+        Assert.Null(runs["en-cours"].State);
+        Assert.Equal(RunState.Aborted, runs["acheve"].State);
+        Assert.Equal(AbortReason.Canceled, runs["acheve"].AbortReason);
+    }
+
     private static WorkflowEvent AnyEvent => new WorkflowEvent.RunFinished(RunState.Completed);
 
     private static WorkflowEvent AnyStart =>

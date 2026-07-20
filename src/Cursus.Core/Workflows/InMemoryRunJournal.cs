@@ -26,8 +26,21 @@ public sealed class InMemoryRunJournal : IRunJournal, IRunJournalReader
         _entries
             .Where(entry => entry.Event is WorkflowEvent.RunStarted)
             .OrderByDescending(entry => entry.At)
-            .Select(entry => new RunSummary(entry.RunId, entry.At))
+            .Select(entry => Summarize(entry))
             .ToList();
+
+    private RunSummary Summarize(JournalEntry start)
+    {
+        // Un run sans clôture est un run en cours : son état terminal reste
+        // absent, il ne s'invente pas.
+        var finish = _entries
+            .Where(entry => entry.RunId == start.RunId)
+            .Select(entry => entry.Event)
+            .OfType<WorkflowEvent.RunFinished>()
+            .LastOrDefault();
+
+        return new RunSummary(start.RunId, start.At, finish?.State, finish?.AbortReason);
+    }
 
     public IReadOnlyList<JournalEntry> ReadEvents(string runId) =>
         _entries.Where(entry => entry.RunId == runId).OrderBy(entry => entry.Seq).ToList();

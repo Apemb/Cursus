@@ -10,4 +10,16 @@
     <ProjectReference Include="..\Cursus.Core\Cursus.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10" />
+
+    <!--
+      Épinglé pour surcharger la version transitive : Microsoft.Data.Sqlite
+      10.0.10 tire SQLitePCLRaw 2.1.11, dont le binaire natif porte une faille
+      de sévérité haute (NU1903 / GHSA-2m69-gcr7-jv3q). À réévaluer dès qu'une
+      version de Microsoft.Data.Sqlite tire 2.1.12 ou plus d'elle-même.
+    -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
+  </ItemGroup>
+
 </Project>
