@@ -1,0 +1,16 @@
+{
+  "entryStep": "compiler",
+  "steps": [
+    {
+      "id": "compiler",
+      "name": "Compiler sans le moindre avertissement",
+      "maxVisits": 1,
+      "script": {
+        "fileName": "/bin/sh",
+        "arguments": ["-c", "dotnet build -warnaserror"],
+        "timeoutSeconds": 600
+      },
+      "edges": []
+    }
+  ]
+}
