@@ -5,6 +5,7 @@
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
 > - `docs/design/presentation.md` — le *comment* de la jonction UI : composition, observation d'un run, pièges Avalonia (§7.12 en détient la décision) ;
+> - `docs/design/parcours.md` — le *quoi* du point de vue de l'utilisateur : la cible d'usage et le parcours réduit du jalon 6 (§7.13 en détient les conséquences) ;
 > - `docs/design/modele-metier.md` — le modèle cible orienté agents (couches, entités, machines à états) ;
 > - `docs/research/agentic-workflows-landscape.md` — les preuves externes (comparatifs, sandboxing, PTY) ;
 > - `docs/reference/royalterminal-0.4.0.md` — l'API RoyalTerminal sondée, faute de documentation éditeur ;
@@ -731,7 +732,7 @@ qu'un critère si :
 | **`IDisposable`, un projet = un host** | Imposé par le code, pas par le style : `SqliteRunJournal` détient une `SqliteConnection` unique non synchronisée. Ouvrir un autre projet = disposer et reconstruire, jamais muter |
 | **Un module par capacité** | La façade n'accueille que ce qui demande une **composition** : lancer/observer/annuler un run. Lister et charger restent `WorkflowCatalog`, déjà testés |
 | **Le flux d'événements fait foi** | Pendant un run, le `WorkflowRun` rendu par `ExecuteAsync` ne sert qu'à savoir que la tâche est finie. Sinon deux écrivains sur le même état |
-| **Un run à la fois** | Non par confort : c'est la seule configuration que le code supporte sans synchronisation (§9.2-14) |
+| **Un run à la fois** | Non par confort : c'est la seule configuration que le code supporte sans synchronisation (§9.2-14). ⚠️ **Révisé par le parcours** — la cible exige des runs concurrents ; voir §7.13 |
 | **Deux tests rendent le critère exécutable** | (a) `Cursus.Core` ne référence aucun assembly `Avalonia.*` ; (b) un end-to-end **headless** qui ouvre, charge, lance et observe un run sans instancier Avalonia. Le second *force* `ProjectHost` à être suffisant |
 
 **Écarts à retenir, parce qu'ils se rediscuteraient sinon :**
@@ -753,6 +754,93 @@ qu'un critère si :
 **Ce que la décision engage, et qui n'existe pas encore** : `Cursus.App` devra référencer
 `Cursus.Persistence` — donc le contrôle de la native `e_sqlite3` dans le bundle devient dû (§7.11,
 §9.2-19), et la stratégie `PATH` (§9.2-15) cesse d'être théorique.
+
+### 7.13 Ce que le parcours utilisateur impose — TRANCHÉ, NON CONSTRUIT
+
+Conception du 2026-07-21, le lendemain de §7.12. **Le parcours lui-même est dans
+`docs/design/parcours.md`** ; ne sont consignées ici que ses conséquences sur l'architecture, parce
+qu'elles révisent des décisions déjà écrites.
+
+Un run dure des dizaines de minutes, parfois des heures. Toute la cible découle de cette seule
+propriété : on n'attend pas devant une application qui ne montre qu'une chose à la fois.
+
+| Ce que la cible impose | Ce que ça révise |
+|---|---|
+| **N projets ouverts simultanément** | `ProjectHost` est confirmé comme la bonne unité — une racine **par projet**, chacune avec sa base et son journal. Rien à changer : c'était déjà le découpage. En revanche il **n'est plus la racine** — voir la ligne suivante |
+| **Une racine au-dessus des hosts** | Elle charge la liste des projets au démarrage, en ouvre et en ferme, sait **énumérer les runs actifs de tous les hosts**, et **porte un état global que les projets consultent sans le posséder** (§7.13.1). C'est ce dernier point qui la fait passer de commodité à pièce d'architecture. Elle contient le **registre machine** du §7.10.1, que le jalon 5 avait repoussé au jalon 7 : la cible le ramène au premier plan. La règle de sens unique tient sans changement — elle construit les hosts, aucun host ne la connaît |
+| **Runs concurrents** | **Révise « un run à la fois » (§7.12).** Ce n'était pas un choix de produit mais un constat de code : `SqliteRunJournal` détient une `SqliteConnection` unique et son `Append` n'a aucun verrou (§9.2-14). Deux runs simultanés ne lèveraient pas — ils corrompraient par intermittence. À traiter **avant** l'UI qui les exposera |
+| **La sortie en direct** | **Révise l'arbitrage du §9.4** qui la traitait comme un « coût caché » optionnel du jalon 6. Elle est le cœur de l'écran de run : sans elle, il ne reste qu'un sablier. C'est le trou §9.2-4, qui devient un prérequis et non une suite |
+| **Le run est la porte d'entrée d'un projet** | L'éditeur de graphe sort du chemin critique — il est en mode configuration, qui se visite sans s'habiter |
+| **Les tâches viennent d'un tracker** | Confirme le §7.10.2 (*le tracker est la source de vérité, Cursus ne le réplique pas*). Ajoute l'**ordre d'arrivée** : Linear d'abord, Jira ensuite — les deux **étudiés avant de dessiner le port**. Un provider local viendra au besoin, plus tard |
+
+**Deux écarts qui se rediscuteraient sinon :**
+
+- **Le provider local reste en dernier, et l'abstraction se protège autrement.** Proposition initiale :
+  l'écrire juste après Linear, pour qu'une abstraction dessinée sur une seule implémentation n'en épouse
+  pas la forme. **Écartée par l'utilisateur, avec raison** — Linear et Jira apportent leur interface de
+  création et d'édition ; un flux local devrait la fournir lui-même, ce qui est une petite application à
+  part entière, sans rapport avec ce que Cursus a à faire. Retenu à la place : **une recherche sur les
+  deux API réelles avant de dessiner le port**, qui supprime le risque à la source au lieu de le couvrir.
+  Elle doit répondre à quatre questions — la maille commune d'un « état » (colonne, statut, workflow
+  d'états), la modélisation des étiquettes, le coût d'un déplacement idempotent, et ce que
+  l'authentification impose de stocker — parce que ce sont les quatre endroits où les deux modèles peuvent
+  diverger assez pour casser une abstraction. Nuance qui rend l'objection moins coûteuse qu'il n'y paraît :
+  **créer et éditer ne sont pas dans le port** — Cursus lit et annote (§7.10.3), il ne rédige pas. Le
+  provider local gardera donc un usage propre, celui de **fixture de test** exerçable sans réseau ni jeton.
+- **La vue agrégée cross-projets — écartée du périmètre, pas du modèle.** Elle serait la consolidation
+  d'écrans qui n'existent pas encore et renverrait de toute façon vers une vue projet. Ce qu'on en retient
+  n'est qu'une contrainte, et elle est gratuite : *la racine doit pouvoir énumérer les runs actifs de tous
+  les projets ouverts*. Ne rien construire de plus.
+
+#### 7.13.1 L'autorisation de démarrer une étape — TRANCHÉ sur le principe, NON CONSTRUIT
+
+Trois besoins apparus séparément en conception sont **une seule chose**, et les construire séparément
+donnerait trois mécanismes qui ne composent pas — surtout, trois façons différentes d'expliquer à l'écran
+pourquoi rien ne bouge :
+
+| Source du refus | Portée | Ce que l'écran doit dire |
+|---|---|---|
+| Quota d'API consommé au-delà d'un seuil | globale | « en attente de quota » |
+| Interrupteur « fin de journée » — on finit ce qui tourne, on ne reprend rien | globale | « en pause » |
+| Prédicat de disponibilité sur `(colonne, étiquettes)` (§7.10.3) | projet | « la carte n'est pas dans la bonne colonne » |
+
+D'où un **point d'évaluation unique avant le démarrage d'une étape**, alimenté par plusieurs sources, et
+qui ne répond jamais par un booléen : il répond *non, et voici pourquoi*.
+
+**Ce que cela introduit dans le noyau : un troisième état d'étape.** Aujourd'hui une étape s'exécute ou
+échoue. Ici elle **ne peut pas encore, et ce n'est pas un échec** — le run dort et reprendra. Rien dans le
+noyau déterministe n'a cette forme ; c'est le premier besoin qui l'exige, et il vient avec l'`AgentStep`.
+
+**Le fait générateur est le `StepKind`, pas le workflow.** Un `AgentStep` consomme du quota par nature, un
+`ScriptStep` non. La déclaration se fait donc **une fois, dans le type** — il n'y a rien à configurer par
+workflow, et « ce workflow n'a pas d'IA, donc pas de protection » se **déduit** de la définition au lieu
+de se cocher. Les deux moments d'évaluation en découlent sans configuration supplémentaire :
+
+- **au lancement du run** — le graphe se parcourt déjà (§4.6) : un workflow contenant au moins une étape
+  consommatrice ne démarre pas si la ressource est épuisée ;
+- **avant chaque étape** — l'attente et la reprise proprement dites.
+
+Le pré-check n'est **pas** redondant avec le second, et c'est son argument principal : un run qui démarre,
+crée une branche et déplace la carte en « En cours de dev » avant de s'endormir trois heures à l'étape 3
+laisse un workspace à moitié transformé et une carte qui ment à toute l'équipe. Mieux vaut ne pas partir.
+
+**Trois pièges, faciles à rater :**
+
+- **Le timeout d'une étape ne court pas pendant l'attente.** Sinon une étape à 600 s meurt en attendant une
+  ressource qu'elle n'a jamais consommée. Attendre et exécuter sont deux horloges.
+- **Un run endormi aggrave le trou §9.2-3** : le `state` à `NULL` confond déjà « en cours » et « tué par un
+  crash ». Un troisième cas rend la confusion intenable — l'attente doit être **journalisée
+  explicitement**, jamais déduite d'une absence.
+- **La règle de sens unique tient sans exception.** Le module de run vit dans un `ProjectHost` et ne doit
+  pas connaître la racine ; il reçoit donc le portail d'autorisation **par constructeur**, comme une
+  dépendance ordinaire, et ignore que sa portée est globale. Seule la racine sait qu'elle n'en construit
+  qu'un exemplaire partagé.
+
+**QUESTION OUVERTE — la maille de l'interrupteur.** « On finit ce qui tourne et on ne reprend rien » agit
+au niveau de l'**étape** : un run peut alors rester figé au milieu toute la nuit, branche créée et carte
+affichant « en cours de dev ». C'est peut-être souhaitable — la carte dit vrai, la reprise est naturelle.
+La variante « finir les runs entamés, n'en démarrer aucun nouveau » laisse un état plus propre au prix
+d'une fin de journée plus longue. Non tranchée ; ne se pose pas avant l'`AgentStep`.
 
 ---
 
@@ -791,14 +879,14 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 | **Jalon 4 — journal & persistance** | `WorkflowEvent` + `IRunJournal` dans le noyau, `Cursus.Persistence` (SQLite + artefacts disque), `IClock`, `RunTrigger`, `RunId`. **Un run survit au process et se relit.** |
 | **Jalon 5 — le projet minimal** | `Cursus.Core.Projects` : la disposition `.cursus/`, `ProjectStore`, `WorkflowCatalog`, et le `.cursus/` de ce dépôt. **Un workflow se lit enfin depuis le disque.** |
 
-⚠️ **Toujours aucun humain dans la boucle** : le catalogue existe, mais rien ne l'appelle en dehors des tests. Ni CLI (écartée, §9.4) ni UI ne permet encore de choisir un workflow et de le lancer — c'est l'objet du jalon 6.
+⚠️ **Toujours aucun humain dans la boucle** : le catalogue existe, mais rien ne l'appelle en dehors des tests. Ni CLI (écartée, §9.4) ni UI ne permet encore de choisir un workflow et de le lancer — c'est l'objet du jalon **6c**, que deux jalons de noyau précèdent désormais (§9.4).
 
 ### 9.2 Les trous, en un endroit unique
 
 1. **Les deux moitiés du dépôt ne sont pas reliées** (§2) : aucun adaptateur entre `StartPty` et `IProcessRunner`, aucune UI de workflow, `SessionKind.Agent` mort. La couture elle-même est une question ouverte (§2.2).
 2. ~~**Aucun point d'entrée qui lise un fichier**~~, ~~**aucun exemple commité**~~ — **refermés au jalon 5** (§4.11). Reste ouvert : **aucun schéma JSON publié** pour outiller un éditeur, et aucun consommateur du catalogue hors des tests.
 3. ~~**Aucune persistance**~~ — **refermé au jalon 4** (§4.10). Restent ouverts : pas de `StepRunId` ni de `contentHash`, **aucun versionnement de schéma**, aucune purge, et un `state` à `NULL` qui confond « en cours » et « tué par un crash ».
-4. **Aucune sortie incrémentale pendant un run** : le journal n'émet qu'aux **frontières d'étape** (§4.10), et `ReadToEndAsync` ne rend la sortie qu'à la mort du process (§4.4). Voir une étape avancer *pendant* qu'elle tourne reste hors d'atteinte — c'est le coût caché du jalon 6.
+4. **Aucune sortie incrémentale pendant un run** : le journal n'émet qu'aux **frontières d'étape** (§4.10), et `ReadToEndAsync` ne rend la sortie qu'à la mort du process (§4.4). Voir une étape avancer *pendant* qu'elle tourne reste hors d'atteinte. ⚠️ **Requalifié par le parcours** : ce n'est plus un coût caché du jalon 6 mais son **prérequis** (§7.13) — sans lui l'écran de run n'est qu'un sablier, et le construire deux fois reviendrait à jeter le premier.
 5. **Aucun passage de données entre étapes** (§4.8, invariant 9) : la seule mémoire partagée est le disque.
 6. **Le refus d'évasion de chemin ne suit pas les symlinks** — garde-fou de déclaration, **pas** confinement OS (§4.5).
 7. **`RunContext.Resolve` ne crée pas les répertoires** : un `workingSubdirectory` déclaré doit préexister.
@@ -808,7 +896,7 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 11. **Aucun test sur `Cursus.App`** — le point de contact le moins abstrait du dépôt est le moins couvert. Le jalon 6 y répond **par le découpage** (§7.12) et non par des tests de contrôles : la logique sort vers des classes POCO testées en xUnit nu. ⚠️ Le harnais `Avalonia.Headless` dépendrait de **xUnit v3** alors que les deux projets de tests sont en **2.9.3** — à confirmer, et sans urgence, ce harnais étant de toute façon inadapté au cycle TDD (`presentation.md` §8).
 12. **Aucune interface d'abstraction du terminal** alors que le principe d'architecture la prévoyait ; couplage direct au type concret de RoyalTerminal.
 13. **L'app est de fait macOS-only** (provider VT natif OSX) alors que le cross-platform est revendiqué comme différenciateur (§1.2).
-14. **Pas de politique de concurrence** documentée ni testée pour `WorkflowEngine`.
+14. **Pas de politique de concurrence** documentée ni testée pour `WorkflowEngine`, et **`SqliteRunJournal` ne la supporte pas** : une `SqliteConnection` unique, un `Append` sans verrou. Deux runs simultanés sur un même projet corrompraient par intermittence plutôt que de lever. La cible les exige (§7.13) — c'est donc à trancher avant l'UI, pas après.
 15. **Le `PATH` d'une app installée est tronqué**, et `ProcessRunner` ne le ré-enrichit pas : une étape utilisant un binaire d'`asdf` ou de Homebrew échoue en `LaunchFailed` hors développement (§6.6). À trancher au jalon 6.
 16. **Le bundle n'est pas notarisé** (signature ad-hoc) : installable sur la machine qui le construit, refusé par Gatekeeper ailleurs (§6.6).
 17. Hygiène : plan de jalons de `landscape.md` caduc, aucun remote git, pas de CI ni de LICENSE, pas d'icône d'application (§1.3-1.4).
@@ -831,7 +919,9 @@ Le détail et les alternatives vivent dans les documents de conception ; ceci es
 
 **Projet, tracker et déclenchement** — trois questions ouvertes, argumentées au **§7.10.6** : l'auto-déclenchement par cron (cible acceptée, reportée, et ce qui devra le rendre sûr), la forme des prédicats de disponibilité, et l'unification ou non du journal des runs avec un futur historique de board.
 
-**Présentation et composition** (`presentation.md` §8) — quatre questions laissées ouvertes par la conception du 2026-07-21, dont deux devront être tranchées *pendant* le jalon 6 : la **stratégie `PATH`** (trou 15, sans quoi les workflows commités échoueront depuis l'app installée) et **la surface du run** — la liste chronologique partage-t-elle le panneau des terminaux, dont il n'existe qu'un ? Cette dernière est du produit, pas de l'architecture : elle sera tranchée par le parcours utilisateur et les maquettes, et c'est elle qui déciderait de rouvrir ou non la question d'un routeur. Les deux autres — le gel d'`INotifyPropertyChanged` dans le noyau, et le moment d'adopter un harnais headless — sont **reportées sans coût**.
+**Présentation et composition** (`presentation.md` §8) — quatre questions laissées ouvertes par la conception du 2026-07-21. **La surface du run est désormais tranchée** par le parcours (`parcours.md` §4) : les workflows et les sessions sont **deux modes**, jamais deux surfaces en compétition pour le même panneau — donc **pas de routeur**, la coquille montre l'un ou l'autre. Reste à trancher *pendant* le jalon 6 : la **stratégie `PATH`** (trou 15, sans quoi les workflows commités échoueront depuis l'app installée). Les deux dernières — le gel d'`INotifyPropertyChanged` dans le noyau, et le moment d'adopter un harnais headless — sont **reportées sans coût**.
+
+**Parcours utilisateur** (`parcours.md` §6) — quatre questions, dont deux qui se posent dès le premier code écrit : le **volume de sortie** (`dotnet test` produit des milliers de lignes ; les afficher et les journaliser n'appellent pas la même réponse, et c'est à trancher *avec* la sortie en flux, pas après), et la **mort de l'arbre de process à l'annulation** (⚠️ non vérifié : `/bin/sh -c "dotnet test"` engendre un fils que `Kill()` sans `entireProcessTree` laisserait orphelin). Les deux autres — retirer un projet dont un run tourne, et la granularité de la vue tâches — attendent leur écran.
 
 **Modèle métier étendu** (`modele-metier.md` §8) — 15 questions, dont trois structurantes pour la suite :
 
@@ -854,17 +944,30 @@ Le plan d'origine en cinq jalons ne tient plus : les décisions du §7.10 ajoute
 | ~~**0**~~ | ~~**Packaging `.app` macOS**~~ — **FAIT**, résultats au §6.6 | rien de fonctionnel — il a validé l'**environnement d'exécution réel**, et confirmé le piège du `PATH` |
 | ~~**4**~~ | ~~**Journal & persistance**~~ — **FAIT**, détails au §4.10 et §7.11 | un run survit au process ; on peut relire ce qui s'est passé |
 | ~~**5**~~ | ~~**Le projet, minimal**~~ — **FAIT**, détails au §4.11 | `project.json` et des workflows lus **depuis le disque** |
-| **6** | **La jonction UI** | un humain choisit un workflow, le lance, voit le run avancer |
+| **6a** | **La sortie en flux** — noyau seul | voir une étape avancer *pendant* qu'elle tourne (trou §9.2-4) |
+| **6b** | **Runs concurrents** — persistance seule | plusieurs workflows en vol, sur un projet comme sur plusieurs (trou §9.2-14) |
+| **6c** | **La jonction UI** | un humain ouvre ses projets, lance un workflow, et voit le run avancer |
 | **7** | **Tracker & `TaskStep`** | l'écran des actions disponibles ; un workflow tire et annote une carte |
 | **8+** | Éditeur de graphe · auto-déclenchement · `AgentStep` | |
+
+**Pourquoi le jalon 6 se scinde en trois** (décidé le 2026-07-21, après le parcours — §7.13). Le parcours
+a fait tomber les deux hypothèses sur lesquelles reposait un jalon 6 monolithique : la sortie n'est plus
+optionnelle, et les runs ne sont plus séquentiels. Les traiter *dans* la jonction reviendrait à mélanger
+« changer le noyau » et « brancher un framework UI » dans le même jalon, et à construire l'écran de run
+deux fois — une fois autour d'un chronomètre, une fois autour d'un flux.
+
+L'ordre a une propriété qui a emporté la décision : **6a et 6b se font intégralement en TDD, sans une
+ligne d'Avalonia**, et ils rendent 6c nettement plus petit. 6a ne dépend de rien ; 6b ne dépend que de la
+persistance. Ce qui reste à 6c est ce qui ne peut pas se faire autrement : la racine multi-projets, la
+coquille, et les trois écrans (ouverture, workflows d'un projet, run).
 
 **Pourquoi le packaging passe en premier, alors qu'il n'apporte aucune fonction.** Quatre risques d'environnement sont déjà écrits dans ce document sans avoir jamais été observés : les binaires natifs de RoyalTerminal arrivent-ils dans le bundle (sinon retombée silencieuse sur le moteur managé et le bug DECCKM, §6.3) ; le `PATH` tronqué en GUI, ré-enrichi par le `-l` du terminal mais **pas** par `ProcessRunner` qui ne lance aucun shell de login ; `SSH_AUTH_SOCK` absent ; et le cwd hérité de `/Applications` — l'argument même qui a rendu `RunContext` obligatoire (§7.3). Les découvrir sur une app qui ne fait rien coûte moins cher que de les découvrir au jalon 6, mêlés à trois nouveautés. Ce chantier est **hors TDD** : aucune logique métier, donc script et vérification manuelle.
 
 **Le jalon 5 remboursait la dette du §9.2, point 2** (personne ne lisait un fichier depuis le disque). Fusionner cette couture avec le projet minimal plutôt qu'en faire un patch isolé s'est vérifié à l'usage : le `Project` est devenu le point de rendez-vous du workspace, du catalogue et des emplacements de journal, là où un « ouvrir un fichier » aurait été à refaire. Le registre machine et le trousseau (§7.10.1) en ont bien été tenus à l'écart, faute de consommateur avant le tracker.
 
-**La forme de ce jalon est déjà tranchée** (§7.12 et `presentation.md`, conception du 2026-07-21) : `ProjectHost` comme racine de composition, un module de run, observation par décorateur d'`IRunJournal` vers un `Channel`, et deux tests — architecture et end-to-end headless — qui rendent exécutable le critère « l'UI n'est qu'une façon d'instancier et d'afficher ». Restent à produire avant le plan gaté : le **parcours utilisateur**, puis une passe de **maquettes** sur les trois seuls points que le raisonnement ne tranche pas (la coquille, la vue d'un run en cours, l'entrée dans l'app).
+**La forme de 6c est déjà tranchée** (§7.12 et `presentation.md`, conception du 2026-07-21) : `ProjectHost` comme racine de composition — sous une racine multi-projets, §7.13 — un module de run, observation par décorateur d'`IRunJournal` vers un `Channel`, et deux tests — architecture et end-to-end headless — qui rendent exécutable le critère « l'UI n'est qu'une façon d'instancier et d'afficher ». Le **parcours utilisateur** est produit (`parcours.md`, 2026-07-21) ; reste une passe de **maquettes** sur les trois points que le raisonnement ne tranche pas (la coquille, la vue d'un run en cours, l'entrée dans l'app), puis le plan gaté.
 
-**Deux coûts cachés du jalon 6.** Le runner ne sait pas streamer (`ReadToEndAsync` ne rend la sortie qu'à la mort du process, §4.4) : voir un run avancer exige un second contrat ou une évolution de l'existant, et c'est là que se repose la couture PTY du §2.2. Et le **layout de graphe** est un algorithme, pas un contrôle Avalonia : recommandation retenue, une **liste chronologique de `StepRun`** au jalon 6 — 80 % de la valeur pour 10 % du coût, directement construite sur le journal — le graphe devenant un jalon à lui seul, partagé avec l'éditeur dont il est le vrai coût.
+**Le layout de graphe reste hors périmètre.** C'est un algorithme, pas un contrôle Avalonia : recommandation retenue, une **liste chronologique de `StepRun`** — 80 % de la valeur pour 10 % du coût, directement construite sur le journal. La forme visée par le parcours (étapes en haut, détail de l'étape sélectionnée en bas) se tient parfaitement avec une liste ordonnée ; le graphe devient un jalon à lui seul, partagé avec l'éditeur dont il est le vrai coût. ⚠️ Le second coût caché autrefois listé ici — le runner qui ne sait pas streamer — n'en est plus un : il est devenu le jalon **6a**, et c'est là que se repose la couture PTY du §2.2.
 
 **Ordre interne du jalon 7** : l'écran des actions **avant** `TaskStep`. Il ne fait que lire, valide le client et les prédicats sans rien mutiler en cas d'erreur, et rend `TaskStep` presque gratuit — c'est l'argument même qui a écarté `cursus-task` (§7.10.4).
 
