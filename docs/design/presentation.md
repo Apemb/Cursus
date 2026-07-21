@@ -343,3 +343,113 @@ conception : il **force `ProjectHost` à être suffisant**, ce qu'aucune relectu
 | **Tests headless** — ⚠️ `Avalonia.Headless.XUnit` 12.x dépendrait de **xUnit v3**, alors que les deux projets de tests du dépôt sont en **xUnit 2.9.3**. À confirmer. | **Ouverte, et non bloquante** : le headless est de toute façon inadapté au cycle TDD (pas de parallélisme, isolation par test coûteuse). À réserver plus tard, ciblé sur l'intégration du contrôle RoyalTerminal, dans un projet séparé |
 | **Stratégie `PATH`** — ré-enrichir dans `ProcessRunner`, déclarer dans `project.json`, ou exiger des chemins absolus | **Ouverte**, fléchée sur le jalon 6 par `architecture.md` §9.2-15. Sans réponse, les workflows commités de ce dépôt échoueront en `LaunchFailed` depuis l'app installée |
 | **Nom du module de run** — `RunSupervisor` est retenu comme hypothèse de travail ; il lance, observe et annule | À confirmer à l'écriture. Écartés : `WorkflowRunner` (trois termes voisins existent déjà : `IProcessRunner`, `ProcessRunner`, `WorkflowEngine`), tout ce qui contient `Session` (mot déjà pris par les sessions terminal) |
+
+---
+
+## 9. Le langage visuel — TRANCHÉ sur les intentions, NON CONSTRUIT
+
+Issu de la passe de maquettes du 2026-07-21. Les maquettes sont jetées ; ce qui suit ne l'est pas, et la
+frontière entre les deux est la seule chose à comprendre pour entretenir cette section :
+
+> **On consigne ce qui encode une décision, jamais ce qui l'exécute.** Que l'ambre soit *réservé* à
+> l'attente est une décision — elle vient du troisième état du §7.13.1, pas du goût. Que cet ambre soit
+> `#C9902E` est une exécution, à régler sur un écran réel et sans intérêt ici.
+
+Une section de langage visuel qui liste des codes hexadécimaux vieillit en trois semaines et personne ne
+la corrige. Une section qui dit *pourquoi cette couleur est prise* survit au premier changement de palette.
+
+### 9.1 L'existant, et sa contradiction — À RÉSOUDRE AU CÂBLAGE
+
+`App.axaml` déclare `RequestedThemeVariant="Default"`, qui **suit le thème système**. Mais
+`MainWindow.axaml` code des couleurs **en dur** : `#1E1E24` pour la colonne, `#111114` pour l'hôte de
+terminaux, `#33FFFFFF` pour les séparateurs. Les deux ne peuvent pas être vrais ensemble : en thème clair,
+la fenêtre est claire et la colonne reste sombre.
+
+Deux sorties, et il faut en choisir une plutôt que laisser le conflit :
+
+- **assumer un thème unique sombre** — défendable pour un outil qui vit à côté d'un terminal, et cohérent
+  avec ce que le code fait déjà. Alors `RequestedThemeVariant` doit dire `Dark`, pas `Default` ;
+- **passer par des ressources de thème** et laisser le système décider. Plus de travail, et c'est le seul
+  chemin si l'application doit un jour se montrer en plein jour à quelqu'un d'autre.
+
+Non tranché. À poser au moment du câblage, pas avant : c'est une décision qui se juge sur un écran.
+
+### 9.2 La disposition — quatre zones, et ce qui ne doit jamais y bouger
+
+```
+┌──────┬──────────────┬───────────────────────────────┐
+│ rail │ colonne      │ surface principale            │
+│      │ du projet    │ (liste des workflows, run,    │
+│ pro- │ ┌──────────┐ │  configuration, Application)  │
+│ jets │ │Run·Sess ⚙│ ├───────────────────────────────┤
+│      │ └──────────┘ │ détail de la sélection        │
+│ ──── │  listes      │ (log en direct, source, …)    │
+│ état │              │                               │
+└──────┴──────────────┴───────────────────────────────┘
+```
+
+Quatre invariants, chacun payé par une erreur commise pendant la passe :
+
+1. **Une seule surface principale à la fois.** Jamais deux en compétition pour le même panneau — c'est le
+   « pas de routeur » de `parcours.md` §4, et c'est ce qui a fait écarter les runs en onglets.
+2. **Le panneau du bas montre le détail de ce qui est sélectionné dans la surface, et rien d'autre.**
+   J'y avais proposé la trajectoire complète du run : elle décrit le run entier, pas l'étape sélectionnée.
+   L'erreur est facile parce que la place est libre ; l'invariant est ce qui l'empêche.
+3. **L'état de l'application vit en pied de rail**, hors de la hiérarchie des projets. Le poser dans la
+   colonne du projet le ferait lire comme un état *de ce projet*.
+4. **La configuration d'un projet est un engrenage près de son nom**, pas une destination de même poids que
+   les modes. Le placement dit de quoi elle règle la configuration — *ce* projet, par opposition à l'écran
+   Application, qui règle la machine.
+
+### 9.3 La couleur porte l'état, et l'accent ne doit pas s'y mêler
+
+Quatre valeurs sémantiques, et une seule règle qui les gouverne : **elles décrivent l'état d'un run, d'une
+étape ou d'une ressource, jamais autre chose.**
+
+| Valeur | Ce qu'elle signifie | Pourquoi elle est réservée |
+|---|---|---|
+| **réussi** | code 0, étape ou run terminé sans échec | — |
+| **échoué** | code non nul, `Failed`, ou `Aborted` — y compris arrêté par l'humain | — |
+| **en cours** | une étape est vivante | — |
+| **en attente** | ⚠️ **réservée au troisième état** du §7.13.1 : ni échec, ni exécution — l'étape ne peut pas *encore* démarrer | Ne pas la dépenser pour un avertissement générique. Le jour où l'attente arrive, il n'y aurait plus de valeur libre pour elle, et elle serait rendue comme un échec — exactement ce que le §7.13.1 cherche à éviter |
+
+Deux règles qui comptent autant que la liste :
+
+- **L'accent d'interface — sélection, focus — doit être distinct des quatre.** Sans quoi « sélectionné »
+  et « en cours » se confondent, et c'est la superposition la plus fréquente à l'écran : on sélectionne
+  presque toujours l'étape qui tourne.
+- **Jamais la couleur seule.** Chaque état porte aussi un libellé ou une forme. L'argument n'est pas
+  seulement le daltonisme : une pastille verte sans mot ne dit pas si elle signifie « réussi » ou « prêt ».
+
+**Point de départ, explicitement révisable** : le ton sombre déjà posé par le dépôt (§9.1), neutre à biais
+froid. Il vient du monde du terminal, à côté duquel l'application vit.
+
+### 9.4 La typographie sépare ce que la machine dit de ce qu'un humain a écrit
+
+| Fonte | Ce qu'elle rend | Exemples |
+|---|---|---|
+| **Monospace** | ce qui vient du système ou du fichier | `tirerLeTicket`, `code 1`, `2 min 04 s`, `dev.2.stdout`, les logs, les chemins |
+| **Proportionnelle** | ce qu'un humain a rédigé | « Passer toute la suite au vert » — le champ `name` d'une étape, les libellés d'interface |
+
+Ce n'est pas un effet de style : c'est ce qui rend lisible **d'un coup d'œil ce qui est modifiable dans le
+JSON**. Un identifiant d'étape et son libellé métier sont deux choses de nature différente, et l'écran doit
+le dire sans avoir à l'expliquer.
+
+Corollaire mécanique : **chiffres alignés** (`tabular-nums` ou son équivalent Avalonia) partout où ils
+s'empilent en colonne — durées, pourcentages, compteurs. Sinon une liste de durées ondule et devient
+illisible sans qu'on sache pourquoi.
+
+### 9.5 Le terminal est une exception, et elle est assumée
+
+RoyalTerminal détient son propre rendu et son propre fond (§5 : le contrôle *est* son état). **Un terminal
+reste sombre dans une application claire** — c'est ce que tout le monde attend, et chercher à l'harmoniser
+avec le thème de la fenêtre serait un travail contre l'attente de l'utilisateur. La même exception vaut
+pour le panneau de sortie d'une étape, qui est du texte de terminal même s'il n'est pas interactif.
+
+### 9.6 Ce qui reste ouvert
+
+- **Les valeurs exactes** — palette, graisses, densité. À régler sur un écran réel, pas dans un document.
+- **Le thème unique ou double** (§9.1), à trancher au câblage.
+- **L'icône de l'application** — trou `architecture.md` §9.2-17, toujours ouvert.
+- **La densité de la liste des visites** : lisible à huit visites dans la maquette ; à trente, il faudra
+  décider entre compacter et faire défiler.
