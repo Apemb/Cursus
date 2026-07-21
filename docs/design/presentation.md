@@ -348,8 +348,9 @@ conception : il **force `ProjectHost` à être suffisant**, ce qu'aucune relectu
 
 ## 9. Le langage visuel — TRANCHÉ sur les intentions, NON CONSTRUIT
 
-Issu de la passe de maquettes du 2026-07-21. Les maquettes sont jetées ; ce qui suit ne l'est pas, et la
-frontière entre les deux est la seule chose à comprendre pour entretenir cette section :
+Issu de la passe de maquettes du 2026-07-21 (archivées dans `docs/design/maquettes/jalon-6.html`, sans
+autorité et non tenues à jour). Ce qui suit, lui, fait foi — et la frontière entre les deux est la seule
+chose à comprendre pour entretenir cette section :
 
 > **On consigne ce qui encode une décision, jamais ce qui l'exécute.** Que l'ambre soit *réservé* à
 > l'attente est une décision — elle vient du troisième état du §7.13.1, pas du goût. Que cet ambre soit

@@ -295,8 +295,11 @@ proche de zéro, et c'est ce qui le rend légitime ici — `WorkflowCatalog.Load
 5. **La sortie en direct n'est pas un raffinement** — c'est ce qui distingue l'écran de run d'un sablier
    décoré, et donc ce qui décide s'il vaut la peine d'être construit.
 
-**Ce que la passe de maquettes du 2026-07-21 a tranché en plus** (les maquettes elles-mêmes sont jetées —
-elles étaient en HTML, Cursus est en XAML, et aucun pipeline ne traduit l'un vers l'autre) :
+**Ce que la passe de maquettes du 2026-07-21 a tranché en plus.** Les maquettes sont archivées dans
+`docs/design/maquettes/jalon-6.html` — **ouvrables dans un navigateur, sans aucune autorité**. Elles ont
+servi à décider, elles ne spécifient rien : elles sont en HTML quand Cursus est en XAML, et aucun pipeline
+ne traduit l'un vers l'autre. Elles ne seront pas tenues à jour ; ce document l'est. Tout écart entre les
+deux se tranche en faveur de ce document.
 
 6. **La coquille est un rail d'icônes**, l'état de l'application en pied de rail, cliquable vers l'écran
    Application (§1.7). Onglets et barre supérieure globale écartés, avec leurs raisons.

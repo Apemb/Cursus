@@ -1,0 +1,3020 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  * { margin: 0; }
+  img, svg { display: block; max-width: 100%; }
+  .archive-note {
+    max-width: 1180px; margin: 24px auto 0; padding: 14px 20px;
+    border: 1px solid currentColor; border-left-width: 4px; border-radius: 7px;
+    font: 14px/1.6 ui-sans-serif, -apple-system, sans-serif;
+    color: #a9700f;
+  }
+  @media (prefers-color-scheme: dark) { .archive-note { color: #d8a842; } }
+  .archive-note code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .9em; }
+  .archive-note strong { font-weight: 650; }
+  @media (max-width: 1228px) { .archive-note { margin-inline: 24px; } }
+</style>
+</head>
+<body>
+<div class="archive-note">
+  <strong>Instantané du 21 juillet 2026 — sans autorité.</strong>
+  Ces maquettes ont servi à <em>décider</em> ; elles ne spécifient rien. Elles sont en HTML quand Cursus
+  est en XAML, et aucun pipeline ne traduit l'un vers l'autre. Les décisions qu'elles ont produites vivent
+  dans <code>docs/design/parcours.md</code> (ce qu'un humain fait) et
+  <code>docs/design/presentation.md</code> §9 (le langage visuel) — <strong>ce sont eux qui font foi</strong>,
+  et eux seuls qui sont tenus à jour. Un écart entre cette page et ces documents se tranche toujours en
+  faveur des documents.
+</div>
+<title>Cursus — maquettes du jalon 6</title>
+
+<style>
+  /* ---------- tokens ---------- */
+  :root {
+    --ink:            #10171a;
+    --ink-2:          #3c4a4e;
+    --ink-3:          #6a7a7e;
+    --ink-4:          #97a5a8;
+    --ground:         #f4f6f6;
+    --panel:          #ffffff;
+    --panel-2:        #eaeeee;
+    --panel-3:        #dee3e3;
+    --line:           #d2d9d9;
+    --line-soft:      #e3e8e8;
+
+    --accent:         #1f7f85;
+    --accent-soft:    #d9ecec;
+    --accent-ink:     #14595e;
+
+    --ok:             #3f8a52;
+    --ok-soft:        #dcece0;
+    --fail:           #b8443a;
+    --fail-soft:      #f6dedb;
+    --wait:           #a97711;
+    --wait-soft:      #f6ebd3;
+
+    --term-bg:        #0e1518;
+    --term-ink:       #c6d3d4;
+
+    --radius:         7px;
+    --radius-lg:      11px;
+    --shadow:         0 1px 2px rgba(16,23,26,.07), 0 12px 32px -12px rgba(16,23,26,.22);
+
+    --sans: ui-sans-serif, -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:          #e6eced;
+      --ink-2:        #b3c0c2;
+      --ink-3:        #859497;
+      --ink-4:        #667578;
+      --ground:       #0d1316;
+      --panel:        #151d20;
+      --panel-2:      #1b2529;
+      --panel-3:      #223035;
+      --line:         #2a373b;
+      --line-soft:    #202b2f;
+
+      --accent:       #46b3b8;
+      --accent-soft:  #16383a;
+      --accent-ink:   #7fd0d3;
+
+      --ok:           #5cae6d;
+      --ok-soft:      #17301d;
+      --fail:         #dd6a5f;
+      --fail-soft:    #351916;
+      --wait:         #d2a03c;
+      --wait-soft:    #31260f;
+
+      --term-bg:      #080d0f;
+      --term-ink:     #b8c6c8;
+
+      --shadow:       0 1px 2px rgba(0,0,0,.4), 0 14px 36px -14px rgba(0,0,0,.7);
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="light"] {
+    --ink:#10171a; --ink-2:#3c4a4e; --ink-3:#6a7a7e; --ink-4:#97a5a8;
+    --ground:#f4f6f6; --panel:#ffffff; --panel-2:#eaeeee; --panel-3:#dee3e3;
+    --line:#d2d9d9; --line-soft:#e3e8e8;
+    --accent:#1f7f85; --accent-soft:#d9ecec; --accent-ink:#14595e;
+    --ok:#3f8a52; --ok-soft:#dcece0; --fail:#b8443a; --fail-soft:#f6dedb;
+    --wait:#a97711; --wait-soft:#f6ebd3;
+    --term-bg:#0e1518; --term-ink:#c6d3d4;
+    --shadow:0 1px 2px rgba(16,23,26,.07), 0 12px 32px -12px rgba(16,23,26,.22);
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    --ink:#e6eced; --ink-2:#b3c0c2; --ink-3:#859497; --ink-4:#667578;
+    --ground:#0d1316; --panel:#151d20; --panel-2:#1b2529; --panel-3:#223035;
+    --line:#2a373b; --line-soft:#202b2f;
+    --accent:#46b3b8; --accent-soft:#16383a; --accent-ink:#7fd0d3;
+    --ok:#5cae6d; --ok-soft:#17301d; --fail:#dd6a5f; --fail-soft:#351916;
+    --wait:#d2a03c; --wait-soft:#31260f;
+    --term-bg:#080d0f; --term-ink:#b8c6c8;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 36px -14px rgba(0,0,0,.7);
+    color-scheme: dark;
+  }
+
+  /* ---------- page ---------- */
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page { max-width: 1180px; margin: 0 auto; padding: 0 24px 120px; }
+  .prose { max-width: 68ch; }
+
+  h1, h2, h3, h4 { text-wrap: balance; line-height: 1.2; }
+
+  h1 {
+    font-size: clamp(30px, 4.4vw, 46px);
+    font-weight: 680;
+    letter-spacing: -0.025em;
+    margin: 0 0 12px;
+  }
+  h2 {
+    font-size: clamp(22px, 2.6vw, 28px);
+    font-weight: 660;
+    letter-spacing: -0.018em;
+    margin: 0 0 14px;
+  }
+  h3 { font-size: 19px; font-weight: 640; letter-spacing: -0.012em; margin: 0 0 8px; }
+  h4 { font-size: 15px; font-weight: 640; margin: 0 0 6px; }
+
+  p { margin: 0 0 14px; }
+  strong { font-weight: 640; color: var(--ink); }
+  em { font-style: italic; }
+
+  a { color: var(--accent); }
+  code, .m { font-family: var(--mono); font-size: 0.88em; }
+  .prose code {
+    background: var(--panel-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--line-soft);
+  }
+
+  header.masthead {
+    padding: 64px 0 40px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .lede { font-size: 18.5px; color: var(--ink-2); max-width: 62ch; }
+
+  .caveat {
+    margin-top: 26px;
+    border-left: 2px solid var(--wait);
+    background: var(--wait-soft);
+    padding: 12px 18px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    max-width: 68ch;
+    font-size: 14.5px;
+    color: var(--ink-2);
+  }
+  .caveat p:last-child { margin-bottom: 0; }
+
+  section.chunk { padding-top: 64px; }
+
+  .rule {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 0;
+  }
+
+  .sec-head {
+    display: flex; align-items: baseline; gap: 14px;
+    margin-bottom: 6px;
+  }
+  .sec-num {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-4);
+    letter-spacing: 0.06em;
+  }
+
+  /* ---------- question chips ---------- */
+  .questions { display: grid; gap: 12px; margin: 30px 0 0; max-width: 900px; }
+  .q {
+    display: grid; grid-template-columns: 26px 1fr; gap: 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+  }
+  .q .qn {
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    padding-top: 3px;
+  }
+  .q p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
+  .q b { color: var(--ink); font-weight: 620; }
+
+  /* ---------- mockup frame ---------- */
+  .frame-wrap { margin: 26px 0 0; overflow-x: auto; padding-bottom: 6px; }
+  .frame {
+    min-width: 1000px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .frame-cap {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 11.5px;
+    color: var(--ink-4);
+    letter-spacing: 0.04em;
+    margin: 10px 0 0;
+  }
+  .frame-cap .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-4); }
+
+  /* window chrome */
+  .tb {
+    height: 38px;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 14px;
+    flex: none;
+  }
+  .lights { display: flex; gap: 7px; margin-right: 6px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .lights i:nth-child(1) { background: #e2685c; }
+  .lights i:nth-child(2) { background: #dfae45; }
+  .lights i:nth-child(3) { background: #56ab5a; }
+  .tb-title { font-size: 12.5px; color: var(--ink-3); font-weight: 560; }
+  .tb-spacer { flex: 1; }
+
+  /* app body grid */
+  .app { display: flex; height: 560px; font-size: 13px; }
+  .app.tall { height: 620px; }
+
+  /* rail (variante A) */
+  .rail {
+    width: 62px; flex: none;
+    background: var(--panel-2);
+    border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 0;
+    gap: 10px;
+  }
+  .proj-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: grid; place-items: center;
+    font-weight: 680; font-size: 14px;
+    background: var(--panel-3); color: var(--ink-2);
+    position: relative;
+    border: 1px solid transparent;
+  }
+  .proj-icon.on {
+    background: var(--accent); color: #fff;
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+  .proj-icon .pip {
+    position: absolute; right: -3px; top: -3px;
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid var(--panel-2);
+    background: var(--accent);
+  }
+  .proj-icon .pip.running { background: var(--accent); }
+  .proj-icon .pip.failed  { background: var(--fail); }
+  .rail-add {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: grid; place-items: center;
+    color: var(--ink-4); font-size: 18px;
+    border: 1px dashed var(--line);
+  }
+  .rail-foot {
+    margin-top: auto;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding-top: 12px;
+    width: 100%;
+    border-top: 1px solid var(--line);
+  }
+
+  /* quota ring */
+  .ring {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: conic-gradient(var(--wait) 0 62%, var(--panel-3) 62% 100%);
+    position: relative;
+  }
+  .ring::after {
+    content: ""; position: absolute; inset: 4px;
+    border-radius: 50%; background: var(--panel-2);
+  }
+  .ring span {
+    position: relative; z-index: 1;
+    font-family: var(--mono); font-size: 9.5px; font-weight: 620;
+    color: var(--wait);
+  }
+
+  /* switch */
+  .sw {
+    width: 34px; height: 19px; border-radius: 10px;
+    background: var(--ok); position: relative; flex: none;
+  }
+  .sw::after {
+    content: ""; position: absolute; top: 2px; left: 17px;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: #fff;
+  }
+  .sw.off { background: var(--panel-3); }
+  .sw.off::after { left: 2px; }
+
+  /* sidebar */
+  .side {
+    width: 226px; flex: none;
+    background: var(--panel-2);
+    border-right: 1px solid var(--line);
+    display: flex; flex-direction: column;
+  }
+  .side.wide { width: 268px; }
+  .side-head {
+    padding: 14px 14px 10px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .side-title { font-weight: 660; font-size: 14px; letter-spacing: -0.01em; }
+  .titlerow { display: flex; align-items: center; gap: 8px; }
+  .gear {
+    margin-left: auto; flex: none;
+    width: 22px; height: 22px; border-radius: 5px;
+    display: grid; place-items: center;
+    color: var(--ink-4); font-size: 13px;
+    border: 1px solid transparent;
+  }
+  .gear.on { background: var(--panel); border-color: var(--line); color: var(--ink); }
+  .side-sub { font-family: var(--mono); font-size: 10.5px; color: var(--ink-4); }
+
+  .seg {
+    display: flex; margin: 0 12px 12px;
+    background: var(--panel-3);
+    border-radius: 6px; padding: 2px;
+    gap: 2px;
+  }
+  .seg b {
+    flex: 1; text-align: center;
+    font-size: 11.5px; font-weight: 560;
+    padding: 4px 0; border-radius: 4px;
+    color: var(--ink-3);
+  }
+  .seg b.on { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+
+  .grp {
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--ink-4);
+    padding: 10px 16px 6px;
+  }
+  .row {
+    padding: 7px 16px;
+    display: flex; align-items: center; gap: 9px;
+    color: var(--ink-2);
+    border-left: 2px solid transparent;
+  }
+  .row.on {
+    background: var(--panel);
+    border-left-color: var(--accent);
+    color: var(--ink);
+    font-weight: 560;
+  }
+  .row .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .ts { font-family: var(--mono); font-size: 10.5px; color: var(--ink-4); font-variant-numeric: tabular-nums; }
+  .row .sub { font-size: 11px; color: var(--ink-4); }
+  .row.two { align-items: flex-start; }
+  .row.two .nm { display: flex; flex-direction: column; gap: 1px; }
+
+  .side-foot {
+    margin-top: auto;
+    border-top: 1px solid var(--line);
+    padding: 11px 14px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+
+  /* status dot */
+  .sd { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--ink-4); }
+  .sd.ok { background: var(--ok); }
+  .sd.fail { background: var(--fail); }
+  .sd.run { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .sd.wait { background: var(--wait); }
+  .sd.idle { background: var(--panel-3); border: 1px solid var(--line); }
+
+  /* main */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--panel); }
+
+  .topbar {
+    height: 44px; flex: none;
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px;
+  }
+  .crumb { display: flex; align-items: center; gap: 8px; color: var(--ink-3); font-size: 12.5px; }
+  .crumb .cur { color: var(--ink); font-weight: 600; }
+  .crumb .sep { color: var(--ink-4); }
+
+  .btn {
+    font-size: 12px; font-weight: 560;
+    padding: 5px 12px; border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--panel-2); color: var(--ink-2);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.danger  { background: transparent; border-color: var(--fail); color: var(--fail); }
+  .btn.ghost   { background: transparent; }
+
+  /* global state bar (variante B) */
+  .gbar {
+    display: flex; align-items: center; gap: 16px;
+    margin-left: auto;
+    font-size: 11.5px; color: var(--ink-3);
+  }
+  .gbar .unit { display: flex; align-items: center; gap: 7px; }
+  .meter {
+    width: 74px; height: 6px; border-radius: 3px;
+    background: var(--panel-3); overflow: hidden;
+  }
+  .meter i { display: block; height: 100%; background: var(--wait); width: 62%; }
+  .gval { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink-2); }
+
+  /* tabs (variante B) */
+  .tabs {
+    display: flex; gap: 1px; flex: none;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--line);
+    padding: 0 8px;
+  }
+  .tab {
+    padding: 8px 14px; font-size: 12px;
+    display: flex; align-items: center; gap: 8px;
+    color: var(--ink-3);
+    border-bottom: 2px solid transparent;
+  }
+  .tab.on { color: var(--ink); border-bottom-color: var(--accent); background: var(--panel); font-weight: 560; }
+  .tab .x { color: var(--ink-4); font-size: 13px; }
+
+  /* workflow cards */
+  .pad { padding: 20px 22px; overflow: hidden; }
+  .cards { display: grid; gap: 10px; max-width: 680px; }
+  .card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 13px 15px;
+    display: flex; align-items: center; gap: 14px;
+    background: var(--panel);
+  }
+  .card .idn { font-family: var(--mono); font-size: 13px; font-weight: 560; }
+  .card .desc { color: var(--ink-3); font-size: 12px; }
+  .card .last { margin-left: auto; text-align: right; }
+  .card .last b { display: block; font-size: 12px; font-weight: 600; }
+  .card .last .when { font-family: var(--mono); font-size: 10.5px; color: var(--ink-4); }
+  .card .col { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .b-ok { color: var(--ok); }
+  .b-fail { color: var(--fail); }
+  .b-run { color: var(--accent); }
+
+  /* ---- run screen ---- */
+  .pipeline {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--line);
+    flex: none;
+    background: var(--panel);
+  }
+  .pipe-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
+  }
+  .verdict {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12px; font-weight: 620;
+    padding: 3px 10px; border-radius: 20px;
+  }
+  .verdict.fail { background: var(--fail-soft); color: var(--fail); }
+  .verdict.run  { background: var(--accent-soft); color: var(--accent-ink); }
+  .verdict.ok   { background: var(--ok-soft); color: var(--ok); }
+  .verdict.wait { background: var(--wait-soft); color: var(--wait); }
+  .runmeta { font-family: var(--mono); font-size: 11px; color: var(--ink-4); font-variant-numeric: tabular-nums; }
+
+  .steps { display: flex; align-items: stretch; gap: 0; }
+  .step {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 13px;
+    min-width: 216px;
+    display: flex; flex-direction: column; gap: 5px;
+    background: var(--panel);
+  }
+  .step.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .step .st-top { display: flex; align-items: center; gap: 8px; }
+  .step .st-name { font-size: 12.5px; font-weight: 580; line-height: 1.35; }
+  .step .st-id { font-family: var(--mono); font-size: 10.5px; color: var(--ink-4); }
+  .step .st-foot { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+  .step .st-dur { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .step .code {
+    font-family: var(--mono); font-size: 10px; color: var(--ink-4);
+    background: var(--panel-2); border-radius: 4px; padding: 2px 5px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .arrow {
+    align-self: center; padding: 0 12px;
+    color: var(--ink-4); font-size: 15px;
+  }
+  .edge-label {
+    align-self: center; padding: 0 8px;
+    font-family: var(--mono); font-size: 9.5px; color: var(--ink-4);
+    text-align: center; line-height: 1.3;
+  }
+
+  /* indeterminate bar */
+  .indet { height: 3px; border-radius: 2px; background: var(--panel-3); overflow: hidden; position: relative; }
+  .indet i {
+    position: absolute; top: 0; bottom: 0; width: 40%;
+    background: var(--accent); border-radius: 2px;
+    animation: slide 1.7s ease-in-out infinite;
+  }
+  @keyframes slide { 0% { left: -40%; } 100% { left: 100%; } }
+
+  /* detail pane */
+  .detail { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .detail-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 22px;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--panel);
+    flex: none;
+  }
+  .dtabs { display: flex; gap: 14px; }
+  .dtabs b { font-size: 11.5px; font-weight: 560; color: var(--ink-4); padding-bottom: 2px; border-bottom: 1.5px solid transparent; }
+  .dtabs b.on { color: var(--ink); border-bottom-color: var(--accent); }
+
+  .term {
+    flex: 1; min-height: 0;
+    background: var(--term-bg); color: var(--term-ink);
+    font-family: var(--mono); font-size: 11.5px; line-height: 1.65;
+    padding: 12px 20px;
+    overflow: hidden;
+    white-space: pre;
+  }
+  .term .dim { color: #64757a; }
+  .term .g { color: #6fbf7d; }
+  .term .r { color: #e0776b; }
+  .term .y { color: #d8ae52; }
+  .term .sel { background: rgba(70,179,184,.22); display: inline-block; width: 100%; }
+  .cursor {
+    display: inline-block; width: 7px; height: 13px;
+    background: var(--term-ink); vertical-align: -2px;
+    animation: blink 1.05s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .indet i { animation: none; left: 0; width: 100%; opacity: .5; }
+    .cursor { animation: none; }
+  }
+
+  /* ---------- verdict blocks ---------- */
+  .weigh {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-top: 20px;
+    overflow: hidden;
+    max-width: 900px;
+  }
+  .weigh > div { padding: 14px 18px; }
+  .weigh > div + div { border-left: 1px solid var(--line); }
+  .weigh h4 {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.11em;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .weigh .for h4 { color: var(--ok); }
+  .weigh .against h4 { color: var(--fail); }
+  .weigh ul { margin: 0; padding-left: 17px; }
+  .weigh li { font-size: 13.5px; color: var(--ink-2); margin-bottom: 5px; }
+  .weigh li:last-child { margin-bottom: 0; }
+
+  .pick {
+    margin-top: 22px;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    max-width: 900px;
+  }
+  .pick h4 {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.11em;
+    text-transform: uppercase; color: var(--accent-ink); margin-bottom: 7px;
+  }
+  .pick p { margin: 0 0 10px; font-size: 14.5px; color: var(--ink-2); }
+  .pick p:last-child { margin-bottom: 0; }
+  .pick strong { color: var(--ink); }
+
+  /* tables */
+  .tbl-wrap { overflow-x: auto; margin-top: 18px; max-width: 900px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 560px; }
+  th, td { text-align: left; padding: 9px 14px 9px 0; vertical-align: top; border-bottom: 1px solid var(--line-soft); }
+  th {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink-4); font-weight: 500;
+  }
+  td { color: var(--ink-2); }
+  td strong { color: var(--ink); }
+
+  .variant-head {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-top: 52px;
+  }
+  .vtag {
+    font-family: var(--mono); font-size: 12px; font-weight: 620;
+    color: #fff; background: var(--ink-3);
+    width: 22px; height: 22px; border-radius: 5px;
+    display: grid; place-items: center;
+    flex: none; align-self: center;
+  }
+  .vtag.rec { background: var(--accent); }
+
+  /* ---------- écran Application ---------- */
+  .rail-home {
+    width: 100%;
+    padding: 9px 8px 0;
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+  }
+  .rail-home .hbtn {
+    width: 46px; padding: 6px 0;
+    border-radius: 8px;
+    background: var(--panel-3);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    border: 1px solid var(--line);
+  }
+  .rail-home .hbtn.on { background: var(--accent-soft); border-color: var(--accent); }
+  .minigauge {
+    width: 30px; height: 4px; border-radius: 2px;
+    background: var(--line); overflow: hidden;
+  }
+  .minigauge i { display: block; height: 100%; background: var(--wait); }
+  .minilab {
+    font-family: var(--mono); font-size: 8.5px; color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hnav {
+    display: flex; gap: 2px; padding: 0 18px;
+    border-bottom: 1px solid var(--line);
+    flex: none; background: var(--panel);
+  }
+  .hnav b {
+    font-size: 12.5px; font-weight: 560; color: var(--ink-3);
+    padding: 10px 12px; border-bottom: 2px solid transparent;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .hnav b.on { color: var(--ink); border-bottom-color: var(--accent); font-weight: 620; }
+
+  .badge {
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: .06em;
+    padding: 1px 5px; border-radius: 3px; text-transform: uppercase;
+    background: var(--panel-3); color: var(--ink-4);
+  }
+  .badge.j6 { background: var(--ok-soft); color: var(--ok); }
+  .badge.later { background: var(--panel-3); color: var(--ink-4); }
+
+  .hbody { flex: 1; overflow: hidden; padding: 20px 24px; display: flex; flex-direction: column; gap: 22px; }
+  .hsec-t {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .11em;
+    text-transform: uppercase; color: var(--ink-4);
+    display: flex; align-items: center; gap: 9px;
+  }
+
+  .provgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .prov {
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 13px 15px; display: flex; flex-direction: column; gap: 9px;
+    background: var(--panel);
+  }
+  .prov.muted { opacity: .5; border-style: dashed; }
+  .prov-top { display: flex; align-items: center; gap: 9px; }
+  .prov-name { font-size: 13px; font-weight: 620; flex: 1; }
+  .prov-sub { font-family: var(--mono); font-size: 10px; color: var(--ink-4); }
+  .gauge { display: flex; flex-direction: column; gap: 4px; }
+  .gauge-bar { height: 6px; border-radius: 3px; background: var(--panel-3); overflow: hidden; }
+  .gauge-bar i { display: block; height: 100%; }
+  .gauge-row {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--ink-3);
+  }
+  .gauge-row b { font-family: var(--mono); font-weight: 620; font-variant-numeric: tabular-nums; }
+
+  .runtable { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .runtable th {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-4); font-weight: 500;
+    padding: 0 12px 7px 0; border-bottom: 1px solid var(--line);
+  }
+  .runtable td {
+    padding: 8px 12px 8px 0; border-bottom: 1px solid var(--line-soft);
+    color: var(--ink-2); vertical-align: middle;
+  }
+  .runtable td.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 11px; }
+  .runtable td strong { font-weight: 600; }
+
+  /* ---------- contrôle d'état d'un run ---------- */
+  .runctl {
+    display: inline-flex; align-items: stretch;
+    border: 1px solid var(--line); border-radius: 7px;
+    overflow: hidden; background: var(--panel-2);
+  }
+  .runctl > span {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 11px; font-size: 11.5px; font-weight: 560;
+    color: var(--ink-3);
+  }
+  .runctl > span + span { border-left: 1px solid var(--line); }
+  .runctl > span.on { background: var(--panel); color: var(--ink); font-weight: 620; }
+  .runctl > span.on.warn { background: var(--wait-soft); color: var(--wait); }
+  .runctl > span.on.stop { background: var(--fail-soft); color: var(--fail); }
+  .runctl > span.dis { opacity: .38; }
+
+  .why {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 11.5px; color: var(--wait);
+    background: var(--wait-soft);
+    border-radius: 5px; padding: 3px 10px;
+  }
+
+  .statemap { display: grid; gap: 0; }
+
+  /* ---------- trajectoire ---------- */
+  .traj { display: flex; flex-direction: column; }
+  .titer {
+    display: flex; align-items: center; gap: 9px;
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-4);
+    padding: 11px 0 5px;
+  }
+  .titer::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+  .titer.loop { color: var(--wait); }
+  .titer.loop::after { background: var(--wait-soft); }
+
+  .tline {
+    display: grid;
+    grid-template-columns: 16px 1fr 78px 128px 62px;
+    align-items: center; gap: 10px;
+    padding: 6px 10px 6px 4px;
+    border-radius: 5px;
+    border-left: 2px solid transparent;
+  }
+  .tline.sel { background: var(--accent-soft); border-left-color: var(--accent); }
+  .tline.dim { opacity: .42; }
+  .tline .tn { font-size: 12.5px; font-weight: 560; }
+  .tline .tid { font-family: var(--mono); font-size: 10px; color: var(--ink-4); }
+  .tline .tcol { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
+  .tline .tag {
+    font-family: var(--mono); font-size: 9.5px;
+    padding: 1px 6px; border-radius: 3px;
+    background: var(--panel-2); color: var(--ink-3);
+    justify-self: start; white-space: nowrap;
+  }
+  .tline .tag.a { background: var(--accent-soft); color: var(--accent-ink); }
+  .tline .tdur {
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+    text-align: right; font-variant-numeric: tabular-nums;
+  }
+
+  .graphbox {
+    border: 1px solid var(--line); border-radius: var(--radius);
+    background: var(--panel); padding: 14px 16px;
+    overflow-x: auto;
+  }
+  .gsvg { display: block; min-width: 660px; }
+  .gsvg text { font-family: var(--sans); }
+  .gsvg .gid { font-family: var(--mono); }
+
+  /* ---------- graphe principal ---------- */
+  .stage {
+    flex: none;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+    padding: 14px 18px 8px;
+    overflow-x: auto;
+  }
+  .bigsvg { display: block; min-width: 940px; }
+  .bigsvg text { font-family: var(--sans); }
+  .bigsvg .gid { font-family: var(--mono); }
+  .bigsvg .pulse {
+    animation: pulse 1.9s ease-in-out infinite;
+    transform-origin: center;
+  }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  .itersel {
+    display: inline-flex; border: 1px solid var(--line);
+    border-radius: 6px; overflow: hidden; background: var(--panel-2);
+  }
+  .itersel span {
+    padding: 3px 10px; font-size: 11px; font-weight: 560; color: var(--ink-3);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .itersel span + span { border-left: 1px solid var(--line); }
+  .itersel span.on { background: var(--panel); color: var(--ink); font-weight: 620; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bigsvg .pulse { animation: none; }
+  }
+
+  @media (max-width: 720px) {
+    .weigh { grid-template-columns: 1fr; }
+    .weigh > div + div { border-left: 0; border-top: 1px solid var(--line); }
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <div class="eyebrow">Cursus · jalon 6 · conception</div>
+    <h1>Maquettes de décision</h1>
+    <p class="lede">
+      Trois écrans à dessiner avant d'écrire une ligne : <strong>la coquille</strong>,
+      <strong>l'écran Application</strong> et <strong>l'écran de run</strong>. Le parcours utilisateur
+      décrit les deux premiers en mots ; ce document sert à trancher ce que les mots laissent ouvert —
+      et le troisième n'existait pas avant cette passe.
+    </p>
+
+    <div class="caveat">
+      <p><strong>Ces maquettes sont jetables.</strong> Elles sont en HTML, Cursus est en XAML, et aucun
+      pipeline ne traduit l'un vers l'autre. Elles servent à <em>décider</em> — une fois la décision prise,
+      elles n'ont plus de valeur et la source de vérité redevient <code>parcours.md</code> et
+      <code>presentation.md</code>.</p>
+    </div>
+
+    <div class="questions">
+      <div class="q">
+        <span class="qn">01</span>
+        <p><b>Où loge l'état de l'application</b> — forfait consommé, interrupteur de fin de journée.
+        Le §1.6 dit « visible quelque part », pas où. C'est le seul état qui n'appartient à aucun projet,
+        dans une coquille dont tout le reste est <em>par projet</em>.
+        <br /><b style="color:var(--ok);">→ Tranché : variante A</b>, le rail. Et le §2 lui donne sa
+        contrepartie détaillée : un écran Application.</p>
+      </div>
+      <div class="q">
+        <span class="qn">02</span>
+        <p><b>Où atterrissent les sessions terminal.</b> Elles sont le seul écran qui existe aujourd'hui.
+        Si la coquille du jalon 6 ne leur donne pas de place, elles disparaissent — et ce serait une décision
+        prise par omission.
+        <br /><b style="color:var(--ok);">→ Tranché : un mode de projet</b>, à côté de Run et Config.</p>
+      </div>
+      <div class="q">
+        <span class="qn">03</span>
+        <p><b>Un run remplace la liste, ou s'ouvre à côté d'elle ?</b> Question de coquille en apparence,
+        question de jalon en réalité : elle décide si l'écran peut montrer deux runs simultanés, donc si
+        elle prépare ou ferme le jalon 6b.
+        <br /><b style="color:var(--ok);">→ Tranché : il remplace.</b> Un run à la fois, ce que le journal
+        impose déjà.</p>
+      </div>
+      <div class="q" style="border-color:var(--accent);">
+        <span class="qn">04</span>
+        <p><b>Que devient le forfait quand il y a plusieurs agents ?</b> Cumuler Claude Code et Codex est
+        l'usage courant. Alors « le forfait » n'est plus un nombre, et la règle « au-delà de N %, on ne
+        lance plus d'étape d'agent » devient <em>par fournisseur</em>. Instruit au §2, puis
+        <b>corrigé au §4</b> : la maille n'est pas le fournisseur mais le couple (fournisseur, modèle).
+        <b>Cette question remonte au noyau.</b></p>
+      </div>
+      <div class="q" style="border-color:var(--accent);">
+        <span class="qn">06</span>
+        <p><b>Un workflow à six étapes avec une boucle tient-il à l'écran ?</b> Le ruban horizontal des
+        maquettes du §1 déborde dès qu'on sort du cas à deux étapes. Le §4 montre pourquoi — et que le
+        remède n'est pas de rétrécir les cartes.</p>
+      </div>
+      <div class="q" style="border-color:var(--accent);">
+        <span class="qn">05</span>
+        <p><b>Le contrôle d'un run est-il un bouton ou un état ?</b> « Arrêter » est un verbe instantané ;
+        or arrêter proprement prend le temps de finir l'étape en cours. Il y a donc un état transitoire,
+        et un état transitoire n'est pas un bouton. Instruit au §3.</p>
+      </div>
+    </div>
+  </header>
+
+  <hr class="rule" />
+
+  <!-- ============================================================ -->
+  <section class="chunk">
+    <div class="prose">
+      <div class="sec-head">
+        <span class="sec-num">§1</span>
+        <h2>La coquille</h2>
+      </div>
+      <p>
+        Trois variantes. Elles ne diffèrent pas par le goût : chacune répond différemment aux trois
+        questions ci-dessus, et le prix se paie ailleurs à chaque fois. Le contenu montré est celui du
+        dépôt réel — le projet <code>Cursus</code>, ses workflows <code>build</code> et
+        <code>verifier</code>.
+      </p>
+    </div>
+
+    <!-- ---------- variante A ---------- -->
+    <div class="variant-head">
+      <span class="vtag rec">A</span>
+      <h3>Rail de projets, l'état global en pied de rail</h3>
+    </div>
+    <div class="prose">
+      <p>
+        La colonne de gauche est réduite à des icônes, façon Slack. En pied de rail — hors de tout projet,
+        ce qui est exactement sa nature — la jauge de forfait et l'interrupteur. Trois modes par projet.
+      </p>
+    </div>
+
+    <div class="frame-wrap">
+      <div class="frame">
+        <div class="tb">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <span class="tb-title">Cursus</span>
+        </div>
+        <div class="app">
+
+          <div class="rail">
+            <div class="proj-icon on">Cu<span class="pip running"></span></div>
+            <div class="proj-icon">He</div>
+            <div class="proj-icon">Ap<span class="pip failed"></span></div>
+            <div class="rail-add">+</div>
+            <div class="rail-foot">
+              <div class="rail-home">
+                <div class="hbtn">
+                  <span class="minilab">Claude</span>
+                  <span class="minigauge"><i style="width:62%;"></i></span>
+                  <span class="minilab">Codex</span>
+                  <span class="minigauge"><i style="width:18%; background:var(--ok);"></i></span>
+                </div>
+              </div>
+              <div class="sw"></div>
+            </div>
+          </div>
+
+          <div class="side">
+            <div class="side-head">
+              <div class="titlerow"><div class="side-title">Cursus</div><span class="gear" role="img" aria-label="Configuration du projet">⚙</span></div>
+              <div class="side-sub">~/Development/Experiences/Cursus</div>
+            </div>
+            <div class="seg">
+              <b class="on">Run</b><b>Sessions</b>
+            </div>
+
+            <div class="grp">En cours</div>
+            <div class="row on">
+              <span class="sd run"></span>
+              <span class="nm">verifier</span>
+              <span class="ts">1 : 47</span>
+            </div>
+
+            <div class="grp">Workflows</div>
+            <div class="row">
+              <span class="sd ok"></span>
+              <span class="nm">build</span>
+              <span class="ts">14 h 02</span>
+            </div>
+            <div class="row">
+              <span class="sd fail"></span>
+              <span class="nm">verifier</span>
+              <span class="ts">hier</span>
+            </div>
+
+            <div class="grp">Runs récents</div>
+            <div class="row">
+              <span class="sd fail"></span>
+              <span class="nm">verifier</span>
+              <span class="ts">18 h 04</span>
+            </div>
+            <div class="row">
+              <span class="sd ok"></span>
+              <span class="nm">build</span>
+              <span class="ts">17 h 51</span>
+            </div>
+          </div>
+
+          <div class="main">
+            <div class="topbar">
+              <div class="crumb">
+                <span>Run</span><span class="sep">›</span><span class="cur">verifier</span>
+              </div>
+              <div style="margin-left:auto; display:flex; gap:8px;">
+                <div class="runctl">
+                  <span class="on"><span class="sd run"></span>En cours</span>
+                  <span class="dis">Arrêt en cours</span>
+                  <span>Arrêté</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="pipeline">
+              <div class="pipe-head">
+                <span class="verdict run"><span class="sd run"></span>En cours</span>
+                <span class="runmeta">démarré à 15 h 22 · 1 min 47 s</span>
+              </div>
+              <div class="steps">
+                <div class="step">
+                  <div class="st-top">
+                    <span class="sd ok"></span>
+                    <span class="st-name">Compiler sans le moindre avertissement</span>
+                  </div>
+                  <span class="st-id">compiler</span>
+                  <div class="st-foot"><span class="st-dur">11,4 s</span><span class="code">dotnet build -warnaserror</span></div>
+                </div>
+                <div class="edge-label">code 0<br />↓</div>
+                <div class="step sel">
+                  <div class="st-top">
+                    <span class="sd run"></span>
+                    <span class="st-name">Passer toute la suite au vert</span>
+                  </div>
+                  <span class="st-id">tester</span>
+                  <div class="st-foot"><span class="st-dur">1 min 36 s</span><span class="code">dotnet test</span></div>
+                  <div class="indet"><i></i></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail">
+              <div class="detail-head">
+                <div class="dtabs"><b class="on">Sortie</b><b>Commande</b><b>Environnement</b></div>
+                <span class="runmeta" style="margin-left:auto;">tester · flux en direct</span>
+              </div>
+              <div class="term"><span class="dim">$ /bin/sh -c "dotnet test"</span>
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Cursus.Core -> bin/Debug/net10.0/Cursus.Core.dll
+  Cursus.Persistence -> bin/Debug/net10.0/Cursus.Persistence.dll
+<span class="dim">[xUnit.net 00:00:00.51]</span>   Discovering: Cursus.Core.Tests
+<span class="dim">[xUnit.net 00:00:00.78]</span>   Discovered:  Cursus.Core.Tests (126 test cases)
+<span class="dim">[xUnit.net 00:00:00.79]</span>   Starting:    Cursus.Core.Tests
+<span class="cursor"></span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <p class="frame-cap"><span class="dot"></span>Variante A — le run occupe la surface, la liste reste à gauche</p>
+
+    <div class="weigh">
+      <div class="for">
+        <h4>Ce qu'elle achète</h4>
+        <ul>
+          <li>L'état de l'application est <strong>au niveau de l'application</strong>, visuellement hors de
+          tout projet. Aucune ambiguïté sur sa portée.</li>
+          <li>Les pastilles sur les icônes donnent <strong>« ce qui tourne partout »</strong> gratuitement —
+          c'est la graine de la vue maison du §1.7, sans écran à construire.</li>
+          <li>Les sessions ont une place nommée, à côté de Run et Config, sans partager de surface avec
+          les workflows — ce qu'exige le §4.1.</li>
+        </ul>
+      </div>
+      <div class="against">
+        <h4>Ce qu'elle coûte</h4>
+        <ul>
+          <li>Deux niveaux de navigation dans 62 pixels : les projets ne portent plus leur nom, seulement
+          deux lettres. Passé quatre ou cinq projets, on lit des initiales.</li>
+          <li>Un seul run visible à la fois par projet. Ouvrir le second ferme le premier.</li>
+          <li>Le forfait est réduit à un anneau : on voit qu'il monte, pas ce qu'il en reste en jetons.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ---------- variante B ---------- -->
+    <div class="variant-head">
+      <span class="vtag">B</span>
+      <h3>Barre supérieure globale, runs en onglets</h3>
+    </div>
+    <div class="prose">
+      <p>
+        L'état de l'application prend une barre sur toute la largeur, au-dessus de tout. Les runs s'ouvrent
+        en onglets : plusieurs restent ouverts côte à côte, et les sessions terminal sont des onglets comme
+        les autres.
+      </p>
+    </div>
+
+    <div class="frame-wrap">
+      <div class="frame">
+        <div class="tb">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <span class="tb-title">Cursus</span>
+          <div class="gbar">
+            <span class="unit">
+              <span>Forfait</span>
+              <span class="meter"><i></i></span>
+              <span class="gval">62 %</span>
+            </span>
+            <span class="unit">
+              <span>Nouvelles étapes</span>
+              <span class="sw"></span>
+            </span>
+          </div>
+        </div>
+        <div class="app">
+
+          <div class="side wide">
+            <div class="side-head">
+              <div class="side-title">Projets</div>
+            </div>
+            <div class="row on">
+              <span class="sd run"></span>
+              <span class="nm">Cursus</span>
+              <span class="ts">1 run</span>
+            </div>
+            <div class="row">
+              <span class="sd idle"></span>
+              <span class="nm">Herdr</span>
+            </div>
+            <div class="row">
+              <span class="sd fail"></span>
+              <span class="nm">Apex-api</span>
+              <span class="ts">hier</span>
+            </div>
+            <div class="row" style="color:var(--ink-4);">
+              <span style="width:8px;text-align:center;">+</span>
+              <span class="nm">Ajouter un projet…</span>
+            </div>
+
+            <div class="grp">Cursus · workflows</div>
+            <div class="row two">
+              <span class="sd ok"></span>
+              <span class="nm"><b style="font-weight:560;">build</b><span class="sub">réussi à 14 h 02 · 12 s</span></span>
+            </div>
+            <div class="row two on">
+              <span class="sd run"></span>
+              <span class="nm"><b style="font-weight:560;">verifier</b><span class="sub">en cours · 1 min 47 s</span></span>
+            </div>
+
+            <div class="side-foot">
+              <span class="btn primary" style="justify-content:center;">Lancer un workflow</span>
+            </div>
+          </div>
+
+          <div class="main">
+            <div class="tabs">
+              <div class="tab on"><span class="sd run"></span>verifier<span class="x">×</span></div>
+              <div class="tab"><span class="sd ok"></span>build<span class="x">×</span></div>
+              <div class="tab"><span class="sd idle"></span>zsh — Cursus<span class="x">×</span></div>
+            </div>
+
+            <div class="pipeline">
+              <div class="pipe-head">
+                <span class="verdict run"><span class="sd run"></span>En cours</span>
+                <span class="runmeta">démarré à 15 h 22 · 1 min 47 s</span>
+                <div class="runctl" style="margin-left:auto;">
+                  <span class="on"><span class="sd run"></span>En cours</span>
+                  <span class="dis">Arrêt en cours</span>
+                  <span>Arrêté</span>
+                </div>
+              </div>
+              <div class="steps">
+                <div class="step">
+                  <div class="st-top"><span class="sd ok"></span><span class="st-name">Compiler sans le moindre avertissement</span></div>
+                  <span class="st-id">compiler</span>
+                  <div class="st-foot"><span class="st-dur">11,4 s</span><span class="code">dotnet build -warnaserror</span></div>
+                </div>
+                <div class="edge-label">code 0<br />↓</div>
+                <div class="step sel">
+                  <div class="st-top"><span class="sd run"></span><span class="st-name">Passer toute la suite au vert</span></div>
+                  <span class="st-id">tester</span>
+                  <div class="st-foot"><span class="st-dur">1 min 36 s</span><span class="code">dotnet test</span></div>
+                  <div class="indet"><i></i></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail">
+              <div class="detail-head">
+                <div class="dtabs"><b class="on">Sortie</b><b>Commande</b><b>Environnement</b></div>
+              </div>
+              <div class="term"><span class="dim">$ /bin/sh -c "dotnet test"</span>
+  Cursus.Core -> bin/Debug/net10.0/Cursus.Core.dll
+  Cursus.Persistence -> bin/Debug/net10.0/Cursus.Persistence.dll
+<span class="dim">[xUnit.net 00:00:00.78]</span>   Discovered:  Cursus.Core.Tests (126 test cases)
+<span class="dim">[xUnit.net 00:00:00.79]</span>   Starting:    Cursus.Core.Tests
+<span class="cursor"></span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <p class="frame-cap"><span class="dot"></span>Variante B — trois onglets ouverts, dont une session terminal</p>
+
+    <div class="weigh">
+      <div class="for">
+        <h4>Ce qu'elle achète</h4>
+        <ul>
+          <li>Le forfait est <strong>lisible en chiffres</strong> et l'interrupteur porte une étiquette qui
+          dit ce qu'il fait — pas une icône à deviner.</li>
+          <li>Les onglets préparent le jalon 6b sans rien lui devoir : deux runs concurrents auront déjà
+          leur place à l'écran le jour où le journal les supportera.</li>
+          <li>Les projets gardent leur nom en toutes lettres.</li>
+        </ul>
+      </div>
+      <div class="against">
+        <h4>Ce qu'elle coûte</h4>
+        <ul>
+          <li><strong>Les onglets rouvrent la question du routeur</strong>, que le §4.1 venait de fermer :
+          une pile d'onglets hétérogènes (runs, sessions) est un routeur, quel que soit son nom.</li>
+          <li>Une session terminal dans un onglet doit survivre à l'invisibilité — c'est exactement le
+          piège du §5 de <code>presentation.md</code> : un conteneur recyclé tue le PTY.</li>
+          <li>La barre supérieure occupe toute la largeur pour deux informations qui changent rarement.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ---------- variante C ---------- -->
+    <div class="variant-head">
+      <span class="vtag">C</span>
+      <h3>Poste de commande en pied de colonne</h3>
+    </div>
+    <div class="prose">
+      <p>
+        Une seule colonne de gauche, nommée, dont le pied est un vrai bloc : forfait, interrupteur, et
+        le décompte de ce qui tourne sur <em>tous</em> les projets. Le run remplace la surface, comme en A.
+      </p>
+    </div>
+
+    <div class="frame-wrap">
+      <div class="frame">
+        <div class="tb">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <span class="tb-title">Cursus</span>
+        </div>
+        <div class="app">
+
+          <div class="side wide">
+            <div class="side-head">
+              <div class="side-title">Projets</div>
+            </div>
+            <div class="row on">
+              <span class="sd run"></span>
+              <span class="nm">Cursus</span>
+              <span class="ts">1 run</span>
+            </div>
+            <div class="row"><span class="sd idle"></span><span class="nm">Herdr</span></div>
+            <div class="row"><span class="sd fail"></span><span class="nm">Apex-api</span><span class="ts">hier</span></div>
+
+            <div class="grp">Cursus</div>
+            <div class="seg" style="margin-top:2px;">
+              <b class="on">Run</b><b>Sessions</b><b>Config</b>
+            </div>
+            <div class="row two">
+              <span class="sd ok"></span>
+              <span class="nm"><b style="font-weight:560;">build</b><span class="sub">réussi à 14 h 02</span></span>
+            </div>
+            <div class="row two on">
+              <span class="sd run"></span>
+              <span class="nm"><b style="font-weight:560;">verifier</b><span class="sub">en cours · 1 min 47 s</span></span>
+            </div>
+
+            <div class="side-foot">
+              <div style="display:flex; align-items:center; gap:9px;">
+                <span class="ring" style="width:26px;height:26px;"><span style="font-size:8px;">62</span></span>
+                <div style="display:flex; flex-direction:column; line-height:1.3;">
+                  <span style="font-size:11.5px; font-weight:560;">Forfait à 62 %</span>
+                  <span style="font-size:10.5px; color:var(--ink-4);">réinitialisé dans 6 j</span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:9px;">
+                <span class="sw"></span>
+                <div style="display:flex; flex-direction:column; line-height:1.3;">
+                  <span style="font-size:11.5px; font-weight:560;">Nouvelles étapes</span>
+                  <span style="font-size:10.5px; color:var(--ink-4);">2 runs en cours, 3 projets</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="main">
+            <div class="topbar">
+              <div class="crumb">
+                <span>Cursus</span><span class="sep">›</span><span>Run</span><span class="sep">›</span><span class="cur">verifier</span>
+              </div>
+              <div class="runctl" style="margin-left:auto;">
+                  <span class="on"><span class="sd run"></span>En cours</span>
+                  <span class="dis">Arrêt en cours</span>
+                  <span>Arrêté</span>
+                </div>
+            </div>
+
+            <div class="pipeline">
+              <div class="pipe-head">
+                <span class="verdict run"><span class="sd run"></span>En cours</span>
+                <span class="runmeta">démarré à 15 h 22 · 1 min 47 s</span>
+              </div>
+              <div class="steps">
+                <div class="step">
+                  <div class="st-top"><span class="sd ok"></span><span class="st-name">Compiler sans le moindre avertissement</span></div>
+                  <span class="st-id">compiler</span>
+                  <div class="st-foot"><span class="st-dur">11,4 s</span><span class="code">dotnet build -warnaserror</span></div>
+                </div>
+                <div class="edge-label">code 0<br />↓</div>
+                <div class="step sel">
+                  <div class="st-top"><span class="sd run"></span><span class="st-name">Passer toute la suite au vert</span></div>
+                  <span class="st-id">tester</span>
+                  <div class="st-foot"><span class="st-dur">1 min 36 s</span><span class="code">dotnet test</span></div>
+                  <div class="indet"><i></i></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail">
+              <div class="detail-head">
+                <div class="dtabs"><b class="on">Sortie</b><b>Commande</b><b>Environnement</b></div>
+              </div>
+              <div class="term"><span class="dim">$ /bin/sh -c "dotnet test"</span>
+  Cursus.Core -> bin/Debug/net10.0/Cursus.Core.dll
+<span class="dim">[xUnit.net 00:00:00.78]</span>   Discovered:  Cursus.Core.Tests (126 test cases)
+<span class="dim">[xUnit.net 00:00:00.79]</span>   Starting:    Cursus.Core.Tests
+<span class="cursor"></span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <p class="frame-cap"><span class="dot"></span>Variante C — une seule colonne, deux niveaux empilés, pied de colonne informatif</p>
+
+    <div class="weigh">
+      <div class="for">
+        <h4>Ce qu'elle achète</h4>
+        <ul>
+          <li>Le pied de colonne dit <strong>« 2 runs en cours, 3 projets »</strong> — la vue maison du §1.7
+          commence là, sous forme d'une ligne de texte plutôt que d'un écran.</li>
+          <li>Une seule colonne : le chemin projet → workflow → run se lit de haut en bas, sans changer d'axe.</li>
+          <li>L'état global est explicite, chiffré, et daté (« réinitialisé dans 6 j »).</li>
+        </ul>
+      </div>
+      <div class="against">
+        <h4>Ce qu'elle coûte</h4>
+        <ul>
+          <li>La colonne empile deux listes de natures différentes. À dix projets, la seconde est sous la
+          ligne de flottaison.</li>
+          <li>L'état global est visuellement <em>dans</em> la colonne des projets — il aura l'air d'appartenir
+          au projet sélectionné jusqu'à ce qu'on lise l'étiquette.</li>
+          <li>Comme A, un seul run à la fois, et rien qui prépare 6b.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pick">
+      <h4>Retenu — variante A</h4>
+      <p>
+        <strong>A, avec le pied de C.</strong> Le rail est le seul des trois qui place l'état global
+        <em>hors</em> de la hiérarchie des projets au lieu de le poser à côté — et c'est le point 01, celui
+        qui a le moins de réponse évidente. Mais l'anneau seul est trop pauvre : reprendre de C le pied
+        chiffré et daté, sur deux lignes, en le gardant dans le rail élargi à ~200 px.
+      </p>
+      <p>
+        <strong>Contre B, l'argument n'est pas esthétique.</strong> Les onglets rouvrent la question du
+        routeur que le parcours vient de fermer, et surtout ils mettent une session terminal dans un
+        conteneur qui peut être recyclé — le piège documenté au §5 de <code>presentation.md</code>. Payer
+        ce risque maintenant pour préparer 6b, alors que 6b n'est pas encore planifié, est le mauvais ordre.
+      </p>
+      <p>
+        <strong>Sur le point 03 :</strong> un run à la fois par projet, assumé. C'est déjà ce que le journal
+        SQLite impose (§4.4 de <code>presentation.md</code>) — l'écran ne doit pas promettre ce que la
+        persistance refuse.
+      </p>
+    </div>
+  </section>
+
+  <hr class="rule" style="margin-top:64px;" />
+
+  <!-- ============================================================ -->
+  <section class="chunk">
+    <div class="prose">
+      <div class="sec-head">
+        <span class="sec-num">§2</span>
+        <h2>L'écran Application</h2>
+      </div>
+      <p>
+        Le pied de rail tient dans 46 pixels. Il peut y résumer, il ne peut pas y expliquer — et il y a
+        des choses à expliquer : la connexion à Linear, les agents installés, le seuil au-delà duquel on
+        cesse de lancer. Le rail devient donc <strong>un résumé cliquable</strong>, et ce qu'il résume vit
+        sur un écran à lui.
+      </p>
+      <p>
+        Ce déplacement rend en outre gratuite une chose qui ne l'était pas : <strong>la « vue maison » du
+        §1.7 cesse d'être un raffinement lointain</strong>. Elle devient le premier onglet d'un écran qu'il
+        faut construire de toute façon pour la configuration.
+      </p>
+    </div>
+
+    <div class="frame-wrap">
+      <div class="frame">
+        <div class="tb">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <span class="tb-title">Cursus</span>
+        </div>
+        <div class="app">
+
+          <div class="rail">
+            <div class="proj-icon">Cu<span class="pip running"></span></div>
+            <div class="proj-icon">He</div>
+            <div class="proj-icon">Ap<span class="pip" style="background:var(--wait);"></span></div>
+            <div class="rail-add">+</div>
+            <div class="rail-foot">
+              <div class="rail-home">
+                <div class="hbtn on">
+                  <span class="minilab">Claude</span>
+                  <span class="minigauge"><i style="width:62%;"></i></span>
+                  <span class="minilab">Codex</span>
+                  <span class="minigauge"><i style="width:18%; background:var(--ok);"></i></span>
+                </div>
+              </div>
+              <div class="sw"></div>
+            </div>
+          </div>
+
+          <div class="main">
+            <div class="hnav">
+              <b class="on">Aperçu</b>
+              <b>Agents <span class="badge later">jalon 7</span></b>
+              <b>Sources <span class="badge later">jalon 7</span></b>
+              <b>Réglages</b>
+            </div>
+
+            <div class="hbody">
+              <div>
+                <div class="hsec-t">Ce qui tourne — 3 projets ouverts</div>
+                <table class="runtable" style="margin-top:10px;">
+                  <thead>
+                    <tr><th>Projet</th><th>Workflow</th><th>Étape</th><th>État</th><th style="text-align:right;">Durée</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Cursus</strong></td>
+                      <td class="mono">verifier</td>
+                      <td>Passer toute la suite au vert</td>
+                      <td><span class="verdict run" style="font-size:11px;"><span class="sd run"></span>En cours</span></td>
+                      <td class="mono" style="text-align:right;">1 : 47</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Apex-api</strong></td>
+                      <td class="mono">redigerLesTests</td>
+                      <td>Écrire la suite manquante</td>
+                      <td><span class="verdict wait" style="font-size:11px;"><span class="sd wait"></span>En attente</span></td>
+                      <td class="mono" style="text-align:right;">4 : 12</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="why" style="margin-top:11px; display:inline-flex;">
+                  <span class="sd wait"></span>
+                  Apex-api attend : le forfait Claude Code est à 62 %, au-delà du seuil de 60 % que vous avez posé. Nouvelle tentative dans 2 min.
+                </div>
+              </div>
+
+              <div>
+                <div class="hsec-t">Forfaits</div>
+                <div class="provgrid" style="margin-top:10px;">
+                  <div class="prov">
+                    <div class="prov-top">
+                      <span class="sd wait"></span>
+                      <span class="prov-name">Claude Code</span>
+                      <span class="prov-sub">Max 20×</span>
+                    </div>
+                    <div class="gauge">
+                      <div class="gauge-bar"><i style="width:62%; background:var(--wait);"></i></div>
+                      <div class="gauge-row"><span>consommé</span><b>62 %</b></div>
+                    </div>
+                    <span class="prov-sub">réinitialisé dans 6 j · seuil 60 %</span>
+                  </div>
+                  <div class="prov">
+                    <div class="prov-top">
+                      <span class="sd ok"></span>
+                      <span class="prov-name">Codex</span>
+                      <span class="prov-sub">Plus</span>
+                    </div>
+                    <div class="gauge">
+                      <div class="gauge-bar"><i style="width:18%; background:var(--ok);"></i></div>
+                      <div class="gauge-row"><span>consommé</span><b>18 %</b></div>
+                    </div>
+                    <span class="prov-sub">réinitialisé dans 2 j · seuil 90 %</span>
+                  </div>
+                  <div class="prov muted">
+                    <div class="prov-top">
+                      <span class="sd idle"></span>
+                      <span class="prov-name">Ajouter un agent</span>
+                    </div>
+                    <span class="prov-sub">Gemini CLI, Aider, …</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div class="hsec-t">Fin de journée</div>
+                <div style="display:flex; align-items:center; gap:12px; margin-top:10px;">
+                  <span class="sw"></span>
+                  <div style="display:flex; flex-direction:column; line-height:1.4;">
+                    <span style="font-size:12.5px; font-weight:600;">Lancer de nouvelles étapes</span>
+                    <span style="font-size:11px; color:var(--ink-4);">Baissé, les runs en cours finissent leur étape puis s'arrêtent. Rien n'est tué.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <p class="frame-cap"><span class="dot"></span>Application › Aperçu — aucun projet n'est sélectionné dans le rail</p>
+
+    <div class="prose" style="margin-top:26px;">
+      <h3>Ce que « plusieurs agents » casse</h3>
+      <p>
+        La remarque sur le cumul Claude Code + Codex n'est pas un détail d'écran. Elle invalide une phrase
+        du §1.6, qui parle du forfait <em>au singulier</em> :
+      </p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:32%;">Ce qui était supposé</th><th>Ce qu'il faut à la place</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>« Le forfait est consommé à 80 % » — <strong>un nombre</strong></td>
+            <td>Un nombre <strong>par fournisseur</strong>, avec son propre seuil et sa propre date de
+            réinitialisation. Le rail n'affiche plus « le » forfait mais le plus contraint</td>
+          </tr>
+          <tr>
+            <td>« Au-delà du seuil, on ne lance plus d'étape d'agent »</td>
+            <td>On ne lance plus d'étape <strong>de ce fournisseur-là</strong>. Une étape Codex peut
+            démarrer pendant qu'une étape Claude attend — deux runs du même projet peuvent donc être dans
+            des états d'autorisation différents</td>
+          </tr>
+          <tr>
+            <td>Une autorisation globale, demandée avant chaque étape</td>
+            <td>Une autorisation <strong>paramétrée par ce que l'étape consomme</strong>. Le prédicat du
+            §7.13.1 reçoit donc une entrée de plus, et cette entrée vient de l'étape, pas de l'application</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pick" style="margin-top:24px;">
+      <h4>Ce que j'en retiens pour le noyau</h4>
+      <p>
+        <strong>Rien à construire au jalon 6</strong> — il n'y a ni agent ni forfait avant le jalon 7.
+        Mais une contrainte à ne pas violer en chemin : quand la forme de l'autorisation se dessinera
+        (§7.13.1, tranchée mais non construite), <strong>elle doit prendre la ressource en paramètre</strong>
+        plutôt que d'interroger un état global. Un booléen « peut-on lancer ? » serait faux dès le second
+        agent installé.
+      </p>
+      <p>
+        <strong>Question que je ne tranche pas :</strong> quand deux agents sont disponibles, qui décide
+        lequel exécute une étape ? L'étape le nomme dans son JSON, ou elle déclare un besoin et
+        l'application choisit selon ce qu'il reste de forfait ? La seconde est séduisante et
+        beaucoup plus coûteuse — elle rend le run non reproductible. À poser au jalon 7, avec l'<code>AgentStep</code>.
+      </p>
+    </div>
+
+    <div class="prose" style="margin-top:34px;">
+      <h3>L'onglet Sources</h3>
+      <p>
+        Même écran, onglet suivant. C'est la place que la recherche sur les quatre trackers attendait :
+        elle a montré qu'il n'y a <strong>aucun identifiant à la fois lisible et stable</strong> et
+        qu'un même outil change de modèle selon le palier de licence — donc cet écran devra montrer ce
+        qu'il a effectivement résolu, pas seulement « connecté ».
+      </p>
+    </div>
+
+    <div class="frame-wrap">
+      <div class="frame">
+        <div class="tb">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <span class="tb-title">Cursus</span>
+        </div>
+        <div style="display:flex; height:300px;">
+          <div class="rail" style="padding-top:12px;">
+            <div class="proj-icon">Cu</div>
+            <div class="proj-icon">He</div>
+            <div class="rail-add">+</div>
+          </div>
+          <div class="main">
+            <div class="hnav">
+              <b>Aperçu</b>
+              <b>Agents <span class="badge later">jalon 7</span></b>
+              <b class="on">Sources <span class="badge later">jalon 7</span></b>
+              <b>Réglages</b>
+            </div>
+            <div class="hbody">
+              <div>
+                <div class="hsec-t">Trackers connectés</div>
+                <div class="provgrid" style="margin-top:10px;">
+                  <div class="prov">
+                    <div class="prov-top">
+                      <span class="sd ok"></span>
+                      <span class="prov-name">Linear</span>
+                    </div>
+                    <span class="prov-sub">équipe BLA · 3 tableaux suivis</span>
+                    <span class="prov-sub" style="color:var(--ink-3);">jeton personnel · valide</span>
+                  </div>
+                  <div class="prov">
+                    <div class="prov-top">
+                      <span class="sd wait"></span>
+                      <span class="prov-name">Jira</span>
+                    </div>
+                    <span class="prov-sub">acme.atlassian.net · projet ED</span>
+                    <span class="prov-sub" style="color:var(--wait);">team-managed : pas de composants</span>
+                  </div>
+                  <div class="prov muted">
+                    <div class="prov-top">
+                      <span class="sd idle"></span>
+                      <span class="prov-name">Ajouter une source</span>
+                    </div>
+                    <span class="prov-sub">GitHub, GitLab, …</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="frame-cap"><span class="dot"></span>Application › Sources — la mention « team-managed » n'est pas décorative, elle change le modèle disponible</p>
+  </section>
+
+  <hr class="rule" style="margin-top:64px;" />
+
+  <!-- ============================================================ -->
+  <section class="chunk">
+    <div class="prose">
+      <div class="sec-head">
+        <span class="sec-num">§3</span>
+        <h2>L'écran de run</h2>
+      </div>
+      <p>
+        Sa forme est déjà tranchée : étapes en haut, détail en bas. Ce qu'il reste à voir, c'est qu'elle
+        <strong>tient dans ses trois états</strong> — sinon elle n'est pas une forme, c'est un cas
+        particulier. Le §4 du parcours affirme qu'un run en cours et un run passé sont le même écran ;
+        les deux maquettes ci-dessous sont là pour le vérifier à l'œil.
+      </p>
+    </div>
+
+    <div class="prose" style="margin-top:36px;">
+      <h3>Le contrôle n'est pas un bouton</h3>
+      <p>
+        « Arrêter » est un verbe instantané, et c'est ce qui le rend faux ici : arrêter <em>proprement</em>
+        veut dire laisser l'étape en cours se terminer et n'en démarrer aucune autre. Il y a donc un
+        moment — quelques secondes, parfois trois minutes — où l'arrêt est <strong>demandé mais pas
+        obtenu</strong>. Un bouton ne sait pas dire ça ; un contrôle à trois positions, si.
+      </p>
+    </div>
+
+    <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:20px;">
+      <div style="border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; background:var(--panel); flex:1; min-width:250px;">
+        <div class="runctl">
+          <span class="on"><span class="sd run"></span>En cours</span>
+          <span class="dis">Arrêt en cours</span>
+          <span>Arrêté</span>
+        </div>
+        <p style="margin:11px 0 0; font-size:13px; color:var(--ink-3);">
+          Les étapes s'enchaînent. La position du milieu est <strong>grisée</strong> : on ne la choisit pas,
+          on y passe.
+        </p>
+      </div>
+      <div style="border:1px solid var(--wait); border-radius:var(--radius); padding:14px 16px; background:var(--panel); flex:1; min-width:250px;">
+        <div class="runctl">
+          <span>En cours</span>
+          <span class="on warn"><span class="sd wait"></span>Arrêt en cours</span>
+          <span>Arrêté</span>
+        </div>
+        <p style="margin:11px 0 0; font-size:13px; color:var(--ink-3);">
+          L'arrêt est demandé, <code style="font-family:var(--mono);font-size:.9em;">tester</code> tourne
+          encore. Revenir à « En cours » annule la demande — rien n'a été perdu.
+        </p>
+      </div>
+      <div style="border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; background:var(--panel); flex:1; min-width:250px;">
+        <div class="runctl">
+          <span>En cours</span>
+          <span class="dis">Arrêt en cours</span>
+          <span class="on stop"><span class="sd fail"></span>Arrêté</span>
+        </div>
+        <p style="margin:11px 0 0; font-size:13px; color:var(--ink-3);">
+          Terminal. <strong>Arrêté n'est pas Échoué</strong> : le noyau le distingue déjà, en
+          <code style="font-family:var(--mono);font-size:.9em;">Aborted / Canceled</code>.
+        </p>
+      </div>
+    </div>
+
+    <div class="pick" style="margin-top:24px;">
+      <h4>L'observation qui sort du dessin</h4>
+      <p>
+        Ce contrôle <strong>est l'interrupteur de fin de journée, à une autre portée</strong>. Même
+        sémantique exactement — « finis ce que tu fais, n'en commence pas d'autre » — l'un appliqué à un
+        run, l'autre à l'application entière. Ce n'est pas une ressemblance : c'est le mécanisme du §7.13.1,
+        vu deux fois.
+      </p>
+      <p>
+        <strong>Conséquence :</strong> ils doivent se composer, pas se contredire. Un run mis sur
+        « En cours » alors que l'interrupteur global est baissé ne redémarre pas — et l'écran doit dire
+        <em>lequel des deux</em> le retient. D'où la ligne d'explication de l'aperçu au §2 : le refus
+        nomme sa cause, sinon l'utilisateur clique sur un contrôle qui n'a pas d'effet visible.
+      </p>
+    </div>
+
+    <div class="prose" style="margin-top:34px;">
+      <h4>D'où vient chaque état affiché</h4>
+      <p>
+        Le contrôle porte <strong>l'intention</strong> ; la pastille en tête de pipeline porte <strong>ce
+        qui se passe</strong>. Les deux ne coïncident que la plupart du temps — et c'est précisément
+        l'intérêt de les séparer. Le noyau, lui, ne connaît que trois valeurs, toutes <em>terminales</em> :
+        <code>Completed</code>, <code>Failed</code>, <code>Aborted</code>. Tout le reste est calculé par
+        la présentation.
+      </p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:24%;">Affiché</th><th style="width:38%;">Calculé à partir de</th><th>Existe ?</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="verdict run" style="font-size:11px;"><span class="sd run"></span>En cours</span></td>
+            <td>Un <code>StepStarted</code> sans <code>StepFinished</code> correspondant, dans le flux</td>
+            <td>Après <strong>6a</strong></td>
+          </tr>
+          <tr>
+            <td><span class="verdict wait" style="font-size:11px;"><span class="sd wait"></span>En attente</span></td>
+            <td>Aucune étape vivante, et l'autorisation de démarrer la suivante a été refusée — forfait,
+            interrupteur, ou disponibilité</td>
+            <td>§7.13.1, <strong>non construit</strong></td>
+          </tr>
+          <tr>
+            <td><span class="verdict wait" style="font-size:11px;"><span class="sd wait"></span>Arrêt en cours</span></td>
+            <td>Intention d'arrêt posée localement, <em>et</em> une étape encore vivante. N'est jamais
+            journalisé : c'est un état de l'écran, pas du run</td>
+            <td><strong>Non construit</strong></td>
+          </tr>
+          <tr>
+            <td><span class="verdict fail" style="font-size:11px;"><span class="sd fail"></span>Arrêté</span></td>
+            <td><code>Aborted</code> + <code>AbortReason.Canceled</code></td>
+            <td>✅ dans le noyau</td>
+          </tr>
+          <tr>
+            <td><span class="verdict ok" style="font-size:11px;"><span class="sd ok"></span>Réussi</span></td>
+            <td><code>Completed</code> <em>et</em> dernière étape en code 0</td>
+            <td>✅ arbitrage d'écran</td>
+          </tr>
+          <tr>
+            <td><span class="verdict fail" style="font-size:11px;"><span class="sd fail"></span>Échoué</span></td>
+            <td><code>Failed</code>, <em>ou</em> <code>Completed</code> avec une dernière étape en code
+            non nul — le cas du dépôt</td>
+            <td>✅ arbitrage d'écran</td>
+          </tr>
+          <tr>
+            <td><span class="verdict fail" style="font-size:11px;"><span class="sd fail"></span>Boucle</span></td>
+            <td><code>Aborted</code> + <code>LoopNotConverging</code> : une étape a dépassé son
+            <code>MaxVisits</code></td>
+            <td>✅ dans le noyau</td>
+          </tr>
+          <tr>
+            <td><span class="verdict fail" style="font-size:11px;"><span class="sd fail"></span>Planté</span></td>
+            <td><code>Aborted</code> + <code>Faulted</code>, et l'exception remonte intacte. L'UI qui ne
+            l'attrape pas plante avec</td>
+            <td>✅ dans le noyau</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose" style="margin-top:20px;">
+      <p>
+        <strong>Huit états d'écran pour trois états de noyau.</strong> Ce n'est pas une dérive : c'est la
+        démonstration que l'arbitrage appartient bien à la présentation, comme le point 4 du §4 de
+        <code>parcours.md</code> l'affirmait. Mais ça a un corollaire à ne pas manquer — <strong>ce calcul
+        est de la logique, donc il se teste</strong>, et il n'a rien à faire dans un code-behind XAML.
+      </p>
+    </div>
+
+    <div class="variant-head" style="margin-top:44px;">
+      <span class="vtag" style="background:var(--fail);">✕</span>
+      <h3>Échoué — et c'est l'écran qui le dit</h3>
+    </div>
+    <div class="prose">
+      <p>
+        Le moteur rendra <code>Completed</code> : la traversée s'est arrêtée là où il n'y avait plus d'arête,
+        ce qui est la vérité du noyau. L'écran affiche <strong>« Échoué »</strong>, ce qui est la vérité de
+        l'humain. Les deux ont raison, et l'arbitrage appartient bien à la présentation.
+      </p>
+    </div>
+
+    <div class="frame-wrap">
+      <div class="frame">
+        <div class="tb">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <span class="tb-title">Cursus</span>
+        </div>
+        <div class="app tall">
+          <div class="rail">
+            <div class="proj-icon on">Cu</div>
+            <div class="proj-icon">He</div>
+            <div class="proj-icon">Ap</div>
+            <div class="rail-add">+</div>
+            <div class="rail-foot">
+              <div class="rail-home">
+                <div class="hbtn">
+                  <span class="minilab">Claude</span>
+                  <span class="minigauge"><i style="width:62%;"></i></span>
+                  <span class="minilab">Codex</span>
+                  <span class="minigauge"><i style="width:18%; background:var(--ok);"></i></span>
+                </div>
+              </div>
+              <div class="sw"></div>
+            </div>
+          </div>
+
+          <div class="side">
+            <div class="side-head">
+              <div class="titlerow"><div class="side-title">Cursus</div><span class="gear" role="img" aria-label="Configuration du projet">⚙</span></div>
+              <div class="side-sub">~/Development/Experiences/Cursus</div>
+            </div>
+            <div class="seg"><b class="on">Run</b><b>Sessions</b></div>
+            <div class="grp">Workflows</div>
+            <div class="row"><span class="sd ok"></span><span class="nm">build</span><span class="ts">14 h 02</span></div>
+            <div class="row on"><span class="sd fail"></span><span class="nm">verifier</span><span class="ts">15 h 26</span></div>
+            <div class="grp">Runs récents</div>
+            <div class="row on"><span class="sd fail"></span><span class="nm">verifier</span><span class="ts">15 h 26</span></div>
+            <div class="row"><span class="sd fail"></span><span class="nm">verifier</span><span class="ts">hier 18 h 04</span></div>
+            <div class="row"><span class="sd ok"></span><span class="nm">build</span><span class="ts">hier 17 h 51</span></div>
+          </div>
+
+          <div class="main">
+            <div class="topbar">
+              <div class="crumb"><span>Run</span><span class="sep">›</span><span class="cur">verifier</span></div>
+              <div style="margin-left:auto; display:flex; gap:8px;">
+                <span class="btn ghost">Copier la sortie</span>
+                <span class="btn primary">Relancer</span>
+              </div>
+            </div>
+
+            <div class="pipeline">
+              <div class="pipe-head">
+                <span class="verdict fail"><span class="sd fail"></span>Échoué</span>
+                <span class="runmeta">15 h 22 → 15 h 26 · 3 min 52 s · arrêté à l'étape « tester »</span>
+              </div>
+              <div class="steps">
+                <div class="step">
+                  <div class="st-top"><span class="sd ok"></span><span class="st-name">Compiler sans le moindre avertissement</span></div>
+                  <span class="st-id">compiler</span>
+                  <div class="st-foot"><span class="st-dur">11,4 s</span><span class="code">code 0</span></div>
+                </div>
+                <div class="edge-label">code 0<br />↓</div>
+                <div class="step sel" style="border-color:var(--fail); box-shadow:0 0 0 2px var(--fail-soft);">
+                  <div class="st-top"><span class="sd fail"></span><span class="st-name">Passer toute la suite au vert</span></div>
+                  <span class="st-id">tester</span>
+                  <div class="st-foot"><span class="st-dur">3 min 41 s</span><span class="code">code 1</span></div>
+                </div>
+                <div class="edge-label" style="opacity:.45;">code 1<br />aucune arête</div>
+                <div class="step" style="opacity:.45; border-style:dashed;">
+                  <div class="st-top"><span class="sd idle"></span><span class="st-name">La traversée s'arrête ici</span></div>
+                  <span class="st-id">—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail">
+              <div class="detail-head">
+                <div class="dtabs"><b class="on">Sortie</b><b>Commande</b><b>Environnement</b></div>
+                <span class="runmeta" style="margin-left:auto;">tester · 1 842 lignes · relu du journal</span>
+              </div>
+              <div class="term"><span class="dim">[xUnit.net 00:03:21.04]</span>   Finished:    Cursus.Core.Tests
+<span class="sel"><span class="r">  Échec Cursus.Core.Tests.Projects.WorkflowCatalogTests.étant donné un workflow au graphe</span></span>
+<span class="sel"><span class="r">  invalide, quand on le charge, alors on obtient le rapport de ses problèmes [4 ms]</span></span>
+<span class="r">    Error Message:</span>
+<span class="r">     Assert.Empty() Failure: Collection was not empty</span>
+<span class="r">     Collection: [ValidationIssue { Code = UnknownStepReference, StepId = "publier" }]</span>
+<span class="dim">    Stack Trace:</span>
+<span class="dim">       at Cursus.Core.Tests.Projects.WorkflowCatalogTests.…(WorkflowCatalogTests.cs:118)</span>
+
+<span class="y">  Échec !</span>  - Échec :     <span class="r">1</span>, Réussi :   <span class="g">125</span>, Ignoré :     0, Total :   126
+</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="frame-cap"><span class="dot"></span>La ligne d'erreur est sélectionnée, prête à copier — c'est le geste réel après un échec</p>
+
+    <div class="prose" style="margin-top:24px;">
+      <p>
+        Trois détails qui sont des décisions, pas du décor :
+      </p>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Ce qu'on voit</th><th>Ce que ça tranche</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Un troisième bloc en pointillé</strong>, « la traversée s'arrête ici »</td>
+            <td>Rend visible <em>pourquoi</em> le run s'est arrêté : aucune arête ne sort du code 1. Sans lui,
+            l'utilisateur croit à un plantage de Cursus plutôt qu'à un workflow qui n'a pas prévu l'échec</td>
+          </tr>
+          <tr>
+            <td><strong>« Relancer »</strong> et non « Rejouer »</td>
+            <td>Un nouveau run, un nouvel identifiant, une nouvelle ligne dans le journal. Rien n'est
+            rejoué — le mot « rejouer » suggérerait une reprise, qui n'existe pas</td>
+          </tr>
+          <tr>
+            <td><strong>« 1 842 lignes · relu du journal »</strong></td>
+            <td>Dit d'où vient ce qui est affiché. C'est la seule différence visible entre un run en cours
+            et un run passé, et elle mérite d'être dite plutôt que devinée</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="rule" style="margin-top:64px;" />
+
+  <!-- ============================================================ -->
+  <section class="chunk">
+    <div class="prose">
+      <div class="sec-head">
+        <span class="sec-num">§4</span>
+        <h2>Un workflow réel, avec sa boucle</h2>
+      </div>
+      <p>
+        Six étapes, dont trois qui bouclent : <em>tirer le ticket</em> → <em>développer</em> →
+        <em>tester</em>, et si les tests échouent, <em>relire</em> puis retour au développement ; sinon
+        <em>documenter</em> → <em>reporter sur le ticket</em>. C'est un workflow plausible, et il suffit
+        à casser le ruban horizontal des maquettes précédentes.
+      </p>
+      <p>
+        <strong>L'inquiétude est fondée, mais le problème n'est pas la taille.</strong> Le ruban ne
+        déborde pas parce qu'il y a six étapes : il déborde parce qu'il essaie de dessiner
+        <em>deux objets à la fois</em>, et qu'à deux étapes sans boucle ces deux objets se ressemblaient
+        assez pour qu'on ne le remarque pas.
+      </p>
+    </div>
+
+    <div class="tbl-wrap" style="max-width:900px;">
+      <table>
+        <thead>
+          <tr><th style="width:22%;">L'objet</th><th style="width:39%;">Ce qu'il est</th><th>Où il vit</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>La définition</strong></td>
+            <td>Un graphe. Six nœuds, des arêtes gardées, une arête de retour. Statique, identique d'un
+            run à l'autre</td>
+            <td><code>.cursus/workflows/*.json</code> — et son édition est le jalon 8</td>
+          </tr>
+          <tr>
+            <td><strong>La trajectoire</strong></td>
+            <td>Une <em>liste ordonnée de visites</em>. Ici huit, pour six étapes : <code>dev</code> et
+            <code>test</code> sont passés deux fois</td>
+            <td><code>WorkflowRun.History</code>, déjà — et
+            <code>StepRun(StepId, <strong>Iteration</strong>, Result)</code> porte déjà le numéro de tour</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose" style="margin-top:22px;">
+      <p>
+        <strong>L'écran d'un run doit montrer la trajectoire, pas le graphe.</strong> C'est ce que le
+        journal contient, c'est ce qui répond à « où en est-on », et c'est une <em>liste</em> — donc ça
+        se dessine dense, ça défile, et ça tient aussi bien à trente visites qu'à huit. Le graphe, lui,
+        répond à « qu'est-ce que ce workflow peut faire », qui est une question d'édition.
+      </p>
+      <p>
+        Voici les deux, sur le même run — <code>test</code> a échoué au premier tour, la boucle a tourné
+        une fois, et <code>documenter</code> est en cours.
+      </p>
+    </div>
+
+    <div class="frame-wrap">
+      <div class="frame">
+        <div class="tb">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <span class="tb-title">Cursus</span>
+        </div>
+        <div class="app tall">
+
+          <div class="rail">
+            <div class="proj-icon on">Ap<span class="pip running"></span></div>
+            <div class="proj-icon">Cu</div>
+            <div class="proj-icon">He</div>
+            <div class="rail-add">+</div>
+            <div class="rail-foot">
+              <div class="rail-home">
+                <div class="hbtn">
+                  <span class="minilab">Opus</span>
+                  <span class="minigauge"><i style="width:71%;"></i></span>
+                  <span class="minilab">Fable</span>
+                  <span class="minigauge"><i style="width:24%; background:var(--ok);"></i></span>
+                </div>
+              </div>
+              <div class="sw"></div>
+            </div>
+          </div>
+
+          <div class="side">
+            <div class="side-head">
+              <div class="titlerow"><div class="side-title">Apex-api</div><span class="gear" role="img" aria-label="Configuration du projet">⚙</span></div>
+              <div class="side-sub">~/Development/Apex-api</div>
+            </div>
+            <div class="seg"><b class="on">Run</b><b>Sessions</b></div>
+            <div class="grp">En cours</div>
+            <div class="row on"><span class="sd run"></span><span class="nm">livrerUnTicket</span><span class="ts">18 : 42</span></div>
+            <div class="grp">Workflows</div>
+            <div class="row"><span class="sd ok"></span><span class="nm">verifier</span><span class="ts">11 h 30</span></div>
+            <div class="row"><span class="sd ok"></span><span class="nm">deployer</span><span class="ts">hier</span></div>
+          </div>
+
+          <div class="main">
+            <div class="topbar">
+              <div class="crumb"><span>Run</span><span class="sep">›</span><span class="cur">livrerUnTicket</span></div>
+              <div style="margin-left:auto; display:flex; gap:8px;">
+                <div class="runctl">
+                  <span class="on"><span class="sd run"></span>En cours</span>
+                  <span class="dis">Arrêt en cours</span>
+                  <span>Arrêté</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="pipeline" style="overflow:hidden;">
+              <div class="pipe-head">
+                <span class="verdict run"><span class="sd run"></span>En cours</span>
+                <span class="runmeta">8 visites · 6 étapes · 1 boucle · 18 min 42 s</span>
+                <span class="runmeta" style="margin-left:auto;">ED-241 · « Idempotence du webhook »</span>
+                <div class="itersel" style="margin-left:12px;"><span>Graphe</span><span class="on">Liste</span></div>
+              </div>
+
+              <div class="traj">
+                <div class="tline">
+                  <span class="sd ok"></span>
+                  <span class="tcol"><span class="tn">Prendre le prochain ticket prêt</span><span class="tid">tirerLeTicket</span></span>
+                  <span class="tag">script</span>
+                  <span class="tag">linear · équipe BLA</span>
+                  <span class="tdur">0,9 s</span>
+                </div>
+
+                <div class="titer loop">Boucle · tour 1</div>
+
+                <div class="tline">
+                  <span class="sd ok"></span>
+                  <span class="tcol"><span class="tn">Implémenter la demande</span><span class="tid">dev</span></span>
+                  <span class="tag a">agent</span>
+                  <span class="tag a">claude · opus 4.8</span>
+                  <span class="tdur">6 min 11 s</span>
+                </div>
+                <div class="tline">
+                  <span class="sd fail"></span>
+                  <span class="tcol"><span class="tn">Passer la suite au vert</span><span class="tid">test</span></span>
+                  <span class="tag">script</span>
+                  <span class="tag">code 1 · 3 échecs</span>
+                  <span class="tdur">2 min 04 s</span>
+                </div>
+                <div class="tline">
+                  <span class="sd ok"></span>
+                  <span class="tcol"><span class="tn">Relire et corriger le tir</span><span class="tid">review</span></span>
+                  <span class="tag a">agent</span>
+                  <span class="tag a">claude · fable 5</span>
+                  <span class="tdur">1 min 38 s</span>
+                </div>
+
+                <div class="titer loop">Boucle · tour 2</div>
+
+                <div class="tline">
+                  <span class="sd ok"></span>
+                  <span class="tcol"><span class="tn">Implémenter la demande</span><span class="tid">dev</span></span>
+                  <span class="tag a">agent</span>
+                  <span class="tag a">claude · opus 4.8</span>
+                  <span class="tdur">5 min 47 s</span>
+                </div>
+                <div class="tline">
+                  <span class="sd ok"></span>
+                  <span class="tcol"><span class="tn">Passer la suite au vert</span><span class="tid">test</span></span>
+                  <span class="tag">script</span>
+                  <span class="tag">code 0 · 214 verts</span>
+                  <span class="tdur">2 min 11 s</span>
+                </div>
+
+                <div class="titer">Sortie de boucle</div>
+
+                <div class="tline sel">
+                  <span class="sd run"></span>
+                  <span class="tcol"><span class="tn">Mettre la documentation à jour</span><span class="tid">documenter</span></span>
+                  <span class="tag a">agent</span>
+                  <span class="tag a">codex · gpt-5</span>
+                  <span class="tdur">0 : 51</span>
+                </div>
+                <div class="tline dim">
+                  <span class="sd idle"></span>
+                  <span class="tcol"><span class="tn">Reporter l'avancement sur le ticket</span><span class="tid">reporter</span></span>
+                  <span class="tag">script</span>
+                  <span class="tag">à venir</span>
+                  <span class="tdur">—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail">
+              <div class="detail-head">
+                <div class="dtabs"><b class="on">Sortie</b><b>Diff</b><b>Commande</b></div>
+                <span class="runmeta" style="margin-left:auto;">documenter.1.stdout · 47 lignes</span>
+              </div>
+              <div class="term"><span class="dim">$ claude -p "Mets à jour la doc d'après le diff de la branche"</span>
+  Lecture de docs/api/webhooks.md…
+  <span class="g">✓</span> section « Idempotence » ajoutée (34 lignes)
+  Lecture de CHANGELOG.md…
+<span class="cursor"></span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <p class="frame-cap"><span class="dot"></span>Huit visites lisibles d'un coup d'œil, et la boucle se voit parce qu'elle est nommée</p>
+
+    <div class="prose" style="margin-top:26px;">
+      <h3>Et le graphe, alors ?</h3>
+      <p>
+        Il reste utile — mais ailleurs, et en plus petit. Comme <strong>encart replié</strong> dans
+        l'écran de run, il répond à la seule question que la trajectoire ne sait pas traiter :
+        <em>que va-t-il se passer ensuite, et pourquoi</em>. Il n'a alors pas besoin d'être manipulable,
+        donc pas besoin de l'algorithme de placement du jalon 8.
+      </p>
+    </div>
+
+    <div class="graphbox">
+      <svg class="gsvg" viewBox="0 0 700 168" width="100%" height="168" role="img"
+           aria-label="Graphe du workflow : tirerLeTicket, dev, test, documenter, reporter, avec une boucle par review">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ink-4)" />
+          </marker>
+          <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--wait)" />
+          </marker>
+        </defs>
+
+        <!-- rangée principale -->
+        <g>
+          <rect x="8"   y="24" width="112" height="38" rx="6" fill="var(--panel-2)" stroke="var(--ok)" />
+          <text x="64"  y="40" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">tirer</text>
+          <text x="64"  y="53" text-anchor="middle" font-size="9"  fill="var(--ink-4)" class="gid">le ticket</text>
+
+          <rect x="156" y="24" width="112" height="38" rx="6" fill="var(--panel-2)" stroke="var(--ok)" />
+          <text x="212" y="40" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">dev</text>
+          <text x="212" y="53" text-anchor="middle" font-size="9"  fill="var(--wait)" class="gid">2 visites</text>
+
+          <rect x="304" y="24" width="112" height="38" rx="6" fill="var(--panel-2)" stroke="var(--ok)" />
+          <text x="360" y="40" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">test</text>
+          <text x="360" y="53" text-anchor="middle" font-size="9"  fill="var(--wait)" class="gid">2 visites</text>
+
+          <rect x="452" y="24" width="112" height="38" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.6" />
+          <text x="508" y="40" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">documenter</text>
+          <text x="508" y="53" text-anchor="middle" font-size="9"  fill="var(--accent-ink)" class="gid">en cours</text>
+
+          <rect x="600" y="24" width="92"  height="38" rx="6" fill="var(--panel)" stroke="var(--line)" stroke-dasharray="3 3" />
+          <text x="646" y="40" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink-4)">reporter</text>
+          <text x="646" y="53" text-anchor="middle" font-size="9"  fill="var(--ink-4)" class="gid">à venir</text>
+        </g>
+
+        <!-- arêtes principales -->
+        <g stroke="var(--ink-4)" stroke-width="1.3" fill="none" marker-end="url(#ar)">
+          <line x1="120" y1="43" x2="150" y2="43" />
+          <line x1="268" y1="43" x2="298" y2="43" />
+          <line x1="416" y1="43" x2="446" y2="43" />
+          <line x1="564" y1="43" x2="594" y2="43" />
+        </g>
+        <text x="431" y="36" text-anchor="middle" font-size="8.5" fill="var(--ok)" class="gid">code 0</text>
+
+        <!-- boucle par review -->
+        <rect x="248" y="112" width="112" height="38" rx="6" fill="var(--panel-2)" stroke="var(--ok)" />
+        <text x="304" y="128" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">review</text>
+        <text x="304" y="141" text-anchor="middle" font-size="9"  fill="var(--ink-4)" class="gid">1 visite</text>
+
+        <g stroke="var(--wait)" stroke-width="1.3" fill="none">
+          <path d="M 360 62 L 360 90 L 330 90 L 330 108" marker-end="url(#arw)" />
+          <path d="M 268 131 L 212 131 L 212 66" marker-end="url(#arw)" />
+        </g>
+        <text x="392" y="83" text-anchor="middle" font-size="8.5" fill="var(--wait)" class="gid">code ≠ 0</text>
+      </svg>
+    </div>
+    <p class="frame-cap"><span class="dot"></span>Le même run vu comme graphe — les compteurs de visites font le lien avec la trajectoire</p>
+
+    <div class="pick" style="margin-top:24px;">
+      <h4>Ce que ça tranche pour l'écran de run</h4>
+      <p>
+        <strong>La liste ordonnée du jalon 6 n'était pas un pis-aller.</strong> Le §5 de
+        <code>parcours.md</code> la présentait comme un manque assumé — « le graphe reste une liste » — en
+        attendant l'algorithme de placement. Le cas à six étapes montre l'inverse : <strong>la liste est
+        la bonne réponse</strong>, parce qu'elle représente la trajectoire, qui est l'objet dont l'écran de
+        run a besoin. L'algorithme de placement reste dû à l'éditeur, il n'est plus dû à l'écran de run.
+      </p>
+      <p>
+        <strong>Corollaire à ne pas manquer :</strong> le regroupement « tour 1 / tour 2 » est un calcul
+        sur <code>History</code> — repérer les visites d'itération &gt; 1 et découper la liste. C'est de la
+        logique pure, donc testable sans une ligne d'Avalonia, et c'est du même ordre que l'arbitrage
+        « Échoué » du §3.
+      </p>
+    </div>
+
+    <div class="caveat" style="max-width:900px; margin-top:20px;">
+      <p>
+        ⚠️ <strong>Cette conclusion est révisée par le §5.</strong> « L'écran doit montrer la trajectoire,
+        <em>pas</em> le graphe » va trop loin : le graphe montre ce qui n'a pas encore été parcouru, ce que
+        la trajectoire ne peut structurellement pas faire. Ce qui reste vrai du §4 : les deux objets sont
+        distincts, et le second n'est pas une version dégradée du premier. Ce qui tombe : l'idée qu'il
+        faille choisir.
+      </p>
+    </div>
+
+    <div class="prose" style="margin-top:30px;">
+      <h3>Une étape, un agent, un modèle — et un quota par modèle</h3>
+      <p>
+        La trajectoire ci-dessus porte deux étiquettes par visite : <code>claude · opus 4.8</code>,
+        <code>claude · fable 5</code>, <code>codex · gpt-5</code>. Ce n'est pas de l'ornement, c'est la
+        correction du §2 : <strong>la ressource contrainte n'est pas le fournisseur, c'est le couple
+        (fournisseur, modèle)</strong> — et Claude Code seul en expose déjà plusieurs.
+      </p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:33%;">Ce que je supposais au §2</th><th>Ce qu'il faut à la place</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Un quota par fournisseur</td>
+            <td>Un quota par <strong>couple (fournisseur, modèle)</strong>. <code>dev</code> sur Opus peut
+            être bloqué pendant que <code>review</code> sur Fable passe — dans le <em>même</em> run, à deux
+            étapes d'écart</td>
+          </tr>
+          <tr>
+            <td>Une liste de fournisseurs connue à l'avance</td>
+            <td>Une clé <strong>ouverte, découverte à l'exécution</strong>. Le quota Sonnet est devenu un
+            quota Fable ; un <code>enum</code> de modèles serait périmé avant d'être commité. C'est une
+            chaîne rendue par le fournisseur, pas un type du domaine</td>
+          </tr>
+          <tr>
+            <td>L'application choisit l'agent selon ce qu'il reste</td>
+            <td><strong>L'étape le nomme</strong>, comme elle nomme sa commande. Le choix est de la
+            configuration, pas de l'ordonnancement — et le run reste reproductible, ce qu'un choix
+            dynamique lui retirerait</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose" style="margin-top:18px;">
+      <p>
+        Cette dernière ligne <strong>referme la question que je laissais ouverte au §2</strong> : « qui
+        décide quel agent exécute une étape ». Réponse : l'étape, dans son JSON. Ce qui reste ouvert, et
+        qui est plus petit, c'est ce qui se passe quand le modèle nommé est épuisé — attendre, ou se
+        rabattre sur un autre. Attendre est cohérent avec le troisième état ; se rabattre demanderait une
+        politique, et rendrait deux exécutions du même workflow non comparables.
+      </p>
+    </div>
+  </section>
+
+  <hr class="rule" style="margin-top:64px;" />
+
+  <!-- ============================================================ -->
+  <section class="chunk">
+    <div class="prose">
+      <div class="sec-head">
+        <span class="sec-num">§5</span>
+        <h2>Le graphe en visualisation principale</h2>
+      </div>
+      <p>
+        Le même run que le §4, mais le graphe prend la surface haute — cinq colonnes façon pipeline
+        GitLab, les nœuds portant leur état, les arêtes portant leur garde. C'est la version que le §4
+        écartait ; la voici construite pour de bon, avec ce qu'elle réussit et ce qu'elle doit résoudre.
+      </p>
+    </div>
+
+    <div class="frame-wrap">
+      <div class="frame">
+        <div class="tb">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <span class="tb-title">Cursus</span>
+        </div>
+        <div class="app tall">
+
+          <div class="rail">
+            <div class="proj-icon on">Ap<span class="pip running"></span></div>
+            <div class="proj-icon">Cu</div>
+            <div class="proj-icon">He</div>
+            <div class="rail-add">+</div>
+            <div class="rail-foot">
+              <div class="rail-home">
+                <div class="hbtn">
+                  <span class="minilab">Opus</span>
+                  <span class="minigauge"><i style="width:71%;"></i></span>
+                  <span class="minilab">Fable</span>
+                  <span class="minigauge"><i style="width:24%; background:var(--ok);"></i></span>
+                </div>
+              </div>
+              <div class="sw"></div>
+            </div>
+          </div>
+
+          <div class="side">
+            <div class="side-head">
+              <div class="titlerow"><div class="side-title">Apex-api</div><span class="gear" role="img" aria-label="Configuration du projet">⚙</span></div>
+              <div class="side-sub">~/Development/Apex-api</div>
+            </div>
+            <div class="seg"><b class="on">Run</b><b>Sessions</b></div>
+            <div class="grp">En cours</div>
+            <div class="row on"><span class="sd run"></span><span class="nm">livrerUnTicket</span><span class="ts">18 : 42</span></div>
+            <div class="grp">Workflows</div>
+            <div class="row"><span class="sd ok"></span><span class="nm">verifier</span><span class="ts">11 h 30</span></div>
+            <div class="row"><span class="sd ok"></span><span class="nm">deployer</span><span class="ts">hier</span></div>
+          </div>
+
+          <div class="main">
+            <div class="topbar">
+              <div class="crumb"><span>Run</span><span class="sep">›</span><span class="cur">livrerUnTicket</span></div>
+              <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+                <div class="runctl">
+                  <span class="on"><span class="sd run"></span>En cours</span>
+                  <span class="dis">Arrêt en cours</span>
+                  <span>Arrêté</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="pipe-head" style="padding:12px 18px 0; margin:0;">
+              <span class="verdict run"><span class="sd run"></span>En cours</span>
+              <span class="runmeta">8 visites · 6 étapes · 1 boucle · 18 min 42 s</span>
+              <span class="runmeta" style="margin-left:auto;">ED-241 · « Idempotence du webhook »</span>
+                <div class="itersel" style="margin-left:12px;"><span class="on">Graphe</span><span>Liste</span></div>
+            </div>
+
+            <div class="stage">
+              <svg class="bigsvg" viewBox="0 0 980 300" width="100%" height="272" role="img"
+                   aria-label="Graphe du run : tirer le ticket, dev deux fois, test deux fois, review une fois, documenter en cours, reporter à venir">
+                <defs>
+                  <marker id="mk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ok)" />
+                  </marker>
+                  <marker id="mw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--wait)" />
+                  </marker>
+                  <marker id="mi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ink-4)" />
+                  </marker>
+                </defs>
+
+                <!-- en-têtes de colonnes -->
+                <g font-size="9" fill="var(--ink-4)" class="gid" letter-spacing="1">
+                  <text x="20"  y="14">SOURCE</text>
+                  <text x="216" y="14">PRODUCTION</text>
+                  <text x="412" y="14">VÉRIFICATION</text>
+                  <text x="608" y="14">SUITE</text>
+                  <text x="804" y="14">CLÔTURE</text>
+                </g>
+                <g stroke="var(--line-soft)" stroke-width="1">
+                  <line x1="200" y1="22" x2="200" y2="288" />
+                  <line x1="396" y1="22" x2="396" y2="288" />
+                  <line x1="592" y1="22" x2="592" y2="288" />
+                  <line x1="788" y1="22" x2="788" y2="288" />
+                </g>
+
+                <!-- arêtes -->
+                <g fill="none" stroke-width="1.6">
+                  <path d="M 180 116 L 210 116" stroke="var(--ok)" marker-end="url(#mk)" />
+                  <path d="M 376 116 L 406 116" stroke="var(--ok)" marker-end="url(#mk)" />
+                  <path d="M 572 116 L 602 116" stroke="var(--ok)" marker-end="url(#mk)" />
+                  <path d="M 768 116 L 798 116" stroke="var(--ink-4)" stroke-dasharray="4 4" marker-end="url(#mi)" />
+                  <path d="M 528 142 C 528 200, 560 226, 600 226" stroke="var(--wait)" marker-end="url(#mw)" />
+                  <path d="M 604 252 C 604 286, 580 288, 540 288 L 320 288 C 300 288, 296 280, 296 262 L 296 148"
+                        stroke="var(--wait)" stroke-dasharray="5 3" marker-end="url(#mw)" />
+                </g>
+                <text x="587" y="108" text-anchor="middle" font-size="9" fill="var(--ok)" class="gid">code 0</text>
+                <text x="556" y="180" font-size="9" fill="var(--wait)" class="gid">code ≠ 0</text>
+                <text x="430" y="284" font-size="9" fill="var(--wait)" class="gid">retour · tour 2 sur 3 max</text>
+
+                <!-- nœud : tirer -->
+                <g>
+                  <rect x="20" y="90" width="160" height="52" rx="8" fill="var(--panel-2)" stroke="var(--ok)" stroke-width="1.4" />
+                  <circle cx="38" cy="116" r="5" fill="var(--ok)" />
+                  <text x="52" y="112" font-size="11.5" font-weight="600" fill="var(--ink)">Tirer le ticket</text>
+                  <text x="52" y="127" font-size="9" fill="var(--ink-4)" class="gid">tirerLeTicket · 0,9 s</text>
+                </g>
+
+                <!-- nœud : dev -->
+                <g>
+                  <rect x="216" y="90" width="160" height="52" rx="8" fill="var(--panel-2)" stroke="var(--ok)" stroke-width="1.4" />
+                  <circle cx="234" cy="116" r="5" fill="var(--ok)" />
+                  <text x="248" y="112" font-size="11.5" font-weight="600" fill="var(--ink)">Implémenter</text>
+                  <text x="248" y="127" font-size="9" fill="var(--ink-4)" class="gid">dev · opus 4.8 · 11 min 58 s</text>
+                  <rect x="336" y="96" width="32" height="15" rx="7" fill="var(--wait-soft)" stroke="var(--wait)" stroke-width="0.8" />
+                  <text x="352" y="107" text-anchor="middle" font-size="9" font-weight="700" fill="var(--wait)" class="gid">× 2</text>
+                </g>
+
+                <!-- nœud : test -->
+                <g>
+                  <rect x="412" y="90" width="160" height="52" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.2" />
+                  <circle cx="430" cy="116" r="5" fill="var(--ok)" />
+                  <text x="444" y="112" font-size="11.5" font-weight="600" fill="var(--ink)">Passer au vert</text>
+                  <text x="444" y="127" font-size="9" fill="var(--ink-4)" class="gid">test · 4 min 15 s</text>
+                  <rect x="532" y="96" width="32" height="15" rx="7" fill="var(--wait-soft)" stroke="var(--wait)" stroke-width="0.8" />
+                  <text x="548" y="107" text-anchor="middle" font-size="9" font-weight="700" fill="var(--wait)" class="gid">× 2</text>
+                  <circle cx="430" cy="132" r="3.2" fill="var(--fail)" />
+                  <text x="440" y="136" font-size="8" fill="var(--fail)" class="gid">1 échec</text>
+                </g>
+
+                <!-- nœud : review -->
+                <g>
+                  <rect x="608" y="200" width="160" height="52" rx="8" fill="var(--panel-2)" stroke="var(--ok)" stroke-width="1.4" />
+                  <circle cx="626" cy="226" r="5" fill="var(--ok)" />
+                  <text x="640" y="222" font-size="11.5" font-weight="600" fill="var(--ink)">Relire</text>
+                  <text x="640" y="237" font-size="9" fill="var(--ink-4)" class="gid">review · fable 5 · 1 min 38 s</text>
+                </g>
+
+                <!-- nœud : documenter -->
+                <g>
+                  <rect x="608" y="90" width="160" height="52" rx="8" fill="var(--panel-2)" stroke="var(--accent)" stroke-width="1.6" />
+                  <circle cx="626" cy="116" r="5" fill="var(--accent)" class="pulse" />
+                  <text x="640" y="112" font-size="11.5" font-weight="600" fill="var(--ink)">Documenter</text>
+                  <text x="640" y="127" font-size="9" fill="var(--accent-ink)" class="gid">documenter · gpt-5 · 0 : 51</text>
+                </g>
+
+                <!-- nœud : reporter -->
+                <g opacity="0.5">
+                  <rect x="804" y="90" width="160" height="52" rx="8" fill="var(--panel)" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="4 3" />
+                  <circle cx="822" cy="116" r="5" fill="none" stroke="var(--ink-4)" stroke-width="1.2" />
+                  <text x="836" y="112" font-size="11.5" font-weight="600" fill="var(--ink-3)">Reporter</text>
+                  <text x="836" y="127" font-size="9" fill="var(--ink-4)" class="gid">reporter · à venir</text>
+                </g>
+              </svg>
+            </div>
+
+            <div class="detail">
+              <div class="detail-head">
+                <span style="font-size:11.5px; font-weight:620;">Passer au vert</span>
+                <div class="itersel">
+                  <span class="on"><span class="sd fail"></span>Tour 1</span>
+                  <span><span class="sd ok"></span>Tour 2</span>
+                </div>
+                <div class="dtabs" style="margin-left:8px;"><b class="on">Sortie</b><b>Commande</b></div>
+                <span class="runmeta" style="margin-left:auto;">test.1.stdout · 612 lignes</span>
+              </div>
+              <div class="term"><span class="dim">$ /bin/sh -c "dotnet test"</span>
+<span class="r">  Échec Apex.Api.Tests.WebhookTests.étant donné un événement déjà traité, quand il</span>
+<span class="r">  revient, alors il est ignoré [7 ms]</span>
+<span class="r">     Assert.Equal() Failure: Values differ — Expected: 1, Actual: 2</span>
+<span class="y">  Échec !</span>  - Échec :     <span class="r">3</span>, Réussi :   <span class="g">211</span>, Total :   214
+</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <p class="frame-cap"><span class="dot"></span>Graphe principal — <code>test</code> sélectionné, et le détail expose ses deux tours</p>
+
+    <div class="prose" style="margin-top:28px;">
+      <h3>Ce que le graphe réussit, et que la trajectoire ratait</h3>
+      <p>
+        Il faut le dire franchement : <strong>sur l'objectif que tu poses — voir l'état de tout le
+        workflow d'un coup d'œil — le graphe gagne, et il gagne sur des points que la liste ne peut pas
+        rattraper.</strong>
+      </p>
+    </div>
+
+    <div class="weigh">
+      <div class="for">
+        <h4>Ce que seul le graphe montre</h4>
+        <ul>
+          <li><strong>Ce qui n'a pas été parcouru.</strong> <code>reporter</code> est là, en pointillé,
+          avant d'avoir existé. La trajectoire ne peut pas l'afficher : elle ne liste que ce qui s'est
+          produit</li>
+          <li><strong>La forme du workflow.</strong> Qu'il y ait une boucle, où elle se referme, et
+          combien de tours il reste avant le <code>maxVisits</code></li>
+          <li><strong>La position dans l'ensemble.</strong> « Il reste deux étapes » se lit sans compter —
+          alors que dans une liste, la fin n'est pas représentée</li>
+          <li><strong>Le coup d'œil est constant.</strong> Huit visites ou trente, le graphe garde six
+          nœuds ; la liste, elle, s'allonge</li>
+        </ul>
+      </div>
+      <div class="against">
+        <h4>Ce qu'il doit résoudre pour être juste</h4>
+        <ul>
+          <li><strong>Un nœud visité deux fois n'a pas un état.</strong> <code>test</code> est vert
+          <em>et</em> a échoué. La maquette s'en tire avec une pastille verte plus un « 1 échec » — c'est
+          une convention, et il faut la choisir consciemment</li>
+          <li><strong>L'ordre disparaît.</strong> On ne lit plus que <code>review</code> s'est produit
+          entre les deux <code>dev</code> ; on l'infère de la topologie</li>
+          <li><strong>Le clic devient ambigu</strong> : le log de quel tour ? D'où le sélecteur du bas —
+          un contrôle de plus, qui n'existe que parce que le graphe compresse</li>
+          <li><strong>Il faut placer les nœuds.</strong> Ces coordonnées sont écrites à la main ; du code
+          devra les calculer</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="prose" style="margin-top:30px;">
+      <h3>Je révise mon estimation du coût</h3>
+      <p>
+        Au §4 j'ai écarté le graphe en partie parce qu'il appellerait « l'algorithme de placement du
+        jalon 8 ». <strong>C'était trop pessimiste, et l'écart mérite d'être dit.</strong> Ce qui coûte
+        cher dans un éditeur, c'est l'interaction : déplacer un nœud, recalculer les arêtes, gérer les
+        croisements que l'utilisateur crée. <strong>En lecture seule, le placement est un tri topologique
+        par niveaux</strong> — de la logique pure, testable en <code>[Fact]</code>, sans une ligne
+        d'Avalonia.
+      </p>
+      <p>
+        Une réserve subsiste, et elle est réelle : <strong>ce tri suppose un graphe acyclique</strong>, et
+        celui-ci ne l'est pas. Il faut donc détecter l'arête de retour et l'exclure du placement avant de
+        répartir en colonnes — un parcours en profondeur classique, mais un vrai morceau d'algorithme. Mon
+        estimation honnête : <strong>de l'ordre de 150 lignes de logique pure</strong>, plus le rendu.
+        C'est plus que zéro, c'est très loin d'un éditeur.
+      </p>
+    </div>
+
+    <div class="pick" style="margin-top:24px;">
+      <h4>Ma recommandation, révisée</h4>
+      <p>
+        <strong>Le graphe et la liste, deux vues sœurs du même run</strong>, permutables par le basculeur
+        visible en haut à droite de la maquette. Ils ne répondent pas à la même question et aucun ne
+        subsume l'autre : le graphe dit <em>où on en est dans le workflow</em>, la liste dit <em>ce qui
+        s'est passé, dans l'ordre</em>. Le panneau du bas reste le détail de la sélection, dans les deux cas.
+        <br /><span style="color:var(--ink-3);">(J'avais d'abord proposé la trajectoire comme onglet du
+        panneau du bas — c'était incohérent, ce panneau montre une étape, pas le run. Corrigé au §6.)</span>
+      </p>
+      <p>
+        <strong>Sur le jalon, en revanche, je ne change pas d'avis :</strong> 6c livre la liste, le graphe
+        vient juste après. Non par prudence, mais parce que le placement se teste <em>sans</em> UI — donc
+        rien n'oblige à le faire pendant le jalon qui, lui, est risqué pour d'autres raisons (les PTY, le
+        <code>PATH</code>, le thread). Et si le graphe glissait, on aurait tout de même un écran de run
+        complet plutôt qu'aucun.
+      </p>
+      <p>
+        <strong>Ce qui décide vraiment, et que je ne peux pas trancher à ta place :</strong> si tu comptes
+        écrire des workflows à quinze étapes avec plusieurs branches, le graphe n'est pas un confort, il
+        est la seule vue utilisable et il faut le faire tôt. Si les workflows restent des chaînes de deux
+        à six étapes avec une boucle, la liste tient très bien et le graphe est un raffinement.
+      </p>
+    </div>
+  </section>
+
+  <hr class="rule" style="margin-top:64px;" />
+
+  <!-- ============================================================ -->
+  <section class="chunk">
+    <div class="prose">
+      <div class="sec-head">
+        <span class="sec-num">§6</span>
+        <h2>Deux corrections, et la question de l'éditeur</h2>
+      </div>
+
+      <h3>Le basculeur : oui, et ma proposition était incohérente</h3>
+      <p>
+        Tu as raison, et je corrige : mettre la trajectoire dans le panneau du bas
+        <strong>mélangeait deux niveaux</strong>. Ce panneau montre le détail de <em>ce qui est
+        sélectionné</em> ; la trajectoire décrit <em>le run entier</em>. Elle n'y avait rien à faire.
+      </p>
+      <p>
+        Graphe et liste sont <strong>deux projections du même objet, au même niveau</strong> — comme les
+        vues icônes et liste d'un explorateur de fichiers. Le basculeur va donc dans la barre du run
+        (visible dans les maquettes des §4 et §5, où il est désormais dessiné), et le panneau du bas reste
+        ce qu'il est : le détail de la sélection.
+      </p>
+      <p>
+        Cette forme a une propriété qui vaut mieux que l'élégance : <strong>la sélection est
+        partagée</strong>. On sélectionne <code>test</code> dans le graphe, on bascule en liste, et c'est
+        <code>test · tour 2</code> qui est surligné. Une seule notion de sélection, deux façons de la
+        désigner — donc un seul état à tester, et deux rendus qui n'ont pas besoin de se connaître.
+      </p>
+      <p>
+        <strong>Et ça découpe mieux le jalon</strong> que ma proposition : 6c livre la liste seule, sans
+        basculeur ; le graphe s'ajoute comme seconde vue sans rien restructurer. C'est exactement ce qu'on
+        veut d'un raffinement — qu'il se greffe, pas qu'il réorganise.
+      </p>
+
+      <h3 style="margin-top:30px;">L'engrenage : oui, et l'argument est déjà écrit</h3>
+      <p>
+        Le segmenté à trois positions <em>Run · Sessions · Config</em> contredisait une décision déjà
+        prise. Le §1.2 de <code>parcours.md</code> dit :
+      </p>
+      <blockquote style="margin:0 0 14px; padding:10px 16px; border-left:2px solid var(--accent); background:var(--panel); border-radius:0 var(--radius) var(--radius) 0; font-size:14px; color:var(--ink-2); max-width:68ch;">
+        « Le run est le mode par défaut… <strong>La configuration se visite, elle ne s'habite pas.</strong> »
+      </blockquote>
+      <p>
+        Un segmenté donne trois destinations de même poids — c'est-à-dire l'inverse. L'engrenage rend la
+        hiérarchie visible : <strong>Run et Sessions s'habitent</strong> (on y reste, on y revient), la
+        configuration se visite et on en repart. Les maquettes sont corrigées.
+      </p>
+      <p>
+        Un détail qui compte : l'engrenage est <strong>à côté du nom du projet</strong>, pas dans une barre
+        d'outils globale. Il dit ainsi de quoi il règle la configuration — celle de <em>ce</em> projet, à
+        distinguer de l'écran Application du §2, qui règle la machine.
+      </p>
+
+      <h3 style="margin-top:30px;">L'éditeur de workflows : oui, deuxième temps — mais pas rien au premier</h3>
+      <p>
+        L'éditeur graphique est le jalon 8 et il n'y a pas de raison de l'avancer. En revanche, laisser
+        l'écran de configuration <em>vide</em> au jalon 6 serait dommage, parce qu'il existe déjà quelque
+        chose d'utile à y montrer et que personne n'affiche : <strong><code>ValidationReport</code></strong>.
+        Il est construit, testé, et aujourd'hui son contenu ne se découvre qu'au lancement d'un run.
+      </p>
+    </div>
+
+    <div class="frame-wrap">
+      <div class="frame">
+        <div class="tb">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <span class="tb-title">Cursus</span>
+        </div>
+        <div style="display:flex; height:430px; font-size:13px;">
+
+          <div class="rail">
+            <div class="proj-icon on">Ap</div>
+            <div class="proj-icon">Cu</div>
+            <div class="rail-add">+</div>
+          </div>
+
+          <div class="side">
+            <div class="side-head">
+              <div class="titlerow">
+                <div class="side-title">Apex-api</div>
+                <span class="gear on" role="img" aria-label="Configuration du projet">⚙</span>
+              </div>
+              <div class="side-sub">~/Development/Apex-api</div>
+            </div>
+            <div class="seg"><b>Run</b><b>Sessions</b></div>
+            <div class="grp">Workflows</div>
+            <div class="row"><span class="sd ok"></span><span class="nm">verifier</span><span class="ts">2 ét.</span></div>
+            <div class="row"><span class="sd ok"></span><span class="nm">deployer</span><span class="ts">4 ét.</span></div>
+            <div class="row on"><span class="sd fail"></span><span class="nm">livrerUnTicket</span><span class="ts">6 ét.</span></div>
+            <div class="grp">Projet</div>
+            <div class="row"><span class="sd idle"></span><span class="nm">Nom et emplacement</span></div>
+            <div class="row"><span class="sd idle"></span><span class="nm">Variables d'environnement</span></div>
+          </div>
+
+          <div class="main">
+            <div class="topbar">
+              <div class="crumb">
+                <span>Configuration</span><span class="sep">›</span><span class="cur">livrerUnTicket</span>
+              </div>
+              <div style="margin-left:auto; display:flex; gap:8px;">
+                <span class="btn ghost">Ouvrir dans l'éditeur</span>
+                <span class="btn">Recharger</span>
+              </div>
+            </div>
+
+            <div style="padding:14px 20px; border-bottom:1px solid var(--line); flex:none;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:11px;">
+                <span class="verdict fail"><span class="sd fail"></span>2 problèmes</span>
+                <span class="runmeta">.cursus/workflows/livrerUnTicket.json · relu il y a 4 s</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:7px;">
+                <div style="display:flex; gap:10px; align-items:flex-start; background:var(--fail-soft); border-radius:5px; padding:8px 12px;">
+                  <span class="sd fail" style="margin-top:5px;"></span>
+                  <div style="display:flex; flex-direction:column; line-height:1.45;">
+                    <span style="font-size:12.5px; font-weight:600;">L'étape <code style="font-family:var(--mono);">review</code> renvoie vers <code style="font-family:var(--mono);">dev2</code>, qui n'existe pas</span>
+                    <span style="font-size:11px; color:var(--ink-3);" class="m">UnknownStepReference · steps[3].edges[0].target</span>
+                  </div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:flex-start; background:var(--wait-soft); border-radius:5px; padding:8px 12px;">
+                  <span class="sd wait" style="margin-top:5px;"></span>
+                  <div style="display:flex; flex-direction:column; line-height:1.45;">
+                    <span style="font-size:12.5px; font-weight:600;">L'étape <code style="font-family:var(--mono);">reporter</code> n'est atteignable par aucun chemin</span>
+                    <span style="font-size:11px; color:var(--ink-3);" class="m">UnreachableStep · steps[5]</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail">
+              <div class="detail-head">
+                <div class="dtabs"><b class="on">Source</b><b>Étapes</b></div>
+                <span class="runmeta" style="margin-left:auto;">lecture seule · l'édition se fait dans votre éditeur</span>
+              </div>
+              <div class="term" style="font-size:11px;"><span class="dim">      {</span>
+<span class="dim">        "id": "review",</span>
+<span class="dim">        "name": "Relire et corriger le tir",</span>
+<span class="dim">        "maxVisits": 3,</span>
+<span class="dim">        "edges": [</span>
+<span class="sel"><span class="r">          { "guard": "always", "target": "dev2" }</span></span>
+<span class="dim">        ]</span>
+<span class="dim">      },</span>
+</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <p class="frame-cap"><span class="dot"></span>Configuration au jalon 6 — on lit, on valide, on édite ailleurs</p>
+
+    <div class="prose" style="margin-top:26px;">
+      <p>
+        Ce n'est pas un éditeur, et ça change quand même l'expérience : aujourd'hui, une faute de frappe
+        dans une arête se découvre <strong>au lancement d'un run</strong>. Là, elle se voit en éditant, avec
+        son emplacement exact. Le coût est proche de zéro — <code>WorkflowCatalog.Load</code> rend déjà ce
+        rapport, il n'y a qu'à l'afficher.
+      </p>
+      <h4 style="margin-top:22px;">Trois paliers, et leurs coûts n'ont rien à voir</h4>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:11%;">Palier</th><th style="width:31%;">Ce qu'on peut faire</th><th>Ce que ça coûte</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Lire<br />et valider</strong><br /><span class="badge j6">jalon 6</span></td>
+            <td>Voir les workflows, leurs étapes, et <strong>les problèmes de validation à l'endroit
+            exact</strong>. Éditer dans son propre éditeur, recharger</td>
+            <td><strong>Quasi nul.</strong> <code>ValidationReport</code> existe et n'est affiché nulle
+            part. Un surveillant de fichier pour le rechargement, et c'est tout</td>
+          </tr>
+          <tr>
+            <td><strong>Éditer<br />par formulaire</strong><br /><span class="badge later">jalon 8a</span></td>
+            <td>Ajouter une étape, changer sa commande, son <code>maxVisits</code>, ses arêtes — chacune
+            un couple (garde, cible) choisi dans une liste. <strong>Aucun canevas</strong></td>
+            <td><strong>Modeste.</strong> Des formulaires sur un modèle déjà validé. Couvre la très grande
+            majorité de l'édition réelle, sans une ligne de dessin</td>
+          </tr>
+          <tr>
+            <td><strong>Le canevas</strong><br /><span class="badge later">jalon 8b</span></td>
+            <td>Déplacer les nœuds, tirer les arêtes à la souris, voir la forme se réorganiser</td>
+            <td><strong>Élevé,</strong> et c'est là qu'est tout le coût du jalon 8 : le placement
+            interactif, les arêtes qui se recalculent, la persistance des positions</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pick" style="margin-top:24px;">
+      <h4>Un lien à ne pas manquer entre le §5 et l'éditeur</h4>
+      <p>
+        <strong>Le placement écrit pour la vue graphe en lecture est réutilisé par le canevas.</strong>
+        Répartir les nœuds en colonnes est le même calcul, qu'on puisse ensuite les déplacer ou non. Faire
+        la vue graphe ne fait donc pas que servir la lecture : <strong>elle avance le jalon 8 d'autant</strong>,
+        et elle fait tomber le risque de cet algorithme bien avant qu'il soit sur le chemin critique.
+      </p>
+      <p>
+        Ça déplace un peu mon arbitrage du §5. Le graphe n'est plus seulement « un raffinement qui améliore
+        la lecture » : c'est <strong>un morceau de l'éditeur qu'on livre en avance sous une forme utile
+        tout de suite</strong>. Ça ne le fait pas rentrer dans 6c pour autant — mais ça en fait le premier
+        candidat juste après, devant les paliers d'édition.
+      </p>
+    </div>
+  </section>
+
+  <hr class="rule" style="margin-top:64px;" />
+
+  <!-- ============================================================ -->
+  <section class="chunk">
+    <div class="prose">
+      <div class="sec-head">
+        <span class="sec-num">§7</span>
+        <h2>Ce que l'écran vaut sans 6a</h2>
+      </div>
+      <p>
+        Toutes les maquettes ci-dessus montrent une sortie qui défile. <strong>Le code ne le permet pas
+        aujourd'hui.</strong> Le §4.1 de <code>presentation.md</code> est net : rien n'est émis entre
+        <code>StepStarted</code> et <code>StepFinished</code>, et <code>ProcessRunner</code> n'obtient la
+        sortie qu'à la mort du process. Voici donc, côte à côte, ce que le même écran affiche pendant les
+        trois minutes du <code>dotnet test</code> — avant, et après.
+      </p>
+    </div>
+
+    <div class="frame-wrap">
+      <div class="frame" style="min-width:900px;">
+        <div class="tb">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <span class="tb-title">Les deux mêmes secondes, avant et après le jalon 6a</span>
+        </div>
+        <div style="display:flex; height:330px;">
+
+          <div style="flex:1; display:flex; flex-direction:column; border-right:1px solid var(--line); min-width:0;">
+            <div class="detail-head">
+              <b style="font-size:11.5px; color:var(--fail);">Aujourd'hui — sans la sortie en flux</b>
+            </div>
+            <div class="pipeline" style="border-bottom:1px solid var(--line-soft);">
+              <div class="steps">
+                <div class="step sel" style="min-width:0;">
+                  <div class="st-top"><span class="sd run"></span><span class="st-name">Passer toute la suite au vert</span></div>
+                  <span class="st-id">tester</span>
+                  <div class="st-foot"><span class="st-dur">1 min 36 s</span></div>
+                  <div class="indet"><i></i></div>
+                </div>
+              </div>
+            </div>
+            <div class="term" style="display:grid; place-items:center; text-align:center; white-space:normal;">
+              <div>
+                <div style="color:#5d6e73; font-size:12px; line-height:1.7;">
+                  StepStarted(tester, 1)<br />reçu il y a 96 secondes.
+                </div>
+                <div style="color:#3f4d51; font-size:11px; margin-top:10px;">Aucune sortie avant la fin du process.</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
+            <div class="detail-head">
+              <b style="font-size:11.5px; color:var(--ok);">Après 6a — la sortie en flux</b>
+            </div>
+            <div class="pipeline" style="border-bottom:1px solid var(--line-soft);">
+              <div class="steps">
+                <div class="step sel" style="min-width:0;">
+                  <div class="st-top"><span class="sd run"></span><span class="st-name">Passer toute la suite au vert</span></div>
+                  <span class="st-id">tester</span>
+                  <div class="st-foot"><span class="st-dur">1 min 36 s</span><span class="code">126 découverts</span></div>
+                  <div class="indet"><i></i></div>
+                </div>
+              </div>
+            </div>
+            <div class="term"><span class="dim">[00:00:00.78]</span> Discovered:  126 test cases
+<span class="dim">[00:00:00.79]</span> Starting:    Cursus.Core.Tests
+<span class="dim">[00:01:12.30]</span> <span class="g">✓</span> ProcessRunnerTests (18)
+<span class="dim">[00:01:28.11]</span> <span class="g">✓</span> WorkflowEngineTests (41)
+<span class="dim">[00:01:33.60]</span> <span class="g">✓</span> RunContextTests (12)
+<span class="cursor"></span></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <p class="frame-cap"><span class="dot"></span>La même seconde du même run, selon que 6a existe ou non</p>
+
+    <div class="pick" style="border-color:var(--wait); background:var(--wait-soft);">
+      <h4 style="color:var(--wait);">Ce que cette comparaison démontre</h4>
+      <p>
+        Le parcours affirmait que <em>« la sortie en direct n'est pas un raffinement — c'est ce qui
+        distingue l'écran de run d'un sablier décoré »</em>. La maquette de gauche est la preuve visuelle
+        de l'affirmation : elle est <strong>honnête</strong>, elle n'invente rien, et elle ne vaut pas la
+        peine d'être construite.
+      </p>
+      <p>
+        <strong>Conséquence d'ordonnancement :</strong> 6a n'est pas une optimisation qu'on greffe après
+        avoir câblé l'UI. C'est ce qui décide si l'UI mérite son câblage — donc il passe bien en premier,
+        comme le découpage 6a → 6b → 6c le prévoit.
+      </p>
+    </div>
+
+    <div class="prose" style="margin-top:38px;">
+      <h3>La sortie ne va pas en base — et c'est déjà le cas</h3>
+      <p>
+        Le point sur les fichiers plutôt que SQLite est juste, et il est <strong>déjà tranché dans le
+        dépôt depuis le jalon 4</strong>. <code>RunArtifactStore</code> range les sorties sous
+        <code>.cursus/runs/&lt;runId&gt;/&lt;stepId&gt;.&lt;iteration&gt;.stdout</code>, et sa
+        documentation donne exactement la raison invoquée :
+      </p>
+      <blockquote style="margin:0 0 14px; padding:10px 16px; border-left:2px solid var(--accent); background:var(--panel); border-radius:0 var(--radius) var(--radius) 0; font-size:14px; color:var(--ink-2);">
+        « Elles ne vont pas en base : un script bavard y ferait grossir le journal sans limite, et
+        <strong>un fichier se suit à la trace pendant qu'il s'écrit — ce que voudra l'interface</strong>. »
+      </blockquote>
+      <p>
+        Le nom de fichier porte déjà l'itération, donc <strong>chaque ligne de la trajectoire du §4 est
+        adressable individuellement</strong> : <code>dev.1.stdout</code> et <code>dev.2.stdout</code> sont
+        deux fichiers distincts. Ce qui reste à faire n'est donc pas de sortir de SQLite, mais de
+        <strong>ne plus écrire à la fin</strong>.
+      </p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:38%;">Aujourd'hui</th><th>Ce que 6a doit changer</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>RunArtifactStore.Write</code> fait un <code>File.WriteAllText</code> <strong>une
+            fois l'étape finie</strong></td>
+            <td>Une écriture <strong>en ajout, au fil de l'eau</strong>, ouverte au démarrage de l'étape.
+            C'est ce qui rend le fichier suivable à la trace — la promesse du commentaire ci-dessus n'est
+            pas encore tenue</td>
+          </tr>
+          <tr>
+            <td><code>ScriptResult.Stdout</code> est un <code>string</code> portant
+            <strong>toute</strong> la sortie en mémoire</td>
+            <td>Il doit porter un <strong>chemin</strong>, pas un contenu. Sinon le gain est nul : la
+            sortie transite par la RAM avant d'atteindre le disque, et un script très bavard fait tomber
+            l'application au lieu de faire grossir un fichier. <strong>C'est un changement de type du
+            noyau</strong>, à instruire au plan de 6a</td>
+          </tr>
+          <tr>
+            <td>Un run à la fois — <code>SqliteRunJournal</code> a une connexion unique non synchronisée
+            (§9.2-14)</td>
+            <td>C'est précisément l'argument : <strong>N étapes parallèles = N fichiers distincts, aucune
+            contention</strong>. Le journal ne reçoit que les frontières d'étape, qui sont rares. Le choix
+            du fichier n'est donc pas une optimisation d'affichage — <strong>c'est ce qui rend 6b
+            possible</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose" style="margin-top:18px;">
+      <p>
+        Ça referme aussi, à moitié, la première question ouverte du §6 de <code>parcours.md</code> — « les
+        afficher est un problème, les journaliser ligne par ligne dans SQLite en est un autre ». La
+        seconde moitié est réglée : <strong>on ne les journalise pas en base, ni ligne par ligne ni
+        autrement.</strong> Reste l'affichage d'un fichier de plusieurs milliers de lignes, qui est un
+        problème de contrôle, pas de persistance.
+      </p>
+    </div>
+  </section>
+
+  <hr class="rule" style="margin-top:64px;" />
+
+  <!-- ============================================================ -->
+  <section class="chunk">
+    <div class="prose">
+      <div class="sec-head">
+        <span class="sec-num">§8</span>
+        <h2>Ce que ces maquettes ne tranchent pas</h2>
+      </div>
+      <p>
+        Six points que le dessin a fait apparaître et qu'il ne suffit pas à résoudre. Ils sont listés
+        ici pour qu'ils ne se perdent pas entre la maquette jetée et le plan de 6a. Les deux derniers
+        n'existaient pas avant l'écran Application — ils sont nés de lui.
+      </p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:34%;">Point</th><th>Pourquoi la maquette ne suffit pas</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Le volume de sortie</strong></td>
+            <td>Le run échoué affiche « 1 842 lignes ». Les <em>afficher</em> est un problème de contrôle ;
+            les <em>journaliser</em> ligne par ligne dans SQLite en est un autre. Aucun dessin ne répond au
+            second, et c'est lui qui contraint 6a</td>
+          </tr>
+          <tr>
+            <td><strong>L'étape en attente</strong></td>
+            <td>Le troisième état — ni échec ni exécution — a sa couleur réservée dans ces maquettes
+            (l'ambre) mais n'apparaît nulle part : il n'existera qu'avec le forfait et l'interrupteur, donc
+            après 6c. La couleur est mise de côté, pas dépensée</td>
+          </tr>
+          <tr>
+            <td><strong>La bascule vers les sessions</strong></td>
+            <td>Le segment « Sessions » est dessiné, son contenu ne l'est pas. Il rappelle surtout le vrai
+            travail : les PTY existants doivent survivre à un changement de mode, ce qui interdit de les
+            binder dans un conteneur recyclable</td>
+          </tr>
+          <tr>
+            <td><strong>Ce qu'on montre d'une commande</strong></td>
+            <td>Les étapes exécutent <code>/bin/sh -c "dotnet build -warnaserror"</code>. La maquette
+            affiche <code>dotnet build -warnaserror</code> — elle a donc déjà décidé de <em>masquer le
+            shell</em>. Défendable, mais c'est une troncature choisie : le jour où un workflow lancera un
+            binaire directement, la règle d'affichage devra tenir dans les deux cas</td>
+          </tr>
+          <tr>
+            <td><strong>La stratégie <code>PATH</code></strong></td>
+            <td>Trou §9.2-15, fléché sur ce jalon. Aucune de ces maquettes ne peut en dépendre — mais sans
+            réponse, l'écran de run le plus soigné du monde affichera <code>LaunchFailed</code> dès que
+            l'app sera lancée depuis le Finder plutôt que depuis un terminal</td>
+          </tr>
+          <tr>
+            <td><strong>D'où vient le pourcentage de forfait</strong> ⚠️</td>
+            <td>La jauge de l'écran Application suppose une source. <strong>Je n'ai pas vérifié</strong> que
+            Claude Code ou Codex exposent leur consommation de manière lisible par un tiers. Si aucun ne le
+            fait, la jauge devient un compteur tenu par Cursus — donc une estimation, et il faudrait alors
+            le dire à l'écran plutôt que d'afficher « 62 % » avec l'autorité d'une mesure</td>
+          </tr>
+          <tr>
+            <td><strong>Où vivent jetons et réglages d'agents</strong></td>
+            <td>Pas dans <code>.cursus/project.json</code> : il est versionné, et un jeton Linear y serait
+            partagé avec toute l'équipe. Ils relèvent du <strong>registre machine et du trousseau</strong>
+            (§7.10.1), que le jalon 5 avait repoussés et que cet écran ramène. Sans eux, l'écran Application
+            n'a rien à afficher</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>
