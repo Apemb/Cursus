@@ -8,6 +8,7 @@
 > - `docs/design/parcours.md` — le *quoi* du point de vue de l'utilisateur : la cible d'usage et le parcours réduit du jalon 6 (§7.13 en détient les conséquences) ;
 > - `docs/design/modele-metier.md` — le modèle cible orienté agents (couches, entités, machines à états) ;
 > - `docs/research/agentic-workflows-landscape.md` — les preuves externes (comparatifs, sandboxing, PTY) ;
+> - `docs/research/trackers/synthese.md` — les quatre trackers superposés (Linear, Jira, GitHub, GitLab) et ce que leur terrain impose au port de tâches (§7.13 en détient les conséquences) ;
 > - `docs/reference/royalterminal-0.4.0.md` — l'API RoyalTerminal sondée, faute de documentation éditeur ;
 > - `CLAUDE.md` (racine) — le contrat de travail, qui désigne le présent fichier comme référence et impose son entretien (§8).
 >
@@ -638,7 +639,7 @@ Deux pièges à ne pas rater le jour venu :
 
 #### 7.10.2 Le déclenchement est un état observé, pas une transition
 
-Modèle **pull** : on lit le tableau, et `(colonne, étiquettes)` détermine par prédicat les workflows proposés pour une tâche. L'écran « tâches et actions disponibles » est une **projection pure**, calculée à la lecture — le tableau est la source, on ne le duplique pas.
+Modèle **pull** : on lit le tableau, et `(colonne, étiquettes)` détermine par prédicat les workflows proposés pour une tâche. ⚠️ **Cette maille est révisée par le §7.13.2** — elle n'existe telle quelle que chez Linear ; chez Jira, GitHub et GitLab la colonne appartient au couple (tâche, tableau), pas à la tâche. Le modèle pull, lui, n'est pas remis en cause : il l'est même d'autant plus qu'aucun des quatre n'est joignable par webhook depuis un client de bureau. L'écran « tâches et actions disponibles » est une **projection pure**, calculée à la lecture — le tableau est la source, on ne le duplique pas.
 
 Ce choix vient de l'observation du terrain (les tickets ne vont que dans un sens, l'information de complétion est portée par des étiquettes comme `Done` / `Comments`) et il fait disparaître trois problèmes d'un coup : pas de webhooks à recevoir, donc ni serveur ni garantie de livraison ; pas de journal de transitions à tenir, puisque l'état courant suffit ; et pas d'ordonnancement d'événements à reconstituer.
 
@@ -650,7 +651,7 @@ Ce choix vient de l'observation du terrain (les tickets ne vont que dans un sens
 
 Le cycle a **trois moments**, et le premier est le seul à rester hors du graphe :
 
-1. **Disponibilité** — prédicat sur `(colonne, étiquettes)`. Précède le run, donc ne peut pas en être une étape : c'est ce qui reste dans `project.json`.
+1. **Disponibilité** — prédicat sur `(colonne, étiquettes)`. Précède le run, donc ne peut pas en être une étape : c'est ce qui reste dans `project.json`. ⚠️ Le §7.13.2 ajoute que ce prédicat devra recevoir un **contexte de tableau** — sans lui, « la colonne » n'est pas définie chez trois trackers sur quatre. Ce qui reste dans `project.json` s'en trouve élargi, pas déplacé.
 2. **Entrée** — une **étape** qui déplace la carte (« En cours de dev » → « En cours de review »).
 3. **Sortie** — une **étape** qui appose l'étiquette d'issue (`Done` ou `Comments`), rendant la carte éligible au workflow suivant.
 
@@ -771,7 +772,7 @@ propriété : on n'attend pas devant une application qui ne montre qu'une chose 
 | **Runs concurrents** | **Révise « un run à la fois » (§7.12).** Ce n'était pas un choix de produit mais un constat de code : `SqliteRunJournal` détient une `SqliteConnection` unique et son `Append` n'a aucun verrou (§9.2-14). Deux runs simultanés ne lèveraient pas — ils corrompraient par intermittence. À traiter **avant** l'UI qui les exposera |
 | **La sortie en direct** | **Révise l'arbitrage du §9.4** qui la traitait comme un « coût caché » optionnel du jalon 6. Elle est le cœur de l'écran de run : sans elle, il ne reste qu'un sablier. C'est le trou §9.2-4, qui devient un prérequis et non une suite |
 | **Le run est la porte d'entrée d'un projet** | L'éditeur de graphe sort du chemin critique — il est en mode configuration, qui se visite sans s'habiter |
-| **Les tâches viennent d'un tracker** | Confirme le §7.10.2 (*le tracker est la source de vérité, Cursus ne le réplique pas*). Ajoute l'**ordre d'arrivée** : Linear d'abord, Jira ensuite — les deux **étudiés avant de dessiner le port**. Un provider local viendra au besoin, plus tard |
+| **Les tâches viennent d'un tracker** | Confirme le §7.10.2 (*le tracker est la source de vérité, Cursus ne le réplique pas*). Ajoute l'**ordre d'arrivée** : Linear d'abord, Jira ensuite — **étudiés avant de dessiner le port**, avec GitHub et GitLab (§7.13.2). Un provider local viendra au besoin, plus tard |
 
 **Deux écarts qui se rediscuteraient sinon :**
 
@@ -787,6 +788,13 @@ propriété : on n'attend pas devant une application qui ne montre qu'une chose 
   diverger assez pour casser une abstraction. Nuance qui rend l'objection moins coûteuse qu'il n'y paraît :
   **créer et éditer ne sont pas dans le port** — Cursus lit et annote (§7.10.3), il ne rédige pas. Le
   provider local gardera donc un usage propre, celui de **fixture de test** exerçable sans réseau ni jeton.
+
+  ✅ **La recherche a eu lieu** (2026-07-21) — `docs/research/trackers/synthese.md`, plus une fiche
+  sourcée par outil. Son périmètre a été **élargi de deux à quatre outils** (GitHub et GitLab ajoutés) et
+  **du seul « lire et annoter » au CRUD complet**, à la demande de l'utilisateur : le port n'exposera
+  peut-être pas la création, mais on ne saura pas ce qu'elle coûte sans l'avoir regardée. Ce qu'elle
+  rapporte, en une ligne : **les quatre ne mettent pas la colonne au même endroit, et pas avec la même
+  arité.** Voir §7.13.2.
 - **La vue agrégée cross-projets — écartée du périmètre, pas du modèle.** Elle serait la consolidation
   d'écrans qui n'existent pas encore et renverrait de toute façon vers une vue projet. Ce qu'on en retient
   n'est qu'une contrainte, et elle est gratuite : *la racine doit pouvoir énumérer les runs actifs de tous
@@ -841,6 +849,55 @@ au niveau de l'**étape** : un run peut alors rester figé au milieu toute la nu
 affichant « en cours de dev ». C'est peut-être souhaitable — la carte dit vrai, la reprise est naturelle.
 La variante « finir les runs entamés, n'en démarrer aucun nouveau » laisse un état plus propre au prix
 d'une fin de journée plus longue. Non tranchée ; ne se pose pas avant l'`AgentStep`.
+
+#### 7.13.2 Ce que les quatre trackers imposent — RECHERCHE FAITE, RIEN DE TRANCHÉ
+
+Recherche du 2026-07-21 sur Linear, Jira Cloud, GitHub (Issues + Projects v2) et GitLab (Issues +
+boards), consignée dans `docs/research/trackers/`. Elle a été menée **avant** de dessiner le port,
+précisément pour qu'une abstraction ne soit pas décalquée d'un seul outil. Elle n'a rien tranché — mais
+elle invalide un présupposé, et c'est à ce titre qu'elle entre ici.
+
+⚠️ **La maille `(colonne, étiquettes)` des §7.10.2 et §7.10.3 n'existe telle quelle que chez Linear.**
+C'est le seul des quatre où « quel est le statut de cette tâche ? » est une question bien posée.
+
+| Outil | Où vit la colonne | Arité |
+|---|---|---|
+| Linear | c'est le statut lui-même (`WorkflowState`, avec sa `position`) | une par tâche |
+| Jira | propriété d'un **board**, et une colonne agrège **N statuts** | autant que de boards qui capturent le ticket |
+| GitHub | valeur d'un champ du `ProjectV2Item`, **pas de l'issue** | autant que de projets contenant l'issue |
+| GitLab | une **étiquette** à laquelle une liste de board est adossée | zéro à N, rien n'impose l'unicité |
+
+Ce n'est pas un écart qu'un adaptateur rattrape : **l'unité qui porte l'avancement n'est pas la tâche
+mais le couple (tâche, tableau)** chez trois outils sur quatre. Un prédicat de disponibilité devra donc
+recevoir un **contexte de tableau**, qui n'est pas une préférence d'affichage mais une donnée de
+configuration du projet Cursus — à loger dans `project.json` (§7.10.1) le moment venu.
+
+Quatre autres constats portent au-delà du port :
+
+- **Aucun identifiant n'est à la fois lisible et stable.** Les quatre font muter leur clé lisible
+  (`BLA-123`, `ED-24`, `#42`) au déplacement d'une tâche. Ce que Cursus persiste doit être opaque ; ce
+  qu'il affiche doit être re-résolu.
+- **Aucun n'offre d'idempotence en création.** Conséquence pour le **moteur**, pas seulement pour le
+  port : si une étape crée une tâche ou un commentaire, la clé de corrélation doit être engendrée et
+  **journalisée avant l'appel**, sinon une reprise après crash duplique. Seul Linear a un mécanisme
+  natif (l'UUID est fourni par le client).
+- **Toute écriture de collection écrase le travail concurrent.** Les quatre remplacent le jeu
+  d'étiquettes entier si on le pose en bloc, et aucun n'a de concurrence optimiste. Il faut
+  systématiquement la voie additive — sinon Cursus efface les annotations des humains qui travaillent
+  en même temps.
+- **Un client de bureau ne reçoit pas de webhooks** (pas d'URL publique). Le sondage du §7.10.6 n'est
+  donc pas un choix mais une contrainte, et le plafond qui mord n'est jamais le quota nominal : c'est
+  **80 créations/minute** chez GitHub, **20 écritures / 2 s par ticket** chez Jira.
+
+Deux singularités valent d'être connues avant de s'engager : **Jira est le seul qui peut refuser** un
+changement d'état (transition découverte à l'exécution, condition, validateur, champ obligatoire — et
+une liste vide qui ne distingue pas « impossible » de « pas le droit ») ; et **GitLab fait du palier de
+licence un écart de modèle**, pas de quota — en Free, l'invariant « une tâche a un statut » est
+invalidable par les données.
+
+**Rien n'est tranché.** La synthèse liste six arbitrages laissés ouverts, dont les deux structurants :
+l'unité qui porte l'avancement, et si « déplacer » est une opération qui peut échouer (forme Jira) ou
+une écriture qui réussit toujours (forme des trois autres). Ils se posent au jalon 7, pas avant.
 
 ---
 
