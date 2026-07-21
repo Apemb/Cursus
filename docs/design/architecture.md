@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `2b08819`. Dernier jalon de code : `2b08819` (*journal & persistance, jalon 4*). Suite de tests : **116 verts** (102 noyau + 14 persistance), build 0 warning.
+> **Statut** : document vivant, à jour du commit `88ecfc4`. Dernier jalon de code : `88ecfc4` (*le projet minimal, jalon 5*). Suite de tests : **141 verts** (126 noyau + 15 persistance), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -34,10 +34,13 @@
 | Moitié | Emplacement | État |
 |---|---|---|
 | Noyau déterministe | `src/Cursus.Core/Workflows/` (28 fichiers) | Moteur de traversée, runner de process réel, contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal. **89 tests.** Fonctionne bout en bout, sans UI. |
-| Persistance | `src/Cursus.Persistence/` (3 fichiers) | Journal SQLite et magasin d'artefacts sur disque. **14 tests.** Un run survit au process. |
+| Projet & catalogue | `src/Cursus.Core/Projects/` (6 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**. **24 tests.** Voir §4.11. |
+| Persistance | `src/Cursus.Persistence/` (3 fichiers) | Journal SQLite et magasin d'artefacts sur disque. **15 tests.** Un run survit au process. |
 | Sessions / PTY | `src/Cursus.Core/Sessions/` (5 fichiers) + `src/Cursus.App/` | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal ; logique de sessions testée (**13 tests**). Antérieure au pivot. |
 
 Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2), et **`Cursus.App` ne référence pas encore `Cursus.Persistence`**.
+
+**Le dépôt est lui-même un projet Cursus** : `.cursus/` porte son `project.json` et deux workflows réels (`build`, `verifier`), gardés valides par `CursusProjectTests`.
 
 ### 1.2 Solution, projets, dépendances
 
@@ -48,20 +51,23 @@ graph TD
     subgraph CoreLib["Cursus.Core"]
         Sessions["Sessions/<br/>TerminalSession, SessionWorkspace,<br/>ShellResolver, ShellEnvironment<br/><i>(CommunityToolkit.Mvvm)</i>"]
         Workflows["Workflows/<br/>WorkflowEngine, ProcessRunner, Validator,<br/>Serializer, RunContext, WorkflowEvent,<br/>IRunJournal, InMemoryRunJournal"]
+        Projects["Projects/<br/>Project, ProjectStore,<br/>WorkflowCatalog, WorkflowEntry"]
     end
+    Projects --> Workflows
     Persistence["Cursus.Persistence<br/>SqliteRunJournal, RunEventCodec,<br/>RunArtifactStore<br/><i>(Microsoft.Data.Sqlite)</i>"] --> CoreLib
     App["Cursus.App<br/>(Avalonia, RoyalTerminal)"] --> CoreLib
     App -. "PAS encore<br/>de référence" .- Persistence
     Sessions -. "aucune référence,<br/>dans aucun sens" .- Workflows
 
     style Workflows fill:#1f6f4a,color:#fff
+    style Projects fill:#1f6f4a,color:#fff
     style Persistence fill:#1f6f4a,color:#fff
     style Sessions fill:#5a4b8a,color:#fff
 ```
 
 Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
-- **Le noyau déterministe a zéro dépendance externe** — mais c'est une propriété de `Workflows/`, **pas du projet `Cursus.Core`**, qui référence `CommunityToolkit.Mvvm` pour `Sessions/` (voir plus bas). `System.Text.Json` et `System.Diagnostics.Process` sont dans le framework. C'est un argument explicite du choix JSON (§7.4), et la raison pour laquelle SQLite vit dans un projet séparé (§7.11).
+- **Le noyau déterministe a zéro dépendance externe** — mais c'est une propriété de `Workflows/` et `Projects/`, **pas du projet `Cursus.Core`**, qui référence `CommunityToolkit.Mvvm` pour `Sessions/` (voir plus bas). `System.Text.Json` et `System.Diagnostics.Process` sont dans le framework. C'est un argument explicite du choix JSON (§7.4), et la raison pour laquelle SQLite vit dans un projet séparé (§7.11).
 - **`Cursus.Persistence` épingle `SQLitePCLRaw.bundle_e_sqlite3` en 2.1.12**, au-dessus de la 2.1.11 que tire `Microsoft.Data.Sqlite` 10.0.10 : c'est le **binaire natif** de cette 2.1.11 qui porte une faille de sévérité haute (NU1903). La raison et la condition de sortie sont dans le `.csproj`. C'est le standard « 0 warning » qui l'a fait apparaître.
 - `CommunityToolkit.Mvvm` est référencé par `Cursus.Core` mais **utilisé uniquement par `SessionWorkspace`**, jamais par `Workflows/`.
 - Le provider VT natif est `RoyalApps.RoyalTerminal.GhosttySharp.Native.OSX` : **`Cursus.App` ne tourne aujourd'hui que sur macOS**. `Cursus.Core` et les tests sont portables POSIX (macOS/Linux) ; le cross-platform revendiqué comme différenciateur est une **cible, pas un acquis** — il exigera un `INativeVtProcessorProvider` par OS.
@@ -70,7 +76,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 116 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 141 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -79,7 +85,7 @@ Prérequis : SDK .NET 10, macOS pour l'app. Le SDK est **épinglé** par `global
 
 ### 1.4 Hygiène de dépôt
 
-Branche `main`, seule branche, 23 commits (HEAD = `2b08819`). **Aucun remote configuré** : dépôt strictement local, sans sauvegarde hors machine — c'est le risque le plus concret du dépôt aujourd'hui.
+Branche `main`, seule branche, 28 commits (HEAD = `88ecfc4`). **Aucun remote configuré** : dépôt strictement local, sans sauvegarde hors machine — c'est le risque le plus concret du dépôt aujourd'hui.
 
 **`README.md` a été refait** (jalon 0) : réduit à ce qu'il est seul à devoir dire — prérequis, commandes de développement, commande d'installation, et les deux pièges de l'application installée (signature ad-hoc, `PATH` tronqué). Il renvoie ici pour tout le reste, plutôt que de dupliquer un état qui se périmerait.
 
@@ -155,7 +161,7 @@ Le noyau déterministe fournit le mécanisme de boucle gardée ; l'agent fournir
 
 ## 4. Le noyau déterministe
 
-Namespace unique `Cursus.Core.Workflows`. Le code est court et commenté : cette section donne la carte, l'artefact utilisateur, et ce qui n'est **pas** déductible d'une lecture.
+Namespace `Cursus.Core.Workflows` pour tout le noyau, plus `Cursus.Core.Projects` pour ce qui l'ancre sur un disque (§4.11). Le code est court et commenté : cette section donne la carte, l'artefact utilisateur, et ce qui n'est **pas** déductible d'une lecture.
 
 ### 4.1 Carte des fichiers
 
@@ -184,7 +190,7 @@ Deux subtilités que les signatures ne disent pas :
 
 ### 4.2 Le format de fichier, par l'exemple
 
-C'est aujourd'hui l'interface utilisateur du noyau. Aucun exemple n'est commité dans le dépôt (§9) ; en voici un complet :
+C'est aujourd'hui l'interface utilisateur du noyau. Deux exemples réels sont commités sous `.cursus/workflows/` (§4.11) ; en voici un plus complet, qui exerce des formes qu'ils n'utilisent pas :
 
 ```json
 {
@@ -227,13 +233,15 @@ C'est aujourd'hui l'interface utilisateur du noyau. Aucun exemple n'est commité
 }
 ```
 
-Et les trois lignes qui le chargent et l'exécutent — information qui, aujourd'hui, n'existe que dans `WorkflowExecutionTests` :
+Et les lignes qui le chargent et l'exécutent — information qui n'existe que dans les tests d'assemblage (`WorkflowExecutionTests` pour la variante « document en mémoire », `ProjectRunTests` pour la variante « fichier dans un projet », plus proche de l'usage réel) :
 
 ```csharp
 var load = WorkflowSerializer.Read(json);          // rend une définition, ou des raisons
-var run  = await new WorkflowEngine(new ProcessRunner())
+var run  = await new WorkflowEngine(new ProcessRunner(), journal)   // le journal est obligatoire (§4.10)
     .ExecuteAsync(load.Definition!, new RunContext("/chemin/absolu/du/workspace"));
 ```
+
+Depuis un projet, les deux premières lignes deviennent `new WorkflowCatalog(project).Load("mon-workflow")` et `project.CreateRunContext()` (§4.11).
 
 Règles du format, non devinables :
 
@@ -365,13 +373,15 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 |---|---|
 | `Workflows/ProcessRunnerTests.cs` (13) | Drainage concurrent des tubes sous forte charge, verbatim des argv (espaces et guillemets), héritage de l'env hôte sous surcharge, `LaunchFailed`+127 sans exception, kill sur timeout, annulation, durée mesurée. Adossés aux **binaires POSIX du système** (macOS/Linux) — non portables Windows, assumé. |
 | `Workflows/WorkflowEngineTests.cs` (18) | La traversée sur `StubProcessRunner` : le stub **enregistre les `ScriptSpec` reçues** (donc assert de la composition du `WorkingDirectory`), **répète le dernier résultat** une fois la liste épuisée (« le runner réussit toujours »), et `CancelAfterRun` simule une annulation **pendant** le run. Boucle convergente, boucle bornée à `[1,2,3]`, `TimedOut` routé par `OnFailure`, `LaunchFailed` terminal. |
-| `Workflows/WorkflowExecutionTests.cs` (2) | Assemblage **sans aucun double**, sur `/bin/sh` : un graphe déclaré en C#, puis **le seul test couvrant la chaîne complète JSON → `Read` → `ExecuteAsync`**, artefacts réellement écrits sur disque aux bons endroits. |
+| `Workflows/WorkflowExecutionTests.cs` (2) | Assemblage **sans aucun double**, sur `/bin/sh` : un graphe déclaré en C#, puis la chaîne JSON → `Read` → `ExecuteAsync` **depuis un document en mémoire**, artefacts réellement écrits sur disque aux bons endroits. La variante partant d'un **fichier** est dans `ProjectRunTests`. |
 | `Workflows/WorkflowSerializerTests.cs` (14) | L'aller-retour caractère pour caractère (`Read`→`Write`) et l'idempotence (`Write`→`Read`→`Write`), le document servant de référentiel de comparaison ; les formes de malformation ; « absence de timeout ≠ zéro ». |
 | `Workflows/RunContextTests.cs` (10) | Les **justifications absentes du code** du refus d'une racine relative ou inexistante. |
 | `Workflows/WorkflowValidatorTests.cs` (11) | La motivation de chaque règle et l'**ordre exact** d'un rapport multi-issues. |
 | `SessionWorkspaceTests` · `ShellResolverTests` · `TerminalSessionTests` (13) | La politique de sélection après fermeture (`min(index, count-1)`, sinon `null`), la numérotation « Session N », la cascade `$SHELL` → `/bin/zsh` → `/bin/bash` avec prédicat d'existence injecté. |
 | `Workflows/WorkflowJournalTests.cs` (15) · `Workflows/InMemoryRunJournalTests.cs` (6) | Ce que le moteur émet et dans quel ordre · l'enveloppe posée par le journal. |
-| `Cursus.Persistence.Tests/` (14) | Le magasin d'artefacts, le journal SQLite, et l'assemblage — tous les tests de durabilité **referment puis rouvrent** le journal avant de relire. |
+| `Cursus.Persistence.Tests/` (15) | Le magasin d'artefacts, le journal SQLite, et les deux assemblages — tous les tests de durabilité **referment puis rouvrent** le journal avant de relire. `ProjectRunTests` est le seul où **aucun emplacement n'est composé par le test** : ils viennent tous du `Project`. |
+| `Projects/ProjectStoreTests.cs` (14) · `Projects/WorkflowCatalogTests.cs` (8) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, et qu'un document cassé ne cache pas les autres. |
+| `Projects/CursusProjectTests.cs` (2) | Que **ce dépôt** s'ouvre comme projet Cursus et que ses workflows commités valident. Le seul test qui lise le dépôt lui-même — garde-fou contre des exemples qui pourrissent. |
 
 ### 4.10 Le journal — CONSTRUIT (jalon 4)
 
@@ -414,6 +424,39 @@ Ce que la lecture du code ne donne pas d'emblée :
 > 3. **`state` à `NULL` = run non clos**, ce qui confond « en cours » et « tué par un crash machine ». La reprise après incident est hors v0 (§9.3).
 
 **Aucun versionnement de schéma** : les tables se créent en `CREATE TABLE IF NOT EXISTS` et rien ne gère une évolution destructrice. Dette assumée, à traiter à la première migration réelle.
+
+### 4.11 Le projet et le catalogue — CONSTRUIT (jalon 5)
+
+`Cursus.Core.Projects` ancre le noyau sur un disque. Jusqu'ici aucun workflow n'était lu depuis un fichier : le sérialiseur travaillait sur des `string`, et le seul document JSON du dépôt était une chaîne littérale dans un test.
+
+```
+<racine>/.cursus/project.json          -- versionné : id, name
+<racine>/.cursus/workflows/*.json      -- versionné : les définitions
+<racine>/.cursus/.gitignore            -- versionné : exclut les deux lignes suivantes
+<racine>/.cursus/cursus.db             -- observation, hors git
+<racine>/.cursus/runs/<runId>/         -- observation, hors git
+```
+
+| Type | Rôle |
+|---|---|
+| `Project` | L'identité (`Id`, `Name`) et **où sont les choses**, ce qu'il sait seul : `Root`, `CursusDirectory`, `ProjectFilePath`, `WorkflowsDirectory`, `DatabasePath`, `ArtifactsRoot`, plus `CreateRunContext()` |
+| `ProjectStore` | `Create` · `Open` · `Discover`. Le seul type du noyau qui écrive la disposition |
+| `WorkflowCatalog` | `List()` rend des `WorkflowEntry(Id, Path)` · `Load(id)` rend un `LoadResult`. Apporte le disque et l'identité, délègue la traduction au sérialiseur |
+
+Ce que la lecture du code ne donne pas d'emblée :
+
+- **La racine du workspace n'est écrite nulle part** : c'est le dossier qui contient le `.cursus/`. `project.json` étant versionné, un chemin absolu y serait faux chez tout collègue (voir la rectification du §7.10).
+- **L'identifiant d'un workflow est son nom de fichier**, sans extension. Un champ `id` dans le document a été écarté : deux sources de vérité qui divergeraient au premier renommage. Corollaire assumé — renommer le fichier change l'identité.
+- **Un document de workflow invalide rapporte ; tout le reste lève.** Le contraste porte la décision : `ValidationReport` existe pour qu'un éditeur affiche tout d'un coup, or un projet qu'on n'ouvre pas n'a aucun écran à alimenter. Donc `LoadResult` pour un graphe cassé — mais des exceptions pour l'**absence** et le conflit : `ProjectNotFoundException`, `InvalidProjectException`, l'`InvalidOperationException` d'un `Create` sur un dossier qui porte déjà un projet, et le `FileNotFoundException` du framework pour un identifiant de workflow qu'aucun fichier ne porte (l'invariant violé y est celui du système de fichiers, pas celui du catalogue). Seule l'identité est exigée d'un `project.json` : le nom n'est qu'un libellé.
+- **`List()` n'ouvre aucun fichier** et trie par identifiant. Un document cassé se découvre au `Load` — sinon un seul fichier fautif rendrait le projet entier inutilisable. L'ordre du système de fichiers n'étant garanti nulle part, le tri est explicite.
+- **`Discover` remonte l'arborescence** jusqu'au premier **`.cursus/project.json`** — et non jusqu'au premier dossier `.cursus/` : un dossier sans fichier de projet est traversé sans arrêt. Reste distinct d'`Open`, qui exige la racine exacte.
+- **`Project` expose des chemins, il ne construit ni journal ni magasin** : `Cursus.Core` ignore `Cursus.Persistence` (§7.11). C'est l'appelant qui assemble `new SqliteRunJournal(project.DatabasePath, new RunArtifactStore(project.ArtifactsRoot))` — ce que fait `ProjectRunTests`, et ce que fera le jalon 6.
+
+**Le dépôt est son propre cobaye.** `.cursus/workflows/` porte les deux moitiés du standard de qualité de `CLAUDE.md` : `build` est une étape unique (`dotnet build -warnaserror`), `verifier` en enchaîne deux — compiler, puis `dotnet test` — reliées par une arête `success`. Ils lancent `/bin/sh -c "dotnet …"` et non `dotnet` : `ProcessRunner` ne lance aucun shell de login et `fileName` doit être un chemin exécutable, or celui de ce poste vient d'asdf. ⚠️ Cela **ne referme pas** le trou §9.2-15 — sous le `PATH` tronqué d'une app installée, ces mêmes workflows échoueraient en `LaunchFailed`.
+
+`CursusProjectTests` garde ces exemples valides : sans lui, un durcissement du validateur les casserait en silence, et le premier écran du jalon 6 ouvrirait sur un projet mort.
+
+**Ce qui n'est pas construit** : le registre machine et le trousseau (§7.10.1) — aucun consommateur avant le tracker ; le provider de tracker et les prédicats de disponibilité (§7.10.6) ; aucun versionnement du schéma de `project.json`, même dette qu'au journal.
 
 ---
 
@@ -566,15 +609,17 @@ Rien de ce qui suit n'existe en code. Le raisonnement complet, les preuves exter
 
 **Couches du modèle cible** (`modele-metier.md` §1) : A (définition) et B (exécution) existent partiellement dans `Workflows/` ; **C (état & journal) est ouverte depuis le jalon 4** (§4.10) — un run survit au process et se relit. Ce qui manque encore à C : la reprise après incident, la purge, et tout ce qui touche au monde agent (transcripts, scrollback).
 
-### 7.10 Le projet, le tableau de tâches et les trois niveaux de stockage — TRANCHÉ, NON CONSTRUIT
+### 7.10 Le projet, le tableau de tâches et les trois niveaux de stockage — PARTIELLEMENT CONSTRUIT
 
-Conception issue de la conversation préparatoire au jalon 4. **Aucune ligne n'existe** ; seul le crochet du §7.10.5 entre dans ce jalon. Consigné ici parce que ces arbitrages contraignent le journal qu'on est sur le point d'écrire.
+Conception issue de la conversation préparatoire au jalon 4. Le **niveau projet** existe depuis le jalon 5 (§4.11) — dans sa forme minimale : identité, définitions, emplacements. Le reste (registre machine, trousseau, tracker) reste **TRANCHÉ, NON CONSTRUIT**.
+
+⚠️ **Une rectification, tranchée au jalon 5** : le tableau ci-dessous listait « racine du workspace » parmi le contenu de `project.json`. Elle n'y est pas et n'y sera pas — ce fichier est versionné, un chemin absolu y serait faux chez tout collègue. La racine est **déduite** : c'est le dossier qui contient le `.cursus/`, ce qui rejoint la formule « l'identité d'un projet est l'emplacement de son `.cursus/` » deux paragraphes plus bas.
 
 #### 7.10.1 Trois niveaux de stockage, distingués par ce qui les rend inaptes aux autres
 
 | Niveau | Où | Quoi | Pourquoi pas ailleurs |
 |---|---|---|---|
-| **Projet** | `.cursus/project.json` + `.cursus/workflows/*.json`, **versionnés** | racine du workspace, provider de tracker, board/équipe, prédicats de disponibilité, les définitions | c'est l'intention d'une équipe : elle doit se partager et se relire dans une PR |
+| **Projet** | `.cursus/project.json` + `.cursus/workflows/*.json`, **versionnés** | *construit* : identité du projet (`id`, `name`) et les définitions · *prévu* : provider de tracker, board/équipe, prédicats de disponibilité | c'est l'intention d'une équipe : elle doit se partager et se relire dans une PR |
 | **Machine** | `~/Library/Application Support/Cursus/registry.json` | la liste des projets importés | dépend de cet ordinateur ; n'a aucun sens pour un collègue |
 | **Trousseau** | Keychain macOS, libsecret ailleurs | les tokens Linear/Jira | un secret ne s'écrit pas sur disque en clair, même hors dépôt |
 
@@ -681,7 +726,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **116 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **141 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 
@@ -698,13 +743,14 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 | **Jalon 3 — déclaration hors du C#** | `RunContext`, `WorkflowValidator` + `ValidationReport`, `WorkflowSerializer` + DTO JSON. Un workflow **peut désormais se décrire en JSON**, lu depuis une chaîne. |
 | **Jalon 0 — packaging** | Bundle `.app` macOS installable, et les quatre mesures d'environnement qu'il a permises (§6.6). |
 | **Jalon 4 — journal & persistance** | `WorkflowEvent` + `IRunJournal` dans le noyau, `Cursus.Persistence` (SQLite + artefacts disque), `IClock`, `RunTrigger`, `RunId`. **Un run survit au process et se relit.** |
+| **Jalon 5 — le projet minimal** | `Cursus.Core.Projects` : la disposition `.cursus/`, `ProjectStore`, `WorkflowCatalog`, et le `.cursus/` de ce dépôt. **Un workflow se lit enfin depuis le disque.** |
 
-⚠️ **Aucun workflow n'est encore lu depuis le disque** : `WorkflowSerializer` travaille sur des `string`, et aucun `File.ReadAllText` de workflow n'existe dans `src/` (le jalon 4 lit bien des fichiers, mais ce sont des artefacts et une base, jamais une définition) ; il n'y a ni CLI ni UI de chargement, et le seul document JSON du dépôt est une chaîne littérale dans `WorkflowExecutionTests`. C'est la couture restante du jalon 3.
+⚠️ **Toujours aucun humain dans la boucle** : le catalogue existe, mais rien ne l'appelle en dehors des tests. Ni CLI (écartée, §9.4) ni UI ne permet encore de choisir un workflow et de le lancer — c'est l'objet du jalon 6.
 
 ### 9.2 Les trous, en un endroit unique
 
 1. **Les deux moitiés du dépôt ne sont pas reliées** (§2) : aucun adaptateur entre `StartPty` et `IProcessRunner`, aucune UI de workflow, `SessionKind.Agent` mort. La couture elle-même est une question ouverte (§2.2).
-2. **Aucun point d'entrée qui lise un fichier** ; **aucun exemple de workflow commité** (`examples/`) ; **aucun schéma JSON publié** pour outiller un éditeur.
+2. ~~**Aucun point d'entrée qui lise un fichier**~~, ~~**aucun exemple commité**~~ — **refermés au jalon 5** (§4.11). Reste ouvert : **aucun schéma JSON publié** pour outiller un éditeur, et aucun consommateur du catalogue hors des tests.
 3. ~~**Aucune persistance**~~ — **refermé au jalon 4** (§4.10). Restent ouverts : pas de `StepRunId` ni de `contentHash`, **aucun versionnement de schéma**, aucune purge, et un `state` à `NULL` qui confond « en cours » et « tué par un crash ».
 4. **Aucune sortie incrémentale pendant un run** : le journal n'émet qu'aux **frontières d'étape** (§4.10), et `ReadToEndAsync` ne rend la sortie qu'à la mort du process (§4.4). Voir une étape avancer *pendant* qu'elle tourne reste hors d'atteinte — c'est le coût caché du jalon 6.
 5. **Aucun passage de données entre étapes** (§4.8, invariant 9) : la seule mémoire partagée est le disque.
@@ -759,14 +805,14 @@ Le plan d'origine en cinq jalons ne tient plus : les décisions du §7.10 ajoute
 |---|---|---|
 | ~~**0**~~ | ~~**Packaging `.app` macOS**~~ — **FAIT**, résultats au §6.6 | rien de fonctionnel — il a validé l'**environnement d'exécution réel**, et confirmé le piège du `PATH` |
 | ~~**4**~~ | ~~**Journal & persistance**~~ — **FAIT**, détails au §4.10 et §7.11 | un run survit au process ; on peut relire ce qui s'est passé |
-| **5** | **Le projet, minimal** | `project.json` (id + racine) et des workflows lus **depuis le disque** |
+| ~~**5**~~ | ~~**Le projet, minimal**~~ — **FAIT**, détails au §4.11 | `project.json` et des workflows lus **depuis le disque** |
 | **6** | **La jonction UI** | un humain choisit un workflow, le lance, voit le run avancer |
 | **7** | **Tracker & `TaskStep`** | l'écran des actions disponibles ; un workflow tire et annote une carte |
 | **8+** | Éditeur de graphe · auto-déclenchement · `AgentStep` | |
 
 **Pourquoi le packaging passe en premier, alors qu'il n'apporte aucune fonction.** Quatre risques d'environnement sont déjà écrits dans ce document sans avoir jamais été observés : les binaires natifs de RoyalTerminal arrivent-ils dans le bundle (sinon retombée silencieuse sur le moteur managé et le bug DECCKM, §6.3) ; le `PATH` tronqué en GUI, ré-enrichi par le `-l` du terminal mais **pas** par `ProcessRunner` qui ne lance aucun shell de login ; `SSH_AUTH_SOCK` absent ; et le cwd hérité de `/Applications` — l'argument même qui a rendu `RunContext` obligatoire (§7.3). Les découvrir sur une app qui ne fait rien coûte moins cher que de les découvrir au jalon 6, mêlés à trois nouveautés. Ce chantier est **hors TDD** : aucune logique métier, donc script et vérification manuelle.
 
-**Le jalon 5 est nouveau et rembourse la dette du §9.1** (personne ne lit un fichier depuis le disque). Il fusionne cette couture avec le projet minimal plutôt que d'en faire un patch isolé : sinon on écrit un « ouvrir un fichier » qu'il faudrait refaire en « ouvrir un projet ». Le registre machine et le trousseau (§7.10.1) **n'y entrent pas** — ils n'ont aucun consommateur avant le tracker.
+**Le jalon 5 remboursait la dette du §9.2, point 2** (personne ne lisait un fichier depuis le disque). Fusionner cette couture avec le projet minimal plutôt qu'en faire un patch isolé s'est vérifié à l'usage : le `Project` est devenu le point de rendez-vous du workspace, du catalogue et des emplacements de journal, là où un « ouvrir un fichier » aurait été à refaire. Le registre machine et le trousseau (§7.10.1) en ont bien été tenus à l'écart, faute de consommateur avant le tracker.
 
 **Deux coûts cachés du jalon 6.** Le runner ne sait pas streamer (`ReadToEndAsync` ne rend la sortie qu'à la mort du process, §4.4) : voir un run avancer exige un second contrat ou une évolution de l'existant, et c'est là que se repose la couture PTY du §2.2. Et le **layout de graphe** est un algorithme, pas un contrôle Avalonia : recommandation retenue, une **liste chronologique de `StepRun`** au jalon 6 — 80 % de la valeur pour 10 % du coût, directement construite sur le journal — le graphe devenant un jalon à lui seul, partagé avec l'éditeur dont il est le vrai coût.
 
