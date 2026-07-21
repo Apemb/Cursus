@@ -4,6 +4,7 @@
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
+> - `docs/design/presentation.md` — le *comment* de la jonction UI : composition, observation d'un run, pièges Avalonia (§7.12 en détient la décision) ;
 > - `docs/design/modele-metier.md` — le modèle cible orienté agents (couches, entités, machines à états) ;
 > - `docs/research/agentic-workflows-landscape.md` — les preuves externes (comparatifs, sandboxing, PTY) ;
 > - `docs/reference/royalterminal-0.4.0.md` — l'API RoyalTerminal sondée, faute de documentation éditeur ;
@@ -496,7 +497,7 @@ Question ouverte immédiate : un `AgentStep` rend-il un `ScriptResult` (donc rou
 | `ShellEnvironment` | Adaptateur **en bordure** : lit `$SHELL`, délègue la politique à `ShellResolver` avec `File.Exists`, et rend le home comme répertoire par défaut. |
 | `ShellResolver` | **Politique pure et testable** : le prédicat d'existence est **injecté** (`Func<string,bool>`). |
 
-Frontière assumée : `SessionWorkspace` n'a pas de dépendance UI *framework*, mais hérite d'`ObservableObject` et expose une `ObservableCollection` — c'est un modèle taillé pour le binding MVVM. `ShellEnvironment` touche l'OS ; il est isolé exprès de `ShellResolver` pour que la politique reste testable.
+Frontière assumée : `SessionWorkspace` n'a pas de dépendance UI *framework*, mais hérite d'`ObservableObject` et expose une `ObservableCollection` — c'est un modèle taillé pour le binding MVVM. ⚠️ **Cette frontière est désormais gelée plutôt que reproduite** (§7.12) : elle reste en l'état parce que la forme des sessions n'est pas connue, mais l'invariant posé pour tout ce qui est neuf est inverse — le noyau publie de l'immuable, la transformation en état observable n'a lieu que dans `Cursus.App`. Symptôme de la pente : `TerminalSession.Title` est mutable **sans** notification alors que le XAML le binde ; renommer une session ne rafraîchirait pas la liste. `ShellEnvironment` touche l'OS ; il est isolé exprès de `ShellResolver` pour que la politique reste testable.
 
 ### 6.2 `src/Cursus.App/` — l'app Avalonia
 
@@ -708,6 +709,51 @@ Retenu : **`Cursus.Persistence`**, qui référence le noyau et implémente ses c
 
 **Coût assumé** : deux projets de plus (bibliothèque + tests), et une native `e_sqlite3` que le bundle macOS devra embarquer le jour où `Cursus.App` référencera la persistance — même piège que `libghostty-vt` (§6.3, §6.6). Le contrôle correspondant dans `build/package-macos.sh` est **volontairement absent** tant que cette référence n'existe pas : il échouerait sur un faux positif.
 
+### 7.12 Présentation et composition : `ProjectHost` — TRANCHÉ, NON CONSTRUIT
+
+Décidé en conception le 2026-07-21, avant le jalon 6, après une passe de recherche à trois lentilles
+(le patron hors iOS, la testabilité réelle en Avalonia, la confrontation au code de ce dépôt). **Le
+*comment* est dans `docs/design/presentation.md`** ; ne sont consignés ici que la décision, ses écarts,
+et ce qu'ils engagent.
+
+**Le critère retenu, à la place d'un nom de patron** — parce qu'un patron ne peut pas échouer, alors
+qu'un critère si :
+
+> L'UI n'est qu'une façon d'instancier la logique et d'afficher des données. Un mode headless ou une CLI
+> doit être réalisable **sans réécrire une ligne de logique métier**.
+
+| Décision | En une ligne |
+|---|---|
+| **VIPER — écarté** | Deux de ses cinq composants n'ont pas d'objet ici : le *Presenter* existe parce qu'UIKit n'a pas de binding (XAML le fait), le *Router* parce qu'UIKit pilote une pile de contrôleurs (une seule `Window`, une seule surface, aucune modale). L'*Entity* est déjà le noyau. Ce qui en est **retenu** : la vue ne fait que binder, et ne pas la tester est assumé |
+| **Hexagonal partiel, asymétrie délibérée** | Les **ports de sortie** existent déjà (`IProcessRunner`, `IRunJournal`, `IRunJournalReader`, `IClock` — les 4 seules interfaces publiques du dépôt). Le **port d'entrée** manquait. Pas d'`IFileSystem` : *on inverse ce qu'on a besoin de doubler*, et le dépôt teste l'I/O contre les binaires POSIX réels par choix (`CLAUDE.md`) |
+| **`ProjectHost`, composition root réifié** | Une racine par projet ouvert, qui **construit les modules et leur passe leurs dépendances par constructeur**. Vit dans `Cursus.Core` et reçoit des fabriques, donc n'apprend rien de SQLite ; **`Cursus.Persistence` fournit le préréglage**, pour que le câblage concret n'existe qu'en un exemplaire |
+| **Règle de sens unique — l'invariant** | **Aucun module ne connaît `ProjectHost`.** Le lui passer en ferait un *Service Locator* : un module qui en dépend ne se teste plus qu'en construisant la racine entière |
+| **`IDisposable`, un projet = un host** | Imposé par le code, pas par le style : `SqliteRunJournal` détient une `SqliteConnection` unique non synchronisée. Ouvrir un autre projet = disposer et reconstruire, jamais muter |
+| **Un module par capacité** | La façade n'accueille que ce qui demande une **composition** : lancer/observer/annuler un run. Lister et charger restent `WorkflowCatalog`, déjà testés |
+| **Le flux d'événements fait foi** | Pendant un run, le `WorkflowRun` rendu par `ExecuteAsync` ne sert qu'à savoir que la tâche est finie. Sinon deux écrivains sur le même état |
+| **Un run à la fois** | Non par confort : c'est la seule configuration que le code supporte sans synchronisation (§9.2-14) |
+| **Deux tests rendent le critère exécutable** | (a) `Cursus.Core` ne référence aucun assembly `Avalonia.*` ; (b) un end-to-end **headless** qui ouvre, charge, lance et observe un run sans instancier Avalonia. Le second *force* `ProjectHost` à être suffisant |
+
+**Écarts à retenir, parce qu'ils se rediscuteraient sinon :**
+
+- **« Une porte d'entrée unique »** était la formulation de départ. Écarté : une façade absorbant tout
+  grandirait par construction (tracker au jalon 7, éditeur au jalon 8) et serait aux trois cinquièmes
+  faite de délégations d'une ligne vers du noyau déjà testé. Retenu : **une racine unique, plusieurs
+  modules**.
+- **Un quatrième projet de composition** — écarté : `Cursus.Persistence` est déjà le seul endroit qui
+  connaît les deux mondes.
+- **Retirer `CommunityToolkit.Mvvm` de `Cursus.Core`** en réimplémentant `INotifyPropertyChanged` à la
+  main (il est dans la BCL) — écarté : n'achète **rien** de fonctionnel, le noyau resterait tout aussi
+  orienté affichage avec plus de code écrit à la main. C'est de la pureté de graphe de dépendances, pas
+  de la testabilité — le travers même qui a fait écarter VIPER.
+- **`INotifyPropertyChanged` dans le noyau** — **gelé, non écarté** : `SessionWorkspace` reste tel quel,
+  la forme des sessions n'étant pas connue (`SessionKind.Agent` est mort, §2). L'invariant ne vaut que
+  pour le neuf (§6.1).
+
+**Ce que la décision engage, et qui n'existe pas encore** : `Cursus.App` devra référencer
+`Cursus.Persistence` — donc le contrôle de la native `e_sqlite3` dans le bundle devient dû (§7.11,
+§9.2-19), et la stratégie `PATH` (§9.2-15) cesse d'être théorique.
+
 ---
 
 ## 8. Règles de contribution
@@ -759,7 +805,7 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 8. **Le validateur ne contrôle ni la présence ni l'absoluité de `fileName`** : une étape sans script ne se voit qu'à l'exécution, en `LaunchFailed`.
 9. **`RunState` ne reflète que la dernière étape** ; pas de nœud terminal typé, terminaison implicite indiscernable d'un oubli d'arête (§4.3).
 10. **L'agrégation des issues est court-circuitée** sur les gardes inconnues et le JSON malformé ; le message de `MalformedDocument` est en anglais (§4.6).
-11. **Aucun test sur `Cursus.App`** — le point de contact le moins abstrait du dépôt est le moins couvert.
+11. **Aucun test sur `Cursus.App`** — le point de contact le moins abstrait du dépôt est le moins couvert. Le jalon 6 y répond **par le découpage** (§7.12) et non par des tests de contrôles : la logique sort vers des classes POCO testées en xUnit nu. ⚠️ Le harnais `Avalonia.Headless` dépendrait de **xUnit v3** alors que les deux projets de tests sont en **2.9.3** — à confirmer, et sans urgence, ce harnais étant de toute façon inadapté au cycle TDD (`presentation.md` §8).
 12. **Aucune interface d'abstraction du terminal** alors que le principe d'architecture la prévoyait ; couplage direct au type concret de RoyalTerminal.
 13. **L'app est de fait macOS-only** (provider VT natif OSX) alors que le cross-platform est revendiqué comme différenciateur (§1.2).
 14. **Pas de politique de concurrence** documentée ni testée pour `WorkflowEngine`.
@@ -784,6 +830,8 @@ Le détail et les alternatives vivent dans les documents de conception ; ceci es
 | Câblage de données entre étapes (`${step.output}`, variables de run) | **Reporté, non écarté** (§4.8) — se rouvrira avec l'`AgentStep` |
 
 **Projet, tracker et déclenchement** — trois questions ouvertes, argumentées au **§7.10.6** : l'auto-déclenchement par cron (cible acceptée, reportée, et ce qui devra le rendre sûr), la forme des prédicats de disponibilité, et l'unification ou non du journal des runs avec un futur historique de board.
+
+**Présentation et composition** (`presentation.md` §8) — quatre questions laissées ouvertes par la conception du 2026-07-21, dont deux devront être tranchées *pendant* le jalon 6 : la **stratégie `PATH`** (trou 15, sans quoi les workflows commités échoueront depuis l'app installée) et **la surface du run** — la liste chronologique partage-t-elle le panneau des terminaux, dont il n'existe qu'un ? Cette dernière est du produit, pas de l'architecture : elle sera tranchée par le parcours utilisateur et les maquettes, et c'est elle qui déciderait de rouvrir ou non la question d'un routeur. Les deux autres — le gel d'`INotifyPropertyChanged` dans le noyau, et le moment d'adopter un harnais headless — sont **reportées sans coût**.
 
 **Modèle métier étendu** (`modele-metier.md` §8) — 15 questions, dont trois structurantes pour la suite :
 
@@ -813,6 +861,8 @@ Le plan d'origine en cinq jalons ne tient plus : les décisions du §7.10 ajoute
 **Pourquoi le packaging passe en premier, alors qu'il n'apporte aucune fonction.** Quatre risques d'environnement sont déjà écrits dans ce document sans avoir jamais été observés : les binaires natifs de RoyalTerminal arrivent-ils dans le bundle (sinon retombée silencieuse sur le moteur managé et le bug DECCKM, §6.3) ; le `PATH` tronqué en GUI, ré-enrichi par le `-l` du terminal mais **pas** par `ProcessRunner` qui ne lance aucun shell de login ; `SSH_AUTH_SOCK` absent ; et le cwd hérité de `/Applications` — l'argument même qui a rendu `RunContext` obligatoire (§7.3). Les découvrir sur une app qui ne fait rien coûte moins cher que de les découvrir au jalon 6, mêlés à trois nouveautés. Ce chantier est **hors TDD** : aucune logique métier, donc script et vérification manuelle.
 
 **Le jalon 5 remboursait la dette du §9.2, point 2** (personne ne lisait un fichier depuis le disque). Fusionner cette couture avec le projet minimal plutôt qu'en faire un patch isolé s'est vérifié à l'usage : le `Project` est devenu le point de rendez-vous du workspace, du catalogue et des emplacements de journal, là où un « ouvrir un fichier » aurait été à refaire. Le registre machine et le trousseau (§7.10.1) en ont bien été tenus à l'écart, faute de consommateur avant le tracker.
+
+**La forme de ce jalon est déjà tranchée** (§7.12 et `presentation.md`, conception du 2026-07-21) : `ProjectHost` comme racine de composition, un module de run, observation par décorateur d'`IRunJournal` vers un `Channel`, et deux tests — architecture et end-to-end headless — qui rendent exécutable le critère « l'UI n'est qu'une façon d'instancier et d'afficher ». Restent à produire avant le plan gaté : le **parcours utilisateur**, puis une passe de **maquettes** sur les trois seuls points que le raisonnement ne tranche pas (la coquille, la vue d'un run en cours, l'entrée dans l'app).
 
 **Deux coûts cachés du jalon 6.** Le runner ne sait pas streamer (`ReadToEndAsync` ne rend la sortie qu'à la mort du process, §4.4) : voir un run avancer exige un second contrat ou une évolution de l'existant, et c'est là que se repose la couture PTY du §2.2. Et le **layout de graphe** est un algorithme, pas un contrôle Avalonia : recommandation retenue, une **liste chronologique de `StepRun`** au jalon 6 — 80 % de la valeur pour 10 % du coût, directement construite sur le journal — le graphe devenant un jalon à lui seul, partagé avec l'éditeur dont il est le vrai coût.
 
