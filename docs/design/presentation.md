@@ -217,6 +217,46 @@ double.
 aujourd'hui sans travail supplémentaire.** L'assumer explicitement, ou payer la synchronisation — mais
 ne pas le découvrir en production.
 
+Une précision utile pour 6b, apportée par la conception du 2026-07-21 : **la contention porte sur le
+journal, pas sur les sorties**. Celles-ci vont déjà en fichiers (`RunArtifactStore`, un par visite), donc
+N étapes concurrentes écrivent dans N fichiers distincts sans se gêner. Ce qui reste à synchroniser est le
+journal, qui ne reçoit que les **frontières d'étape** — des écritures rares. Le problème de 6b est donc
+plus petit qu'il n'y paraît, à condition de ne pas faire passer les sorties par la base.
+
+### 4.5 Ce que l'écran calcule, et que le noyau ne dit pas — TRANCHÉ, NON CONSTRUIT
+
+`RunState` est documenté « **état terminal** » : `Completed`, `Failed`, `Aborted`, plus un `AbortReason`.
+**Il n'existe aucun état « en cours » dans le noyau**, et rien du tout pour l'attente. Tout ce que l'écran
+affiche au-delà de ces trois valeurs est donc **calculé par la présentation** — ce qui n'est pas une
+dérive mais la démonstration que l'arbitrage lui appartient (`parcours.md` §4, point 4).
+
+| Affiché | Calculé à partir de | Existe ? |
+|---|---|---|
+| **En cours** | un `StepStarted` sans `StepFinished` correspondant | après 6a |
+| **En attente** | aucune étape vivante, et l'autorisation de démarrer refusée (§7.13.1 d'`architecture.md`) | non construit |
+| **Arrêt en cours** | intention d'arrêt posée localement **et** une étape encore vivante. **Jamais journalisé** : c'est un état de l'écran, pas du run | non construit |
+| **Arrêté** | `Aborted` + `Canceled` | ✅ noyau |
+| **Réussi** | `Completed` **et** dernière étape en code 0 | arbitrage d'écran |
+| **Échoué** | `Failed`, **ou** `Completed` avec une dernière étape en code non nul — le cas du dépôt | arbitrage d'écran |
+| **Boucle non convergente** | `Aborted` + `LoopNotConverging` | ✅ noyau |
+| **Planté** | `Aborted` + `Faulted`, et l'exception remonte intacte — une UI qui ne l'attrape pas plante avec (§3.5) | ✅ noyau |
+
+**Huit états d'écran pour trois états de noyau.** Le corollaire est la seule chose à retenir ici : *ce
+calcul est de la logique*, donc il se teste en `[Fact]` nu, et **il n'a rien à faire dans un code-behind**.
+
+Trois autres calculs relèvent exactement de la même règle, et forment ensemble le contenu testable de
+l'écran de run :
+
+- **Le regroupement par tours** — découper `History` en itérations pour la vue liste (« tour 1 / tour 2 /
+  sortie de boucle »). Une projection pure sur `StepRun.Iteration`, qui existe déjà.
+- **Le placement des nœuds** pour la vue graphe — un tri topologique par niveaux. ⚠️ Il **suppose un graphe
+  acyclique**, ce qu'un workflow avec boucle n'est pas : il faut détecter l'arête de retour et l'exclure
+  avant de répartir. Estimation : de l'ordre de 150 lignes de logique pure. C'est ce qui rend le graphe
+  bien moins cher qu'un éditeur, et testable sans UI.
+- **La sélection, partagée entre les deux vues.** Sélectionner une étape dans le graphe et basculer en
+  liste doit surligner la visite correspondante. **Une seule notion de sélection, deux rendus qui ne se
+  connaissent pas** — sinon on écrit deux fois la même logique de navigation et elles divergent.
+
 ---
 
 ## 5. Le terminal : là où « vue passive » se cogne au réel
