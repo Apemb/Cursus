@@ -1,10 +1,25 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Cursus.App.App"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             RequestedThemeVariant="Light">
+             <!-- Thème clair assumé (presentation.md §9.1) : palette macOS light mode.
+                  Le terminal fait exception et reste sombre (§9.5). -->
 
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>
+
+    <Application.Resources>
+        <!-- Palette macOS light mode, centralisée pour ne pas semer des hex en dur.
+             Les tons chrome (rail, barres) et le texte suivent les couleurs système
+             claires ; le fond terminal reste sombre, exprès. -->
+        <SolidColorBrush x:Key="ChromeRailBrush" Color="#E7E7EA" />
+        <SolidColorBrush x:Key="ChromeSidebarBrush" Color="#F1F1F3" />
+        <SolidColorBrush x:Key="SeparatorBrush" Color="#D6D6DA" />
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#1D1D1F" />
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#86868B" />
+        <SolidColorBrush x:Key="DangerBrush" Color="#C0392B" />
+        <SolidColorBrush x:Key="TerminalBackgroundBrush" Color="#1E1E1E" />
+        <SolidColorBrush x:Key="TerminalPlaceholderBrush" Color="#8A8A8E" />
+    </Application.Resources>
 </Application>

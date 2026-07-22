@@ -11,10 +11,12 @@
     <Grid ColumnDefinitions="260,4,*">
 
         <!-- Barre latérale : sessions -->
-        <DockPanel Grid.Column="0" Background="#1E1E24">
-            <Border DockPanel.Dock="Top" Padding="16,14" BorderBrush="#33FFFFFF" BorderThickness="0,0,0,1">
+        <DockPanel Grid.Column="0" Background="{DynamicResource ChromeSidebarBrush}">
+            <Border DockPanel.Dock="Top" Padding="16,14"
+                    BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,0,0,1">
                 <StackPanel Spacing="10">
-                    <TextBlock Text="Sessions" FontSize="16" FontWeight="Bold" Foreground="#F0F0F0" />
+                    <TextBlock Text="Sessions" FontSize="16" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
                     <Button Content="＋  Nouvelle session"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
@@ -32,8 +34,10 @@
                     <DataTemplate x:DataType="sessions:TerminalSession">
                         <Grid ColumnDefinitions="*,Auto" MinHeight="34">
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Title}" Foreground="#EDEDED" />
-                                <TextBlock Text="{Binding ShellPath}" FontSize="11" Opacity="0.5" Foreground="#EDEDED" />
+                                <TextBlock Text="{Binding Title}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                <TextBlock Text="{Binding ShellPath}" FontSize="11"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" />
                             </StackPanel>
                             <Button Grid.Column="1"
                                     Content="✕"
@@ -41,6 +45,7 @@
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Padding="8,2"
+                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                     Command="{Binding $parent[ListBox].((vm:MainViewModel)DataContext).CloseSessionCommand}"
                                     CommandParameter="{Binding}" />
                         </Grid>
@@ -49,13 +54,14 @@
             </ListBox>
         </DockPanel>
 
-        <GridSplitter Grid.Column="1" Background="#33FFFFFF" ResizeDirection="Columns" />
+        <GridSplitter Grid.Column="1" Background="{DynamicResource SeparatorBrush}" ResizeDirection="Columns" />
 
-        <!-- Panneau terminal : rempli par le code-behind -->
-        <Panel Grid.Column="2" Name="TerminalHost" Background="#111114">
+        <!-- Panneau terminal : rempli par le code-behind. Reste sombre : le terminal
+             est une exception assumée au thème clair (presentation.md §9.5). -->
+        <Panel Grid.Column="2" Name="TerminalHost" Background="{DynamicResource TerminalBackgroundBrush}">
             <TextBlock Name="EmptyPlaceholder"
                        Text="Aucune session — crée-en une pour ouvrir un terminal."
-                       Foreground="#777"
+                       Foreground="{DynamicResource TerminalPlaceholderBrush}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center" />
         </Panel>

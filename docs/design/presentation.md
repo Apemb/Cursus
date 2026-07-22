@@ -365,21 +365,23 @@ chose à comprendre pour entretenir cette section :
 Une section de langage visuel qui liste des codes hexadécimaux vieillit en trois semaines et personne ne
 la corrige. Une section qui dit *pourquoi cette couleur est prise* survit au premier changement de palette.
 
-### 9.1 L'existant, et sa contradiction — À RÉSOUDRE AU CÂBLAGE
+### 9.1 La contradiction, tranchée — THÈME CLAIR ASSUMÉ (jalon 6c·1)
 
-`App.axaml` déclare `RequestedThemeVariant="Default"`, qui **suit le thème système**. Mais
-`MainWindow.axaml` code des couleurs **en dur** : `#1E1E24` pour la colonne, `#111114` pour l'hôte de
-terminaux, `#33FFFFFF` pour les séparateurs. Les deux ne peuvent pas être vrais ensemble : en thème clair,
-la fenêtre est claire et la colonne reste sombre.
+La contradiction — `App.axaml` en `RequestedThemeVariant="Default"` (suit le système) pendant que les vues
+codaient des couleurs sombres en dur, d'où un mauvais contraste sous un système en clair — a été tranchée
+sur écran, au jalon 6c·1, en faveur du **thème clair unique** :
 
-Deux sorties, et il faut en choisir une plutôt que laisser le conflit :
+- `App.axaml` passe en `RequestedThemeVariant="Light"` (Fluent light pour les contrôles) ;
+- une **palette macOS light mode centralisée** en ressources d'application (`ChromeRail`, `ChromeSidebar`,
+  `Separator`, `TextPrimary`, `TextSecondary`, `Danger`) remplace les hex en dur des vues, qui les
+  référencent en `DynamicResource` — un seul endroit à toucher pour la faire évoluer ;
+- **le terminal reste sombre**, exception assumée (§9.5) : son fond et le placeholder ont leur propre paire
+  de tons, distincte du chrome clair.
 
-- **assumer un thème unique sombre** — défendable pour un outil qui vit à côté d'un terminal, et cohérent
-  avec ce que le code fait déjà. Alors `RequestedThemeVariant` doit dire `Dark`, pas `Default` ;
-- **passer par des ressources de thème** et laisser le système décider. Plus de travail, et c'est le seul
-  chemin si l'application doit un jour se montrer en plein jour à quelqu'un d'autre.
-
-Non tranché. À poser au moment du câblage, pas avant : c'est une décision qui se juge sur un écran.
+*Écarté :* le **thème unique sombre** (défendable pour un outil à côté d'un terminal, mais l'utilisateur
+juge le contraste mauvais sur son macOS clair) et le **suivi système clair/sombre** (le vrai chemin si
+l'app doit un jour se montrer en sombre à quelqu'un — reporté, non écarté : la palette étant déjà en
+ressources, y ajouter un jeu sombre commuté par `ThemeVariant` sera local, pas une réécriture).
 
 ### 9.2 La disposition — quatre zones, et ce qui ne doit jamais y bouger
 
@@ -428,8 +430,10 @@ Deux règles qui comptent autant que la liste :
 - **Jamais la couleur seule.** Chaque état porte aussi un libellé ou une forme. L'argument n'est pas
   seulement le daltonisme : une pastille verte sans mot ne dit pas si elle signifie « réussi » ou « prêt ».
 
-**Point de départ, explicitement révisable** : le ton sombre déjà posé par le dépôt (§9.1), neutre à biais
-froid. Il vient du monde du terminal, à côté duquel l'application vit.
+**Fond, tranché au 6c·1** : le chrome est en **thème clair** (palette macOS light mode, §9.1) ; le
+terminal, lui, reste sombre (§9.5). Les quatre valeurs sémantiques ci-dessus se choisiront donc sur un
+fond clair quand l'écran de run arrivera — un vert et un rouge lisibles sur clair, pas les tons pensés
+pour un fond sombre.
 
 ### 9.4 La typographie sépare ce que la machine dit de ce qu'un humain a écrit
 
