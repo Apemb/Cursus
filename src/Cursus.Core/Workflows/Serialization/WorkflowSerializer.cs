@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
+using Cursus.Core.Workflows.Validation;
 
 namespace Cursus.Core.Workflows.Serialization;
 

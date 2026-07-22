@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Validation;
 
 /// <summary>Nature d'un problème relevé dans un graphe.</summary>
 public enum ValidationIssueKind

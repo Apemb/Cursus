@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Validation;
 
 /// <summary>
 /// Répond à « ce graphe est-il exécutable ? » par la liste exhaustive de ce qui

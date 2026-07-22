@@ -1,4 +1,5 @@
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Validation;
 
 namespace Cursus.Core.Tests.Workflows;
 
