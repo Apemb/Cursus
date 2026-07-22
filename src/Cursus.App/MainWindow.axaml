@@ -3,39 +3,49 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:Cursus.App.ViewModels"
-        xmlns:sessions="using:Cursus.Core.Sessions"
+        xmlns:views="using:Cursus.App.Views"
+        xmlns:projects="using:Cursus.Core.Projects"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
         x:Class="Cursus.App.MainWindow"
-        x:DataType="vm:MainViewModel"
+        x:DataType="vm:ShellViewModel"
         Width="1000" Height="640"
         Title="Cursus">
 
-    <Grid ColumnDefinitions="260,4,*">
+    <Grid ColumnDefinitions="220,*">
 
-        <!-- Barre latérale : sessions -->
-        <DockPanel Grid.Column="0" Background="#1E1E24">
+        <!-- Rail des projets connus -->
+        <DockPanel Grid.Column="0" Background="#17171B">
             <Border DockPanel.Dock="Top" Padding="16,14" BorderBrush="#33FFFFFF" BorderThickness="0,0,0,1">
                 <StackPanel Spacing="10">
                     <TextBlock Text="Cursus" FontSize="20" FontWeight="Bold" Foreground="#F0F0F0" />
-                    <Button Content="＋  Nouvelle session"
+                    <Button Content="＋  Ajouter un projet"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
                             Padding="0,8"
-                            Command="{Binding AddSessionCommand}" />
+                            Click="OnAddProjectClick" />
+                    <!-- Vide tant que le dernier ajout a réussi ; sinon le refus lisible -->
+                    <TextBlock Text="{Binding AddError}"
+                               TextWrapping="Wrap"
+                               FontSize="11"
+                               Foreground="#E0866B" />
                 </StackPanel>
             </Border>
 
-            <ListBox ItemsSource="{Binding Workspace.Sessions}"
-                     SelectedItem="{Binding Workspace.SelectedSession, Mode=TwoWay}"
+            <ListBox ItemsSource="{Binding Projects}"
+                     SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
                      Background="Transparent"
                      BorderThickness="0"
                      Padding="6">
                 <ListBox.ItemTemplate>
-                    <DataTemplate x:DataType="sessions:TerminalSession">
+                    <DataTemplate x:DataType="projects:Project">
                         <Grid ColumnDefinitions="*,Auto" MinHeight="34">
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Title}" Foreground="#EDEDED" />
-                                <TextBlock Text="{Binding ShellPath}" FontSize="11" Opacity="0.5" Foreground="#EDEDED" />
+                                <TextBlock Text="{Binding Name}" Foreground="#EDEDED" />
+                                <TextBlock Text="{Binding Root}"
+                                           FontSize="11"
+                                           Opacity="0.5"
+                                           Foreground="#EDEDED"
+                                           TextTrimming="CharacterEllipsis" />
                             </StackPanel>
                             <Button Grid.Column="1"
                                     Content="✕"
@@ -43,7 +53,7 @@
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Padding="8,2"
-                                    Command="{Binding $parent[ListBox].((vm:MainViewModel)DataContext).CloseSessionCommand}"
+                                    Command="{Binding $parent[ListBox].((vm:ShellViewModel)DataContext).RemoveProjectCommand}"
                                     CommandParameter="{Binding}" />
                         </Grid>
                     </DataTemplate>
@@ -51,16 +61,8 @@
             </ListBox>
         </DockPanel>
 
-        <GridSplitter Grid.Column="1" Background="#33FFFFFF" ResizeDirection="Columns" />
-
-        <!-- Panneau terminal : rempli par le code-behind -->
-        <Panel Grid.Column="2" Name="TerminalHost" Background="#111114">
-            <TextBlock Name="EmptyPlaceholder"
-                       Text="Aucune session — crée-en une pour ouvrir un terminal."
-                       Foreground="#777"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center" />
-        </Panel>
+        <!-- Surface : les sessions (marche suivante : conditionnée au projet sélectionné) -->
+        <views:SessionsView Grid.Column="1" DataContext="{Binding Sessions}" />
 
     </Grid>
 </Window>

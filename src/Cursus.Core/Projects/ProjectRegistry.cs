@@ -33,6 +33,17 @@ public sealed class ProjectRegistry
         Load();
     }
 
+    /// <summary>
+    /// Le registre de la machine, à son emplacement par défaut :
+    /// <c>~/.config/cursus/</c> (résolu comme <see cref="Environment.SpecialFolder.ApplicationData"/>,
+    /// soit le même chemin sur macOS et Linux). C'est la fabrique de composition
+    /// pour les drivers (App aujourd'hui, une CLI un jour) ; les tests, eux,
+    /// injectent un dossier temporaire par le constructeur.
+    /// </summary>
+    public static ProjectRegistry ForCurrentUser()
+        => new(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "cursus"));
+
     public IReadOnlyList<Project> Projects => _projects;
 
     /// <summary>
