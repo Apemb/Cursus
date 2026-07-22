@@ -149,6 +149,32 @@ public class SqliteRunJournalTests : IDisposable
         Assert.Equal(AbortReason.LoopNotConverging, runs["acheve"].AbortReason);
     }
 
+    [Fact(DisplayName = "étant donné plusieurs runs journalisés en concurrence sur une même base, quand tous se terminent, alors chacun se relit intégralement, avec sa séquence propre continue, sans perte ni doublon")]
+    public async Task Concurrent_appends_never_corrupt_the_journal()
+    {
+        // arrange — une seule base, donc une seule connexion partagée par tous les runs
+        using var journal = NewJournal();
+        const int runs = 24;
+        const int eventsPerRun = 6;
+
+        // act — les runs écrivent de front : sans sérialisation, deux transactions
+        // sur la même connexion se heurtent, et la contention le rend quasi certain
+        await Task.WhenAll(Enumerable.Range(0, runs).Select(r => Task.Run(() =>
+        {
+            var runId = $"run-{r}";
+            journal.Append(runId, AnyStart);
+            for (var i = 1; i <= eventsPerRun - 2; i++)
+                journal.Append(runId, new WorkflowEvent.StepStarted("A", i));
+            journal.Append(runId, new WorkflowEvent.RunFinished(RunState.Completed));
+        })));
+
+        // assert — chaque run a ses événements numérotés de 1 à N, sans trou ni doublon
+        for (var r = 0; r < runs; r++)
+            Assert.Equal(
+                Enumerable.Range(1, eventsPerRun).Select(i => (long)i),
+                journal.ReadEvents($"run-{r}").Select(entry => entry.Seq));
+    }
+
     // --- helpers ---
 
     private SqliteRunJournal NewJournal() => new(Path.Combine(_root, "cursus.db"));

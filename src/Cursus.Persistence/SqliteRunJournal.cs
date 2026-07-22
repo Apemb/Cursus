@@ -15,6 +15,12 @@ public sealed class SqliteRunJournal : IRunJournal, IRunJournalReader, IDisposab
     private readonly SqliteConnection _connection;
     private readonly IClock _clock;
 
+    // La connexion est unique et non thread-safe : deux runs concurrents sur le
+    // même projet écriraient sur elle en même temps. Le verrou les sérialise —
+    // négligeable devant un lancement de process, et la seule façon correcte ici,
+    // le pool de Microsoft.Data.Sqlite n'offrant pas de plafond à une connexion.
+    private readonly Lock _writeLock = new();
+
     public SqliteRunJournal(string databasePath, IClock? clock = null)
     {
         _clock = clock ?? SystemClock.Instance;
@@ -34,15 +40,18 @@ public sealed class SqliteRunJournal : IRunJournal, IRunJournalReader, IDisposab
     {
         var at = _clock.UtcNow;
 
-        // Une transaction par événement : négligeable devant un lancement de
-        // process, et un crash laisse alors un journal exploitable jusqu'au
-        // dernier instant plutôt qu'un tampon perdu.
-        using var transaction = _connection.BeginTransaction();
+        lock (_writeLock)
+        {
+            // Une transaction par événement : négligeable devant un lancement de
+            // process, et un crash laisse alors un journal exploitable jusqu'au
+            // dernier instant plutôt qu'un tampon perdu.
+            using var transaction = _connection.BeginTransaction();
 
-        Project(runId, at, @event, transaction);
-        InsertEvent(runId, at, @event, transaction);
+            Project(runId, at, @event, transaction);
+            InsertEvent(runId, at, @event, transaction);
 
-        transaction.Commit();
+            transaction.Commit();
+        }
     }
 
     public IReadOnlyList<RunSummary> ListRuns()

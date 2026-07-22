@@ -9,6 +9,11 @@ public sealed class InMemoryRunJournal : IRunJournal, IRunJournalReader
     private readonly List<JournalEntry> _entries = [];
     private readonly IClock _clock;
 
+    // Le double doit être aussi sûr que le vrai journal : sans garde, deux runs
+    // concurrents se partageraient la liste et sa numérotation (cf. le verrou de
+    // SqliteRunJournal). La lecture reste hors verrou, elle a lieu après.
+    private readonly Lock _writeLock = new();
+
     public InMemoryRunJournal(IClock? clock = null) => _clock = clock ?? SystemClock.Instance;
 
     /// <summary>Tout ce qui a été journalisé, dans l'ordre d'arrivée, runs confondus.</summary>
@@ -16,10 +21,15 @@ public sealed class InMemoryRunJournal : IRunJournal, IRunJournalReader
 
     public void Append(string runId, WorkflowEvent @event)
     {
-        // La séquence est propre à chaque run : c'est elle qui fait foi sur
-        // l'ordre, et deux runs concurrents ne doivent pas se la partager.
-        var seq = _entries.Count(entry => entry.RunId == runId) + 1;
-        _entries.Add(new JournalEntry(runId, seq, _clock.UtcNow, @event));
+        var at = _clock.UtcNow;
+
+        lock (_writeLock)
+        {
+            // La séquence est propre à chaque run : c'est elle qui fait foi sur
+            // l'ordre, et deux runs concurrents ne doivent pas se la partager.
+            var seq = _entries.Count(entry => entry.RunId == runId) + 1;
+            _entries.Add(new JournalEntry(runId, seq, at, @event));
+        }
     }
 
     public IReadOnlyList<RunSummary> ListRuns() =>

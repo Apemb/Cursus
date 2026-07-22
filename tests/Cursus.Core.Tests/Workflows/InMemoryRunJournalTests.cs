@@ -101,6 +101,29 @@ public class InMemoryRunJournalTests
         Assert.Equal(AbortReason.Canceled, runs["acheve"].AbortReason);
     }
 
+    [Fact(DisplayName = "étant donné plusieurs runs journalisés en concurrence, quand tous se terminent, alors chacun garde sa séquence propre, sans perte ni doublon")]
+    public async Task Concurrent_appends_keep_each_run_sequence_intact()
+    {
+        // arrange — un seul journal, partagé par tous les runs
+        var journal = new InMemoryRunJournal();
+        const int runs = 24;
+        const int eventsPerRun = 6;
+
+        // act — les runs écrivent de front sur la même liste, non thread-safe sans garde
+        await Task.WhenAll(Enumerable.Range(0, runs).Select(r => Task.Run(() =>
+        {
+            var runId = $"run-{r}";
+            for (var i = 0; i < eventsPerRun; i++)
+                journal.Append(runId, AnyEvent);
+        })));
+
+        // assert — chaque run porte ses événements numérotés de 1 à N, sans trou ni doublon
+        for (var r = 0; r < runs; r++)
+            Assert.Equal(
+                Enumerable.Range(1, eventsPerRun).Select(i => (long)i),
+                journal.ReadEvents($"run-{r}").Select(entry => entry.Seq));
+    }
+
     private static WorkflowEvent AnyEvent => new WorkflowEvent.RunFinished(RunState.Completed);
 
     private static WorkflowEvent AnyStart =>
