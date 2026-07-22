@@ -37,10 +37,10 @@
 
 | Moitié | Emplacement | État |
 |---|---|---|
-| Noyau déterministe | `src/Cursus.Core/Workflows/` (38 fichiers) | Moteur de traversée, runner de process réel, contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal, puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b). **102 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
+| Noyau déterministe | `src/Cursus.Core/Workflows/` (38 fichiers) | Moteur de traversée, runner de process réel, contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal, puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b). **100 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
 | Projet & catalogue | `src/Cursus.Core/Projects/` (6 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees. **23 tests.** Voir §4.11. |
 | Persistance | `src/Cursus.Persistence/` (3 fichiers) | Journal SQLite (écriture sérialisée) et magasin d'artefacts sur disque. **17 tests.** Un run survit au process. |
-| Sessions / PTY | `src/Cursus.Core/Sessions/` (5 fichiers) + `src/Cursus.App/` | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal ; logique de sessions testée (**11 tests**). Antérieure au pivot. |
+| Sessions / PTY | `src/Cursus.Core/Sessions/` (5 fichiers) + `src/Cursus.App/` | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal ; logique de sessions testée (**13 tests**). Antérieure au pivot. |
 
 Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2), et **`Cursus.App` ne référence pas encore `Cursus.Persistence`**.
 
@@ -89,7 +89,7 @@ Prérequis : SDK .NET 10, macOS pour l'app. Le SDK est **épinglé** par `global
 
 ### 1.4 Hygiène de dépôt
 
-Branche `main`, seule branche, 28 commits (HEAD = `88ecfc4`). **Aucun remote configuré** : dépôt strictement local, sans sauvegarde hors machine — c'est le risque le plus concret du dépôt aujourd'hui.
+Branche `main`, seule branche, une quarantaine de commits (le compte exact rote à chaque commit ; c'est `git rev-list --count HEAD` qui fait foi). **Aucun remote configuré** : dépôt strictement local, sans sauvegarde hors machine — c'est le risque le plus concret du dépôt aujourd'hui.
 
 **`README.md` a été refait** (jalon 0) : réduit à ce qu'il est seul à devoir dire — prérequis, commandes de développement, commande d'installation, et les deux pièges de l'application installée (signature ad-hoc, `PATH` tronqué). Il renvoie ici pour tout le reste, plutôt que de dupliquer un état qui se périmerait.
 
@@ -149,7 +149,7 @@ La trajectoire initiale commençait par le plus visible : une app Avalonia affic
 
 **Ce que le pivot achète** : pas de PTY (un `Process` à sorties redirigées, pas de `forkpty` — le PTY n'est nécessaire *que* pour un agent interactif, et c'est exactement la frontière entre les deux mondes) ; aucune question de persistance de flux (« le flux **est** l'artefact ») ; une seule machine à états construite au lieu de quatre.
 
-> Nuance de registre : `noyau-deterministe.md` §5.1 prévoit **deux** machines à états v0 (`StepRun` : `Pending→Running→Succeeded/Failed/TimedOut/LaunchFailed`, et `WorkflowRun`). Dans le code, **seule celle du run existe** : `StepRun` est un record `(StepId, Iteration, Result)` sans état ni identité ni horodatage. L'état d'une visite se déduit de son `ScriptResult`.
+> Nuance de registre : `noyau-deterministe.md` §5.1 prévoit **deux** machines à états v0 (`StepRun` : `Pending→Running→Succeeded/Failed/TimedOut/LaunchFailed`, et `WorkflowRun`). Dans le code, **seule celle du run existe** : `StepRun` est un record `(StepId, Iteration, Result, Output)` sans état ni identité ni horodatage. L'état d'une visite se déduit de son `ScriptResult`.
 
 ### 3.1 Limites d'une boucle sans agent
 
@@ -243,12 +243,12 @@ C'est aujourd'hui l'interface utilisateur du noyau. Deux exemples réels sont co
 Et les lignes qui le chargent et l'exécutent — information qui n'existe que dans les tests d'assemblage (`WorkflowExecutionTests` pour la variante « document en mémoire », `ProjectRunTests` pour la variante « fichier dans un projet », plus proche de l'usage réel) :
 
 ```csharp
-var load = WorkflowSerializer.Read(json);          // rend une définition, ou des raisons
-var run  = await new WorkflowEngine(new ProcessRunner(), journal)   // le journal est obligatoire (§4.10)
-    .ExecuteAsync(load.Definition!, new RunContext("/chemin/absolu/du/workspace"));
+var load = WorkflowSerializer.Read(json);                                     // rend une définition, ou des raisons
+var run  = await new WorkflowEngine(new ProcessRunner(), journal, artifacts)   // journal ET puits obligatoires (§4.10, §4.12)
+    .ExecuteAsync(load.Definition!, new RunContext("/chemin/absolu/du/workspace"), runId);   // l'appelant fournit runId (§4.8)
 ```
 
-Depuis un projet, les deux premières lignes deviennent `new WorkflowCatalog(project).Load("mon-workflow")` et `project.CreateRunContext()` (§4.11).
+Depuis un projet, la définition se charge par `new WorkflowCatalog(project).Load("mon-workflow")`, et le `RunContext` ne vient plus du projet directement mais d'un **worktree provisionné** (`IWorkspaceProvisioner`, §4.13) — c'est ce workspace isolé qu'on passe au moteur.
 
 Règles du format, non devinables :
 
@@ -260,8 +260,8 @@ Règles du format, non devinables :
 
 ### 4.3 La traversée
 
-`WorkflowEngine` : classe scellée, `ctor(IProcessRunner, IRunJournal)`, une seule méthode publique
-`Task<WorkflowRun> ExecuteAsync(WorkflowDefinition, RunContext, RunTrigger? = null, CancellationToken = default)`.
+`WorkflowEngine` : classe scellée, `ctor(IProcessRunner, IRunJournal, IRunOutputStore)`, une seule méthode publique
+`Task<WorkflowRun> ExecuteAsync(WorkflowDefinition, RunContext, string runId, RunTrigger? = null, CancellationToken = default)` — le `runId` est fourni par l'appelant (§4.8, invariant 8).
 
 Le schéma ci-dessous montre la **traversée** ; ce que chaque étape émet au journal est en §4.10.
 
@@ -377,16 +377,18 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 
 | Fichier de test | Ce qu'il est le seul à fixer |
 |---|---|
-| `Workflows/ProcessRunnerTests.cs` (13) | Drainage concurrent des tubes sous forte charge, verbatim des argv (espaces et guillemets), héritage de l'env hôte sous surcharge, `LaunchFailed`+127 sans exception, kill sur timeout, annulation, durée mesurée. Adossés aux **binaires POSIX du système** (macOS/Linux) — non portables Windows, assumé. |
+| `Workflows/ProcessRunnerTests.cs` (14) | Drainage concurrent des tubes sous forte charge, verbatim des argv (espaces et guillemets), héritage de l'env hôte sous surcharge, `LaunchFailed`+127 sans exception, kill sur timeout, annulation, durée mesurée, **sortie lisible pendant que le process tourne** (6a, poignée de main par fichier sentinelle). Adossés aux **binaires POSIX du système** (macOS/Linux) — non portables Windows, assumé. |
+| `Workflows/GitWorkspaceProvisionerTests.cs` (6) | Le provisionnement worktree, adossé à un **vrai dépôt git** : nouveau travail en HEAD détaché sur une base, review d'une branche existante, démontage qui retire le worktree, isolation de deux workspaces, coexistence de deux branches issues du détachement, et « git absent » → `GitNotAvailableException` (sur un `StubProcessRunner` rendant `LaunchFailed`). |
+| `Workflows/InMemoryRunOutputStoreTests.cs` (2) | Le puits volatile : une sortie écrite se relit avec sa taille ; un flux muet a un `Path` absent. |
 | `Workflows/WorkflowEngineTests.cs` (18) | La traversée sur `StubProcessRunner` : le stub **enregistre les `ScriptSpec` reçues** (donc assert de la composition du `WorkingDirectory`), **répète le dernier résultat** une fois la liste épuisée (« le runner réussit toujours »), et `CancelAfterRun` simule une annulation **pendant** le run. Boucle convergente, boucle bornée à `[1,2,3]`, `TimedOut` routé par `OnFailure`, `LaunchFailed` terminal. |
 | `Workflows/WorkflowExecutionTests.cs` (2) | Assemblage **sans aucun double**, sur `/bin/sh` : un graphe déclaré en C#, puis la chaîne JSON → `Read` → `ExecuteAsync` **depuis un document en mémoire**, artefacts réellement écrits sur disque aux bons endroits. La variante partant d'un **fichier** est dans `ProjectRunTests`. |
 | `Workflows/WorkflowSerializerTests.cs` (14) | L'aller-retour caractère pour caractère (`Read`→`Write`) et l'idempotence (`Write`→`Read`→`Write`), le document servant de référentiel de comparaison ; les formes de malformation ; « absence de timeout ≠ zéro ». |
 | `Workflows/RunContextTests.cs` (10) | Les **justifications absentes du code** du refus d'une racine relative ou inexistante. |
 | `Workflows/WorkflowValidatorTests.cs` (11) | La motivation de chaque règle et l'**ordre exact** d'un rapport multi-issues. |
 | `SessionWorkspaceTests` · `ShellResolverTests` · `TerminalSessionTests` (13) | La politique de sélection après fermeture (`min(index, count-1)`, sinon `null`), la numérotation « Session N », la cascade `$SHELL` → `/bin/zsh` → `/bin/bash` avec prédicat d'existence injecté. |
-| `Workflows/WorkflowJournalTests.cs` (15) · `Workflows/InMemoryRunJournalTests.cs` (6) | Ce que le moteur émet et dans quel ordre · l'enveloppe posée par le journal. |
-| `Cursus.Persistence.Tests/` (15) | Le magasin d'artefacts, le journal SQLite, et les deux assemblages — tous les tests de durabilité **referment puis rouvrent** le journal avant de relire. `ProjectRunTests` est le seul où **aucun emplacement n'est composé par le test** : ils viennent tous du `Project`. |
-| `Projects/ProjectStoreTests.cs` (14) · `Projects/WorkflowCatalogTests.cs` (8) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, et qu'un document cassé ne cache pas les autres. |
+| `Workflows/WorkflowJournalTests.cs` (16) · `Workflows/InMemoryRunJournalTests.cs` (7) | Ce que le moteur émet et dans quel ordre (dont le `runId` fourni par l'appelant) · l'enveloppe posée par le journal (dont sa sûreté sous `Append` concurrent). |
+| `Cursus.Persistence.Tests/` (17) | Le magasin d'artefacts, le journal SQLite (dont sa sûreté sous contention), et l'assemblage — les tests de durabilité **referment puis rouvrent** le journal avant de relire. `ProjectRunTests` est le seul où **aucun emplacement n'est composé par le test** : ils viennent tous du `Project` — et c'est la **preuve d'assemblage concurrent** du jalon 6b (deux runs de front, chacun dans son worktree). |
+| `Projects/ProjectStoreTests.cs` (13) · `Projects/WorkflowCatalogTests.cs` (8) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, et qu'un document cassé ne cache pas les autres. |
 | `Projects/CursusProjectTests.cs` (2) | Que **ce dépôt** s'ouvre comme projet Cursus et que ses workflows commités valident. Le seul test qui lise le dépôt lui-même — garde-fou contre des exemples qui pourrissent. |
 
 ### 4.10 Le journal — CONSTRUIT (jalon 4)
@@ -418,7 +420,7 @@ Ce que la lecture du code ne donne pas d'emblée :
 - **`AbortReason.Faulted` n'apparaît que dans le journal.** Quand un invariant saute (`UnknownStepException`, `PathEscapesWorkspaceException`), le moteur clôt le run puis **laisse l'exception remonter inchangée** — la raison sert à ne pas laisser un run « en cours » à jamais, jamais à convertir une exception en résultat. `ExecuteAsync` enveloppe pour cela une `TraverseAsync` privée.
 - **Dépasser `MaxVisits` n'émet aucun `StepStarted`** — corollaire de l'invariant 5 (§4.8), désormais observable.
 
-`ExecuteAsync(definition, context, trigger = null, cancellationToken = default)` : le `RunTrigger` (§7.10.5) précède le jeton, qui reste en dernier par convention .NET. Le `RunId` est engendré **par le moteur, un par exécution**, et remonte dans `WorkflowRun.RunId` — le porter dans `RunContext` a été écarté, un contexte étant réutilisable d'un run à l'autre (deux runs auraient partagé une clé primaire).
+`ExecuteAsync(definition, context, runId, trigger = null, cancellationToken = default)` : le `RunTrigger` (§7.10.5) précède le jeton, qui reste en dernier par convention .NET. Le `runId` est **fourni par l'appelant** (jalon 6b) et remonte dans `WorkflowRun.RunId` — le moteur ne le forge plus, parce que c'est l'appelant qui, en amont, monte le worktree du run à ce nom (§4.13). Il n'est pas non plus porté par `RunContext` : un contexte pourrait sinon être réutilisé d'un run à l'autre, et deux runs partageraient une clé primaire.
 
 **Côté persistance** (`src/Cursus.Persistence/`) : `run_events` est la source, `runs` une **projection dénormalisée** entretenue à l'écriture — sans elle, lister les runs exigerait de rejouer toute la base. Une transaction par événement, sans tampon ; `journal_mode=WAL` pour que l'interface puisse relire pendant qu'un run écrit.
 
@@ -438,14 +440,15 @@ Ce que la lecture du code ne donne pas d'emblée :
 ```
 <racine>/.cursus/project.json          -- versionné : id, name
 <racine>/.cursus/workflows/*.json      -- versionné : les définitions
-<racine>/.cursus/.gitignore            -- versionné : exclut les deux lignes suivantes
+<racine>/.cursus/.gitignore            -- versionné : exclut les trois lignes suivantes
 <racine>/.cursus/cursus.db             -- observation, hors git
 <racine>/.cursus/runs/<runId>/         -- observation, hors git
+<racine>/.cursus/worktrees/<runId>/    -- worktree isolé d'un run (6b), hors git
 ```
 
 | Type | Rôle |
 |---|---|
-| `Project` | L'identité (`Id`, `Name`) et **où sont les choses**, ce qu'il sait seul : `Root`, `CursusDirectory`, `ProjectFilePath`, `WorkflowsDirectory`, `DatabasePath`, `ArtifactsRoot`, plus `CreateRunContext()` |
+| `Project` | L'identité (`Id`, `Name`) et **où sont les choses**, ce qu'il sait seul : `Root`, `CursusDirectory`, `ProjectFilePath`, `WorkflowsDirectory`, `DatabasePath`, `ArtifactsRoot`, `WorktreesRoot`. Ne fabrique **plus** de `RunContext` — la racine d'un run est un worktree provisionné (§4.13) |
 | `ProjectStore` | `Create` · `Open` · `Discover`. Le seul type du noyau qui écrive la disposition |
 | `WorkflowCatalog` | `List()` rend des `WorkflowEntry(Id, Path)` · `Load(id)` rend un `LoadResult`. Apporte le disque et l'identité, délègue la traduction au sérialiseur |
 
@@ -769,7 +772,7 @@ qu'un critère si :
 | Décision | En une ligne |
 |---|---|
 | **VIPER — écarté** | Deux de ses cinq composants n'ont pas d'objet ici : le *Presenter* existe parce qu'UIKit n'a pas de binding (XAML le fait), le *Router* parce qu'UIKit pilote une pile de contrôleurs (une seule `Window`, une seule surface, aucune modale). L'*Entity* est déjà le noyau. Ce qui en est **retenu** : la vue ne fait que binder, et ne pas la tester est assumé |
-| **Hexagonal partiel, asymétrie délibérée** | Les **ports de sortie** existent déjà (`IProcessRunner`, `IRunJournal`, `IRunJournalReader`, `IClock` — les 4 seules interfaces publiques du dépôt). Le **port d'entrée** manquait. Pas d'`IFileSystem` : *on inverse ce qu'on a besoin de doubler*, et le dépôt teste l'I/O contre les binaires POSIX réels par choix (`CLAUDE.md`) |
+| **Hexagonal partiel, asymétrie délibérée** | Les **ports de sortie** existent déjà (`IProcessRunner`, `IRunJournal`, `IRunJournalReader`, `IClock`, plus `IRunOutputStore`/`IStepOutputSink` au 6a et `IWorkspaceProvisioner`/`IProvisionedWorkspace` au 6b — 8 interfaces publiques). Le **port d'entrée** manquait. Pas d'`IFileSystem` : *on inverse ce qu'on a besoin de doubler*, et le dépôt teste l'I/O contre les binaires POSIX réels par choix (`CLAUDE.md`) |
 | **`ProjectHost`, composition root réifié** | Une racine par projet ouvert, qui **construit les modules et leur passe leurs dépendances par constructeur**. Vit dans `Cursus.Core` et reçoit des fabriques, donc n'apprend rien de SQLite ; **`Cursus.Persistence` fournit le préréglage**, pour que le câblage concret n'existe qu'en un exemplaire |
 | **Règle de sens unique — l'invariant** | **Aucun module ne connaît `ProjectHost`.** Le lui passer en ferait un *Service Locator* : un module qui en dépend ne se teste plus qu'en construisant la racine entière |
 | **`IDisposable`, un projet = un host** | Imposé par le code, pas par le style : `SqliteRunJournal` détient une `SqliteConnection` unique non synchronisée. Ouvrir un autre projet = disposer et reconstruire, jamais muter |
