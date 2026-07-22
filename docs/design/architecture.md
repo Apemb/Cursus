@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `f2a9762`. Dernier jalon de code : `f2a9762` (*le loader de projets, jalon 6c·1*). Suite de tests : **161 verts** (144 noyau + 17 persistance), build 0 warning.
+> **Statut** : document vivant, à jour du commit `31a43aa`. Dernier jalon de code : `f2a9762` (*le loader de projets, jalon 6c·1*). Suite de tests : **164 verts** (147 noyau + 17 persistance), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -80,7 +80,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 161 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 164 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -390,7 +390,7 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 | `Cursus.Persistence.Tests/` (17) | Le magasin d'artefacts, le journal SQLite (dont sa sûreté sous contention), et l'assemblage — les tests de durabilité **referment puis rouvrent** le journal avant de relire. `ProjectRunTests` est le seul où **aucun emplacement n'est composé par le test** : ils viennent tous du `Project` — et c'est la **preuve d'assemblage concurrent** du jalon 6b (deux runs de front, chacun dans son worktree). |
 | `Projects/ProjectStoreTests.cs` (13) · `Projects/WorkflowCatalogTests.cs` (8) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, et qu'un document cassé ne cache pas les autres. |
 | `Projects/CursusProjectTests.cs` (2) | Que **ce dépôt** s'ouvre comme projet Cursus et que ses workflows commités valident. Le seul test qui lise le dépôt lui-même — garde-fou contre des exemples qui pourrissent. |
-| `Projects/ProjectRegistryTests.cs` (7) | Le registre machine (6c·1) : inscrire un projet valide, refuser un dossier sans `.cursus/`, dédoublonner par racine normalisée, retirer sans toucher au dépôt · persister et **recharger** entre deux instances · démarrage à froid sans fichier · un chemin qui ne résout plus est **ignoré de la liste mais conservé dans le fichier** (une lecture ne mute rien). |
+| `Projects/ProjectRegistryTests.cs` (10) | Le registre machine (6c·1) : inscrire un projet valide, refuser un dossier sans `.cursus/`, dédoublonner par racine normalisée, retirer sans toucher au dépôt · persister et **recharger** entre deux instances · démarrage à froid sans fichier · un chemin qui ne résout plus est **ignoré de la liste mais conservé dans le fichier** (une lecture ne mute rien) · et la résolution du dossier machine (`$XDG_CONFIG_HOME` sinon `~/.config`, vide = absent), **jamais** `~/Library/Application Support`. |
 | `ArchitectureTests.cs` (1) | Le garde-fou de la couche de présentation (§7.12, 6c·1) : `Cursus.Core` ne référence **aucun** assembly `Avalonia.*`. Non-vacuité vérifiée en le retournant un instant sur un assembly réellement présent. |
 
 ### 4.10 Le journal — CONSTRUIT (jalon 4)
@@ -700,7 +700,7 @@ Conception issue de la conversation préparatoire au jalon 4. Le **niveau projet
 | **Machine** | `~/.config/cursus/projects.json` — *construit au 6c·1* (`ProjectRegistry`) | la liste des projets connus · *prévu* : réglages machine | dépend de cet ordinateur ; n'a aucun sens pour un collègue |
 | **Trousseau** | Keychain macOS, libsecret ailleurs | les tokens Linear/Jira | un secret ne s'écrit pas sur disque en clair, même hors dépôt |
 
-L'emplacement machine est `~/.config/cursus/` (résolu comme `SpecialFolder.ApplicationData` de .NET — même chemin sur macOS et Linux), **et non** `~/Library/Application Support/` : Cursus est un outil de dev non distribué (bundle signé ad-hoc), la convention XDG donne un seul chemin de code et correspond à ce que son public attend. Le fichier y porte des chemins **absolus** — à l'inverse de `project.json`, il ne se partage jamais par git. Décision tranchée au 6c·1 (L-1).
+L'emplacement machine est `~/.config/cursus/` (ou `$XDG_CONFIG_HOME/cursus`), **et non** `~/Library/Application Support/` : Cursus est un outil de dev non distribué (bundle signé ad-hoc), la convention XDG correspond à ce que son public attend. ⚠️ On le résout **explicitement** (`ProjectRegistry.ResolveConfigDirectory` : `$XDG_CONFIG_HOME` sinon `<home>/.config`, une valeur vide comptant comme absente comme dans le shell) et **surtout pas** par `SpecialFolder.ApplicationData` de .NET — qui rend justement `~/Library/Application Support` sur macOS, le piège découvert au 6c·1. Le fichier y porte des chemins **absolus** — à l'inverse de `project.json`, il ne se partage jamais par git. Décision tranchée au 6c·1 (L-1).
 
 Le journal (`.cursus/cursus.db`) et les artefacts (`.cursus/runs/<runId>/`) vivent **dans le projet mais hors de git**. Base et sorties au même endroit, sauvegardées ou détruites ensemble : un journal qui référence des artefacts disparus est pire qu'un journal absent, parce qu'il prétend être complet. La coupe versionné / ignoré passe entre l'**intention** (configuration, définitions) et l'**observation** (ce qui s'est passé sur une machine) — les mélanger dans git rendrait tout merge conflictuel.
 
@@ -1010,7 +1010,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **161 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **164 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 

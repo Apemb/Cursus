@@ -116,6 +116,36 @@ public sealed class ProjectRegistryTests : IDisposable
         Assert.Contains("disparu", File.ReadAllText(configFile));
     }
 
+    [Fact(DisplayName = "étant donné XDG_CONFIG_HOME défini, quand on résout le dossier de configuration machine, alors il est sous ce dossier")]
+    public void The_config_directory_honours_xdg_config_home()
+    {
+        // act
+        var dir = ProjectRegistry.ResolveConfigDirectory("/tmp/xdg", "/home/moi");
+
+        // assert
+        Assert.Equal(Path.Combine("/tmp/xdg", "cursus"), dir);
+    }
+
+    [Fact(DisplayName = "étant donné XDG_CONFIG_HOME absent, quand on résout le dossier de configuration machine, alors il retombe sous ~/.config")]
+    public void The_config_directory_falls_back_to_dot_config()
+    {
+        // act
+        var dir = ProjectRegistry.ResolveConfigDirectory(null, "/home/moi");
+
+        // assert — jamais ~/Library/Application Support : on vise .config explicitement
+        Assert.Equal(Path.Combine("/home/moi", ".config", "cursus"), dir);
+    }
+
+    [Fact(DisplayName = "étant donné XDG_CONFIG_HOME vide, quand on résout le dossier de configuration machine, alors il retombe sous ~/.config comme le fait le shell")]
+    public void An_empty_xdg_config_home_counts_as_unset()
+    {
+        // act
+        var dir = ProjectRegistry.ResolveConfigDirectory("", "/home/moi");
+
+        // assert — parité avec build/reset-data.sh (${XDG_CONFIG_HOME:-$HOME/.config})
+        Assert.Equal(Path.Combine("/home/moi", ".config", "cursus"), dir);
+    }
+
     public void Dispose()
     {
         Directory.Delete(_configDir, recursive: true);

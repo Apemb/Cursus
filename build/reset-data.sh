@@ -20,9 +20,10 @@
 
 set -euo pipefail
 
-# Même résolution que le SpecialFolder.ApplicationData de .NET : XDG d'abord,
-# repli sur ~/.config. C'est ce qui garantit que le script vise exactement le
-# dossier que l'application écrit.
+# Même résolution que ProjectRegistry.ResolveConfigDirectory côté app : XDG
+# d'abord, repli sur ~/.config. (Surtout PAS SpecialFolder.ApplicationData de
+# .NET, qui rend ~/Library/Application Support sur macOS.) C'est ce qui garantit
+# que le script vise exactement le dossier que l'application écrit.
 readonly CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/cursus"
 
 DRY_RUN=false

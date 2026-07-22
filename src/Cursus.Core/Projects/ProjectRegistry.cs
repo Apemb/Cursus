@@ -34,15 +34,36 @@ public sealed class ProjectRegistry
     }
 
     /// <summary>
-    /// Le registre de la machine, à son emplacement par défaut :
-    /// <c>~/.config/cursus/</c> (résolu comme <see cref="Environment.SpecialFolder.ApplicationData"/>,
-    /// soit le même chemin sur macOS et Linux). C'est la fabrique de composition
-    /// pour les drivers (App aujourd'hui, une CLI un jour) ; les tests, eux,
-    /// injectent un dossier temporaire par le constructeur.
+    /// Le registre de la machine, à son emplacement par défaut : <c>~/.config/cursus/</c>
+    /// (ou <c>$XDG_CONFIG_HOME/cursus</c>). C'est la fabrique de composition pour les
+    /// drivers (App aujourd'hui, une CLI un jour) ; les tests, eux, injectent un
+    /// dossier temporaire par le constructeur.
     /// </summary>
+    /// <remarks>
+    /// On ne passe **pas** par <see cref="Environment.SpecialFolder.ApplicationData"/> :
+    /// sur macOS il rend <c>~/Library/Application Support</c>, la convention native — qui
+    /// n'est pas ce qu'on veut pour un outil de dev. On vise <c>.config</c> explicitement,
+    /// en parité avec <c>build/reset-data.sh</c>.
+    /// </remarks>
     public static ProjectRegistry ForCurrentUser()
-        => new(Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "cursus"));
+        => new(ResolveConfigDirectory(
+            Environment.GetEnvironmentVariable("XDG_CONFIG_HOME"),
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)));
+
+    /// <summary>
+    /// Le dossier de configuration machine de Cursus à partir de l'environnement :
+    /// <c>$XDG_CONFIG_HOME/cursus</c> s'il est posé, sinon <c>&lt;home&gt;/.config/cursus</c>.
+    /// Une valeur vide compte comme non définie — comme le fait le shell
+    /// (<c>${XDG_CONFIG_HOME:-$HOME/.config}</c>), sans quoi l'app et le script de reset
+    /// viseraient deux dossiers.
+    /// </summary>
+    public static string ResolveConfigDirectory(string? xdgConfigHome, string home)
+    {
+        var configHome = string.IsNullOrEmpty(xdgConfigHome)
+            ? Path.Combine(home, ".config")
+            : xdgConfigHome;
+        return Path.Combine(configHome, "cursus");
+    }
 
     public IReadOnlyList<Project> Projects => _projects;
 
