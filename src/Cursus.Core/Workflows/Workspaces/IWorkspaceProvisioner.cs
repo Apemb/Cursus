@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Workspaces;
 
 /// <summary>
 /// Donne à un run un répertoire de travail <b>isolé</b>, pour que plusieurs runs

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Workspaces;
 
 using static Cursus.Core.Tests.Workflows.WorkflowFixtures;
 

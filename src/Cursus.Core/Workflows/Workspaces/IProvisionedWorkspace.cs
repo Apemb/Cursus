@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Workspaces;
 
 /// <summary>
 /// Le répertoire de travail isolé d'<b>un</b> run, le temps de son exécution.

@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Workspaces;
 
 /// <summary>
 /// Ce qu'un run veut comme point de départ pour son répertoire de travail isolé,

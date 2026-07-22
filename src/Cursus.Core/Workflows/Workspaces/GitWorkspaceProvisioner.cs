@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Workspaces;
 
 /// <summary>
 /// Provisionne l'espace isolé d'un run par un <b>worktree git</b> : partage

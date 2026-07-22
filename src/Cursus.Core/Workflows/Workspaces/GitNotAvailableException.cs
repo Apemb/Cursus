@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Workspaces;
 
 /// <summary>
 /// Levée quand le provisionnement échoue faute de pouvoir lancer <c>git</c> :
