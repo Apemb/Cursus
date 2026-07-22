@@ -48,6 +48,7 @@ public static class ProjectStore
             """
             cursus.db*
             runs/
+            worktrees/
 
             """);
 

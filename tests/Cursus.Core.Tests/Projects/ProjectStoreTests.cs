@@ -71,7 +71,7 @@ public class ProjectStoreTests : IDisposable
         Assert.Equal(created.Id, ProjectStore.Open(_root).Id);
     }
 
-    [Fact(DisplayName = "étant donné un projet créé, quand on lit le fichier d'exclusion git de son dossier, alors il écarte le journal et les artefacts")]
+    [Fact(DisplayName = "étant donné un projet créé, quand on lit le fichier d'exclusion git de son dossier, alors il écarte le journal, les artefacts et les worktrees des runs")]
     public void A_created_project_keeps_its_observations_out_of_git()
     {
         // act
@@ -81,6 +81,8 @@ public class ProjectStoreTests : IDisposable
         var ignored = File.ReadAllLines(Path.Combine(_root, ".cursus", ".gitignore"));
         Assert.Contains("cursus.db*", ignored);
         Assert.Contains("runs/", ignored);
+        // les worktrees des runs vivent sous .cursus/ mais ne se committent jamais
+        Assert.Contains("worktrees/", ignored);
     }
 
     // --- ouverture et découverte ---
@@ -138,19 +140,8 @@ public class ProjectStoreTests : IDisposable
         // détruites ensemble, sinon le journal prétend être complet à tort
         Assert.Equal(Path.Combine(_root, ".cursus", "cursus.db"), project.DatabasePath);
         Assert.Equal(Path.Combine(_root, ".cursus", "runs"), project.ArtifactsRoot);
-    }
-
-    [Fact(DisplayName = "étant donné un projet ouvert, quand on lui demande un contexte de run, alors ce contexte a la racine du projet pour workspace")]
-    public void A_project_hands_out_the_run_context_its_workflows_execute_in()
-    {
-        // arrange
-        var project = ProjectStore.Create(_root, "Démo");
-
-        // act
-        var context = project.CreateRunContext();
-
-        // assert
-        Assert.Equal(project.Root, context.WorkspaceRoot);
+        // les worktrees isolés des runs vivent sous le même dossier
+        Assert.Equal(Path.Combine(_root, ".cursus", "worktrees"), project.WorktreesRoot);
     }
 
     [Fact(DisplayName = "étant donné un sous-répertoire profond d'un projet, quand on découvre le projet depuis là, alors on retrouve le projet racine")]

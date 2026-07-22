@@ -1,75 +1,119 @@
+using System.Diagnostics;
+
 using Cursus.Core.Projects;
 using Cursus.Core.Workflows;
 
 namespace Cursus.Persistence.Tests;
 
 /// <summary>
-/// L'assemblage du jalon 5 : un projet sur disque, un workflow lu depuis son
-/// dossier, un run journalisé aux emplacements que le projet désigne. Rien n'y
-/// est composé à la main — c'est la différence exacte avec
-/// <c>JournalledExecutionTests</c>, qui reste le témoin du jalon 4.
+/// L'assemblage du jalon 6b, sans le moindre double : un projet qui est un dépôt
+/// git, deux tâches, deux runs lancés <b>de front</b>, chacun provisionné dans
+/// son propre worktree. C'est la preuve que la cible — plusieurs workflows en
+/// même temps sur un même projet — tient : ni le journal partagé ni les fichiers
+/// de travail ne se corrompent.
 /// </summary>
-public class ProjectRunTests : IDisposable
+public sealed class ProjectRunTests : IDisposable
 {
     private readonly string _root = Directory.CreateTempSubdirectory("cursus-projet-").FullName;
 
-    [Fact(DisplayName = "étant donné un projet créé sur disque et un workflow déposé dans son dossier, quand on le charge et qu'on l'exécute avec un journal placé aux emplacements du projet, alors le run se relit depuis le journal du projet et ses sorties sont sous la racine d'artefacts du projet")]
-    public async Task A_project_carries_everything_a_run_needs()
+    [Fact(DisplayName = "étant donné deux tâches sur un même projet, quand on lance leurs deux runs en concurrence chacun dans son worktree, alors les deux se relisent dans le journal du projet, leurs branches coexistent, et aucun fichier de travail n'a collisionné")]
+    public async Task Two_runs_execute_concurrently_each_in_its_own_worktree()
     {
-        // arrange — le projet, puis un workflow déposé comme le ferait un humain
-        var project = ProjectStore.Create(_root, "Démo");
+        // arrange — un projet, un workflow déposé, puis le tout érigé en dépôt git
+        var project = ProjectStore.Create(_root, "Concurrent");
         File.WriteAllText(
-            Path.Combine(project.WorkflowsDirectory, "recenser.json"),
+            Path.Combine(project.WorkflowsDirectory, "travailler.json"),
             """
             {
-              "entryStep": "recenser",
+              "entryStep": "travailler",
               "steps": [
-                { "id": "recenser", "name": "Recenser le workspace", "maxVisits": 1,
-                  "script": { "fileName": "/bin/sh", "arguments": ["-c", "ls -a > inventaire.txt; echo recensement termine"] },
-                  "edges": [ { "guard": "success", "target": "confirmer" } ] },
-
-                { "id": "confirmer", "name": "Confirmer", "maxVisits": 1,
-                  "script": { "fileName": "/bin/sh", "arguments": ["-c", "test -f inventaire.txt"] },
+                { "id": "travailler", "name": "Travailler", "maxVisits": 1,
+                  "script": { "fileName": "/bin/sh", "arguments": ["-c", "echo done > resultat.txt"] },
                   "edges": [] }
               ]
             }
             """);
+        InitRepository();
 
-        var loaded = new WorkflowCatalog(project).Load("recenser");
+        var loaded = new WorkflowCatalog(project).Load("travailler");
+        var provisioner = new GitWorkspaceProvisioner(new ProcessRunner(), project.Root, project.WorktreesRoot);
 
-        // act — le run se déroule, puis tout ce qui le portait est refermé
-        string runId;
+        // le provisionnement est du montage (séquentiel) ; l'appelant, qui connaît
+        // la tâche, baptise chaque branche — le worktree détaché le permet.
+        using var workspaceA = provisioner.Provision("run-a", new WorkspaceRequest.NewWork("HEAD"));
+        using var workspaceB = provisioner.Provision("run-b", new WorkspaceRequest.NewWork("HEAD"));
+        Git(workspaceA.Context.WorkspaceRoot, "checkout", "-b", "task/ENG-1");
+        Git(workspaceB.Context.WorkspaceRoot, "checkout", "-b", "task/ENG-2");
+
+        // act — les deux runs tournent de front, journalisant dans la même base
         using (var journal = JournalOf(project))
         {
-            var run = await new WorkflowEngine(new ProcessRunner(), journal, new RunArtifactStore(project.ArtifactsRoot))
-                .ExecuteAsync(loaded.Definition!, project.CreateRunContext(), Guid.NewGuid().ToString());
+            var artifacts = new RunArtifactStore(project.ArtifactsRoot);
+            var engine = new WorkflowEngine(new ProcessRunner(), journal, artifacts);
 
-            runId = run.RunId;
-            Assert.Equal(RunState.Completed, run.State);
+            await Task.WhenAll(
+                engine.ExecuteAsync(loaded.Definition!, workspaceA.Context, "run-a", RunTrigger.ForTask("ENG-1")),
+                engine.ExecuteAsync(loaded.Definition!, workspaceB.Context, "run-b", RunTrigger.ForTask("ENG-2")));
         }
 
-        // assert — le workspace du run était bien la racine du projet
-        Assert.True(File.Exists(Path.Combine(project.Root, "inventaire.txt")));
-
-        // le journal du projet se relit dans une instance neuve
+        // assert — les deux runs se relisent dans le journal du projet, tous deux terminés
         using var reopened = JournalOf(project);
+        var runs = reopened.ListRuns().ToDictionary(run => run.RunId);
+        Assert.Equal(RunState.Completed, runs["run-a"].State);
+        Assert.Equal(RunState.Completed, runs["run-b"].State);
+        Assert.Equal(4, reopened.ReadEvents("run-a").Count); // start, step start, step finish, run finish
+        Assert.Equal(4, reopened.ReadEvents("run-b").Count);
 
-        var summary = Assert.Single(reopened.ListRuns());
-        Assert.Equal(runId, summary.RunId);
-        Assert.Equal(RunState.Completed, summary.State);
+        // les branches créées par chaque run coexistent dans le dépôt
+        var branches = Git(project.Root, "branch", "--format=%(refname:short)");
+        Assert.Contains("task/ENG-1", branches);
+        Assert.Contains("task/ENG-2", branches);
 
-        var chosen = Assert.Single(reopened.ReadEvents(runId).Select(e => e.Event).OfType<WorkflowEvent.EdgeChosen>());
-        Assert.Equal("confirmer", chosen.ToStepId);
-
-        // et les sorties sont sous la racine d'artefacts que le projet désigne
-        Assert.Contains(
-            "recensement termine",
-            new RunArtifactStore(project.ArtifactsRoot)
-                .Read(runId, "recenser", 1, ArtifactStream.StandardOutput));
+        // aucune collision : chaque run a son fichier, dans son worktree, et le
+        // dépôt principal n'a rien vu passer
+        Assert.True(File.Exists(Path.Combine(workspaceA.Context.WorkspaceRoot, "resultat.txt")));
+        Assert.True(File.Exists(Path.Combine(workspaceB.Context.WorkspaceRoot, "resultat.txt")));
+        Assert.False(File.Exists(Path.Combine(project.Root, "resultat.txt")));
     }
 
-    /// <summary>Le journal d'un projet : ses deux emplacements viennent du projet, jamais du test.</summary>
+    // --- helpers ---
+
+    /// <summary>Le journal d'un projet : ses emplacements viennent du projet, jamais du test.</summary>
     private static SqliteRunJournal JournalOf(Project project) => new(project.DatabasePath);
+
+    /// <summary>Érige la racine du projet en dépôt git avec un commit initial — la base des worktrees.</summary>
+    private void InitRepository()
+    {
+        Git(_root, "init");
+        Git(_root, "config", "user.email", "test@cursus.dev");
+        Git(_root, "config", "user.name", "Cursus Test");
+        Git(_root, "add", "-A");
+        Git(_root, "commit", "-m", "commit initial");
+    }
+
+    /// <summary>git piloté en direct pour le décor — hors production, l'invariant 3 ne s'y applique pas.</summary>
+    private static string Git(string workingDirectory, params string[] arguments)
+    {
+        var startInfo = new ProcessStartInfo("git")
+        {
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        foreach (var argument in arguments)
+            startInfo.ArgumentList.Add(argument);
+
+        using var process = Process.Start(startInfo)!;
+        var stdout = process.StandardOutput.ReadToEnd();
+        var stderr = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        if (process.ExitCode != 0)
+            throw new InvalidOperationException(
+                $"git {string.Join(' ', arguments)} a échoué ({process.ExitCode}) : {stderr}");
+
+        return stdout.Trim();
+    }
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
 }

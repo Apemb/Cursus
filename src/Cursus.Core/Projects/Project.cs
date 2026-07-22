@@ -1,5 +1,3 @@
-using Cursus.Core.Workflows;
-
 namespace Cursus.Core.Projects;
 
 /// <summary>
@@ -49,9 +47,10 @@ public sealed class Project
     public string ArtifactsRoot => Path.Combine(CursusDirectory, "runs");
 
     /// <summary>
-    /// Le contexte dans lequel les workflows de ce projet s'exécutent : sa
-    /// racine est le workspace. C'est la seule jonction entre le projet et le
-    /// moteur — la définition, elle, reste portable d'un projet à l'autre.
+    /// Où montent les worktrees isolés des runs. Un run ne s'exécute plus à la
+    /// racine du projet — il travaille dans son propre worktree, pour que
+    /// plusieurs runs coexistent sur le dépôt sans s'écraser. Sous <c>.cursus/</c>
+    /// (imbriqué mais gitignoré) : la racine du projet, elle, reste le dépôt.
     /// </summary>
-    public RunContext CreateRunContext() => new(Root);
+    public string WorktreesRoot => Path.Combine(CursusDirectory, "worktrees");
 }
