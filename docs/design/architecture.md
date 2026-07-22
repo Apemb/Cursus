@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `3062aa5`. Dernier jalon de code : `3062aa5` (*les runs concurrents, jalon 6b*). Suite de tests : **153 verts** (136 noyau + 17 persistance), build 0 warning.
+> **Statut** : document vivant, à jour du commit `f2a9762`. Dernier jalon de code : `f2a9762` (*le loader de projets, jalon 6c·1*). Suite de tests : **161 verts** (144 noyau + 17 persistance), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -80,7 +80,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 153 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 161 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -390,6 +390,8 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 | `Cursus.Persistence.Tests/` (17) | Le magasin d'artefacts, le journal SQLite (dont sa sûreté sous contention), et l'assemblage — les tests de durabilité **referment puis rouvrent** le journal avant de relire. `ProjectRunTests` est le seul où **aucun emplacement n'est composé par le test** : ils viennent tous du `Project` — et c'est la **preuve d'assemblage concurrent** du jalon 6b (deux runs de front, chacun dans son worktree). |
 | `Projects/ProjectStoreTests.cs` (13) · `Projects/WorkflowCatalogTests.cs` (8) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, et qu'un document cassé ne cache pas les autres. |
 | `Projects/CursusProjectTests.cs` (2) | Que **ce dépôt** s'ouvre comme projet Cursus et que ses workflows commités valident. Le seul test qui lise le dépôt lui-même — garde-fou contre des exemples qui pourrissent. |
+| `Projects/ProjectRegistryTests.cs` (7) | Le registre machine (6c·1) : inscrire un projet valide, refuser un dossier sans `.cursus/`, dédoublonner par racine normalisée, retirer sans toucher au dépôt · persister et **recharger** entre deux instances · démarrage à froid sans fichier · un chemin qui ne résout plus est **ignoré de la liste mais conservé dans le fichier** (une lecture ne mute rien). |
+| `ArchitectureTests.cs` (1) | Le garde-fou de la couche de présentation (§7.12, 6c·1) : `Cursus.Core` ne référence **aucun** assembly `Avalonia.*`. Non-vacuité vérifiée en le retournant un instant sur un assembly réellement présent. |
 
 ### 4.10 Le journal — CONSTRUIT (jalon 4)
 
@@ -465,7 +467,7 @@ Ce que la lecture du code ne donne pas d'emblée :
 
 `CursusProjectTests` garde ces exemples valides : sans lui, un durcissement du validateur les casserait en silence, et le premier écran du jalon 6 ouvrirait sur un projet mort.
 
-**Ce qui n'est pas construit** : le registre machine et le trousseau (§7.10.1) — aucun consommateur avant le tracker ; le provider de tracker et les prédicats de disponibilité (§7.10.6) ; aucun versionnement du schéma de `project.json`, même dette qu'au journal.
+**Ce qui n'est pas construit** : le **trousseau** (§7.10.1) — aucun consommateur avant le tracker ; le provider de tracker et les prédicats de disponibilité (§7.10.6) ; aucun versionnement du schéma de `project.json`, même dette qu'au journal. Le **registre machine**, lui, a désormais sa première pierre au jalon 6c·1 (§4.14) : la liste des projets connus.
 
 ### 4.12 Le magasin de sortie en flux — CONSTRUIT (jalon 6a)
 
@@ -505,6 +507,33 @@ Ce que le code ne dit pas d'emblée :
 - **Le provisionnement est du montage, séquentiel ; l'exécution est concurrente.** La preuve d'assemblage (`ProjectRunTests`) provisionne deux worktrees, puis lance les deux runs en `Task.WhenAll` : ils journalisent dans la même base et écrivent chacun dans son worktree, sans se corrompre. Git worktree add n'est donc jamais appelé en parallèle — pas de verrou de provisionnement à ce stade.
 - **L'appelant possède identité + cycle de vie du workspace.** `ExecuteAsync` prend le `runId` (invariant 8) ; le worktree monte à `<WorktreesRoot>/<runId>`, ce qui permet de le retrouver depuis le journal. Le futur host (§7.12) sera cet appelant, et portera la politique « un run actif par tâche » — hors périmètre ici.
 - **`InMemoryWorkspaceProvisioner` n'existe pas** (contrairement aux autres doubles `InMemory*`) : le moteur ne prend pas de provisionneur, rien ne le drainait.
+
+### 4.14 Le loader de projets — CONSTRUIT (jalon 6c·1)
+
+La première remontée d'UI, et la première pierre de la **racine machine** (§7.13). L'UI se construit par
+petites marches suivant le flux utilisateur (loader → ouvrir → lancer → sortie → run passé → config) ;
+celle-ci n'en livre que la première : *lister les projets, en ajouter, en retirer, se les rappeler entre
+deux lancements*. Ouvrir un projet en mode run, `ProjectHost`, le lancement d'un workflow restent à venir.
+
+- **`ProjectRegistry`** (`Cursus.Core/Projects/`) porte **toute** la logique. Inscrire valide par
+  `ProjectStore.Open` et laisse remonter `ProjectNotFoundException` — l'invariant « c'est un projet
+  Cursus » a déjà son gardien, on ne le duplique pas. Dédoublonnage par racine normalisée. Retirer ne
+  touche jamais au dépôt : oublier et supprimer sont deux gestes. La liste se persiste dans
+  `~/.config/cursus/projects.json` (§7.10.1) et se recharge au démarrage ; **une lecture ne mute jamais
+  le fichier** — un chemin qui ne résout plus (volume démonté) est ignoré de l'affichage mais conservé sur
+  disque, parce que distinguer « déplacé » de « supprimé » est le problème du registre machine complet.
+- **La coquille App** passe de surface unique à **rail des projets | surface**. `ShellViewModel` est un
+  adaptateur mince sur le registre (il délègue, et traduit un refus en message). La vue sessions n'est pas
+  supprimée mais **extraite** telle quelle dans `Views/SessionsView` (son `DataContext` reste un
+  `MainViewModel`) : bindings et plomberie PTY inchangés, dette gelée ré-hébergée (§6.1), pas refactorée.
+  Le sélecteur de dossier vit dans le code-behind (il exige un `TopLevel`) et ne passe qu'un chemin au
+  ViewModel. La composition se fait dans `App.axaml.cs` via `ProjectRegistry.ForCurrentUser()` — la
+  fabrique Core qui connaît l'emplacement machine ; une future CLI la réutilise sans dupliquer la convention.
+- **Le premier des deux tests exécutables du §7.12 existe** : `ArchitectureTests` vérifie que `Cursus.Core`
+  ne référence aucun assembly `Avalonia.*`. Sa non-vacuité a été prouvée (il tombe quand on vise un
+  assembly réellement présent). Le second — l'end-to-end headless — reste à écrire.
+- **Frontière tenue.** Toute la logique du loader est prouvée en `[Fact]` dans `Cursus.Core.Tests`, sans
+  une ligne d'Avalonia ; la coquille est un binder humble, non testé (assumé, `presentation.md` §1).
 
 ---
 
@@ -548,15 +577,15 @@ Frontière assumée : `SessionWorkspace` n'a pas de dépendance UI *framework*, 
 
 ### 6.2 `src/Cursus.App/` — l'app Avalonia
 
-Fenêtre unique : barre latérale 260 px (liste des sessions bindée sur `Workspace.Sessions`, sélection two-way) / `GridSplitter` / panneau `TerminalHost`.
+Depuis le jalon 6c·1 (§4.14), la fenêtre est **rail des projets | surface** : `MainWindow` porte à gauche le rail bindé sur `ShellViewModel.Projects` (ajout, retrait, sélection), à droite une surface qui héberge la vue sessions. Son code-behind est réduit au **sélecteur de dossier** (il exige un `TopLevel`), qui ne passe qu'un chemin au ViewModel.
 
-Tout le travail terminal est dans le code-behind `MainWindow.axaml.cs`, sans XAML : un dictionnaire `Guid → TerminalControl` garde **un contrôle terminal vivant par session, même masqué** (comportement « façon TMUX ») ; le basculement se fait par `IsVisible`, **jamais par recréation**. `EnsureTerminal` crée le contrôle (Menlo 13, invisible) et **démarre le PTY dans `Loaded`, une seule fois** : `terminal.StartPty(session.ShellPath, session.WorkingDirectory, new[] { "-l" })` — le PTY démarre au premier affichage réel, quand les bounds sont connues. Le `-l` demande un **shell de login** : sur macOS, une app GUI hérite d'un `PATH` tronqué, que seul un login shell ré-enrichit (`landscape.md`, Vague 2).
+Le travail terminal a été **extrait tel quel** dans le code-behind `Views/SessionsView.axaml.cs`, sans XAML, dont le `DataContext` reste un `MainViewModel` : un dictionnaire `Guid → TerminalControl` garde **un contrôle terminal vivant par session, même masqué** (comportement « façon TMUX ») ; le basculement se fait par `IsVisible`, **jamais par recréation**. `EnsureTerminal` crée le contrôle (Menlo 13, invisible) et **démarre le PTY dans `Loaded`, une seule fois** : `terminal.StartPty(session.ShellPath, session.WorkingDirectory, new[] { "-l" })` — le PTY démarre au premier affichage réel, quand les bounds sont connues. Le `-l` demande un **shell de login** : sur macOS, une app GUI hérite d'un `PATH` tronqué, que seul un login shell ré-enrichit (`landscape.md`, Vague 2).
 
-`App.axaml.cs` instancie `MainWindow` avec `new MainViewModel()` — **pas de DI**. `MainViewModel` est un adaptateur mince : deux `[RelayCommand]` qui délèguent à `SessionWorkspace`.
+`App.axaml.cs` instancie `MainWindow` avec `new ShellViewModel(ProjectRegistry.ForCurrentUser())` — **pas de DI**, la composition tient en une ligne. `ShellViewModel` est un adaptateur mince sur le registre (il délègue, traduit un refus d'ajout en message) ; il porte la surface sessions (`MainViewModel`, lui-même deux `[RelayCommand]` sur `SessionWorkspace`) comme enfant. Sélectionner un projet ne change pas encore la surface — c'est la marche suivante.
 
 ### 6.3 RoyalTerminal et le gotcha VT
 
-RoyalTerminal fournit le contrôle terminal complet (rendu, PTY, moteur VT). Utilisé **uniquement dans `Cursus.App`**, en deux points : `MainWindow.axaml.cs` et `src/Cursus.App/Terminals/NativeTerminalFactory.cs`.
+RoyalTerminal fournit le contrôle terminal complet (rendu, PTY, moteur VT). Utilisé **uniquement dans `Cursus.App`**, en deux points : `Views/SessionsView.axaml.cs` et `src/Cursus.App/Terminals/NativeTerminalFactory.cs`.
 
 `NativeTerminalFactory.Create()` **n'utilise pas le constructeur sans paramètre** : il recompose manuellement toutes les dépendances du contrôle afin d'injecter le provider VT natif :
 
@@ -659,7 +688,7 @@ Rien de ce qui suit n'existe en code. Le raisonnement complet, les preuves exter
 
 ### 7.10 Le projet, le tableau de tâches et les trois niveaux de stockage — PARTIELLEMENT CONSTRUIT
 
-Conception issue de la conversation préparatoire au jalon 4. Le **niveau projet** existe depuis le jalon 5 (§4.11) — dans sa forme minimale : identité, définitions, emplacements. Le reste (registre machine, trousseau, tracker) reste **TRANCHÉ, NON CONSTRUIT**.
+Conception issue de la conversation préparatoire au jalon 4. Le **niveau projet** existe depuis le jalon 5 (§4.11) — dans sa forme minimale : identité, définitions, emplacements. Le **registre machine** a désormais sa première pierre — la liste des projets connus (`ProjectRegistry`, jalon 6c·1, §4.14) ; le **trousseau** et le **tracker** restent **TRANCHÉ, NON CONSTRUIT**.
 
 ⚠️ **Une rectification, tranchée au jalon 5** : le tableau ci-dessous listait « racine du workspace » parmi le contenu de `project.json`. Elle n'y est pas et n'y sera pas — ce fichier est versionné, un chemin absolu y serait faux chez tout collègue. La racine est **déduite** : c'est le dossier qui contient le `.cursus/`, ce qui rejoint la formule « l'identité d'un projet est l'emplacement de son `.cursus/` » deux paragraphes plus bas.
 
@@ -668,8 +697,10 @@ Conception issue de la conversation préparatoire au jalon 4. Le **niveau projet
 | Niveau | Où | Quoi | Pourquoi pas ailleurs |
 |---|---|---|---|
 | **Projet** | `.cursus/project.json` + `.cursus/workflows/*.json`, **versionnés** | *construit* : identité du projet (`id`, `name`) et les définitions · *prévu* : provider de tracker, board/équipe, prédicats de disponibilité | c'est l'intention d'une équipe : elle doit se partager et se relire dans une PR |
-| **Machine** | `~/Library/Application Support/Cursus/registry.json` | la liste des projets importés | dépend de cet ordinateur ; n'a aucun sens pour un collègue |
+| **Machine** | `~/.config/cursus/projects.json` — *construit au 6c·1* (`ProjectRegistry`) | la liste des projets connus · *prévu* : réglages machine | dépend de cet ordinateur ; n'a aucun sens pour un collègue |
 | **Trousseau** | Keychain macOS, libsecret ailleurs | les tokens Linear/Jira | un secret ne s'écrit pas sur disque en clair, même hors dépôt |
+
+L'emplacement machine est `~/.config/cursus/` (résolu comme `SpecialFolder.ApplicationData` de .NET — même chemin sur macOS et Linux), **et non** `~/Library/Application Support/` : Cursus est un outil de dev non distribué (bundle signé ad-hoc), la convention XDG donne un seul chemin de code et correspond à ce que son public attend. Le fichier y porte des chemins **absolus** — à l'inverse de `project.json`, il ne se partage jamais par git. Décision tranchée au 6c·1 (L-1).
 
 Le journal (`.cursus/cursus.db`) et les artefacts (`.cursus/runs/<runId>/`) vivent **dans le projet mais hors de git**. Base et sorties au même endroit, sauvegardées ou détruites ensemble : un journal qui référence des artefacts disparus est pire qu'un journal absent, parce qu'il prétend être complet. La coupe versionné / ignoré passe entre l'**intention** (configuration, définitions) et l'**observation** (ce qui s'est passé sur une machine) — les mélanger dans git rendrait tout merge conflictuel.
 
@@ -779,7 +810,7 @@ qu'un critère si :
 | **Un module par capacité** | La façade n'accueille que ce qui demande une **composition** : lancer/observer/annuler un run. Lister et charger restent `WorkflowCatalog`, déjà testés |
 | **Le flux d'événements fait foi** | Pendant un run, le `WorkflowRun` rendu par `ExecuteAsync` ne sert qu'à savoir que la tâche est finie. Sinon deux écrivains sur le même état |
 | **Un run à la fois** | Non par confort : c'est la seule configuration que le code supporte sans synchronisation (§9.2-14). ⚠️ **Révisé par le parcours** — la cible exige des runs concurrents ; voir §7.13 |
-| **Deux tests rendent le critère exécutable** | (a) `Cursus.Core` ne référence aucun assembly `Avalonia.*` ; (b) un end-to-end **headless** qui ouvre, charge, lance et observe un run sans instancier Avalonia. Le second *force* `ProjectHost` à être suffisant |
+| **Deux tests rendent le critère exécutable** | (a) `Cursus.Core` ne référence aucun assembly `Avalonia.*` — **construit au 6c·1** (`ArchitectureTests`, §4.14) ; (b) un end-to-end **headless** qui ouvre, charge, lance et observe un run sans instancier Avalonia — *pas encore*. Le second *force* `ProjectHost` à être suffisant |
 
 **Écarts à retenir, parce qu'ils se rediscuteraient sinon :**
 
@@ -813,7 +844,7 @@ propriété : on n'attend pas devant une application qui ne montre qu'une chose 
 | Ce que la cible impose | Ce que ça révise |
 |---|---|
 | **N projets ouverts simultanément** | `ProjectHost` est confirmé comme la bonne unité — une racine **par projet**, chacune avec sa base et son journal. Rien à changer : c'était déjà le découpage. En revanche il **n'est plus la racine** — voir la ligne suivante |
-| **Une racine au-dessus des hosts** | Elle charge la liste des projets au démarrage, en ouvre et en ferme, sait **énumérer les runs actifs de tous les hosts**, et **porte un état global que les projets consultent sans le posséder** (§7.13.1). C'est ce dernier point qui la fait passer de commodité à pièce d'architecture. Elle contient le **registre machine** du §7.10.1, que le jalon 5 avait repoussé au jalon 7 : la cible le ramène au premier plan. La règle de sens unique tient sans changement — elle construit les hosts, aucun host ne la connaît |
+| **Une racine au-dessus des hosts** | Elle charge la liste des projets au démarrage, en ouvre et en ferme, sait **énumérer les runs actifs de tous les hosts**, et **porte un état global que les projets consultent sans le posséder** (§7.13.1). C'est ce dernier point qui la fait passer de commodité à pièce d'architecture. Elle contient le **registre machine** du §7.10.1, que le jalon 5 avait repoussé au jalon 7 : la cible le ramène au premier plan. **Sa première pierre est construite au 6c·1** — `ProjectRegistry` charge, persiste, ajoute et retire la liste des projets (§4.14) ; restent à venir la construction des hosts, l'énumération des runs actifs et l'état global. La règle de sens unique tient sans changement — elle construit les hosts, aucun host ne la connaît |
 | **Runs concurrents** | **Révise « un run à la fois » (§7.12).** Ce n'était pas un choix de produit mais un constat de code : `SqliteRunJournal` détient une `SqliteConnection` unique et son `Append` n'a aucun verrou (§9.2-14). Deux runs simultanés ne lèveraient pas — ils corrompraient par intermittence. À traiter **avant** l'UI qui les exposera |
 | **La sortie en direct** | **Révise l'arbitrage du §9.4** qui la traitait comme un « coût caché » optionnel du jalon 6. Elle est le cœur de l'écran de run : sans elle, il ne reste qu'un sablier. C'est le trou §9.2-4, qui devient un prérequis et non une suite |
 | **Le run est la porte d'entrée d'un projet** | L'éditeur de graphe sort du chemin critique — la configuration se visite sans s'habiter, et relève d'un **engrenage** plutôt que d'un mode de même poids (maquette du 2026-07-21, `parcours.md` §1.2). ⚠️ Nuance apportée par la même passe : « l'éditeur sort du chemin critique » ne veut pas dire « rien à faire en configuration au jalon 6 ». **`ValidationReport` est construit, testé, et affiché nulle part** — ses problèmes ne se découvrent qu'au lancement d'un run. L'exposer est le palier 1 des trois de `parcours.md` §7, et il coûte presque rien |
@@ -979,7 +1010,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **153 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **161 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 

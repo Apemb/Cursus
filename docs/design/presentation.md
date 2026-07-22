@@ -42,11 +42,13 @@ dépôt :
 
 Ce qu'il en reste, et qui est retenu : *la vue ne fait que binder*, et **ne pas la tester est assumé**.
 
-⚠️ La condition du point 3 est aujourd'hui **massivement violée** : `MainViewModel` fait 21 lignes,
-`MainWindow.axaml.cs` en contient ~90 de comportement réel (réconciliation de collection, cycle de vie
-des PTY, politique de visibilité et de focus), et le XAML court-circuite le ViewModel pour binder
-directement sur un type du domaine. Le problème n'est pas l'absence d'un patron : c'est que le
-ViewModel n'est pas sur le chemin.
+⚠️ Cette condition était **massivement violée** avant le jalon 6c·1. Elle ne l'est plus **pour le neuf** :
+le loader (§7 de `parcours.md`, `architecture.md` §4.14) met un `ShellViewModel` sur le chemin, et toute
+sa logique vit en Core, testée. La violation **survit uniquement dans la dette sessions**, désormais
+isolée : les ~90 lignes de comportement réel (réconciliation de collection, cycle de vie des PTY,
+visibilité, focus) et le XAML qui binde directement sur un type du domaine ont été **extraits tels quels**
+dans `Views/SessionsView.axaml.cs` — gelés, pas reproduits (§8). Le neuf respecte la règle ; l'ancien est
+mis de côté en attendant que la forme des sessions soit connue.
 
 ---
 
@@ -320,12 +322,16 @@ en dur.
 
 ---
 
-## 7. Les deux tests qui rendent le critère exécutable — TRANCHÉ, NON CONSTRUIT
+## 7. Les deux tests qui rendent le critère exécutable — PARTIELLEMENT CONSTRUIT
 
 1. **Test d'architecture** : `Cursus.Core` ne référence aucun assembly `Avalonia.*`. Il tombe le jour où
-   quelqu'un glisse une dépendance UI dans le noyau — y compris par mégarde transitive.
+   quelqu'un glisse une dépendance UI dans le noyau — y compris par mégarde transitive. ✅ **Construit au
+   jalon 6c·1** (`ArchitectureTests`, `architecture.md` §4.14) — non-vacuité prouvée en le retournant un
+   instant sur un assembly réellement présent.
 2. **Test end-to-end headless** : ouvrir le projet, lister, charger un workflow, le lancer, consommer le
-   flux d'événements, vérifier l'état final — **sans instancier une seule ligne d'Avalonia**.
+   flux d'événements, vérifier l'état final — **sans instancier une seule ligne d'Avalonia**. **Pas encore
+   construit** : il attend qu'un projet s'ouvre en mode run et qu'un workflow se lance depuis l'UI (marches
+   suivantes du loader).
 
 Le second est le critère du §1 transformé en assertion. S'il passe, le mode CLI existe déjà et il ne
 reste qu'à lui écrire un point d'entrée ; s'il devient impossible à écrire, c'est que de la logique a fui
