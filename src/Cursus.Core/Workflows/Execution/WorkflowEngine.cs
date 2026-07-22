@@ -1,7 +1,7 @@
 using Cursus.Core.Workflows.Journaling;
 using Cursus.Core.Workflows.Output;
 
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Execution;
 
 /// <summary>
 /// Parcourt un graphe de <see cref="StepDefinition"/> depuis son point d'entrée,

@@ -2,6 +2,7 @@ using System.Diagnostics;
 
 using Cursus.Core.Projects;
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Execution;
 using Cursus.Core.Workflows.Workspaces;
 
 namespace Cursus.Persistence.Tests;

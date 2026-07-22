@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Execution;
 
 /// <summary>
 /// Levée quand un sous-chemin déclaré par une étape désigne un emplacement

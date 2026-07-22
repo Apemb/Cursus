@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Execution;
 
 /// <summary>
 /// Frontière I/O du noyau déterministe : lance un process décrit par un

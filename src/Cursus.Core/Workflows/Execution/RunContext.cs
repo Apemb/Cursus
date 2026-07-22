@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Execution;
 
 /// <summary>
 /// La racine du workspace dans laquelle se déroule un run, et la résolution

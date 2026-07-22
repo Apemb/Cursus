@@ -1,5 +1,6 @@
 using System.Text;
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Execution;
 
 namespace Cursus.Core.Tests.Workflows;
 

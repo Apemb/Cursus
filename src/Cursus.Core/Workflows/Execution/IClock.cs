@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Execution;
 
 /// <summary>
 /// L'heure, injectable. Le noyau n'y touche que pour horodater le journal :

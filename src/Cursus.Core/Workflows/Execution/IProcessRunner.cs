@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Execution;
 
 /// <summary>
 /// Abstraction du lancement d'un process. Le moteur délègue ici et ne fait
