@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 using Cursus.Core.Projects;
 
 namespace Cursus.Core.Tests.Projects;
@@ -67,6 +69,51 @@ public sealed class ProjectRegistryTests : IDisposable
         // assert — hors de la liste, mais le .cursus/ du projet reste intact
         Assert.Empty(registry.Projects);
         Assert.True(File.Exists(Path.Combine(_root, ".cursus", "project.json")));
+    }
+
+    [Fact(DisplayName = "étant donné un registre où l'on a ajouté un projet, quand un nouveau registre s'ouvre sur le même dossier de config, alors il relit le même projet")]
+    public void A_new_registry_reloads_the_projects_added_before()
+    {
+        // arrange
+        var project = ProjectStore.Create(_root, "Démo");
+        new ProjectRegistry(_configDir).Add(_root);
+
+        // act — un registre neuf, même dossier de configuration
+        var reloaded = new ProjectRegistry(_configDir);
+
+        // assert
+        Assert.Contains(reloaded.Projects, p => p.Id == project.Id);
+    }
+
+    [Fact(DisplayName = "étant donné aucun fichier de configuration, quand un registre s'ouvre, alors sa liste est vide")]
+    public void A_registry_without_a_config_file_starts_empty()
+    {
+        // act — _configDir existe mais ne porte aucun projects.json
+        var registry = new ProjectRegistry(_configDir);
+
+        // assert
+        Assert.Empty(registry.Projects);
+    }
+
+    [Fact(DisplayName = "étant donné un fichier de configuration listant un chemin qui ne résout plus, quand le registre s'ouvre, alors ce chemin est absent de la liste et le fichier n'est pas réécrit")]
+    public void A_stored_path_that_no_longer_resolves_is_skipped_but_kept_on_disk()
+    {
+        // arrange — un projects.json écrit à la main : un projet réel et un
+        // chemin fantôme (un dossier qui n'existe pas / n'existe plus)
+        ProjectStore.Create(_root, "Démo");
+        var ghost = Path.Combine(_configDir, "disparu");
+        var configFile = Path.Combine(_configDir, "projects.json");
+        File.WriteAllText(configFile, $$"""
+            { "projects": [ {{JsonSerializer.Serialize(_root)}}, {{JsonSerializer.Serialize(ghost)}} ] }
+            """);
+
+        // act
+        var registry = new ProjectRegistry(_configDir);
+
+        // assert — seul le projet réel apparaît...
+        Assert.Single(registry.Projects);
+        // ...mais le fichier garde les deux entrées : une lecture ne perd rien
+        Assert.Contains("disparu", File.ReadAllText(configFile));
     }
 
     public void Dispose()

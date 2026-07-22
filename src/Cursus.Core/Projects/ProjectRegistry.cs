@@ -1,3 +1,7 @@
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
+
 namespace Cursus.Core.Projects;
 
 /// <summary>
@@ -7,13 +11,26 @@ namespace Cursus.Core.Projects;
 /// </summary>
 public sealed class ProjectRegistry
 {
+    internal const string FileName = "projects.json";
+
+    private static readonly JsonSerializerOptions Options = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        WriteIndented = true,
+
+        // Un chemin accentué doit rester lisible dans le fichier — même raison
+        // qu'au sérialiseur de projets.
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+    };
+
+    private readonly string _filePath;
     private readonly List<Project> _projects = [];
 
     public ProjectRegistry(string configDirectory)
     {
-        // Le dossier de configuration portera la liste persistée ; aucun
-        // comportement ne l'exige encore (il arrive au comportement « la
-        // machine se souvient »).
+        _filePath = Path.Combine(configDirectory, FileName);
+        Load();
     }
 
     public IReadOnlyList<Project> Projects => _projects;
@@ -34,6 +51,7 @@ public sealed class ProjectRegistry
             return;
 
         _projects.Add(project);
+        Save();
     }
 
     /// <summary>
@@ -45,6 +63,37 @@ public sealed class ProjectRegistry
     public void Remove(string projectRoot)
     {
         var root = Path.GetFullPath(projectRoot);
-        _projects.RemoveAll(inscribed => inscribed.Root == root);
+        if (_projects.RemoveAll(inscribed => inscribed.Root == root) > 0)
+            Save();
+    }
+
+    private void Load()
+    {
+        if (!File.Exists(_filePath))
+            return;
+
+        var document = JsonSerializer.Deserialize<RegistryDocument>(File.ReadAllText(_filePath), Options);
+        foreach (var root in document?.Projects ?? [])
+        {
+            try
+            {
+                _projects.Add(ProjectStore.Open(root));
+            }
+            catch (ProjectNotFoundException)
+            {
+                // Un chemin qui ne résout plus (dossier supprimé, volume démonté)
+                // est ignoré de l'affichage — mais on n'écrit rien ici, donc
+                // l'entrée survit dans le fichier. Distinguer « déplacé » de
+                // « supprimé » est le problème du registre machine complet ; une
+                // simple relecture, elle, ne doit jamais faire perdre un projet.
+            }
+        }
+    }
+
+    private void Save()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
+        var document = new RegistryDocument(_projects.ConvertAll(project => project.Root).ToArray());
+        File.WriteAllText(_filePath, JsonSerializer.Serialize(document, Options));
     }
 }
