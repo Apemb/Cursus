@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `88ecfc4`. Dernier jalon de code : `88ecfc4` (*le projet minimal, jalon 5*). Suite de tests : **141 verts** (126 noyau + 15 persistance), build 0 warning.
+> **Statut** : document vivant, à jour du commit `5b1cfd9`. Dernier jalon de code : `5b1cfd9` (*la sortie en flux, jalon 6a*). Suite de tests : **145 verts** (129 noyau + 16 persistance), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -80,7 +80,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 141 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 145 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -175,11 +175,13 @@ Namespace `Cursus.Core.Workflows` pour tout le noyau, plus `Cursus.Core.Projects
 | `StepDefinition.cs` | Un nœud : `Id`, `Name`, `Script`, `MaxVisits`, `OutEdges`, `WorkingSubdirectory?` (relatif) |
 | `Edge.cs` · `Guard.cs` | `record Edge(Guard, string Target)` · garde abstraite `Matches(ScriptResult)` |
 | `ScriptSpec.cs` | Ce qu'on lance : `FileName`, `Arguments`, `WorkingDirectory?`, `Environment?`, `Timeout?` |
-| `ScriptOutcome.cs` · `ScriptResult.cs` | `Completed`/`TimedOut`/`LaunchFailed` · résultat + `IsSuccess` |
-| `IProcessRunner.cs` · `ProcessRunner.cs` | La seule couture I/O · son implémentation réelle |
+| `ScriptOutcome.cs` · `ScriptResult.cs` | `Completed`/`TimedOut`/`LaunchFailed` · ce que le process a fait (`ExitCode`, `Outcome`, `Duration`) + `IsSuccess` |
+| `IProcessRunner.cs` · `ProcessRunner.cs` | La seule couture I/O (ruisselle vers deux `Stream`) · son implémentation réelle |
+| `IRunOutputStore.cs` · `IStepOutputSink.cs` · `InMemoryRunOutputStore.cs` | Le puits de sortie : ouvrir avant l'étape · deux flux + `StepOutput` · l'implémentation volatile. Voir §4.12 |
+| `StepOutput.cs` · `OutputArtifact.cs` | Ce qu'une visite a laissé : liste d'artefacts `(Name, Path?, Size)` |
 | `RunContext.cs` | Racine du workspace et résolution des sous-chemins |
 | `WorkflowEngine.cs` | La traversée du graphe |
-| `WorkflowRun.cs` · `StepRun.cs` | `RunState`, `AbortReason`, historique · une visite |
+| `WorkflowRun.cs` · `StepRun.cs` | `RunState`, `AbortReason`, historique · une visite (`Result` + `Output`) |
 | `WorkflowValidator.cs` · `ValidationReport.cs` | Validité du graphe · `ValidationIssueKind` (9 valeurs), `ValidationIssue`, `ValidationReport` |
 | `WorkflowSerializer.cs` · `WorkflowDocument.cs` | JSON ⟷ modèle, `LoadResult` · les DTO `internal` |
 | `UnknownStepException.cs` · `PathEscapesWorkspaceException.cs` · `UnknownGuardException.cs` | Voir §4.6 |
@@ -290,21 +292,19 @@ Le `with` non destructif, juste avant l'appel au runner, est le **seul endroit d
 
 `ProcessRunner` est la frontière I/O du noyau. Le reste de la méthode est du .NET ordinaire ; deux points ne se redécouvrent pas seuls :
 
-**Pourquoi les lectures ne sont pas awaitées.** Les deux `ReadToEndAsync` sont lancées avant le `WaitForExitAsync` et awaitées seulement à la fin : lire l'un des tubes jusqu'au bout avant l'autre bloquerait le process dès que le tube non lu est plein (64 Kio). Aucun jeton n'est passé à ces lectures — à la mort du process les tubes se ferment, les lectures s'achèvent d'elles-mêmes et rendent la **sortie partielle**, y compris après un kill.
+**Pourquoi les copies ne sont pas awaitées d'emblée.** Depuis le jalon 6a, `RunAsync` prend **deux `Stream`** fournis par l'appelant et y **ruisselle** les sorties : deux `BaseStream.CopyToAsync` (copie d'octets bruts, aucune décision d'encodage) lancées avant le `WaitForExitAsync` et awaitées seulement à la fin. Lire l'un des tubes jusqu'au bout avant l'autre bloquerait le process dès que le tube non lu est plein (64 Kio). Aucun jeton n'est passé à ces copies — à la mort du process les tubes se ferment, les copies s'achèvent d'elles-mêmes et rendent la **sortie partielle**, y compris après un kill.
 
 **Pourquoi le CTS est lié.** Un `CancellationTokenSource.CreateLinkedTokenSource(ct)` porte le `CancelAfter(timeout)`. Au réveil par annulation, le process est tué (`Kill(entireProcessTree: true)`) puis on appelle `cancellationToken.ThrowIfCancellationRequested()` : **c'est le lien qui distingue les deux causes**. Jeton d'origine annulé → l'exception remonte (le moteur en fait `Aborted/Canceled`). Sinon c'est le délai → `outcome = TimedOut`, une issue d'exécution ordinaire que `OnFailure` routera.
 
-Convention : un binaire introuvable (`Win32Exception` au `Start`) rend `ScriptResult(127, LaunchFailed, Stderr: message)` — **pas d'exception**. 127 est la convention shell « command not found », la même que `execvp` côté PTY.
+Convention : un binaire introuvable (`Win32Exception` au `Start`) rend `ScriptResult(127, LaunchFailed)` — **pas d'exception** — après avoir écrit son message sur le flux stderr fourni, où il devient le contenu stderr de la visite. 127 est la convention shell « command not found », la même que `execvp` côté PTY.
 
 **Limites assumées du runner :**
 
-- **Aucune sortie incrémentale** : `ReadToEndAsync` ne rend la sortie qu'à la mort du process. Impossible d'afficher la sortie d'une étape en cours — bloquant pour la jonction UI (§2.2), qui exigera un runner streamant ou un second contrat.
-- **Capture non plafonnée** : stdout/stderr sont accumulés en `string` en mémoire et conservés dans `WorkflowRun.History` pour toute la durée du run. Un script bavard le fait grossir sans limite.
 - **Pas de stdin** : `ScriptSpec` n'a aucun champ d'entrée.
 - **Résolution de `FileName` non contrainte** : avec `UseShellExecute = false`, un nom sans séparateur est cherché dans le `PATH` et un chemin relatif n'est **pas** résolu contre le `WorkingDirectory` calculé par `RunContext` — le soin pris à absolutiser le cwd est donc contournable. `noyau-deterministe.md` §3 exige un chemin **absolu** ; ni `ScriptSpec`, ni `ProcessRunner`, ni le validateur ne l'imposent (le validateur ne vérifie même pas que `fileName` est non vide : une étape sans script ne se voit qu'à l'exécution, en `LaunchFailed`).
 - **Course non gardée au kill** : `Kill` peut lever une `InvalidOperationException` si le process meurt entre le réveil et l'appel.
 - **Aucune politique de concurrence documentée** : `WorkflowEngine` est sans état d'instance, mais rien ne spécifie ni ne teste plusieurs runs simultanés — première question au moment du câblage UI.
-- **Aucune observabilité *dans le runner*** : pas d'`ILogger`. Le run, lui, émet désormais des événements (§4.10) — mais seulement aux frontières d'étape, jamais pendant qu'un script tourne.
+- **Aucune observabilité *dans le runner*** : pas d'`ILogger`. Le run émet des événements (§4.10) aux seules frontières d'étape ; sa **sortie**, elle, ruisselle bien *pendant* qu'un script tourne (jalon 6a) — c'est le fichier qu'un observateur suit à la trace, pas un flux d'événements.
 
 ### 4.5 Résolution des chemins et confinement
 
@@ -389,7 +389,7 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 
 ### 4.10 Le journal — CONSTRUIT (jalon 4)
 
-Le moteur **raconte** désormais ce qu'il fait. `WorkflowEngine(IProcessRunner, IRunJournal)` : le journal est un paramètre **obligatoire**, jamais optionnel — un défaut muet rendrait le silence accidentel, alors que c'est précisément le trou qu'on referme ; un run qu'on ne veut pas relire prend simplement un `InMemoryRunJournal` qu'on ignore.
+Le moteur **raconte** désormais ce qu'il fait. `WorkflowEngine(IProcessRunner, IRunJournal, IRunOutputStore)` : le journal **et** le puits de sortie (§4.12, jalon 6a) sont des paramètres **obligatoires**, jamais optionnels — un défaut muet rendrait le silence accidentel, alors que c'est précisément le trou qu'on referme ; un run qu'on ne veut pas relire prend simplement un `InMemoryRunJournal` et un `InMemoryRunOutputStore` qu'on ignore.
 
 Cinq événements, **imbriqués dans `WorkflowEvent`** comme les variantes de `Guard` le sont dans `Guard` : leurs noms sont trop courants pour occuper le namespace.
 
@@ -400,7 +400,7 @@ sequenceDiagram
     E->>J: RunStarted(Definition, WorkspaceRoot, Trigger)
     loop chaque visite
         E->>J: StepStarted(StepId, Iteration)
-        E->>J: StepFinished(StepId, Iteration, ScriptResult)
+        E->>J: StepFinished(StepId, Iteration, ScriptResult, StepOutput)
         opt une arête matche
             E->>J: EdgeChosen(FromStepId, ToStepId)
         end
@@ -423,7 +423,7 @@ Ce que la lecture du code ne donne pas d'emblée :
 `RunEventCodec` traduit vers des **DTO de payload, un par kind**, pour la même raison qu'au §7.5 — mais ici c'était aussi une obligation : les gardes d'une `WorkflowDefinition` sont des types abstraits que `System.Text.Json` ne sait pas reconstruire. La définition transite donc par `WorkflowSerializer` dans la colonne `definition_json`, et le codec l'y récupère à la relecture.
 
 > **Trois conséquences à ne pas découvrir en production.**
-> 1. **Un `StepFinished` relu a ses sorties vides.** Elles vivent dans `RunArtifactStore`, pas en base ; le payload n'en garde que les tailles. C'est au magasin qu'il faut aller les chercher.
+> 1. **Un `StepFinished` relu porte les *artefacts* de sa sortie, jamais les octets.** Le payload garde une liste `(nom, chemin, taille)` — le contenu vit dans le magasin (§4.12), à ce chemin près. Depuis le jalon 6a, c'est le **puits** qui a écrit ces fichiers *pendant* l'étape ; le journal ne les écrit plus après coup, il ne fait qu'en enregistrer les artefacts.
 > 2. **La définition figée repasse par le validateur à la relecture** (`WorkflowSerializer.Read` valide). Un durcissement futur des règles rendrait d'anciens runs **illisibles**.
 > 3. **`state` à `NULL` = run non clos**, ce qui confond « en cours » et « tué par un crash machine ». La reprise après incident est hors v0 (§9.3).
 
@@ -454,13 +454,30 @@ Ce que la lecture du code ne donne pas d'emblée :
 - **Un document de workflow invalide rapporte ; tout le reste lève.** Le contraste porte la décision : `ValidationReport` existe pour qu'un éditeur affiche tout d'un coup, or un projet qu'on n'ouvre pas n'a aucun écran à alimenter. Donc `LoadResult` pour un graphe cassé — mais des exceptions pour l'**absence** et le conflit : `ProjectNotFoundException`, `InvalidProjectException`, l'`InvalidOperationException` d'un `Create` sur un dossier qui porte déjà un projet, et le `FileNotFoundException` du framework pour un identifiant de workflow qu'aucun fichier ne porte (l'invariant violé y est celui du système de fichiers, pas celui du catalogue). Seule l'identité est exigée d'un `project.json` : le nom n'est qu'un libellé.
 - **`List()` n'ouvre aucun fichier** et trie par identifiant. Un document cassé se découvre au `Load` — sinon un seul fichier fautif rendrait le projet entier inutilisable. L'ordre du système de fichiers n'étant garanti nulle part, le tri est explicite.
 - **`Discover` remonte l'arborescence** jusqu'au premier **`.cursus/project.json`** — et non jusqu'au premier dossier `.cursus/` : un dossier sans fichier de projet est traversé sans arrêt. Reste distinct d'`Open`, qui exige la racine exacte.
-- **`Project` expose des chemins, il ne construit ni journal ni magasin** : `Cursus.Core` ignore `Cursus.Persistence` (§7.11). C'est l'appelant qui assemble `new SqliteRunJournal(project.DatabasePath, new RunArtifactStore(project.ArtifactsRoot))` — ce que fait `ProjectRunTests`, et ce que fera le jalon 6.
+- **`Project` expose des chemins, il ne construit ni journal ni magasin** : `Cursus.Core` ignore `Cursus.Persistence` (§7.11). C'est l'appelant qui assemble `new SqliteRunJournal(project.DatabasePath)` **et** `new RunArtifactStore(project.ArtifactsRoot)` — le premier pour les événements, le second comme puits de sortie du moteur (§4.12) — ce que fait `ProjectRunTests`, et ce que fera le jalon 6c.
 
 **Le dépôt est son propre cobaye.** `.cursus/workflows/` porte les deux moitiés du standard de qualité de `CLAUDE.md` : `build` est une étape unique (`dotnet build -warnaserror`), `verifier` en enchaîne deux — compiler, puis `dotnet test` — reliées par une arête `success`. Ils lancent `/bin/sh -c "dotnet …"` et non `dotnet` : `ProcessRunner` ne lance aucun shell de login et `fileName` doit être un chemin exécutable, or celui de ce poste vient d'asdf. ⚠️ Cela **ne referme pas** le trou §9.2-15 — sous le `PATH` tronqué d'une app installée, ces mêmes workflows échoueraient en `LaunchFailed`.
 
 `CursusProjectTests` garde ces exemples valides : sans lui, un durcissement du validateur les casserait en silence, et le premier écran du jalon 6 ouvrirait sur un projet mort.
 
 **Ce qui n'est pas construit** : le registre machine et le trousseau (§7.10.1) — aucun consommateur avant le tracker ; le provider de tracker et les prédicats de disponibilité (§7.10.6) ; aucun versionnement du schéma de `project.json`, même dette qu'au journal.
+
+### 4.12 Le magasin de sortie en flux — CONSTRUIT (jalon 6a)
+
+La sortie d'une étape ne transite plus par la RAM ni par le résultat. Elle **ruisselle vers un fichier ouvert au démarrage de l'étape**, ce qui rend enfin possible de suivre une étape *pendant* qu'elle tourne (trou §9.2-4, requalifié en prérequis de l'écran de run par le parcours) — et, parce que chaque visite écrit son propre fichier, ouvre la porte aux runs concurrents du jalon 6b (N étapes = N fichiers, aucune contention).
+
+| Type (Core) | Rôle |
+|---|---|
+| `IRunOutputStore` | `Open(runId, stepId, iteration)` rend un puits **avant** l'étape. Le moteur en dépend comme d'`IRunJournal` ; c'est le seul agencement qui permet d'ouvrir le fichier au démarrage — le journal, lui, ne voit la visite qu'après coup. |
+| `IStepOutputSink` | Deux `Stream` (`Stdout`, `Stderr`) où le runner déverse, et, une fois clos, le `StepOutput` de la visite. Orienté script (deux flux), assumé : seul le script existe. |
+| `StepOutput` / `OutputArtifact` | Une **liste** d'artefacts `(Name, Path?, Size)`, pas une paire figée. `RunArtifactStore` (persistance) implémente le magasin sur fichier ; `InMemoryRunOutputStore` (Core) est le puits volatile, défaut sans persistance et double des tests. |
+
+Ce que la lecture du code ne donne pas d'emblée :
+
+- **`ScriptResult` ne porte plus la sortie** : `ExitCode`, `Outcome`, `Duration`, rien d'autre. Ce que le process a *fait* et *où sa sortie a été rangée* sont deux choses, portées l'une par `ScriptResult`, l'autre par `StepOutput` sur `StepRun` et `StepFinished`.
+- **Chaque flux crée son fichier au premier octet.** Un flux muet ne laisse rien (`Path` absent) : la règle « pas de fichier vide » du magasin est préservée, désormais flux par flux.
+- **Raw = octets, pas texte.** Le runner copie les `BaseStream` bruts : le primitif honnête pour ce qui portera un jour l'ANSI d'un terminal (§2.2), et il épargne toute décision d'encodage. La taille d'un artefact est en octets.
+- **`StepOutput` est délibérément minimal, et sa forme est réversible.** Ni interface, ni type abstrait, ni distinction *brut*/*structuré* : seule la **cardinalité** est ouverte, pour qu'un futur type d'étape ajoute des artefacts sans reshaper le type. On peut le durcir tard sans coût — il n'est vu que du noyau et de la persistance (aucun consommateur d'UI), et le schéma du payload n'est pas publié. La forme des sorties d'`AgentStep`/`TaskStep`, et l'éventuel canal **structuré** (un JSONL de transcript/activité) face au canal **brut**, restent **QUESTION OUVERTE** : on tranchera avec les cas réels, pas en les devinant. Une conversation *interactive*, elle, n'est pas une sortie qu'on relit — c'est le monde sessions/PTY (§2.2), orthogonal, et `StepOutput` n'a pas à le couvrir.
 
 ---
 
@@ -475,7 +492,7 @@ Le pari central promet que greffer un nouveau type d'étape sera une extension, 
 2. `WorkflowDocument.cs` + le mapping de `WorkflowSerializer` — un champ `kind` dans le document, avec sa retombée par défaut sur le script pour ne pas casser les fichiers existants.
 3. Un **exécuteur** dédié, derrière une abstraction analogue à `IProcessRunner`, et le point de dispatch qui choisit l'exécuteur selon le `StepKind`.
 4. `WorkflowValidator` — les règles propres au nouveau kind.
-5. `RunEventCodec` — le payload de `StepFinished` est aujourd'hui celui d'un script (code de sortie, issue, tailles de sortie). Un `TaskStep` en voudra un autre (ticket, colonne cible). C'est **exactement pour cela** qu'aucun `exit_code` n'a été promu en colonne (§7.10.4) : le nouveau kind ajoute une branche au codec, il ne migre pas une table remplie.
+5. `RunEventCodec` — le payload de `StepFinished` est aujourd'hui celui d'un script (code de sortie, issue, artefacts de sortie). Un `TaskStep` en voudra un autre (ticket, colonne cible). C'est **exactement pour cela** qu'aucun `exit_code` n'a été promu en colonne (§7.10.4) : le nouveau kind ajoute une branche au codec, il ne migre pas une table remplie.
 
 **Ce qui ne doit PAS bouger :**
 - la boucle de `WorkflowEngine.ExecuteAsync` (compteur de visites, sélection d'arête, états terminaux) ;
@@ -700,7 +717,7 @@ Portées côté modèle par `RunTrigger`, passé à `ExecuteAsync` et embarqué 
 
 `Workflows/` revendique le **zéro dépendance externe** (§1.2) et le journal du jalon 4 avait besoin de SQLite. Deux façons d'en sortir : faire tomber la propriété, ou déplacer l'implémentation.
 
-Retenu : **`Cursus.Persistence`**, qui référence le noyau et implémente ses contrats. Le noyau définit `IRunJournal` / `IRunJournalReader` et embarque `InMemoryRunJournal` ; lui seul est nécessaire pour exécuter un workflow. Trois gains concrets, dans l'ordre où ils comptent :
+Retenu : **`Cursus.Persistence`**, qui référence le noyau et implémente ses contrats. Le noyau définit `IRunJournal` / `IRunJournalReader` — et, depuis le jalon 6a, `IRunOutputStore`, qu'implémente `RunArtifactStore` — et embarque les doubles volatils `InMemoryRunJournal` et `InMemoryRunOutputStore` ; eux seuls sont nécessaires pour exécuter un workflow. Trois gains concrets, dans l'ordre où ils comptent :
 
 - **La frontière devient vérifiable par le compilateur** au lieu d'être une convention. Une régression qui ferait fuiter du SQL dans le moteur ne compile pas.
 - **Le noyau reste testable sans base** — aucun test de `Cursus.Core.Tests` ne touche un fichier `.db`, ce qui les garde rapides et sans nettoyage.
@@ -935,7 +952,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **141 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **145 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 
@@ -961,7 +978,7 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 1. **Les deux moitiés du dépôt ne sont pas reliées** (§2) : aucun adaptateur entre `StartPty` et `IProcessRunner`, aucune UI de workflow, `SessionKind.Agent` mort. La couture elle-même est une question ouverte (§2.2).
 2. ~~**Aucun point d'entrée qui lise un fichier**~~, ~~**aucun exemple commité**~~ — **refermés au jalon 5** (§4.11). Reste ouvert : **aucun schéma JSON publié** pour outiller un éditeur, et aucun consommateur du catalogue hors des tests.
 3. ~~**Aucune persistance**~~ — **refermé au jalon 4** (§4.10). Restent ouverts : pas de `StepRunId` ni de `contentHash`, **aucun versionnement de schéma**, aucune purge, et un `state` à `NULL` qui confond « en cours » et « tué par un crash ».
-4. **Aucune sortie incrémentale pendant un run** : le journal n'émet qu'aux **frontières d'étape** (§4.10), et `ReadToEndAsync` ne rend la sortie qu'à la mort du process (§4.4). Voir une étape avancer *pendant* qu'elle tourne reste hors d'atteinte. ⚠️ **Requalifié par le parcours** : ce n'est plus un coût caché du jalon 6 mais son **prérequis** (§7.13) — sans lui l'écran de run n'est qu'un sablier, et le construire deux fois reviendrait à jeter le premier. **Un troisième verrou, identifié le 2026-07-21 et à instruire au plan de 6a** : `ScriptResult.Stdout` est un `string` portant **toute** la sortie en mémoire, et `RunArtifactStore.Write` fait un `File.WriteAllText` **une fois l'étape finie**. Le bon endroit est déjà choisi — la doc du magasin dit « un fichier se suit à la trace pendant qu'il s'écrit, ce que voudra l'interface » — mais la promesse n'est pas tenue : il faut une écriture **en ajout, ouverte au démarrage de l'étape**, et un `ScriptResult` qui porte un **chemin** plutôt qu'un contenu. Sans ce second point le gain est nul : la sortie transite par la RAM avant d'atteindre le disque, et un script très bavard fait tomber l'application au lieu de faire grossir un fichier. **C'est un changement de type du noyau**, pas un détail de persistance.
+4. ~~**Aucune sortie incrémentale pendant un run**~~ — **refermé au jalon 6a** (§4.12). La sortie ruisselle désormais vers un fichier ouvert au démarrage de l'étape ; `ScriptResult` ne la porte plus, un `StepOutput` en porte les artefacts, et un script bavard fait grossir un fichier au lieu de faire tomber l'application. Le changement de type annoncé a bien eu lieu, avec une révision : ce n'est pas `ScriptResult` qui porte le chemin (il redevient purement factuel) mais `StepOutput`, séparé — l'emplacement de la sortie n'est pas l'affaire du process. Le journal, lui, n'émet toujours ses événements qu'aux **frontières d'étape** (§4.10) ; c'est le *fichier* qui se suit à la trace, pas un flux d'événements. **Reste ouvert, et propre à 6c** : l'**affichage** en direct de ce fichier — le flux *vivant* (décorateur d'`IRunJournal` vers un `Channel`, §7.12) distinct du flux *durable* posé ici.
 5. **Aucun passage de données entre étapes** (§4.8, invariant 9) : la seule mémoire partagée est le disque.
 6. **Le refus d'évasion de chemin ne suit pas les symlinks** — garde-fou de déclaration, **pas** confinement OS (§4.5).
 7. **`RunContext.Resolve` ne crée pas les répertoires** : un `workingSubdirectory` déclaré doit préexister.
@@ -1019,7 +1036,7 @@ Le plan d'origine en cinq jalons ne tient plus : les décisions du §7.10 ajoute
 | ~~**0**~~ | ~~**Packaging `.app` macOS**~~ — **FAIT**, résultats au §6.6 | rien de fonctionnel — il a validé l'**environnement d'exécution réel**, et confirmé le piège du `PATH` |
 | ~~**4**~~ | ~~**Journal & persistance**~~ — **FAIT**, détails au §4.10 et §7.11 | un run survit au process ; on peut relire ce qui s'est passé |
 | ~~**5**~~ | ~~**Le projet, minimal**~~ — **FAIT**, détails au §4.11 | `project.json` et des workflows lus **depuis le disque** |
-| **6a** | **La sortie en flux** — noyau seul | voir une étape avancer *pendant* qu'elle tourne (trou §9.2-4) |
+| ~~**6a**~~ | ~~**La sortie en flux**~~ — **FAIT**, détails au §4.12 | voir une étape avancer *pendant* qu'elle tourne — la sortie ruisselle sur disque, `ScriptResult` ne la porte plus |
 | **6b** | **Runs concurrents** — persistance seule | plusieurs workflows en vol, sur un projet comme sur plusieurs (trou §9.2-14) |
 | **6c** | **La jonction UI** | un humain ouvre ses projets, lance un workflow, et voit le run avancer |
 | **7** | **Tracker & `TaskStep`** | l'écran des actions disponibles ; un workflow tire et annote une carte |
@@ -1040,7 +1057,7 @@ coquille, et les trois écrans (ouverture, workflows d'un projet, run).
 
 **Le jalon 5 remboursait la dette du §9.2, point 2** (personne ne lisait un fichier depuis le disque). Fusionner cette couture avec le projet minimal plutôt qu'en faire un patch isolé s'est vérifié à l'usage : le `Project` est devenu le point de rendez-vous du workspace, du catalogue et des emplacements de journal, là où un « ouvrir un fichier » aurait été à refaire. Le registre machine et le trousseau (§7.10.1) en ont bien été tenus à l'écart, faute de consommateur avant le tracker.
 
-**La forme de 6c est déjà tranchée** (§7.12 et `presentation.md`, conception du 2026-07-21) : `ProjectHost` comme racine de composition — sous une racine multi-projets, §7.13 — un module de run, observation par décorateur d'`IRunJournal` vers un `Channel`, et deux tests — architecture et end-to-end headless — qui rendent exécutable le critère « l'UI n'est qu'une façon d'instancier et d'afficher ». Le **parcours utilisateur** est produit (`parcours.md`, 2026-07-21), et la passe de **maquettes** a eu lieu le même jour. Elle a tranché la coquille (rail d'icônes, état de l'application en pied cliquable), la configuration (un engrenage, pas un mode), la vue d'un run (graphe et liste, deux vues sœurs à sélection partagée) et son contrôle (un état à trois positions, pas un bouton) — le tout consigné dans `parcours.md` §1.2, §1.4, §1.6, §1.7 et §4. Les maquettes elles-mêmes sont **archivées sans autorité** dans `docs/design/maquettes/jalon-6.html` — ouvrables dans un navigateur, **non tenues à jour**, et sans valeur de spécification : elles sont en HTML quand Cursus est en XAML, et elles servaient à décider. Tout écart entre elles et `parcours.md` ou `presentation.md` se tranche en faveur de ces derniers. Reste le **plan gaté de 6a**.
+**La forme de 6c est déjà tranchée** (§7.12 et `presentation.md`, conception du 2026-07-21) : `ProjectHost` comme racine de composition — sous une racine multi-projets, §7.13 — un module de run, observation par décorateur d'`IRunJournal` vers un `Channel`, et deux tests — architecture et end-to-end headless — qui rendent exécutable le critère « l'UI n'est qu'une façon d'instancier et d'afficher ». Le **parcours utilisateur** est produit (`parcours.md`, 2026-07-21), et la passe de **maquettes** a eu lieu le même jour. Elle a tranché la coquille (rail d'icônes, état de l'application en pied cliquable), la configuration (un engrenage, pas un mode), la vue d'un run (graphe et liste, deux vues sœurs à sélection partagée) et son contrôle (un état à trois positions, pas un bouton) — le tout consigné dans `parcours.md` §1.2, §1.4, §1.6, §1.7 et §4. Les maquettes elles-mêmes sont **archivées sans autorité** dans `docs/design/maquettes/jalon-6.html` — ouvrables dans un navigateur, **non tenues à jour**, et sans valeur de spécification : elles sont en HTML quand Cursus est en XAML, et elles servaient à décider. Tout écart entre elles et `parcours.md` ou `presentation.md` se tranche en faveur de ces derniers. Le **jalon 6a est FAIT** (§4.12) ; restent **6b** (runs concurrents, persistance seule) puis **6c** (la jonction UI).
 
 **Le layout de graphe reste hors de 6c — mais l'argument a changé, et son statut avec.** La position d'origine (« le graphe est un jalon à lui seul, partagé avec l'éditeur dont il est le vrai coût ») est **révisée par la maquette du 2026-07-21** sur deux points, et l'écart mérite d'être écrit :
 
