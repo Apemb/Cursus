@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Journaling;
 
 /// <summary>
 /// Journal volatile : le double des tests, et le seul que le noyau embarque.

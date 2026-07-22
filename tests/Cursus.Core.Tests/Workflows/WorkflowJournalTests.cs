@@ -1,4 +1,5 @@
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Journaling;
 
 using static Cursus.Core.Tests.Workflows.WorkflowFixtures;
 

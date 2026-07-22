@@ -1,3 +1,5 @@
+using Cursus.Core.Workflows.Journaling;
+
 namespace Cursus.Core.Workflows;
 
 /// <summary>

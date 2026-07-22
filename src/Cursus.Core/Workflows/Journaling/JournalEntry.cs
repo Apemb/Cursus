@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Journaling;
 
 /// <summary>
 /// Un événement tel que le journal l'a enregistré. L'émetteur ne fournit que

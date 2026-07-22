@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Journaling;
 
 /// <summary>
 /// Reçoit les événements d'un run et les rend durables, dans l'ordre.

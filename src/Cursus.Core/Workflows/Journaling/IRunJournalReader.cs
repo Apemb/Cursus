@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Journaling;
 
 /// <summary>
 /// Relit ce qu'un journal a gardé. Séparée de <see cref="IRunJournal"/> pour
