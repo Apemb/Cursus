@@ -2,7 +2,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
 
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Serialization;
 
 /// <summary>Ce qu'a produit la lecture d'un document : une définition, ou les raisons de son refus.</summary>
 /// <param name="Definition">Non nulle si et seulement si le rapport est valide.</param>

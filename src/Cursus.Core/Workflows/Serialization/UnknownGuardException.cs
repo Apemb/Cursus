@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Serialization;
 
 /// <summary>
 /// Signale, à l'intérieur du sérialiseur, une garde que le document déclare et

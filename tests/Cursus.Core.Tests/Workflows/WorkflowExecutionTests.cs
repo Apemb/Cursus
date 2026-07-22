@@ -1,5 +1,6 @@
 using System.Text;
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Serialization;
 using Cursus.Core.Workflows.Output;
 using Cursus.Core.Workflows.Journaling;
 

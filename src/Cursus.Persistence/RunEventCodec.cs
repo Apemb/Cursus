@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Serialization;
 
 namespace Cursus.Persistence;
 

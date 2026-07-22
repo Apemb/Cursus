@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Serialization;
 
 /// <summary>
 /// La forme du fichier de workflow, délibérément distincte du modèle interne :

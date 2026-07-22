@@ -1,4 +1,5 @@
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Serialization;
 
 namespace Cursus.Persistence.Tests;
 
