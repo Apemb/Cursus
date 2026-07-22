@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `5b1cfd9`. Dernier jalon de code : `5b1cfd9` (*la sortie en flux, jalon 6a*). Suite de tests : **145 verts** (129 noyau + 16 persistance), build 0 warning.
+> **Statut** : document vivant, à jour du commit `3062aa5`. Dernier jalon de code : `3062aa5` (*les runs concurrents, jalon 6b*). Suite de tests : **153 verts** (136 noyau + 17 persistance), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -37,10 +37,10 @@
 
 | Moitié | Emplacement | État |
 |---|---|---|
-| Noyau déterministe | `src/Cursus.Core/Workflows/` (28 fichiers) | Moteur de traversée, runner de process réel, contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal. **89 tests.** Fonctionne bout en bout, sans UI. |
-| Projet & catalogue | `src/Cursus.Core/Projects/` (6 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**. **24 tests.** Voir §4.11. |
-| Persistance | `src/Cursus.Persistence/` (3 fichiers) | Journal SQLite et magasin d'artefacts sur disque. **15 tests.** Un run survit au process. |
-| Sessions / PTY | `src/Cursus.Core/Sessions/` (5 fichiers) + `src/Cursus.App/` | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal ; logique de sessions testée (**13 tests**). Antérieure au pivot. |
+| Noyau déterministe | `src/Cursus.Core/Workflows/` (38 fichiers) | Moteur de traversée, runner de process réel, contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal, puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b). **102 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
+| Projet & catalogue | `src/Cursus.Core/Projects/` (6 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees. **23 tests.** Voir §4.11. |
+| Persistance | `src/Cursus.Persistence/` (3 fichiers) | Journal SQLite (écriture sérialisée) et magasin d'artefacts sur disque. **17 tests.** Un run survit au process. |
+| Sessions / PTY | `src/Cursus.Core/Sessions/` (5 fichiers) + `src/Cursus.App/` | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal ; logique de sessions testée (**11 tests**). Antérieure au pivot. |
 
 Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2), et **`Cursus.App` ne référence pas encore `Cursus.Persistence`**.
 
@@ -80,7 +80,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 145 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 153 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -179,8 +179,9 @@ Namespace `Cursus.Core.Workflows` pour tout le noyau, plus `Cursus.Core.Projects
 | `IProcessRunner.cs` · `ProcessRunner.cs` | La seule couture I/O (ruisselle vers deux `Stream`) · son implémentation réelle |
 | `IRunOutputStore.cs` · `IStepOutputSink.cs` · `InMemoryRunOutputStore.cs` | Le puits de sortie : ouvrir avant l'étape · deux flux + `StepOutput` · l'implémentation volatile. Voir §4.12 |
 | `StepOutput.cs` · `OutputArtifact.cs` | Ce qu'une visite a laissé : liste d'artefacts `(Name, Path?, Size)` |
+| `IWorkspaceProvisioner.cs` · `IProvisionedWorkspace.cs` · `WorkspaceRequest.cs` · `GitWorkspaceProvisioner.cs` | Le workspace isolé d'un run : provisionner par `runId` · le porter puis le démonter · `NewWork(base)`/`Review(ref)` · l'implémentation worktree git (via `IProcessRunner`). Voir §4.13 |
 | `RunContext.cs` | Racine du workspace et résolution des sous-chemins |
-| `WorkflowEngine.cs` | La traversée du graphe |
+| `WorkflowEngine.cs` | La traversée du graphe (reçoit le `runId` de l'appelant, ne le forge plus) |
 | `WorkflowRun.cs` · `StepRun.cs` | `RunState`, `AbortReason`, historique · une visite (`Result` + `Output`) |
 | `WorkflowValidator.cs` · `ValidationReport.cs` | Validité du graphe · `ValidationIssueKind` (9 valeurs), `ValidationIssue`, `ValidationReport` |
 | `WorkflowSerializer.cs` · `WorkflowDocument.cs` | JSON ⟷ modèle, `LoadResult` · les DTO `internal` |
@@ -366,8 +367,9 @@ flowchart LR
 5. **Le compteur de visites précède l'exécution** : dépasser `MaxVisits` n'ajoute aucun `StepRun`.
 6. **La définition reste portable** : aucun chemin absolu ; `RunContext` n'en fait pas partie.
 7. **L'annulation n'est pas une issue d'exécution**, c'est une interruption du run — et elle **conserve l'historique**.
-8. **Le moteur ne connaît que `StepDefinition` + `IProcessRunner` + `IRunJournal`.** C'est le pari central du pivot ; §5 en donne le garde-fou vérifiable. Le journal n'y déroge pas : le moteur *émet*, il ne *lit* jamais — d'où deux interfaces séparées (§4.10).
-9. **Aucune donnée ne circule d'une étape à l'autre** : aucune sortie de `StepRun` n'alimente le `ScriptSpec` suivant, il n'existe ni variables de run ni câblage de références. La seule mémoire partagée d'un run est **le système de fichiers du workspace** (c'est ce que fait le test d'assemblage avec `artefact.txt`). Le câblage par références façon Conductor (`${taskRef.output.champ}`) est relevé dans `landscape.md` comme vocabulaire à emprunter : **reporté, non écarté**. Il faudra le rouvrir pour l'`AgentStep`, dont le prompt voudra dépendre de la sortie de l'étape précédente.
+8. **Le moteur ne connaît que `StepDefinition` + `IProcessRunner` + `IRunJournal` + `IRunOutputStore`.** C'est le pari central du pivot ; §5 en donne le garde-fou vérifiable. Le journal n'y déroge pas : le moteur *émet*, il ne *lit* jamais — d'où deux interfaces séparées (§4.10). Le **provisionnement du workspace n'y entre pas** (jalon 6b, §4.13) : c'est un collaborateur de l'**appelant**, qui provisionne le worktree *avant* `ExecuteAsync` et le démonte *après*. Corollaire tranché au 6b : **l'identité du run est une entrée**, plus un `Guid` forgé dans le moteur — l'appelant la connaît en amont, puisque c'est lui qui monte le worktree à ce nom.
+9. **Aucune donnée ne circule d'une étape à l'autre** : aucune sortie de `StepRun` n'alimente le `ScriptSpec` suivant, il n'existe ni variables de run ni câblage de références. La seule mémoire partagée d'un run est **le système de fichiers du workspace** — depuis le jalon 6b, le **worktree isolé** du run (§4.13). Le câblage par références façon Conductor (`${taskRef.output.champ}`) est relevé dans `landscape.md` comme vocabulaire à emprunter : **reporté, non écarté**. Il faudra le rouvrir pour l'`AgentStep`, dont le prompt voudra dépendre de la sortie de l'étape précédente. L'état durable *entre* workflows, lui, ne sera **pas** un magasin Cursus : il vit dans les systèmes de référence — git (branche, PR) et le tracker (issue properties Jira, kv idempotent) — modèle Symphony « re-dériver du tracker + filesystem ».
+10. **Le workspace d'un run isolé est un dépôt git.** Le provisionnement par worktree (§4.13) suppose que la racine du projet est un dépôt : c'est la contrepartie assumée de l'isolation. `git` devient une dépendance externe du noyau, lancée **via `IProcessRunner`** (l'invariant 3 tient), et son absence est signalée lisiblement (`GitNotAvailableException`), non par un échec de process opaque.
 
 ### 4.9 Ce que seuls les tests spécifient
 
@@ -389,7 +391,7 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 
 ### 4.10 Le journal — CONSTRUIT (jalon 4)
 
-Le moteur **raconte** désormais ce qu'il fait. `WorkflowEngine(IProcessRunner, IRunJournal, IRunOutputStore)` : le journal **et** le puits de sortie (§4.12, jalon 6a) sont des paramètres **obligatoires**, jamais optionnels — un défaut muet rendrait le silence accidentel, alors que c'est précisément le trou qu'on referme ; un run qu'on ne veut pas relire prend simplement un `InMemoryRunJournal` et un `InMemoryRunOutputStore` qu'on ignore.
+Le moteur **raconte** désormais ce qu'il fait. `WorkflowEngine(IProcessRunner, IRunJournal, IRunOutputStore)` : le journal **et** le puits de sortie (§4.12, jalon 6a) sont des paramètres **obligatoires**, jamais optionnels — un défaut muet rendrait le silence accidentel, alors que c'est précisément le trou qu'on referme ; un run qu'on ne veut pas relire prend simplement un `InMemoryRunJournal` et un `InMemoryRunOutputStore` qu'on ignore. Depuis le jalon 6b, `Append` est **sérialisé par un `lock`** dans les deux implémentations : plusieurs runs d'un même projet écrivent sur la même connexion, qui n'est pas thread-safe (§4.13).
 
 Cinq événements, **imbriqués dans `WorkflowEvent`** comme les variantes de `Guard` le sont dans `Guard` : leurs noms sont trop courants pour occuper le namespace.
 
@@ -478,6 +480,28 @@ Ce que la lecture du code ne donne pas d'emblée :
 - **Chaque flux crée son fichier au premier octet.** Un flux muet ne laisse rien (`Path` absent) : la règle « pas de fichier vide » du magasin est préservée, désormais flux par flux.
 - **Raw = octets, pas texte.** Le runner copie les `BaseStream` bruts : le primitif honnête pour ce qui portera un jour l'ANSI d'un terminal (§2.2), et il épargne toute décision d'encodage. La taille d'un artefact est en octets.
 - **`StepOutput` est délibérément minimal, et sa forme est réversible.** Ni interface, ni type abstrait, ni distinction *brut*/*structuré* : seule la **cardinalité** est ouverte, pour qu'un futur type d'étape ajoute des artefacts sans reshaper le type. On peut le durcir tard sans coût — il n'est vu que du noyau et de la persistance (aucun consommateur d'UI), et le schéma du payload n'est pas publié. La forme des sorties d'`AgentStep`/`TaskStep`, et l'éventuel canal **structuré** (un JSONL de transcript/activité) face au canal **brut**, restent **QUESTION OUVERTE** : on tranchera avec les cas réels, pas en les devinant. Une conversation *interactive*, elle, n'est pas une sortie qu'on relit — c'est le monde sessions/PTY (§2.2), orthogonal, et `StepOutput` n'a pas à le couvrir.
+
+### 4.13 Runs concurrents : journal verrouillé et workspace isolé — CONSTRUIT (jalon 6b)
+
+La cible veut **plusieurs workflows de front sur un même projet** — le même workflow sur deux tâches, deux agents modifiant du code en parallèle. Le moteur y était **déjà prêt** : aucun état par run sur ses champs, `RunArtifactStore` rangé par `(runId, stepId, iteration)`, `ProcessRunner` sans état. Restaient deux points, et deux seulement.
+
+**1. Le journal encaissait mal la concurrence.** Sur un même projet, les runs partagent une base, donc une `SqliteConnection` unique, non thread-safe. Un `lock` sérialise `Append` dans `SqliteRunJournal` **et** `InMemoryRunJournal` (le double doit être aussi sûr que le vrai) : négligeable devant un lancement de process, et la seule voie correcte — `Microsoft.Data.Sqlite` n'offre pas de plafond de pool à une connexion, et l'épuisement de pool comme mutex *timeout* au lieu de bloquer. La lecture *pendant* l'écriture (connexion de lecture séparée en WAL) reste pour 6c ; ici le verrou ne couvre que l'écriture.
+
+**2. Le répertoire de travail se partageait.** Les logs (par `runId`) et la base (sérialisée) ne collisionnent pas — mais ce que les **scripts** écrivent (le code source, l'état git), dont Cursus ne choisit pas les noms, si. L'isolation est un **worktree git** par run.
+
+| Type (Core) | Rôle |
+|---|---|
+| `IWorkspaceProvisioner` | `Provision(runId, WorkspaceRequest)` rend un workspace isolé. Collaborateur de l'**appelant**, jamais du moteur. |
+| `WorkspaceRequest` | `NewWork(BaseRef)` — worktree en **HEAD détaché** sur la base ; `Review(Reference)` — checkout de la ref. Le **nom de branche n'est jamais forgé** par Cursus. |
+| `IProvisionedWorkspace` | Porte le `RunContext` du run (racine = le worktree), démonte à la fermeture (`git worktree remove --force`). |
+| `GitWorkspaceProvisioner` | L'implémentation, dans le noyau à côté de `ProcessRunner`. Lance `git` **via `IProcessRunner`** (invariant 3), sous `project.WorktreesRoot` (`.cursus/worktrees`, imbriqué mais gitignoré). |
+
+Ce que le code ne dit pas d'emblée :
+
+- **HEAD détaché pour le neuf, à dessein.** Le nom court d'une branche dev est souvent calculé *en cours* de workflow (un LLM à partir du ticket) : le provisionneur ne peut donc pas le connaître au démarrage. Il ne possède que l'**isolation** ; la branche est baptisée plus tard — par une étape, ou par l'appelant qui connaît la tâche. Le détachement évite aussi le refus git « branch already checked out » quand deux runs partent de la même base — un test le prouve en faisant coexister deux branches.
+- **Le provisionnement est du montage, séquentiel ; l'exécution est concurrente.** La preuve d'assemblage (`ProjectRunTests`) provisionne deux worktrees, puis lance les deux runs en `Task.WhenAll` : ils journalisent dans la même base et écrivent chacun dans son worktree, sans se corrompre. Git worktree add n'est donc jamais appelé en parallèle — pas de verrou de provisionnement à ce stade.
+- **L'appelant possède identité + cycle de vie du workspace.** `ExecuteAsync` prend le `runId` (invariant 8) ; le worktree monte à `<WorktreesRoot>/<runId>`, ce qui permet de le retrouver depuis le journal. Le futur host (§7.12) sera cet appelant, et portera la politique « un run actif par tâche » — hors périmètre ici.
+- **`InMemoryWorkspaceProvisioner` n'existe pas** (contrairement aux autres doubles `InMemory*`) : le moteur ne prend pas de provisionneur, rien ne le drainait.
 
 ---
 
@@ -952,7 +976,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **145 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **153 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 
@@ -979,7 +1003,7 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 2. ~~**Aucun point d'entrée qui lise un fichier**~~, ~~**aucun exemple commité**~~ — **refermés au jalon 5** (§4.11). Reste ouvert : **aucun schéma JSON publié** pour outiller un éditeur, et aucun consommateur du catalogue hors des tests.
 3. ~~**Aucune persistance**~~ — **refermé au jalon 4** (§4.10). Restent ouverts : pas de `StepRunId` ni de `contentHash`, **aucun versionnement de schéma**, aucune purge, et un `state` à `NULL` qui confond « en cours » et « tué par un crash ».
 4. ~~**Aucune sortie incrémentale pendant un run**~~ — **refermé au jalon 6a** (§4.12). La sortie ruisselle désormais vers un fichier ouvert au démarrage de l'étape ; `ScriptResult` ne la porte plus, un `StepOutput` en porte les artefacts, et un script bavard fait grossir un fichier au lieu de faire tomber l'application. Le changement de type annoncé a bien eu lieu, avec une révision : ce n'est pas `ScriptResult` qui porte le chemin (il redevient purement factuel) mais `StepOutput`, séparé — l'emplacement de la sortie n'est pas l'affaire du process. Le journal, lui, n'émet toujours ses événements qu'aux **frontières d'étape** (§4.10) ; c'est le *fichier* qui se suit à la trace, pas un flux d'événements. **Reste ouvert, et propre à 6c** : l'**affichage** en direct de ce fichier — le flux *vivant* (décorateur d'`IRunJournal` vers un `Channel`, §7.12) distinct du flux *durable* posé ici.
-5. **Aucun passage de données entre étapes** (§4.8, invariant 9) : la seule mémoire partagée est le disque.
+5. **Aucun passage de données entre étapes** (§4.8, invariant 9) : la seule mémoire partagée d'un run est son **worktree** (§4.13). Le câblage structuré (`${step.output}`) est *reporté, non écarté*, à rouvrir avec l'`AgentStep` ; l'état durable entre workflows vit dans git et le tracker, pas dans un magasin Cursus.
 6. **Le refus d'évasion de chemin ne suit pas les symlinks** — garde-fou de déclaration, **pas** confinement OS (§4.5).
 7. **`RunContext.Resolve` ne crée pas les répertoires** : un `workingSubdirectory` déclaré doit préexister.
 8. **Le validateur ne contrôle ni la présence ni l'absoluité de `fileName`** : une étape sans script ne se voit qu'à l'exécution, en `LaunchFailed`.
@@ -988,8 +1012,8 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 11. **Aucun test sur `Cursus.App`** — le point de contact le moins abstrait du dépôt est le moins couvert. Le jalon 6 y répond **par le découpage** (§7.12) et non par des tests de contrôles : la logique sort vers des classes POCO testées en xUnit nu. ⚠️ Le harnais `Avalonia.Headless` dépendrait de **xUnit v3** alors que les deux projets de tests sont en **2.9.3** — à confirmer, et sans urgence, ce harnais étant de toute façon inadapté au cycle TDD (`presentation.md` §8).
 12. **Aucune interface d'abstraction du terminal** alors que le principe d'architecture la prévoyait ; couplage direct au type concret de RoyalTerminal.
 13. **L'app est de fait macOS-only** (provider VT natif OSX) alors que le cross-platform est revendiqué comme différenciateur (§1.2).
-14. **Pas de politique de concurrence** documentée ni testée pour `WorkflowEngine`, et **`SqliteRunJournal` ne la supporte pas** : une `SqliteConnection` unique, un `Append` sans verrou. Deux runs simultanés sur un même projet corrompraient par intermittence plutôt que de lever. La cible les exige (§7.13) — c'est donc à trancher avant l'UI, pas après.
-15. **Le `PATH` d'une app installée est tronqué**, et `ProcessRunner` ne le ré-enrichit pas : une étape utilisant un binaire d'`asdf` ou de Homebrew échoue en `LaunchFailed` hors développement (§6.6). À trancher au jalon 6.
+14. ~~**Pas de politique de concurrence** documentée ni testée pour `WorkflowEngine`, et **`SqliteRunJournal` ne la supporte pas**~~ — **refermé au jalon 6b** (§4.13). `Append` est sérialisé par un `lock`, et chaque run s'exécute dans un **worktree git isolé** (`GitWorkspaceProvisioner`) : la preuve d'assemblage lance deux runs de front sur un même projet sans corruption du journal ni collision de fichiers. Restent ouverts et notés là-bas : la lecture concurrente *pendant* l'écriture (connexion séparée, propre à 6c), et un verrou de provisionnement si un jour on monte des worktrees en parallèle (aujourd'hui le montage est séquentiel).
+15. **Le `PATH` d'une app installée est tronqué**, et `ProcessRunner` ne le ré-enrichit pas : une étape utilisant un binaire d'`asdf` ou de Homebrew échoue en `LaunchFailed` hors développement (§6.6) — et depuis le jalon 6b **`git` lui-même** peut manquer ainsi (§4.13). C'est le pendant runtime d'un **check de configuration des prérequis Cursus** (git, puis `claude`…), noté comme petit jalon voisin : sa logique — « donné les commandes que Cursus exige, rendre celles qui manquent » — est pure et constructible tôt ; sa restitution à l'utilisateur attend une surface (6c). Le preflight des prérequis *d'un workflow* (`node`, `python`…) reste, lui, à la charge de l'utilisateur — question ouverte basse priorité.
 16. **Le bundle n'est pas notarisé** (signature ad-hoc) : installable sur la machine qui le construit, refusé par Gatekeeper ailleurs (§6.6).
 17. Hygiène : plan de jalons de `landscape.md` caduc, aucun remote git, pas de CI ni de LICENSE, pas d'icône d'application (§1.3-1.4).
 18. **La définition figée d'un run repasse par le validateur à la relecture** : durcir une règle de validation rendrait d'anciens runs illisibles (§4.10).
@@ -1005,7 +1029,7 @@ Le détail et les alternatives vivent dans les documents de conception ; ceci es
 |---|---|
 | Expressivité des gardes : `OnStdoutMatch(regex)` pour les outils qui sortent 0 en imprimant `FAILED` ? | Inclination : non en v0 ; le préfixe `stdout:` est **déjà réservé** dans le format, `Guard` reste extensible |
 | `Fork`/`Join` (dont `DynamicFork`) et `SubWorkflow` comme `StepKind` | Tranché sur le principe (extension propre du routage), non construit, non planifié |
-| Idempotence et reprise après crash de Cursus | « Journaliser d'abord » est **fait** (§4.10). La reprise reste ouverte, et le journal en montre le premier obstacle : un run non clos est indiscernable d'un run en cours |
+| Idempotence et reprise après crash de Cursus | « Journaliser d'abord » est **fait** (§4.10) ; le socle de reprise (event-sourcing, ancrage `(runId, stepId, iteration)`) est posé et le jalon 6b l'a **gardé ouvert sans y toucher**. La reprise reste un **jalon à part, plutôt près de l'`AgentStep`** (qui la motive : long, coûteux, échoue par l'extérieur). Reconstruire *où* reprendre est facile grâce au journal ; le point dur sera l'**idempotence d'une étape à effet de bord** (rejouer un `POST` Linear duplique) — « l'idempotence remonte jusqu'au moteur ». À ne pas confondre avec rejouer une étape *échouée par code de sortie*, déjà faisable (arête réflexive + `maxVisits`). Premier obstacle connu : un run non clos est indiscernable d'un run en cours |
 | Nœuds terminaux typés (`Success`/`Failure`) ou garde `Default` obligatoire ? | **Ouvert** (§4.3) — soulevé par le comportement actuel de `RunState` |
 | Câblage de données entre étapes (`${step.output}`, variables de run) | **Reporté, non écarté** (§4.8) — se rouvrira avec l'`AgentStep` |
 
@@ -1057,7 +1081,7 @@ coquille, et les trois écrans (ouverture, workflows d'un projet, run).
 
 **Le jalon 5 remboursait la dette du §9.2, point 2** (personne ne lisait un fichier depuis le disque). Fusionner cette couture avec le projet minimal plutôt qu'en faire un patch isolé s'est vérifié à l'usage : le `Project` est devenu le point de rendez-vous du workspace, du catalogue et des emplacements de journal, là où un « ouvrir un fichier » aurait été à refaire. Le registre machine et le trousseau (§7.10.1) en ont bien été tenus à l'écart, faute de consommateur avant le tracker.
 
-**La forme de 6c est déjà tranchée** (§7.12 et `presentation.md`, conception du 2026-07-21) : `ProjectHost` comme racine de composition — sous une racine multi-projets, §7.13 — un module de run, observation par décorateur d'`IRunJournal` vers un `Channel`, et deux tests — architecture et end-to-end headless — qui rendent exécutable le critère « l'UI n'est qu'une façon d'instancier et d'afficher ». Le **parcours utilisateur** est produit (`parcours.md`, 2026-07-21), et la passe de **maquettes** a eu lieu le même jour. Elle a tranché la coquille (rail d'icônes, état de l'application en pied cliquable), la configuration (un engrenage, pas un mode), la vue d'un run (graphe et liste, deux vues sœurs à sélection partagée) et son contrôle (un état à trois positions, pas un bouton) — le tout consigné dans `parcours.md` §1.2, §1.4, §1.6, §1.7 et §4. Les maquettes elles-mêmes sont **archivées sans autorité** dans `docs/design/maquettes/jalon-6.html` — ouvrables dans un navigateur, **non tenues à jour**, et sans valeur de spécification : elles sont en HTML quand Cursus est en XAML, et elles servaient à décider. Tout écart entre elles et `parcours.md` ou `presentation.md` se tranche en faveur de ces derniers. Le **jalon 6a est FAIT** (§4.12) ; restent **6b** (runs concurrents, persistance seule) puis **6c** (la jonction UI).
+**La forme de 6c est déjà tranchée** (§7.12 et `presentation.md`, conception du 2026-07-21) : `ProjectHost` comme racine de composition — sous une racine multi-projets, §7.13 — un module de run, observation par décorateur d'`IRunJournal` vers un `Channel`, et deux tests — architecture et end-to-end headless — qui rendent exécutable le critère « l'UI n'est qu'une façon d'instancier et d'afficher ». Le **parcours utilisateur** est produit (`parcours.md`, 2026-07-21), et la passe de **maquettes** a eu lieu le même jour. Elle a tranché la coquille (rail d'icônes, état de l'application en pied cliquable), la configuration (un engrenage, pas un mode), la vue d'un run (graphe et liste, deux vues sœurs à sélection partagée) et son contrôle (un état à trois positions, pas un bouton) — le tout consigné dans `parcours.md` §1.2, §1.4, §1.6, §1.7 et §4. Les maquettes elles-mêmes sont **archivées sans autorité** dans `docs/design/maquettes/jalon-6.html` — ouvrables dans un navigateur, **non tenues à jour**, et sans valeur de spécification : elles sont en HTML quand Cursus est en XAML, et elles servaient à décider. Tout écart entre elles et `parcours.md` ou `presentation.md` se tranche en faveur de ces derniers. Les **jalons 6a et 6b sont FAITS** (§4.12, §4.13) ; reste **6c** (la jonction UI). Deux jalons voisins, hors de la ligne 6a-6c, ont émergé de la conception de 6b et sont notés à leur place : le **check des prérequis Cursus** (trou §9.2-15) et la **reprise d'un run interrompu** (§9.3), cette dernière à caler près de l'`AgentStep`.
 
 **Le layout de graphe reste hors de 6c — mais l'argument a changé, et son statut avec.** La position d'origine (« le graphe est un jalon à lui seul, partagé avec l'éditeur dont il est le vrai coût ») est **révisée par la maquette du 2026-07-21** sur deux points, et l'écart mérite d'être écrit :
 
