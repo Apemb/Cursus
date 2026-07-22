@@ -39,7 +39,7 @@ public class JournalledExecutionTests : IDisposable
         using (var journal = NewJournal())
         {
             var run = await new WorkflowEngine(new ProcessRunner(), journal, Artifacts())
-                .ExecuteAsync(loaded.Definition!, workspace, RunTrigger.ForTask("ENG-1234"));
+                .ExecuteAsync(loaded.Definition!, workspace, Guid.NewGuid().ToString(), RunTrigger.ForTask("ENG-1234"));
 
             runId = run.RunId;
             Assert.Equal(RunState.Failed, run.State);

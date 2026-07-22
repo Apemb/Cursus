@@ -23,6 +23,13 @@ internal static class WorkflowFixtures
     internal static ScriptResult Exit(int code) => new(code, ScriptOutcome.Completed);
 
     /// <summary>
+    /// Un identifiant de run frais, comme le fera l'appelant réel. Le moteur ne
+    /// le forge plus : les tests de traversée qui se moquent de l'identité en
+    /// prennent un jetable, ceux qui la relisent en fournissent un choisi.
+    /// </summary>
+    internal static string NewRunId() => Guid.NewGuid().ToString();
+
+    /// <summary>
     /// Un moteur dont on ne compte pas relire le journal : les tests de
     /// traversée l'ignorent, mais le moteur en exige un — un run muet est un
     /// run qu'on ne peut pas relire.

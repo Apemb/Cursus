@@ -20,7 +20,7 @@ public class WorkflowEngineTests
         var engine = Engine(runner);
 
         // act
-        var run = await engine.ExecuteAsync(definition, Workspace);
+        var run = await engine.ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(new[] { "A", "B", "C" }, run.History.Select(s => s.StepId));
@@ -40,7 +40,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(new[] { "A", "B" }, run.History.Select(s => s.StepId));
@@ -59,7 +59,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(new[] { "A", "C" }, run.History.Select(s => s.StepId));
@@ -78,7 +78,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(new[] { "A", "B" }, run.History.Select(s => s.StepId));
@@ -97,7 +97,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(new[] { "A", "C" }, run.History.Select(s => s.StepId));
@@ -111,7 +111,7 @@ public class WorkflowEngineTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(new[] { "A" }, run.History.Select(s => s.StepId));
@@ -126,7 +126,7 @@ public class WorkflowEngineTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(RunState.Failed, run.State);
@@ -145,7 +145,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(new[] { "A", "B" }, run.History.Select(s => s.StepId));
@@ -162,7 +162,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(new[] { 1, 2, 3 }, run.History.Select(s => s.Iteration));
@@ -181,7 +181,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(new[] { 1, 2 }, run.History.Select(s => s.Iteration));
@@ -199,7 +199,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Single(run.History);
@@ -219,7 +219,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(new[] { "A", "C" }, run.History.Select(s => s.StepId));
@@ -233,7 +233,7 @@ public class WorkflowEngineTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(RunState.Failed, run.State);
@@ -251,7 +251,7 @@ public class WorkflowEngineTests
 
         // act / assert
         await Assert.ThrowsAsync<UnknownStepException>(
-            async () => await Engine(runner).ExecuteAsync(definition, Workspace));
+            async () => await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId()));
     }
 
     [Fact(DisplayName = "étant donné un jeton annulé après la première étape, quand on exécute le workflow, alors le run est interrompu pour annulation")]
@@ -267,7 +267,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace, cancellationToken: cancellation.Token);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId(), cancellationToken: cancellation.Token);
 
         // assert
         Assert.Equal(RunState.Aborted, run.State);
@@ -287,7 +287,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        var run = await Engine(runner).ExecuteAsync(definition, Workspace, cancellationToken: cancellation.Token);
+        var run = await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId(), cancellationToken: cancellation.Token);
 
         // assert
         Assert.Equal(new[] { "A" }, run.History.Select(s => s.StepId));
@@ -301,7 +301,7 @@ public class WorkflowEngineTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        await Engine(runner).ExecuteAsync(definition, Workspace);
+        await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(Workspace.WorkspaceRoot, runner.Executed.Single().WorkingDirectory);
@@ -319,7 +319,7 @@ public class WorkflowEngineTests
         });
 
         // act
-        await Engine(runner).ExecuteAsync(definition, Workspace);
+        await Engine(runner).ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(

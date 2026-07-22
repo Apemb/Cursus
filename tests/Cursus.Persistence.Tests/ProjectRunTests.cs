@@ -42,7 +42,7 @@ public class ProjectRunTests : IDisposable
         using (var journal = JournalOf(project))
         {
             var run = await new WorkflowEngine(new ProcessRunner(), journal, new RunArtifactStore(project.ArtifactsRoot))
-                .ExecuteAsync(loaded.Definition!, project.CreateRunContext());
+                .ExecuteAsync(loaded.Definition!, project.CreateRunContext(), Guid.NewGuid().ToString());
 
             runId = run.RunId;
             Assert.Equal(RunState.Completed, run.State);

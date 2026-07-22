@@ -22,10 +22,13 @@ public sealed class WorkflowEngine
     public async Task<WorkflowRun> ExecuteAsync(
         WorkflowDefinition definition,
         RunContext context,
+        string runId,
         RunTrigger? trigger = null,
         CancellationToken cancellationToken = default)
     {
-        var runId = Guid.NewGuid().ToString();
+        // L'identité n'est plus forgée ici : l'appelant la fournit, parce que
+        // c'est lui — le fabricant du RunContext — qui provisionne le workspace
+        // isolé à ce nom, avant même que le run démarre.
         _journal.Append(runId, new WorkflowEvent.RunStarted(
             definition, context.WorkspaceRoot, trigger ?? RunTrigger.Manual));
 

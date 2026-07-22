@@ -19,7 +19,7 @@ public class WorkflowJournalTests
 
         // act
         await Engine(new StubProcessRunner(Exit(0)), journal)
-            .ExecuteAsync(definition, Workspace);
+            .ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Collection(
@@ -43,7 +43,7 @@ public class WorkflowJournalTests
 
         // act
         await Engine(new StubProcessRunner(Exit(0)), journal)
-            .ExecuteAsync(definition, Workspace);
+            .ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         var runId = Assert.Single(journal.Entries.Select(entry => entry.RunId).Distinct());
@@ -59,8 +59,8 @@ public class WorkflowJournalTests
         var engine = Engine(new StubProcessRunner(Exit(0)), journal);
 
         // act
-        await engine.ExecuteAsync(definition, Workspace);
-        await engine.ExecuteAsync(definition, Workspace);
+        await engine.ExecuteAsync(definition, Workspace, NewRunId());
+        await engine.ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(2, journal.Entries.Select(entry => entry.RunId).Distinct().Count());
@@ -75,10 +75,27 @@ public class WorkflowJournalTests
 
         // act
         var run = await Engine(new StubProcessRunner(Exit(0)), journal)
-            .ExecuteAsync(definition, Workspace);
+            .ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(journal.Entries[0].RunId, run.RunId);
+    }
+
+    [Fact(DisplayName = "étant donné un identifiant de run fourni par l'appelant, quand le run s'exécute, alors le résultat et le journal portent cet identifiant, non un forgé par le moteur")]
+    public async Task The_caller_supplies_the_run_identifier()
+    {
+        // arrange — l'identité n'est plus l'affaire du moteur : le futur host la
+        // connaît avant le run, pour provisionner un worktree à son nom.
+        var journal = new InMemoryRunJournal();
+        var definition = new WorkflowDefinition("A", new[] { Step("A") });
+
+        // act
+        var run = await Engine(new StubProcessRunner(Exit(0)), journal)
+            .ExecuteAsync(definition, Workspace, "run-choisi-dehors");
+
+        // assert
+        Assert.Equal("run-choisi-dehors", run.RunId);
+        Assert.Equal("run-choisi-dehors", journal.Entries[0].RunId);
     }
 
     [Fact(DisplayName = "étant donné un démarrage journalisé, quand on le lit, alors il porte la définition exécutée et la racine du workspace")]
@@ -90,7 +107,7 @@ public class WorkflowJournalTests
 
         // act
         await Engine(new StubProcessRunner(Exit(0)), journal)
-            .ExecuteAsync(definition, Workspace);
+            .ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         var started = Assert.IsType<WorkflowEvent.RunStarted>(journal.Entries[0].Event);
@@ -111,7 +128,7 @@ public class WorkflowJournalTests
 
         // act
         await Engine(new StubProcessRunner(Exit(0)), journal)
-            .ExecuteAsync(definition, Workspace);
+            .ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         var chosen = Assert.Single(
@@ -129,7 +146,7 @@ public class WorkflowJournalTests
 
         // act
         await Engine(new StubProcessRunner(Exit(0)), journal)
-            .ExecuteAsync(definition, Workspace);
+            .ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Empty(journal.Entries.Select(entry => entry.Event).OfType<WorkflowEvent.EdgeChosen>());
@@ -147,7 +164,7 @@ public class WorkflowJournalTests
 
         // act
         await Engine(new StubProcessRunner(Exit(1)), journal)
-            .ExecuteAsync(definition, Workspace);
+            .ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         var visits = journal.Entries.Select(entry => entry.Event).OfType<WorkflowEvent.StepStarted>();
@@ -167,7 +184,7 @@ public class WorkflowJournalTests
 
         // act
         await Engine(new StubProcessRunner(Exit(1)), journal)
-            .ExecuteAsync(definition, Workspace);
+            .ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         Assert.Equal(2, journal.Entries.Count(entry => entry.Event is WorkflowEvent.StepStarted));
@@ -189,7 +206,7 @@ public class WorkflowJournalTests
 
         // act
         await Engine(runner, journal)
-            .ExecuteAsync(definition, Workspace, cancellationToken: cancellation.Token);
+            .ExecuteAsync(definition, Workspace, NewRunId(), cancellationToken: cancellation.Token);
 
         // assert
         var finished = Assert.IsType<WorkflowEvent.RunFinished>(journal.Entries[^1].Event);
@@ -207,7 +224,7 @@ public class WorkflowJournalTests
         // act
         await Assert.ThrowsAsync<UnknownStepException>(async () =>
             await Engine(new StubProcessRunner(Exit(0)), journal)
-                .ExecuteAsync(definition, Workspace));
+                .ExecuteAsync(definition, Workspace, NewRunId()));
 
         // assert
         var finished = Assert.IsType<WorkflowEvent.RunFinished>(journal.Entries[^1].Event);
@@ -228,7 +245,7 @@ public class WorkflowJournalTests
         // act
         await Assert.ThrowsAsync<PathEscapesWorkspaceException>(async () =>
             await Engine(new StubProcessRunner(Exit(0)), journal)
-                .ExecuteAsync(definition, Workspace));
+                .ExecuteAsync(definition, Workspace, NewRunId()));
 
         // assert
         var finished = Assert.IsType<WorkflowEvent.RunFinished>(journal.Entries[^1].Event);
@@ -244,7 +261,7 @@ public class WorkflowJournalTests
 
         // act
         await Engine(new StubProcessRunner(Exit(3)), journal)
-            .ExecuteAsync(definition, Workspace);
+            .ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         var visit = Assert.Single(
@@ -263,7 +280,7 @@ public class WorkflowJournalTests
 
         // act
         await Engine(new StubProcessRunner(Exit(0)), journal)
-            .ExecuteAsync(definition, Workspace);
+            .ExecuteAsync(definition, Workspace, NewRunId());
 
         // assert
         var started = Assert.IsType<WorkflowEvent.RunStarted>(journal.Entries[0].Event);
@@ -280,7 +297,7 @@ public class WorkflowJournalTests
 
         // act
         await Engine(new StubProcessRunner(Exit(0)), journal)
-            .ExecuteAsync(definition, Workspace, RunTrigger.ForTask("ENG-1234"));
+            .ExecuteAsync(definition, Workspace, NewRunId(), RunTrigger.ForTask("ENG-1234"));
 
         // assert
         var started = Assert.IsType<WorkflowEvent.RunStarted>(journal.Entries[0].Event);
