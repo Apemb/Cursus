@@ -13,12 +13,10 @@ namespace Cursus.Persistence;
 public sealed class SqliteRunJournal : IRunJournal, IRunJournalReader, IDisposable
 {
     private readonly SqliteConnection _connection;
-    private readonly RunArtifactStore _artifacts;
     private readonly IClock _clock;
 
-    public SqliteRunJournal(string databasePath, RunArtifactStore artifacts, IClock? clock = null)
+    public SqliteRunJournal(string databasePath, IClock? clock = null)
     {
-        _artifacts = artifacts;
         _clock = clock ?? SystemClock.Instance;
 
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(databasePath))!);
@@ -155,15 +153,6 @@ public sealed class SqliteRunJournal : IRunJournal, IRunJournalReader, IDisposab
             ("$stepId", stepId),
             ("$iteration", iteration),
             ("$payload", RunEventCodec.Encode(@event)));
-
-        // Les sorties partent sur disque plutôt qu'en base : le payload n'en
-        // garde que les tailles, et elles peuvent alors grossir sans faire
-        // grossir le journal.
-        if (@event is WorkflowEvent.StepFinished visit)
-        {
-            _artifacts.Write(runId, visit.StepId, visit.Iteration, ArtifactStream.StandardOutput, visit.Result.Stdout);
-            _artifacts.Write(runId, visit.StepId, visit.Iteration, ArtifactStream.StandardError, visit.Result.Stderr);
-        }
     }
 
     private long NextSeq(string runId, SqliteTransaction transaction)

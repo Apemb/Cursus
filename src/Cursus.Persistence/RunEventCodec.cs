@@ -42,8 +42,7 @@ internal static class RunEventCodec
             e.Result.ExitCode,
             e.Result.Outcome.ToString(),
             e.Result.Duration.TotalSeconds,
-            e.Result.Stdout.Length,
-            e.Result.Stderr.Length)),
+            e.Output.Artifacts.Select(a => new ArtifactPayload(a.Name, a.Path, a.Size)).ToList())),
 
         WorkflowEvent.EdgeChosen e => Write(new EdgeChosenPayload(e.FromStepId, e.ToStepId)),
 
@@ -79,13 +78,16 @@ internal static class RunEventCodec
 
             case nameof(WorkflowEvent.StepFinished):
             {
-                // Les sorties reviennent vides : elles vivent dans le magasin
-                // d'artefacts, et c'est là qu'il faut aller les chercher.
+                // Le contenu n'est pas là : le payload ne garde que les artefacts
+                // (nom, chemin, taille), et c'est le magasin qui détient les octets.
                 var p = Read<StepFinishedPayload>(payload);
-                return new WorkflowEvent.StepFinished(p.StepId, p.Iteration, new ScriptResult(
+                var result = new ScriptResult(
                     p.ExitCode,
                     Enum.Parse<ScriptOutcome>(p.Outcome),
-                    Duration: TimeSpan.FromSeconds(p.DurationSeconds)));
+                    Duration: TimeSpan.FromSeconds(p.DurationSeconds));
+                var output = new StepOutput(
+                    p.Artifacts.Select(a => new OutputArtifact(a.Name, a.Path, a.Size)).ToList());
+                return new WorkflowEvent.StepFinished(p.StepId, p.Iteration, result, output);
             }
 
             case nameof(WorkflowEvent.EdgeChosen):
@@ -123,8 +125,9 @@ internal static class RunEventCodec
         int ExitCode,
         string Outcome,
         double DurationSeconds,
-        int StdoutLength,
-        int StderrLength);
+        IReadOnlyList<ArtifactPayload> Artifacts);
+
+    private sealed record ArtifactPayload(string Name, string? Path, long Size);
 
     private sealed record EdgeChosenPayload(string FromStepId, string ToStepId);
 

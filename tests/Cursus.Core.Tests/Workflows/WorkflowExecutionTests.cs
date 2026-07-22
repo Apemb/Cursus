@@ -1,18 +1,22 @@
+using System.Text;
 using Cursus.Core.Workflows;
 
 namespace Cursus.Core.Tests.Workflows;
 
 /// <summary>
 /// Test d'assemblage : le moteur de traversée sur le vrai <see cref="ProcessRunner"/>.
-/// Le noyau déterministe exécute ici de vrais process, sans aucun double.
+/// Le noyau déterministe exécute ici de vrais process, sans aucun double. La
+/// sortie ne transite plus par le résultat : elle ruisselle dans un puits, ici
+/// en mémoire, d'où on la relit.
 /// </summary>
 public class WorkflowExecutionTests
 {
-    [Fact(DisplayName = "étant donné un graphe de vrais scripts dont l'un échoue, quand on exécute le workflow, alors il emprunte l'arête d'échec, va jusqu'au bout et rapporte les sorties")]
+    [Fact(DisplayName = "étant donné un graphe de vrais scripts dont l'un échoue, quand on exécute le workflow, alors il emprunte l'arête d'échec, va jusqu'au bout et sa sortie se relit depuis le puits")]
     public async Task A_real_graph_of_scripts_runs_end_to_end_through_its_failure_edge()
     {
         // arrange — quatre scripts partageant un répertoire de travail
         var workspace = new RunContext(Directory.CreateTempSubdirectory("cursus-workflow-").FullName);
+        var output = new InMemoryRunOutputStore();
         var definition = new WorkflowDefinition("preparer", new[]
         {
             Step("preparer", "echo bonjour > artefact.txt", new Edge(Guard.OnSuccess, "verifier")),
@@ -22,14 +26,19 @@ public class WorkflowExecutionTests
         });
 
         // act
-        var run = await new WorkflowEngine(new ProcessRunner(), new InMemoryRunJournal()).ExecuteAsync(definition, workspace);
+        var run = await new WorkflowEngine(new ProcessRunner(), new InMemoryRunJournal(), output)
+            .ExecuteAsync(definition, workspace);
 
         // assert
         Assert.Equal(new[] { "preparer", "verifier", "tester", "rapporter" }, run.History.Select(s => s.StepId));
         Assert.Equal(RunState.Completed, run.State);
-        Assert.Contains("2 tests en echec", run.History[2].Result.Stderr);
-        Assert.Contains("rapport ecrit", run.History[3].Result.Stdout);
+        Assert.Contains("2 tests en echec", Captured(output, run.RunId, "tester", "stderr"));
+        Assert.Contains("rapport ecrit", Captured(output, run.RunId, "rapporter", "stdout"));
         Assert.True(File.Exists(Path.Combine(workspace.WorkspaceRoot, "artefact.txt")));
+
+        // le StepRun porte les tailles que le puits a rangées
+        var reported = run.History[3].Output.Artifacts.Single(a => a.Name == "stdout").Size;
+        Assert.Equal(output.Captured(run.RunId, "rapporter", 1, "stdout").Length, reported);
 
         // --- helpers locaux ---
         static StepDefinition Step(string id, string script, params Edge[] edges) =>
@@ -41,6 +50,7 @@ public class WorkflowExecutionTests
     {
         // arrange — plus une seule ligne de C# ne déclare le graphe.
         var workspace = new RunContext(Directory.CreateTempSubdirectory("cursus-json-").FullName);
+        var output = new InMemoryRunOutputStore();
         Directory.CreateDirectory(Path.Combine(workspace.WorkspaceRoot, "backend"));
 
         const string document = """
@@ -66,16 +76,20 @@ public class WorkflowExecutionTests
 
         // act
         var loaded = WorkflowSerializer.Read(document);
-        var run = await new WorkflowEngine(new ProcessRunner(), new InMemoryRunJournal()).ExecuteAsync(loaded.Definition!, workspace);
+        var run = await new WorkflowEngine(new ProcessRunner(), new InMemoryRunJournal(), output)
+            .ExecuteAsync(loaded.Definition!, workspace);
 
         // assert
         Assert.True(loaded.Report.IsValid);
         Assert.Equal(new[] { "preparer", "tester", "rapporter" }, run.History.Select(s => s.StepId));
         Assert.Equal(RunState.Completed, run.State);
-        Assert.Contains("2 tests en echec", run.History[1].Result.Stderr);
+        Assert.Contains("2 tests en echec", Captured(output, run.RunId, "tester", "stderr"));
 
         // le sous-chemin déclaré est bien celui où le script a travaillé
         Assert.True(File.Exists(Path.Combine(workspace.WorkspaceRoot, "backend", "artefact.txt")));
         Assert.True(File.Exists(Path.Combine(workspace.WorkspaceRoot, "rapport.txt")));
     }
+
+    private static string Captured(InMemoryRunOutputStore store, string runId, string stepId, string name) =>
+        Encoding.UTF8.GetString(store.Captured(runId, stepId, 1, name));
 }

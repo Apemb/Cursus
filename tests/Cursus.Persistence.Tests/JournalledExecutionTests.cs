@@ -38,7 +38,7 @@ public class JournalledExecutionTests : IDisposable
         string runId;
         using (var journal = NewJournal())
         {
-            var run = await new WorkflowEngine(new ProcessRunner(), journal)
+            var run = await new WorkflowEngine(new ProcessRunner(), journal, Artifacts())
                 .ExecuteAsync(loaded.Definition!, workspace, RunTrigger.ForTask("ENG-1234"));
 
             runId = run.RunId;
@@ -76,7 +76,7 @@ public class JournalledExecutionTests : IDisposable
     // --- helpers ---
 
     private SqliteRunJournal NewJournal() =>
-        new(Path.Combine(_cursusDirectory, "cursus.db"), Artifacts());
+        new(Path.Combine(_cursusDirectory, "cursus.db"));
 
     private RunArtifactStore Artifacts() => new(Path.Combine(_cursusDirectory, "runs"));
 

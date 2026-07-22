@@ -18,7 +18,7 @@ public class WorkflowJournalTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        await new WorkflowEngine(new StubProcessRunner(Exit(0)), journal)
+        await Engine(new StubProcessRunner(Exit(0)), journal)
             .ExecuteAsync(definition, Workspace);
 
         // assert
@@ -42,7 +42,7 @@ public class WorkflowJournalTests
         });
 
         // act
-        await new WorkflowEngine(new StubProcessRunner(Exit(0)), journal)
+        await Engine(new StubProcessRunner(Exit(0)), journal)
             .ExecuteAsync(definition, Workspace);
 
         // assert
@@ -56,7 +56,7 @@ public class WorkflowJournalTests
         // arrange
         var journal = new InMemoryRunJournal();
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
-        var engine = new WorkflowEngine(new StubProcessRunner(Exit(0)), journal);
+        var engine = Engine(new StubProcessRunner(Exit(0)), journal);
 
         // act
         await engine.ExecuteAsync(definition, Workspace);
@@ -74,7 +74,7 @@ public class WorkflowJournalTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        var run = await new WorkflowEngine(new StubProcessRunner(Exit(0)), journal)
+        var run = await Engine(new StubProcessRunner(Exit(0)), journal)
             .ExecuteAsync(definition, Workspace);
 
         // assert
@@ -89,7 +89,7 @@ public class WorkflowJournalTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        await new WorkflowEngine(new StubProcessRunner(Exit(0)), journal)
+        await Engine(new StubProcessRunner(Exit(0)), journal)
             .ExecuteAsync(definition, Workspace);
 
         // assert
@@ -110,7 +110,7 @@ public class WorkflowJournalTests
         });
 
         // act
-        await new WorkflowEngine(new StubProcessRunner(Exit(0)), journal)
+        await Engine(new StubProcessRunner(Exit(0)), journal)
             .ExecuteAsync(definition, Workspace);
 
         // assert
@@ -128,7 +128,7 @@ public class WorkflowJournalTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        await new WorkflowEngine(new StubProcessRunner(Exit(0)), journal)
+        await Engine(new StubProcessRunner(Exit(0)), journal)
             .ExecuteAsync(definition, Workspace);
 
         // assert
@@ -146,7 +146,7 @@ public class WorkflowJournalTests
         });
 
         // act
-        await new WorkflowEngine(new StubProcessRunner(Exit(1)), journal)
+        await Engine(new StubProcessRunner(Exit(1)), journal)
             .ExecuteAsync(definition, Workspace);
 
         // assert
@@ -166,7 +166,7 @@ public class WorkflowJournalTests
         });
 
         // act
-        await new WorkflowEngine(new StubProcessRunner(Exit(1)), journal)
+        await Engine(new StubProcessRunner(Exit(1)), journal)
             .ExecuteAsync(definition, Workspace);
 
         // assert
@@ -188,7 +188,7 @@ public class WorkflowJournalTests
         });
 
         // act
-        await new WorkflowEngine(runner, journal)
+        await Engine(runner, journal)
             .ExecuteAsync(definition, Workspace, cancellationToken: cancellation.Token);
 
         // assert
@@ -206,7 +206,7 @@ public class WorkflowJournalTests
 
         // act
         await Assert.ThrowsAsync<UnknownStepException>(async () =>
-            await new WorkflowEngine(new StubProcessRunner(Exit(0)), journal)
+            await Engine(new StubProcessRunner(Exit(0)), journal)
                 .ExecuteAsync(definition, Workspace));
 
         // assert
@@ -227,7 +227,7 @@ public class WorkflowJournalTests
 
         // act
         await Assert.ThrowsAsync<PathEscapesWorkspaceException>(async () =>
-            await new WorkflowEngine(new StubProcessRunner(Exit(0)), journal)
+            await Engine(new StubProcessRunner(Exit(0)), journal)
                 .ExecuteAsync(definition, Workspace));
 
         // assert
@@ -243,7 +243,7 @@ public class WorkflowJournalTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        await new WorkflowEngine(new StubProcessRunner(Exit(3)), journal)
+        await Engine(new StubProcessRunner(Exit(3)), journal)
             .ExecuteAsync(definition, Workspace);
 
         // assert
@@ -262,7 +262,7 @@ public class WorkflowJournalTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        await new WorkflowEngine(new StubProcessRunner(Exit(0)), journal)
+        await Engine(new StubProcessRunner(Exit(0)), journal)
             .ExecuteAsync(definition, Workspace);
 
         // assert
@@ -279,7 +279,7 @@ public class WorkflowJournalTests
         var definition = new WorkflowDefinition("A", new[] { Step("A") });
 
         // act
-        await new WorkflowEngine(new StubProcessRunner(Exit(0)), journal)
+        await Engine(new StubProcessRunner(Exit(0)), journal)
             .ExecuteAsync(definition, Workspace, RunTrigger.ForTask("ENG-1234"));
 
         // assert

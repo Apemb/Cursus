@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text;
 
 namespace Cursus.Core.Workflows;
 
@@ -13,7 +14,8 @@ public sealed class ProcessRunner : IProcessRunner
     /// <summary>Code de sortie rapporté quand l'exécutable n'a pas pu être lancé (convention shell).</summary>
     private const int CommandNotFound = 127;
 
-    public async Task<ScriptResult> RunAsync(ScriptSpec spec, CancellationToken cancellationToken = default)
+    public async Task<ScriptResult> RunAsync(
+        ScriptSpec spec, Stream stdout, Stream stderr, CancellationToken cancellationToken = default)
     {
         using var process = Describe(spec);
 
@@ -26,15 +28,18 @@ public sealed class ProcessRunner : IProcessRunner
         {
             // Un binaire introuvable est un résultat d'étape ordinaire — la garde
             // OnFailure le routera — pas une exception que le moteur devrait gérer.
-            return new ScriptResult(CommandNotFound, ScriptOutcome.LaunchFailed, Stderr: failure.Message);
+            // Le pourquoi de l'échec devient le contenu stderr de la visite.
+            await stderr.WriteAsync(Encoding.UTF8.GetBytes(failure.Message), CancellationToken.None);
+            return new ScriptResult(CommandNotFound, ScriptOutcome.LaunchFailed);
         }
 
-        // Les deux tubes sont vidés en parallèle : lire l'un jusqu'au bout avant
+        // Copie brute des deux tubes, en parallèle : lire l'un jusqu'au bout avant
         // l'autre bloquerait le process dès que le tube non lu est plein (64 Kio).
-        // Aucun jeton ici : à la mort du process les tubes se ferment, les
-        // lectures s'achèvent d'elles-mêmes et rendent la sortie partielle.
-        var stdout = process.StandardOutput.ReadToEndAsync();
-        var stderr = process.StandardError.ReadToEndAsync();
+        // On copie les octets tels quels (BaseStream), sans décision d'encodage.
+        // Aucun jeton sur la copie : à la mort du process les tubes se ferment,
+        // elle s'achève d'elle-même et rend la sortie partielle.
+        var pumpOut = process.StandardOutput.BaseStream.CopyToAsync(stdout, CancellationToken.None);
+        var pumpErr = process.StandardError.BaseStream.CopyToAsync(stderr, CancellationToken.None);
 
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         if (spec.Timeout is { } timeout)
@@ -50,6 +55,10 @@ public sealed class ProcessRunner : IProcessRunner
             process.Kill(entireProcessTree: true);
             await process.WaitForExitAsync(CancellationToken.None);
 
+            // Vider les tubes avant de rendre la main : la destination peut être
+            // refermée par l'appelant sitôt l'annulation remontée.
+            await Task.WhenAll(pumpOut, pumpErr);
+
             // Une annulation demandée par l'appelant interrompt le run : elle
             // remonte. Un dépassement de délai, lui, est une issue d'exécution
             // ordinaire, que la garde OnFailure routera.
@@ -57,7 +66,8 @@ public sealed class ProcessRunner : IProcessRunner
             outcome = ScriptOutcome.TimedOut;
         }
 
-        return new ScriptResult(process.ExitCode, outcome, await stdout, await stderr, chrono.Elapsed);
+        await Task.WhenAll(pumpOut, pumpErr);
+        return new ScriptResult(process.ExitCode, outcome, chrono.Elapsed);
     }
 
     /// <summary>

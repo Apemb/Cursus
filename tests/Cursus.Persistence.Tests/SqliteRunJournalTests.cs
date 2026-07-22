@@ -51,7 +51,7 @@ public class SqliteRunJournalTests : IDisposable
         {
             journal.Append("run-1", AnyStart);
             journal.Append("run-1", new WorkflowEvent.StepStarted("A", 1));
-            journal.Append("run-1", new WorkflowEvent.StepFinished("A", 1, new ScriptResult(0, ScriptOutcome.Completed)));
+            journal.Append("run-1", new WorkflowEvent.StepFinished("A", 1, new ScriptResult(0, ScriptOutcome.Completed), NoOutput));
             journal.Append("run-1", new WorkflowEvent.EdgeChosen("A", "B"));
             journal.Append("run-1", new WorkflowEvent.RunFinished(RunState.Completed));
         }
@@ -80,7 +80,7 @@ public class SqliteRunJournalTests : IDisposable
 
         // act
         journal.Append("run-1", new WorkflowEvent.StepFinished(
-            "A", 2, new ScriptResult(3, ScriptOutcome.TimedOut, Duration: TimeSpan.FromSeconds(1.5))));
+            "A", 2, new ScriptResult(3, ScriptOutcome.TimedOut, Duration: TimeSpan.FromSeconds(1.5)), NoOutput));
 
         // assert
         var visit = Assert.IsType<WorkflowEvent.StepFinished>(journal.ReadEvents("run-1")[^1].Event);
@@ -91,25 +91,28 @@ public class SqliteRunJournalTests : IDisposable
         Assert.Equal(TimeSpan.FromSeconds(1.5), visit.Result.Duration);
     }
 
-    [Fact(DisplayName = "étant donné une visite dont le script a écrit sur ses deux sorties, quand on la journalise, alors les sorties partent dans le magasin d'artefacts et non en base")]
-    public void The_outputs_of_a_visit_go_to_the_artifact_store_not_to_the_database()
+    [Fact(DisplayName = "étant donné une visite portant des artefacts de sortie, quand on la relit, alors ses artefacts sont restitués et le journal n'a gardé aucun octet de contenu")]
+    public void A_visit_reads_back_with_its_artifacts_and_no_output_bytes()
     {
         // arrange
         using var journal = NewJournal();
         journal.Append("run-1", AnyStart);
+        var output = new StepOutput([
+            new OutputArtifact("stdout", "/runs/run-1/A.1.stdout", 13),
+            new OutputArtifact("stderr", null, 0),
+        ]);
 
-        // act
+        // act — le journal ne garde des sorties que les artefacts (nom, chemin,
+        // taille), jamais les octets : ceux-ci vivent dans le magasin.
         journal.Append("run-1", new WorkflowEvent.StepFinished(
-            "A", 1, new ScriptResult(0, ScriptOutcome.Completed, "tout va bien", "un avertissement")));
+            "A", 1, new ScriptResult(0, ScriptOutcome.Completed), output));
 
         // assert
-        var store = new RunArtifactStore(Path.Combine(_root, "runs"));
-        Assert.Equal("tout va bien", store.Read("run-1", "A", 1, ArtifactStream.StandardOutput));
-        Assert.Equal("un avertissement", store.Read("run-1", "A", 1, ArtifactStream.StandardError));
-
         var visit = Assert.IsType<WorkflowEvent.StepFinished>(journal.ReadEvents("run-1")[^1].Event);
-        Assert.Empty(visit.Result.Stdout);
-        Assert.Empty(visit.Result.Stderr);
+        var stdout = visit.Output.Artifacts.Single(a => a.Name == "stdout");
+        Assert.Equal("/runs/run-1/A.1.stdout", stdout.Path);
+        Assert.Equal(13, stdout.Size);
+        Assert.Null(visit.Output.Artifacts.Single(a => a.Name == "stderr").Path);
     }
 
     [Fact(DisplayName = "étant donné deux runs journalisés, quand on relit les événements de l'un, alors ceux de l'autre n'y figurent pas")]
@@ -148,9 +151,9 @@ public class SqliteRunJournalTests : IDisposable
 
     // --- helpers ---
 
-    private SqliteRunJournal NewJournal() => new(
-        Path.Combine(_root, "cursus.db"),
-        new RunArtifactStore(Path.Combine(_root, "runs")));
+    private SqliteRunJournal NewJournal() => new(Path.Combine(_root, "cursus.db"));
+
+    private static StepOutput NoOutput => new([]);
 
     /// <summary>
     /// Un graphe minimal mais <b>valide</b> : la définition figée dans la table

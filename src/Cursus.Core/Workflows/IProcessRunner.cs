@@ -8,9 +8,12 @@ namespace Cursus.Core.Workflows;
 public interface IProcessRunner
 {
     /// <summary>
-    /// Lance le process décrit et attend sa fin. Une annulation tue le process
-    /// et lève <see cref="OperationCanceledException"/> : elle n'est pas une
-    /// issue d'exécution mais une interruption du run.
+    /// Lance le process décrit et attend sa fin, en <b>ruisselant</b> ses deux
+    /// sorties (octets bruts) vers <paramref name="stdout"/> et
+    /// <paramref name="stderr"/> à mesure qu'elles arrivent. Une annulation tue
+    /// le process et lève <see cref="OperationCanceledException"/> : elle n'est
+    /// pas une issue d'exécution mais une interruption du run.
     /// </summary>
-    Task<ScriptResult> RunAsync(ScriptSpec spec, CancellationToken cancellationToken = default);
+    Task<ScriptResult> RunAsync(
+        ScriptSpec spec, Stream stdout, Stream stderr, CancellationToken cancellationToken = default);
 }

@@ -24,11 +24,12 @@ public abstract record WorkflowEvent
     public sealed record StepStarted(string StepId, int Iteration) : WorkflowEvent;
 
     /// <summary>
-    /// Une visite d'étape s'achève. Elle emporte le résultat entier, sorties
-    /// comprises : c'est au journal de décider ce qu'il en garde en base et ce
-    /// qu'il décharge sur disque.
+    /// Une visite d'étape s'achève. Elle emporte ce que le process a fait
+    /// (<see cref="ScriptResult"/>) et où sa sortie a été rangée
+    /// (<see cref="StepOutput"/>) — le contenu, lui, est déjà sur disque.
     /// </summary>
-    public sealed record StepFinished(string StepId, int Iteration, ScriptResult Result) : WorkflowEvent;
+    public sealed record StepFinished(
+        string StepId, int Iteration, ScriptResult Result, StepOutput Output) : WorkflowEvent;
 
     /// <summary>
     /// Le routage a retenu une arête. Séparé de la fin d'étape parce que c'est

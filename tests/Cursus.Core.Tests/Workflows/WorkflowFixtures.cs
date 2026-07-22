@@ -27,7 +27,12 @@ internal static class WorkflowFixtures
     /// traversée l'ignorent, mais le moteur en exige un — un run muet est un
     /// run qu'on ne peut pas relire.
     /// </summary>
-    internal static WorkflowEngine Engine(IProcessRunner runner) => new(runner, new InMemoryRunJournal());
+    internal static WorkflowEngine Engine(IProcessRunner runner) =>
+        new(runner, new InMemoryRunJournal(), new InMemoryRunOutputStore());
+
+    /// <summary>Même moteur, mais sur un journal qu'on fournit pour l'inspecter.</summary>
+    internal static WorkflowEngine Engine(IProcessRunner runner, IRunJournal journal) =>
+        new(runner, journal, new InMemoryRunOutputStore());
 }
 
 /// <summary>
@@ -56,7 +61,8 @@ internal sealed class StubProcessRunner : IProcessRunner
     /// <summary>Les specs effectivement reçues, dans l'ordre — le moteur les compose avant de les transmettre.</summary>
     public List<ScriptSpec> Executed { get; } = [];
 
-    public Task<ScriptResult> RunAsync(ScriptSpec spec, CancellationToken cancellationToken = default)
+    public Task<ScriptResult> RunAsync(
+        ScriptSpec spec, Stream stdout, Stream stderr, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         Executed.Add(spec);

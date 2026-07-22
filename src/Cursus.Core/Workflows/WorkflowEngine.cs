@@ -10,11 +10,13 @@ public sealed class WorkflowEngine
 {
     private readonly IProcessRunner _runner;
     private readonly IRunJournal _journal;
+    private readonly IRunOutputStore _output;
 
-    public WorkflowEngine(IProcessRunner runner, IRunJournal journal)
+    public WorkflowEngine(IProcessRunner runner, IRunJournal journal, IRunOutputStore output)
     {
         _runner = runner;
         _journal = journal;
+        _output = output;
     }
 
     public async Task<WorkflowRun> ExecuteAsync(
@@ -65,26 +67,35 @@ public sealed class WorkflowEngine
 
             _journal.Append(runId, new WorkflowEvent.StepStarted(cursor, iteration));
 
+            // Le puits s'ouvre avant l'étape : c'est ce qui permet à la sortie de
+            // ruisseler pendant le run plutôt que d'être écrite à la fin.
             ScriptResult result;
-            try
+            StepOutput output;
+            using (var sink = _output.Open(runId, cursor, iteration))
             {
-                // La définition déclare un sous-chemin relatif, le runner attend
-                // un répertoire absolu : le moteur est le seul à connaître le
-                // contexte, donc le seul à pouvoir traduire.
-                var script = step.Script with { WorkingDirectory = context.Resolve(step.WorkingSubdirectory) };
-                result = await _runner.RunAsync(script, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                // L'annulation interrompt le run mais ne l'efface pas : la
-                // trajectoire déjà parcourue reste observable.
-                _journal.Append(runId, new WorkflowEvent.RunFinished(
-                    RunState.Aborted, AbortReason.Canceled));
-                return new WorkflowRun(runId, RunState.Aborted, history, AbortReason.Canceled);
+                try
+                {
+                    // La définition déclare un sous-chemin relatif, le runner attend
+                    // un répertoire absolu : le moteur est le seul à connaître le
+                    // contexte, donc le seul à pouvoir traduire.
+                    var script = step.Script with { WorkingDirectory = context.Resolve(step.WorkingSubdirectory) };
+                    result = await _runner.RunAsync(script, sink.Stdout, sink.Stderr, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // L'annulation interrompt le run mais ne l'efface pas : la
+                    // trajectoire déjà parcourue reste observable, et la sortie
+                    // partielle est chassée sur disque en refermant le puits.
+                    _journal.Append(runId, new WorkflowEvent.RunFinished(
+                        RunState.Aborted, AbortReason.Canceled));
+                    return new WorkflowRun(runId, RunState.Aborted, history, AbortReason.Canceled);
+                }
+
+                output = sink.Complete();
             }
 
-            history.Add(new StepRun(cursor, iteration, result));
-            _journal.Append(runId, new WorkflowEvent.StepFinished(cursor, iteration, result));
+            history.Add(new StepRun(cursor, iteration, result, output));
+            _journal.Append(runId, new WorkflowEvent.StepFinished(cursor, iteration, result, output));
 
             var edge = step.OutEdges.FirstOrDefault(e => e.Guard.Matches(result));
             if (edge is null)

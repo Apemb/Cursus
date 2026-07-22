@@ -41,7 +41,7 @@ public class ProjectRunTests : IDisposable
         string runId;
         using (var journal = JournalOf(project))
         {
-            var run = await new WorkflowEngine(new ProcessRunner(), journal)
+            var run = await new WorkflowEngine(new ProcessRunner(), journal, new RunArtifactStore(project.ArtifactsRoot))
                 .ExecuteAsync(loaded.Definition!, project.CreateRunContext());
 
             runId = run.RunId;
@@ -69,8 +69,7 @@ public class ProjectRunTests : IDisposable
     }
 
     /// <summary>Le journal d'un projet : ses deux emplacements viennent du projet, jamais du test.</summary>
-    private static SqliteRunJournal JournalOf(Project project) =>
-        new(project.DatabasePath, new RunArtifactStore(project.ArtifactsRoot));
+    private static SqliteRunJournal JournalOf(Project project) => new(project.DatabasePath);
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
 }

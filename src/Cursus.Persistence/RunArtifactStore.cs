@@ -31,22 +31,6 @@ public sealed class RunArtifactStore : IRunOutputStore
             PathFor(runId, stepId, iteration, ArtifactStream.StandardOutput),
             PathFor(runId, stepId, iteration, ArtifactStream.StandardError));
 
-    /// <summary>
-    /// Range une sortie et rend son chemin, ou <c>null</c> si elle était vide :
-    /// la plupart des étapes n'écrivent rien sur stderr, et un fichier vide par
-    /// visite noierait le répertoire sans rien apprendre à personne.
-    /// </summary>
-    public string? Write(string runId, string stepId, int iteration, ArtifactStream stream, string content)
-    {
-        if (content.Length == 0)
-            return null;
-
-        var path = PathFor(runId, stepId, iteration, stream);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, content);
-        return path;
-    }
-
     /// <summary>Relit une sortie rangée.</summary>
     public string Read(string runId, string stepId, int iteration, ArtifactStream stream) =>
         File.ReadAllText(PathFor(runId, stepId, iteration, stream));
