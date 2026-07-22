@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Output;
 
 /// <summary>
 /// Le puits d'une visite : deux flux où déverser les sorties pendant qu'elles

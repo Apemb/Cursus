@@ -1,4 +1,5 @@
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Output;
 using Cursus.Core.Workflows.Journaling;
 
 namespace Cursus.Core.Tests.Workflows;

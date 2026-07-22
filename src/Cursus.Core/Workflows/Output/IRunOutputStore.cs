@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Output;
 
 /// <summary>
 /// Ouvre un puits par visite, avant qu'elle s'exécute — c'est ce qui permet à

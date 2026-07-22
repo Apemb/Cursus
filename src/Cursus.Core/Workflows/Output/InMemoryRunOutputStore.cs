@@ -1,4 +1,4 @@
-namespace Cursus.Core.Workflows;
+namespace Cursus.Core.Workflows.Output;
 
 /// <summary>
 /// Puits volatile : capture en mémoire ce qu'une visite écrit, sans chemin sur
