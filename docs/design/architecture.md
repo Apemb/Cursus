@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `31a43aa`. Dernier jalon de code : `f2a9762` (*le loader de projets, jalon 6c·1*). Suite de tests : **164 verts** (147 noyau + 17 persistance), build 0 warning.
+> **Statut** : document vivant, à jour du commit `a9de071` (*rangement de `Workflows/` en sous-namespaces — §4*). Dernier jalon de code : `f2a9762` (*le loader de projets, jalon 6c·1*). Suite de tests : **164 verts** (147 noyau + 17 persistance), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -37,7 +37,7 @@
 
 | Moitié | Emplacement | État |
 |---|---|---|
-| Noyau déterministe | `src/Cursus.Core/Workflows/` (38 fichiers) | Moteur de traversée, runner de process réel, contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal, puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b). **100 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
+| Noyau déterministe | `src/Cursus.Core/Workflows/` (38 fichiers, rangés en vocabulaire racine + 6 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel, contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal, puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b). **100 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
 | Projet & catalogue | `src/Cursus.Core/Projects/` (6 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees. **23 tests.** Voir §4.11. |
 | Persistance | `src/Cursus.Persistence/` (3 fichiers) | Journal SQLite (écriture sérialisée) et magasin d'artefacts sur disque. **17 tests.** Un run survit au process. |
 | Sessions / PTY | `src/Cursus.Core/Sessions/` (5 fichiers) + `src/Cursus.App/` | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal ; logique de sessions testée (**13 tests**). Antérieure au pivot. |
@@ -54,7 +54,7 @@ Le noyau et la persistance se connaissent (le second implémente les contrats du
 graph TD
     subgraph CoreLib["Cursus.Core"]
         Sessions["Sessions/<br/>TerminalSession, SessionWorkspace,<br/>ShellResolver, ShellEnvironment<br/><i>(CommunityToolkit.Mvvm)</i>"]
-        Workflows["Workflows/<br/>WorkflowEngine, ProcessRunner, Validator,<br/>Serializer, RunContext, WorkflowEvent,<br/>IRunJournal, InMemoryRunJournal"]
+        Workflows["Workflows/<br/><i>racine : vocabulaire (graphe, run, script)</i><br/>Execution · Serialization · Validation<br/>Journaling · Output · Workspaces"]
         Projects["Projects/<br/>Project, ProjectStore,<br/>WorkflowCatalog, WorkflowEntry"]
     end
     Projects --> Workflows
@@ -165,7 +165,21 @@ Le noyau déterministe fournit le mécanisme de boucle gardée ; l'agent fournir
 
 ## 4. Le noyau déterministe
 
-Namespace `Cursus.Core.Workflows` pour tout le noyau, plus `Cursus.Core.Projects` pour ce qui l'ancre sur un disque (§4.11). Le code est court et commenté : cette section donne la carte, l'artefact utilisateur, et ce qui n'est **pas** déductible d'une lecture.
+Namespace racine `Cursus.Core.Workflows` pour le **vocabulaire partagé**, plus **six sous-namespaces** pour les services (ci-dessous), et `Cursus.Core.Projects` pour ce qui l'ancre sur un disque (§4.11). Le code est court et commenté : cette section donne la carte, l'artefact utilisateur, et ce qui n'est **pas** déductible d'une lecture.
+
+**Découpage en sous-namespaces** (rangement du fourre-tout d'origine — les 38 fichiers étaient à plat sous un unique `Cursus.Core.Workflows`) : la racine ne garde que le **langage que tout le monde importe**, les services descendent chacun dans sa responsabilité, et **chaque exception suit l'invariant qu'elle protège** (levée par `WorkflowDefinition` → racine, par `WorkflowSerializer` → `Serialization`, par `RunContext` → `Execution`, par `GitWorkspaceProvisioner` → `Workspaces`).
+
+| Namespace | Ce qu'il porte |
+|---|---|
+| `Cursus.Core.Workflows` (racine) | Le vocabulaire : définition du graphe (`WorkflowDefinition`, `StepDefinition`, `Edge`, `Guard`, `UnknownStepException`), état d'un run (`WorkflowRun`, `StepRun`, `RunSummary`, `RunTrigger`, `WorkflowEvent`), contrat de script/sortie (`ScriptSpec`, `ScriptResult`, `ScriptOutcome`, `StepOutput`, `OutputArtifact`) |
+| `…Execution` | `WorkflowEngine`, `RunContext`, `IClock`, `IProcessRunner`, `ProcessRunner`, `PathEscapesWorkspaceException` |
+| `…Serialization` | `WorkflowSerializer`, `WorkflowDocument`, `UnknownGuardException` |
+| `…Validation` | `WorkflowValidator`, `ValidationReport` (+ `ValidationIssueKind`, `ValidationIssue`) |
+| `…Journaling` | `IRunJournal`, `IRunJournalReader`, `InMemoryRunJournal`, `JournalEntry` |
+| `…Output` | `IRunOutputStore`, `InMemoryRunOutputStore`, `IStepOutputSink` |
+| `…Workspaces` | `IWorkspaceProvisioner`, `GitWorkspaceProvisioner`, `IProvisionedWorkspace`, `WorkspaceRequest`, `GitNotAvailableException` |
+
+`Execution` et `Workspaces` se citent mutuellement (le moteur provisionne, le provisioner s'exécute) — un couplage tacite dans le fourre-tout, désormais explicite via `using`. La carte par fichier ci-dessous garde son rôle de référence des responsabilités individuelles.
 
 ### 4.1 Carte des fichiers
 
