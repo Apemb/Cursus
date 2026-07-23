@@ -72,6 +72,14 @@ public sealed class ProjectHost : IDisposable
         return _launcher.LaunchAsync(definition, workflowId, trigger, observer, cancellationToken);
     }
 
+    /// <summary>
+    /// Les événements d'un run, ordonnés — l'alimentation <b>relecture</b> de la
+    /// projection d'écran (l'autre étant le flux live de <see cref="LaunchAsync"/>).
+    /// Passe par le host pour que la présentation ne connaisse ni SQLite ni le
+    /// disque : elle plie ces événements dans la même <c>RunProjection</c>.
+    /// </summary>
+    public IReadOnlyList<JournalEntry> ReadEvents(string runId) => _journal.ReadEvents(runId);
+
     public IReadOnlyList<WorkflowLastRun> LastRunPerWorkflow()
     {
         // ListRuns rend les runs du plus récemment démarré au plus ancien : le

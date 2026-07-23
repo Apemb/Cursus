@@ -2,6 +2,7 @@ using System.Diagnostics;
 
 using Cursus.Core.Projects;
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Projection;
 
 namespace Cursus.Persistence.Tests;
 
@@ -68,9 +69,65 @@ public sealed class ProjectHostEndToEndTests : IDisposable
         Assert.Equal(RunState.Completed, passage.LastRun!.State);
     }
 
+    [Fact(DisplayName = "étant donné un run lancé par le préréglage, quand on plie son flux live et qu'on plie sa relecture ReadEvents, alors les deux projections coïncident — même écran, deux alimentations, sans Avalonia")]
+    public async Task Folding_the_live_flux_and_folding_the_replay_yield_the_same_projection()
+    {
+        // arrange — un vrai projet-dépôt-git avec un workflow qui aboutit
+        var project = ProjectStore.Create(_root, "Démo");
+        File.WriteAllText(
+            Path.Combine(project.WorkflowsDirectory, "verifier.json"),
+            """
+            {
+              "entryStep": "verifier",
+              "steps": [
+                { "id": "verifier", "name": "Vérifier", "maxVisits": 1,
+                  "script": { "fileName": "/bin/sh", "arguments": ["-c", "echo ok > resultat.txt"] },
+                  "edges": [] }
+              ]
+            }
+            """);
+        InitRepository();
+
+        // act — une alimentation *live* : la projection se plie au fil de l'émission
+        using var host = SqliteProjectHost.Open(project);
+        var live = new ProjectingObserver();
+        var run = await host.LaunchAsync("verifier", observer: live);
+
+        // ... et une alimentation *relecture* : la même projection, pliée du journal
+        var replay = new RunProjection();
+        foreach (var entry in host.ReadEvents(run.RunId))
+            replay.Apply(entry.Event);
+
+        // assert — les deux projections décrivent le même écran. La durée est
+        // neutralisée : le journal la range en secondes-double (lossy, assumé —
+        // c'est une métrique, pas une entrée de routage), seul axe où flux et
+        // relecture peuvent différer ; tout le reste doit être bit-à-bit égal.
+        Assert.Equal(live.Projection.State, replay.State);
+        Assert.Equal(live.Projection.AbortReason, replay.AbortReason);
+        Assert.Equal(
+            live.Projection.Trajectory.Select(StripDuration),
+            replay.Trajectory.Select(StripDuration));
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
     // --- helpers ---
+
+    /// <summary>Une visite dont la durée est remise à zéro — pour comparer flux et relecture hors de l'imprécision assumée du journal.</summary>
+    private static RunVisit StripDuration(RunVisit visit) =>
+        visit.Result is null ? visit : visit with { Result = visit.Result with { Duration = default } };
+
+    /// <summary>
+    /// L'alimentation live sous forme testable : un <see cref="IProgress{T}"/>
+    /// <b>synchrone</b> (l'émission du moteur l'est) qui plie chaque événement dans
+    /// sa projection au fil de l'eau — exactement ce que fera le RunViewModel.
+    /// </summary>
+    private sealed class ProjectingObserver : IProgress<WorkflowEvent>
+    {
+        public RunProjection Projection { get; } = new();
+
+        public void Report(WorkflowEvent value) => Projection.Apply(value);
+    }
 
     /// <summary>Érige la racine du projet en dépôt git avec un commit initial — la base des worktrees.</summary>
     private void InitRepository()
