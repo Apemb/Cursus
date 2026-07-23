@@ -1,7 +1,7 @@
 # Schémas d'architecture — la carte visuelle de Cursus
 
-> **Statut** : compagnon visuel de `architecture.md`, à jour du commit `7ed427e`
-> (jalon 6c·3a — la surface d'un projet montre le dernier passage). Rendu par
+> **Statut** : compagnon visuel de `architecture.md`, à jour du commit `8f2c961`
+> (jalon 6c·3c — l'écran de run, la projection à deux alimentations). Rendu par
 > l'aperçu Markdown de Rider, GitHub et VS Code (Mermaid natif, aucune étape de
 > build).
 >
@@ -285,18 +285,19 @@ Trois faits que le parallélisme rend évidents (`architecture.md` §3, §4.1) :
 
 ---
 
-## 4. Le noyau — vocabulaire racine et six services
+## 4. Le noyau — vocabulaire racine et sept services
 
-`Cursus.Core.Workflows` range le fourre-tout d'origine (38 fichiers à plat) en un
-**vocabulaire racine** que tout le monde importe (le modèle §3 en fait partie), plus
-**six sous-namespaces** de services. Chaque service dépend de la racine ; les
+`Cursus.Core.Workflows` range le fourre-tout d'origine (43 fichiers, jadis à plat) en
+un **vocabulaire racine** que tout le monde importe (le modèle §3 en fait partie), plus
+**sept sous-namespaces** de services. Chaque service dépend de la racine ; les
 exceptions suivent l'invariant qu'elles protègent (`architecture.md` §4).
 
 ```mermaid
 flowchart TB
   root["<b>Cursus.Core.Workflows (racine)</b><br/><small>le vocabulaire que tout le monde importe — dont le modèle §3</small><br/>Graphe : WorkflowDefinition · StepDefinition · Edge · Guard<br/>Run : WorkflowRun · StepRun · RunSummary · RunTrigger · WorkflowEvent<br/>Script/sortie : ScriptSpec · ScriptResult · ScriptOutcome · StepOutput · OutputArtifact"]
 
-  Exec["<b>…Execution</b><br/><small>lance et route un run</small><br/>WorkflowEngine · RunContext · IProcessRunner · ProcessRunner · IClock"]
+  Exec["<b>…Execution</b><br/><small>lance et route un run</small><br/>WorkflowEngine · WorkflowLauncher · RunContext · IProcessRunner · ProcessRunner · PathStrategy · IClock"]
+  Proj["<b>…Projection</b><br/><small>plie le flux en écran de run</small><br/>RunProjection · RunVisit · RunControl"]
   Ser["<b>…Serialization</b><br/><small>JSON ⟷ modèle</small><br/>WorkflowSerializer · WorkflowDocument"]
   Val["<b>…Validation</b><br/><small>validité du graphe</small><br/>WorkflowValidator · ValidationReport"]
   Jou["<b>…Journaling</b><br/><small>écrire et relire un run</small><br/>IRunJournal · IRunJournalReader · InMemoryRunJournal · JournalEntry"]
@@ -304,6 +305,7 @@ flowchart TB
   Wsp["<b>…Workspaces</b><br/><small>worktree isolé d'un run</small><br/>IWorkspaceProvisioner · GitWorkspaceProvisioner"]
 
   Exec --> root
+  Proj --> root
   Ser --> root
   Val --> root
   Jou --> root
