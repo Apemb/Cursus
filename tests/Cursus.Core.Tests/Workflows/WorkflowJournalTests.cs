@@ -290,6 +290,38 @@ public class WorkflowJournalTests
         Assert.Null(started.Trigger.TaskKey);
     }
 
+    [Fact(DisplayName = "étant donné un id de workflow fourni, quand le run démarre, alors le démarrage journalisé porte cet id de workflow")]
+    public async Task A_supplied_workflow_id_is_journalled_on_the_start_event()
+    {
+        // arrange
+        var journal = new InMemoryRunJournal();
+        var definition = new WorkflowDefinition("A", new[] { Step("A") });
+
+        // act
+        await Engine(new StubProcessRunner(Exit(0)), journal)
+            .ExecuteAsync(definition, Workspace, NewRunId(), workflowId: "verifier");
+
+        // assert
+        var started = Assert.IsType<WorkflowEvent.RunStarted>(journal.Entries[0].Event);
+        Assert.Equal("verifier", started.WorkflowId);
+    }
+
+    [Fact(DisplayName = "étant donné aucun id de workflow, quand le run démarre, alors le démarrage journalisé n'en porte aucun (nullable respecté)")]
+    public async Task A_run_without_a_workflow_id_journals_none()
+    {
+        // arrange — la rétrocompat des appels 3a : un run non issu d'un catalogue
+        var journal = new InMemoryRunJournal();
+        var definition = new WorkflowDefinition("A", new[] { Step("A") });
+
+        // act
+        await Engine(new StubProcessRunner(Exit(0)), journal)
+            .ExecuteAsync(definition, Workspace, NewRunId());
+
+        // assert
+        var started = Assert.IsType<WorkflowEvent.RunStarted>(journal.Entries[0].Event);
+        Assert.Null(started.WorkflowId);
+    }
+
     [Fact(DisplayName = "étant donné un déclenchement par une tâche, quand on exécute, alors le démarrage journalisé porte la clé de cette tâche")]
     public async Task A_task_triggered_run_journals_the_task_key()
     {

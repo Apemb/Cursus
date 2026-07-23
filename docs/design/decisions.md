@@ -291,3 +291,37 @@ UI** (marche engrenage de configuration) : fermer `LoadResult` en **union fermé
 « projet illisible lève / workflow illisible rend un `LoadResult` » reste voulue.
 
 **Renvoi** : `architecture.md` §4.6.
+
+---
+
+## D-011 — Le moteur émet un flux de progression, aux mêmes points que le journal
+
+**Statut** : Accepté (2026-07-23).
+
+**Contexte.** L'écran de run (6c·3c) doit montrer les étapes défiler **en direct**. Le
+moteur, jusqu'ici, ne rend son `WorkflowRun` qu'à la fin et ne journalise qu'en écriture
+durable : aucune source live à laquelle une UI puisse s'abonner. Comment exposer
+l'avancement d'un run *pendant* qu'il tourne ?
+
+**Décision.** `ExecuteAsync` gagne un **observateur optionnel** (`IProgress<WorkflowEvent>`)
+où le moteur **pousse chaque événement à mesure**. L'invariant qui fait la valeur du choix :
+l'émission passe par **un unique point** (`Emit`) qui, dans le même geste, journalise **et**
+notifie l'observateur — si bien que le flux éphémère et le journal durable **ne peuvent pas
+diverger** (même séquence, même ordre, par construction). Le journal reste la vérité ; le
+flux n'est qu'une dérivation vivante, pour l'UI. Réutilise le vocabulaire `WorkflowEvent`.
+
+**Alternatives écartées.**
+- *L'UI relit/tail le journal, moteur inchangé* — coupleraît l'UI au schéma SQLite,
+  imposerait un polling, rendrait mal le temps réel (latence, pas d'événement « poussé »).
+- *Un type d'événement dédié à l'UI, distinct de `WorkflowEvent`* — dupliquerait le
+  vocabulaire et **rouvrirait** le risque de divergence que l'invariant « même point
+  d'émission » ferme.
+- *Une interface maison `IRunObserver` portant le `runId`* — inutile : un observateur est
+  créé **par run**, il sait déjà lequel il observe. `IProgress<T>` de la BCL suffit et son
+  implémentation `Progress<T>` marshallera vers le thread d'UI en 6c·3c.
+
+**Conséquences.** Le port est éphémère et facultatif : un run headless n'en fournit pas et
+se déroule à l'identique. L'écran de run de 6c·3c s'y branchera comme premier des deux flux
+(l'autre étant le *tail* du fichier d'artefact).
+
+**Renvoi** : `architecture.md` §7.12 ; plan de marche 6c·3b.

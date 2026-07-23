@@ -46,6 +46,19 @@ internal static class WorkflowFixtures
 }
 
 /// <summary>
+/// Observateur de test : capture, dans l'ordre et de façon synchrone, chaque
+/// événement que le moteur pousse. Synchrone à dessein — contrairement à
+/// <see cref="Progress{T}"/>, il n'ordonnance rien, pour que l'assertion voie
+/// exactement la séquence émise.
+/// </summary>
+internal sealed class RecordingObserver : IProgress<WorkflowEvent>
+{
+    public List<WorkflowEvent> Events { get; } = [];
+
+    public void Report(WorkflowEvent value) => Events.Add(value);
+}
+
+/// <summary>
 /// Une horloge pilotée par le test, pour que l'horodatage cesse d'être une
 /// inconnue — et qu'on puisse la faire avancer quand l'ordre en dépend.
 /// </summary>
