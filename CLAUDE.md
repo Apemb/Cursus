@@ -28,6 +28,12 @@ Le mettre à jour **dans le même commit ou immédiatement après** dès qu'un d
 Ne pas y consigner ce qui est déjà lisible ailleurs : l'historique git raconte les hashes et la
 chronologie, le code raconte le comment. Le document raconte le **pourquoi** et le **découpage**.
 
+Le **pourquoi *dans le temps*** — un pivot, un arbitrage tranché, une alternative écartée après débat, une
+décision qu'une décision plus tardive vient superséder — va, lui, dans **`docs/design/decisions.md`** (journal
+ADR, **append-only** : on n'y réécrit jamais). C'est le complément de `architecture.md`, qui décrit l'état
+*présent* et ne garde pas les décisions périmées. Ajouter une entrée `D-NNN` dès qu'une décision structurante
+est prise ou renversée ; y renvoyer depuis le message de commit quand c'est utile.
+
 Y maintenir la distinction en trois registres : **construit** / **tranché mais pas encore construit** /
 **question ouverte**. Un « prévu » présenté comme un « fait » désoriente le lecteur suivant.
 
