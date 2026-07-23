@@ -325,3 +325,46 @@ se déroule à l'identique. L'écran de run de 6c·3c s'y branchera comme premie
 (l'autre étant le *tail* du fichier d'artefact).
 
 **Renvoi** : `architecture.md` §7.12 ; plan de marche 6c·3b.
+
+---
+
+## D-012 — Parallélisme d'étapes reporté ; l'écran de run est choisi pour y survivre
+
+**Statut** : Reporté (2026-07-23).
+
+**Contexte.** La maquette de l'écran de run (6c·3c) a fait surgir une question concrète :
+faire tourner deux étapes **de front** — les tests back et front côte à côte pour gagner du
+temps. Le noyau ne sait pas le faire. Le moteur est une traversée **séquentielle** (un seul
+`cursor`, §4.3) ; les arêtes d'une `StepDefinition` sont des **choix exclusifs** sur un code
+de sortie, pas des successeurs concurrents. Le `Fork`/`Join` était déjà listé comme question
+ouverte « tranchée sur le principe, non planifiée » (§9.3) — mais sans motivation ni lien aux
+invariants qu'il rouvre.
+
+**Décision.** Ne **rien construire** maintenant : le parallélisme (fan-out `Fork` → N étapes
+concurrentes, `Join` fan-in qui attend que toutes finissent) reste une question ouverte, que
+cette entrée **motive concrètement** sans la planifier. Elle dépasse 6c·3c et probablement
+l'`AgentStep`.
+
+La décision qui vaut d'être consignée est l'autre : **l'écran de run est dessiné pour
+survivre au parallélisme sans reshape.** Le pipeline déroule la **traversée** (une visite = un
+nœud — c'est déjà comme ça qu'une boucle se rend, en répétition), et le log ne dépend que du
+**nœud sélectionné** (un fichier d'artefact par visite, 6a). Deux étapes concurrentes ne sont
+alors que deux nœuds « en cours » côte à côte, chacun sélectionnable avec son log — le manque
+est **dans le noyau**, jamais dans la vue.
+
+**Alternatives écartées.**
+- *Construire fan-out/join maintenant, tant qu'on tient l'écran* — rouvrirait deux invariants
+  (cursor unique, arêtes exclusives) et une machine à états au beau milieu d'un jalon de
+  présentation : exactement le mélange « changer le noyau » + « brancher l'UI » que la scission
+  du jalon 6 a refusé (§9.4).
+- *Dessiner l'écran autour d'un chemin unique, plus simple à court terme* — le condamnerait à
+  un reshape le jour du fan-out. La traversée-déroulée ne coûte pas plus cher et encaisse les
+  **deux** répétitions du même graphe : la boucle (séquentielle) **et** le parallèle (concurrent).
+
+**Conséquences.** Quand le fan-out arrivera, il touchera `StepDefinition` (arêtes concurrentes
+vs exclusives), le moteur (N `cursor`), le journal (des visites entrelacées, plus strictement
+ordonnées par un chemin unique) — **mais pas la forme de l'écran**. Le vrai point dur sera la
+**jonction** : la barrière fan-in, et surtout que faire quand une branche échoue pendant qu'une
+autre tourne encore. À rouvrir avec l'`AgentStep`.
+
+**Renvoi** : `architecture.md` §9.3 (ligne `Fork`/`Join`), §4.3 ; maquette 6c·3c.
