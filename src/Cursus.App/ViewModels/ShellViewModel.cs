@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -8,18 +9,29 @@ using Cursus.Core.Projects;
 namespace Cursus.App.ViewModels;
 
 /// <summary>
-/// La coquille : le rail des projets connus à gauche, une surface à droite (pour
-/// l'instant les sessions terminal). Adaptateur mince sur <see cref="ProjectRegistry"/> —
-/// toute la logique de registre vit en Core ; ici on ne fait que binder et
-/// traduire un refus en message.
+/// La coquille : le rail des projets connus à gauche, une surface à droite (le
+/// projet ouvert). Adaptateur mince sur <see cref="ProjectRegistry"/> — toute la
+/// logique de registre vit en Core ; ici on ne fait que binder et traduire un
+/// refus en message.
+///
+/// <para>
+/// Elle tient aussi, en attendant sa réification (§7.13), le rôle de racine
+/// au-dessus des hosts : elle <b>construit</b> le <see cref="ProjectHost"/> du
+/// projet sélectionné et le <b>dispose</b> quand on en change. Elle le fait par
+/// une fabrique reçue — jamais elle n'apprend que c'est du SQLite —, et la règle
+/// de sens unique tient : la surface reçoit la projection du host, pas le host.
+/// </para>
 /// </summary>
-public partial class ShellViewModel : ObservableObject
+public partial class ShellViewModel : ObservableObject, IDisposable
 {
     private readonly ProjectRegistry _registry;
+    private readonly Func<Project, ProjectHost> _openHost;
+    private ProjectHost? _currentHost;
 
-    public ShellViewModel(ProjectRegistry registry)
+    public ShellViewModel(ProjectRegistry registry, Func<Project, ProjectHost> openHost)
     {
         _registry = registry;
+        _openHost = openHost;
         Projects = new ObservableCollection<Project>(registry.Projects);
     }
 
@@ -49,12 +61,28 @@ public partial class ShellViewModel : ObservableObject
     private Project? _selectedProject;
 
     /// <summary>
-    /// La jonction rail → surface : choisir un projet l'ouvre sur son mode run,
-    /// le désélectionner rend la surface vide. Une sélection neuve reconstruit la
-    /// surface — pas de recyclage, l'objet ouvert est jetable.
+    /// La jonction rail → surface : choisir un projet ouvre son host, lit le
+    /// dernier passage de ses workflows et en fait la surface ; le désélectionner
+    /// la vide. Le host du projet précédent est disposé — une connexion SQLite par
+    /// projet, jamais deux — et la surface reconstruite, l'objet ouvert est jetable.
     /// </summary>
-    partial void OnSelectedProjectChanged(Project? value) =>
-        CurrentSurface = value is null ? null : new OpenProjectViewModel(value);
+    partial void OnSelectedProjectChanged(Project? value)
+    {
+        _currentHost?.Dispose();
+
+        if (value is null)
+        {
+            _currentHost = null;
+            CurrentSurface = null;
+            return;
+        }
+
+        _currentHost = _openHost(value);
+        CurrentSurface = new OpenProjectViewModel(value.Name, _currentHost.LastRunPerWorkflow());
+    }
+
+    /// <summary>Ferme le host encore ouvert : sa connexion SQLite ne doit pas fuir à la fermeture.</summary>
+    public void Dispose() => _currentHost?.Dispose();
 
     /// <summary>Le dernier refus d'ajout à afficher ; <c>null</c> si le dernier ajout a réussi.</summary>
     [ObservableProperty]

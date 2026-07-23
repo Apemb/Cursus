@@ -35,7 +35,13 @@ echo "==> Vérification des bibliothèques natives"
 # retombe SILENCIEUSEMENT sur son moteur managé, qui suit mal DECCKM : les
 # flèches ne sont plus encodées comme les TUI l'attendent. Un bundle sans
 # cette bibliothèque se lance très bien et se comporte mal — d'où ce garde-fou.
-for lib in libghostty-vt.dylib libAvaloniaNative.dylib libSkiaSharp.dylib; do
+#
+# libe_sqlite3 porte le moteur SQLite (SQLitePCLRaw). Depuis que Cursus.App
+# référence Cursus.Persistence (jalon 6c·3a), ouvrir le journal d'un projet la
+# charge ; absente du bundle, l'app se lance mais lève dès qu'on sélectionne un
+# projet. Ce contrôle, volontairement absent tant que la référence n'existait
+# pas (il aurait échoué sur un faux positif), devient dû ici.
+for lib in libghostty-vt.dylib libAvaloniaNative.dylib libSkiaSharp.dylib libe_sqlite3.dylib; do
     if [[ ! -f "${APP}/Contents/MacOS/${lib}" ]]; then
         echo "ERREUR : ${lib} absente du bundle." >&2
         exit 1

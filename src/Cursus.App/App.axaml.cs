@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Cursus.App.ViewModels;
 using Cursus.Core.Projects;
+using Cursus.Persistence;
 
 namespace Cursus.App;
 
@@ -18,11 +19,12 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             // Racine de composition du driver : le registre à son emplacement
-            // machine par défaut. Les modules le reçoivent construit, ils ne le
-            // composent jamais eux-mêmes.
+            // machine par défaut, et le préréglage SQLite comme fabrique de hosts.
+            // C'est l'unique endroit qui lie les deux mondes — les modules
+            // reçoivent leurs dépendances construites, ils ne composent jamais.
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new ShellViewModel(ProjectRegistry.ForCurrentUser()),
+                DataContext = new ShellViewModel(ProjectRegistry.ForCurrentUser(), SqliteProjectHost.Open),
             };
         }
 
