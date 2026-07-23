@@ -1,3 +1,5 @@
+using System.Text;
+
 using Cursus.Core.Workflows;
 using Cursus.Core.Workflows.Output;
 
@@ -8,6 +10,39 @@ public enum ArtifactStream
 {
     StandardOutput,
     StandardError,
+}
+
+/// <summary>
+/// Suiveur d'un artefact : à chaque <see cref="ReadMore"/>, rend ce qui s'est
+/// ajouté au fichier depuis la lecture précédente — c'est <b>lui</b> qui retient
+/// la position, pas la vue. Tolère un fichier encore absent (flux muet) : la
+/// lecture rend alors le vide, puis le contenu dès qu'il apparaît.
+/// </summary>
+public sealed class ArtifactTail
+{
+    private readonly string _path;
+    private long _position;
+
+    internal ArtifactTail(string path) => _path = path;
+
+    /// <summary>Le texte ajouté depuis la lecture précédente — vide si rien de neuf, ou si le fichier n'existe pas encore.</summary>
+    public string ReadMore()
+    {
+        if (!File.Exists(_path))
+            return "";
+
+        // Partage en lecture/écriture : le puits de la visite écrit encore dans
+        // ce fichier pendant qu'on le suit.
+        using var file = new FileStream(_path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        if (_position >= file.Length)
+            return "";
+
+        file.Seek(_position, SeekOrigin.Begin);
+        var pending = new byte[file.Length - _position];
+        var read = file.Read(pending, 0, pending.Length);
+        _position += read;
+        return Encoding.UTF8.GetString(pending, 0, read);
+    }
 }
 
 /// <summary>
@@ -35,6 +70,14 @@ public sealed class RunArtifactStore : IRunOutputStore
     /// <summary>Relit une sortie rangée.</summary>
     public string Read(string runId, string stepId, int iteration, ArtifactStream stream) =>
         File.ReadAllText(PathFor(runId, stepId, iteration, stream));
+
+    /// <summary>
+    /// Ouvre un suiveur sur la sortie d'une visite : de quoi lire par incréments
+    /// ce qui s'y ajoute pendant qu'elle tourne (le log en direct). Le fichier
+    /// peut ne pas exister encore — un flux muet ne le crée qu'au premier octet.
+    /// </summary>
+    public ArtifactTail Follow(string runId, string stepId, int iteration, ArtifactStream stream) =>
+        new(PathFor(runId, stepId, iteration, stream));
 
     private string PathFor(string runId, string stepId, int iteration, ArtifactStream stream)
     {

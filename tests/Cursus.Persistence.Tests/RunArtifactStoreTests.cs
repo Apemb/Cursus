@@ -127,6 +127,63 @@ public class RunArtifactStoreTests : IDisposable
         Assert.Equal("second tour", store.Read("run-1", "compiler", 2, ArtifactStream.StandardOutput));
     }
 
+    [Fact(DisplayName = "étant donné un artefact déjà écrit, quand on le suit et qu'on lit, alors on obtient tout son contenu")]
+    public void Following_an_already_written_artifact_reads_all_its_content()
+    {
+        // arrange
+        var store = new RunArtifactStore(_root);
+        using (var sink = store.Open("run-1", "compiler", 1))
+        {
+            sink.Stdout.Write(Encoding.UTF8.GetBytes("déjà là"));
+            sink.Complete();
+        }
+
+        // act
+        var tail = store.Follow("run-1", "compiler", 1, ArtifactStream.StandardOutput);
+
+        // assert
+        Assert.Equal("déjà là", tail.ReadMore());
+    }
+
+    [Fact(DisplayName = "étant donné qu'on a déjà lu jusqu'au bout, quand l'artefact grossit et qu'on relit, alors on n'obtient que l'ajout")]
+    public void Reading_again_after_the_artifact_grew_yields_only_the_addition()
+    {
+        // arrange — le puits reste ouvert, l'étape « tourne » encore
+        var store = new RunArtifactStore(_root);
+        using var sink = store.Open("run-1", "compiler", 1);
+        sink.Stdout.Write(Encoding.UTF8.GetBytes("premier "));
+        sink.Stdout.Flush();
+
+        var tail = store.Follow("run-1", "compiler", 1, ArtifactStream.StandardOutput);
+        Assert.Equal("premier ", tail.ReadMore());
+
+        // act — la sortie grossit après la première lecture
+        sink.Stdout.Write(Encoding.UTF8.GetBytes("puis second"));
+        sink.Stdout.Flush();
+
+        // assert — seul l'ajout, pas tout le fichier
+        Assert.Equal("puis second", tail.ReadMore());
+    }
+
+    [Fact(DisplayName = "étant donné un artefact pas encore créé, quand on le suit, alors la lecture rend le vide sans lever, puis le contenu dès qu'il apparaît")]
+    public void Following_a_not_yet_created_artifact_yields_empty_then_content_once_it_appears()
+    {
+        // arrange — le puits est ouvert mais rien n'a encore été écrit : pas de fichier
+        var store = new RunArtifactStore(_root);
+        using var sink = store.Open("run-1", "compiler", 1);
+        var tail = store.Follow("run-1", "compiler", 1, ArtifactStream.StandardOutput);
+
+        // act / assert — suivre un flux encore muet ne lève pas, rend le vide
+        Assert.Equal("", tail.ReadMore());
+
+        // act — le premier octet crée enfin le fichier
+        sink.Stdout.Write(Encoding.UTF8.GetBytes("surgit"));
+        sink.Stdout.Flush();
+
+        // assert — le suiveur rattrape ce qui vient d'apparaître
+        Assert.Equal("surgit", tail.ReadMore());
+    }
+
     [Fact(DisplayName = "étant donné un identifiant d'étape contenant un séparateur de chemin, quand on ouvre un puits pour lui, alors l'ouverture est refusée")]
     public void Opening_a_sink_for_a_step_identifier_that_walks_the_filesystem_is_refused()
     {
