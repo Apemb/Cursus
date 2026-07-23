@@ -14,6 +14,16 @@ public sealed class ProcessRunner : IProcessRunner
     /// <summary>Code de sortie rapporté quand l'exécutable n'a pas pu être lancé (convention shell).</summary>
     private const int CommandNotFound = 127;
 
+    private readonly PathStrategy _pathStrategy;
+
+    /// <param name="pathStrategy">
+    /// De quoi résoudre un binaire malgré un <c>PATH</c> graphique tronqué (§9.2-15).
+    /// À défaut, les racines connues de la machine (<see cref="PathStrategy.Default"/>) —
+    /// inoffensif là où le <c>PATH</c> est déjà complet (dev, <c>dotnet test</c>).
+    /// </param>
+    public ProcessRunner(PathStrategy? pathStrategy = null) =>
+        _pathStrategy = pathStrategy ?? PathStrategy.Default;
+
     public async Task<ScriptResult> RunAsync(
         ScriptSpec spec, Stream stdout, Stream stderr, CancellationToken cancellationToken = default)
     {
@@ -73,9 +83,11 @@ public sealed class ProcessRunner : IProcessRunner
     /// <summary>
     /// Traduit un <see cref="ScriptSpec"/> en process prêt à démarrer : argv passé
     /// token par token (aucun quoting), sorties redirigées, environnement hôte
-    /// surchargé clé par clé.
+    /// surchargé clé par clé, puis <c>PATH</c> enrichi des racines connues — en
+    /// dernier, pour couvrir aussi bien le <c>PATH</c> hérité qu'un éventuel
+    /// surchargé par l'étape.
     /// </summary>
-    private static Process Describe(ScriptSpec spec)
+    private Process Describe(ScriptSpec spec)
     {
         var process = new Process
         {
@@ -93,6 +105,13 @@ public sealed class ProcessRunner : IProcessRunner
 
         foreach (var (key, value) in spec.Environment ?? new Dictionary<string, string>())
             process.StartInfo.Environment[key] = value;
+
+        // Le PATH effectif est l'hérité, éventuellement surchargé par l'étape. On
+        // résout la commande directe en absolu (car .NET ne cherche pas dans le PATH
+        // de StartInfo), et on enrichit le PATH transmis pour les process descendants.
+        process.StartInfo.Environment.TryGetValue("PATH", out var effectivePath);
+        process.StartInfo.FileName = _pathStrategy.Resolve(spec.FileName, effectivePath);
+        process.StartInfo.Environment["PATH"] = _pathStrategy.Enrich(effectivePath);
 
         return process;
     }
