@@ -113,27 +113,36 @@
                         </ItemsControl.Styles>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:GraphNodeRow">
-                                <Border Width="132" Height="44"
+                                <!-- Boîte à largeur fixe (Width doit égaler NodeWidth du
+                                     RunGraphViewModel — les connecteurs s'y accrochent). Grille
+                                     Auto/*/Auto : la colonne * borne le libellé, donc l'ellipse
+                                     tronque au lieu de déborder. Infobulle = nom complet. -->
+                                <Border Width="150" Height="44"
                                         Background="#FFFFFF"
                                         BorderBrush="{DynamicResource SeparatorBrush}"
                                         BorderThickness="1" CornerRadius="8"
-                                        Padding="10,0">
-                                    <StackPanel Orientation="Horizontal" Spacing="7"
-                                                VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Glyph}"
+                                        Padding="10,0"
+                                        ToolTip.Tip="{Binding Label}">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding Glyph}"
                                                    Foreground="{Binding StatusBrush}"
                                                    FontWeight="Bold"
+                                                   Margin="0,0,7,0"
                                                    VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding Label}"
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Label}"
                                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                                    TextTrimming="CharacterEllipsis"
                                                    VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding VisitBadge}"
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding VisitBadge}"
                                                    IsVisible="{Binding HasRevisits}"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                                    FontSize="11"
+                                                   Margin="6,0,0,0"
                                                    VerticalAlignment="Center" />
-                                    </StackPanel>
+                                    </Grid>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

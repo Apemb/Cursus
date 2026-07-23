@@ -24,7 +24,9 @@ public sealed partial class RunGraphViewModel : ObservableObject
 {
     // Géométrie de vue : le pas d'une colonne et d'une ligne, la taille d'un nœud, la
     // marge. Réglage à l'œil, pas un invariant — c'est justement ce que Core ignore.
-    private const double NodeWidth = 132;
+    // NOTE : NodeWidth/NodeHeight sont dupliqués dans RunView.axaml (la boîte du nœud) —
+    // les connecteurs s'accrochent à ces bords, les deux valeurs doivent rester égales.
+    private const double NodeWidth = 150;
     private const double NodeHeight = 44;
     private const double ColumnStride = NodeWidth + 48;
     private const double RowStride = NodeHeight + 24;
