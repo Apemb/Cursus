@@ -1,4 +1,6 @@
 using Cursus.Core.Projects;
+using Cursus.Core.Workflows.Execution;
+using Cursus.Core.Workflows.Workspaces;
 
 namespace Cursus.Persistence;
 
@@ -15,6 +17,21 @@ public static class SqliteProjectHost
     /// Ouvre le host d'un projet sur sa vraie base. À l'appelant de le disposer :
     /// un projet = un host, et disposer le host ferme la connexion SQLite.
     /// </summary>
-    public static ProjectHost Open(Project project) =>
-        new(project, () => new SqliteRunJournal(project.DatabasePath));
+    /// <remarks>
+    /// Le <b>même</b> <see cref="SqliteRunJournal"/> sert de lecteur au host et
+    /// d'écrivain au lanceur : une seule connexion, donc ce qui est lancé se relit
+    /// sans divergence et se ferme d'une seule disposition. ⚠️ Séquentiel en 3b
+    /// (lancer <em>puis</em> lire) ; une lecture concurrente d'un lancement en cours
+    /// (runs de front, 6c·3c / §7.13) exigera de revoir le partage de connexion.
+    /// </remarks>
+    public static ProjectHost Open(Project project)
+    {
+        var journal = new SqliteRunJournal(project.DatabasePath);
+        var launcher = new WorkflowLauncher(
+            new ProcessRunner(),
+            journal,
+            new RunArtifactStore(project.ArtifactsRoot),
+            new GitWorkspaceProvisioner(new ProcessRunner(), project.Root, project.WorktreesRoot));
+        return new ProjectHost(project, () => journal, launcher);
+    }
 }

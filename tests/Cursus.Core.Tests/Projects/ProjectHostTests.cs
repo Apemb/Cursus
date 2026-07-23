@@ -1,7 +1,9 @@
 using Cursus.Core.Projects;
 using Cursus.Core.Tests.Workflows;
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Execution;
 using Cursus.Core.Workflows.Journaling;
+using Cursus.Core.Workflows.Output;
 
 namespace Cursus.Core.Tests.Projects;
 
@@ -22,7 +24,7 @@ public class ProjectHostTests : IDisposable
         var project = ProjectStore.Create(_root, "Démo");
         Deposit(project, "build");
         Deposit(project, "verifier");
-        using var host = new ProjectHost(project, () => new InMemoryRunJournal());
+        using var host = new ProjectHost(project, () => new InMemoryRunJournal(), AnyLauncher());
 
         // act
         var passages = host.LastRunPerWorkflow();
@@ -42,7 +44,7 @@ public class ProjectHostTests : IDisposable
         var journal = new InMemoryRunJournal();
         journal.Append("r1", Started("verifier"));
         journal.Append("r1", new WorkflowEvent.RunFinished(RunState.Failed));
-        using var host = new ProjectHost(project, () => journal);
+        using var host = new ProjectHost(project, () => journal, AnyLauncher());
 
         // act
         var passages = host.LastRunPerWorkflow().ToDictionary(passage => passage.Workflow.Id);
@@ -66,7 +68,7 @@ public class ProjectHostTests : IDisposable
         clock.UtcNow = clock.UtcNow.AddHours(2);
         journal.Append("recent", Started("verifier"));
         journal.Append("recent", new WorkflowEvent.RunFinished(RunState.Completed));
-        using var host = new ProjectHost(project, () => journal);
+        using var host = new ProjectHost(project, () => journal, AnyLauncher());
 
         // act
         var passage = host.LastRunPerWorkflow().Single(passage => passage.Workflow.Id == "verifier");
@@ -75,13 +77,35 @@ public class ProjectHostTests : IDisposable
         Assert.Equal("recent", passage.LastRun!.RunId);
     }
 
+    [Fact(DisplayName = "étant donné un host et l'id d'un workflow du projet, quand on le lance puis relit le dernier passage, alors ce workflow n'est plus « jamais lancé »")]
+    public async Task Launching_a_workflow_fills_its_last_run()
+    {
+        // arrange — le lanceur écrit dans le même journal que le host relit : c'est
+        // ce partage qui ferme la boucle 3a (lire) ↔ 3b (lancer).
+        var project = ProjectStore.Create(_root, "Démo");
+        Deposit(project, "verifier");
+        var journal = new InMemoryRunJournal();
+        var launcher = new WorkflowLauncher(
+            new StubProcessRunner(new ScriptResult(0, ScriptOutcome.Completed)),
+            journal, new InMemoryRunOutputStore(), new FakeProvisioner());
+        using var host = new ProjectHost(project, () => journal, launcher);
+
+        // act
+        await host.LaunchAsync("verifier");
+
+        // assert
+        var passage = host.LastRunPerWorkflow().Single(passage => passage.Workflow.Id == "verifier");
+        Assert.NotNull(passage.LastRun);
+        Assert.Equal(RunState.Completed, passage.LastRun!.State);
+    }
+
     [Fact(DisplayName = "étant donné un host ouvert sur un journal disposable, quand on dispose le host, alors le journal sous-jacent est disposé")]
     public void Disposing_the_host_disposes_its_journal()
     {
         // arrange — un projet minimal suffit, seule la vie du journal est en jeu
         var project = ProjectStore.Create(_root, "Démo");
         var journal = new DisposableJournalSpy();
-        var host = new ProjectHost(project, () => journal);
+        var host = new ProjectHost(project, () => journal, AnyLauncher());
 
         // act
         host.Dispose();
@@ -96,6 +120,14 @@ public class ProjectHostTests : IDisposable
 
     private static void Deposit(Project project, string id) =>
         File.WriteAllText(Path.Combine(project.WorkflowsDirectory, $"{id}.json"), AnyDocument);
+
+    /// <summary>
+    /// Un lanceur dont ces tests-ci n'exercent pas le lancement : ils portent sur
+    /// la lecture. Sur son propre journal jetable, sans rapport avec le lecteur.
+    /// </summary>
+    private static WorkflowLauncher AnyLauncher() =>
+        new(new StubProcessRunner(new ScriptResult(0, ScriptOutcome.Completed)),
+            new InMemoryRunJournal(), new InMemoryRunOutputStore(), new FakeProvisioner());
 
     /// <summary>Un démarrage rattaché à un workflow. Le double InMemory ne revalide
     /// pas la définition, un graphe nu suffit.</summary>

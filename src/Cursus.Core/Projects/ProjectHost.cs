@@ -1,4 +1,5 @@
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Execution;
 using Cursus.Core.Workflows.Journaling;
 
 namespace Cursus.Core.Projects;
@@ -25,22 +26,52 @@ public sealed class ProjectHost : IDisposable
 {
     private readonly WorkflowCatalog _catalog;
     private readonly IRunJournalReader _journal;
+    private readonly WorkflowLauncher _launcher;
 
     /// <param name="journal">
     /// La fabrique du journal du projet. Le host l'appelle une fois et détient le
     /// résultat ; c'est <c>Cursus.Persistence</c> qui la lie au vrai
     /// <c>SqliteRunJournal</c>, pour que le câblage concret n'existe qu'en un lieu.
     /// </param>
-    public ProjectHost(Project project, Func<IRunJournalReader> journal)
+    /// <param name="launcher">
+    /// Le lanceur du projet, câblé par le même préréglage sur le <b>même</b>
+    /// journal que le lecteur — une seule instance en mémoire, une seule connexion
+    /// en SQLite : ce qui a été lancé se relit sans qu'un second magasin diverge,
+    /// et la disposition reste unique.
+    /// </param>
+    public ProjectHost(Project project, Func<IRunJournalReader> journal, WorkflowLauncher launcher)
     {
         _catalog = new WorkflowCatalog(project);
         _journal = journal();
+        _launcher = launcher;
     }
 
     /// <summary>
     /// Le dernier passage de chaque workflow connu du projet — sa trace la plus
     /// récente dans le journal, ou aucune s'il n'a jamais tourné.
     /// </summary>
+    /// <summary>
+    /// Lance le workflow <paramref name="workflowId"/> du projet : charge sa
+    /// définition du catalogue et la confie au lanceur, qui provisionne, exécute
+    /// et journalise en estampillant cette provenance. Le run se relit ensuite via
+    /// <see cref="LastRunPerWorkflow"/> — c'est la boucle 3a↔3b.
+    /// </summary>
+    /// <remarks>
+    /// Chemin heureux : la définition est supposée valide. Un workflow illisible au
+    /// lancement (fermer <c>LoadResult</c> en union, le refuser proprement) relève
+    /// de la marche engrenage de configuration, seule à confronter l'utilisateur au
+    /// <c>ValidationReport</c>.
+    /// </remarks>
+    public Task<WorkflowRun> LaunchAsync(
+        string workflowId,
+        RunTrigger? trigger = null,
+        IProgress<WorkflowEvent>? observer = null,
+        CancellationToken cancellationToken = default)
+    {
+        var definition = _catalog.Load(workflowId).Definition!;
+        return _launcher.LaunchAsync(definition, workflowId, trigger, observer, cancellationToken);
+    }
+
     public IReadOnlyList<WorkflowLastRun> LastRunPerWorkflow()
     {
         // ListRuns rend les runs du plus récemment démarré au plus ancien : le
