@@ -40,7 +40,7 @@
 
 | Moitié | Emplacement | État |
 |---|---|---|
-| Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 7 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **projection de run** (plie le flux en trajectoire + statut + contrôle 3 positions, `Projection/`, 6c·3c). **130 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
+| Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 7 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **deux projections sœurs** (`Projection/`, event-fed) : `RunProjection` plie le flux en trajectoire + statut + contrôle 3 positions (6c·3c), `GraphProjection` le plie en overlay de graphe qui montre le **non-parcouru** (vue graphe). **191 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
 | Projet & catalogue | `src/Cursus.Core/Projects/` (9 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert : lire le passé, **lancer** (6c·3b), **relire les événements** d'un run (`ReadEvents`, 6c·3c). **38 tests.** Voir §4.11, §4.14, §4.16, §4.17. |
 | Persistance | `src/Cursus.Persistence/` | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque avec **suiveur de tail** (6c·3c), et le préréglage SQLite de `ProjectHost`. **28 tests.** Un run survit au process ; le flux live d'un run et sa relecture donnent la **même** projection (preuve end-to-end, 6c·3c). |
 | Écran de run & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et l'**écran de run** (6c·3c) : cliquer un workflow le lance et déroule sa trajectoire, le log de la visite sélectionnée se suit en direct, un contrôle à trois positions l'arrête ; un run passé se rouvre en relecture. Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
@@ -176,7 +176,7 @@ Namespace racine `Cursus.Core.Workflows` pour le **vocabulaire partagé**, plus 
 |---|---|
 | `Cursus.Core.Workflows` (racine) | Le vocabulaire : définition du graphe (`WorkflowDefinition`, `StepDefinition`, `Edge`, `Guard`, `UnknownStepException`), état d'un run (`WorkflowRun`, `StepRun`, `RunSummary`, `RunTrigger`, `WorkflowEvent`), contrat de script/sortie (`ScriptSpec`, `ScriptResult`, `ScriptOutcome`, `StepOutput`, `OutputArtifact`) |
 | `…Execution` | `WorkflowEngine`, `WorkflowLauncher`, `RunContext`, `IClock`, `IProcessRunner`, `ProcessRunner`, `PathStrategy`, `PathEscapesWorkspaceException` |
-| `…Projection` | `RunProjection` (plie le flux en trajectoire + statut + sélection + contrôle), `RunVisit`, `RunControl` (enum 3 positions). Cœur testable de l'écran de run (§4.18) |
+| `…Projection` | `RunProjection` (plie le flux en trajectoire + statut + sélection + contrôle), `RunVisit`, `RunControl` (enum 3 positions) ; **`GraphProjection`** (plie le même flux en overlay de graphe : structure + statut par nœud + arêtes traversées), `GraphNode`, `GraphEdge`, `GraphNodeStatus`. Deux projections sœurs, cœur testable de l'écran de run (§4.18) |
 | `…Serialization` | `WorkflowSerializer`, `WorkflowDocument`, `UnknownGuardException` |
 | `…Validation` | `WorkflowValidator`, `ValidationReport` (+ `ValidationIssueKind`, `ValidationIssue`) |
 | `…Journaling` | `IRunJournal`, `IRunJournalReader`, `InMemoryRunJournal`, `JournalEntry` |
@@ -203,6 +203,7 @@ Namespace racine `Cursus.Core.Workflows` pour le **vocabulaire partagé**, plus 
 | `WorkflowEngine.cs` | La traversée du graphe (reçoit le `runId` de l'appelant, ne le forge plus ; émet `RunStarted` avec ce runId) |
 | `WorkflowLauncher.cs` | Le montage d'un vrai run : forge le runId, provisionne un worktree, assemble le moteur, estampille la provenance. Voir §4.17 |
 | `Projection/RunProjection.cs` · `RunVisit.cs` · `RunControl.cs` | Plie une séquence de `WorkflowEvent` en trajectoire + statut + contrôle 3 positions, source-agnostique (flux live ou relecture). Voir §4.18, `D-013` |
+| `Projection/GraphProjection.cs` · `GraphNode.cs` | Plie le **même** flux en overlay de graphe : structure apprise du `RunStarted`, statut par nœud (dernière issue + `VisitCount`), arêtes traversées (`EdgeChosen`). Vue sœur qui montre le **non-parcouru**. Voir §4.18, `D-016` |
 | `WorkflowRun.cs` · `StepRun.cs` | `RunState`, `AbortReason`, historique · une visite (`Result` + `Output`) |
 | `WorkflowValidator.cs` · `ValidationReport.cs` | Validité du graphe · `ValidationIssueKind` (9 valeurs), `ValidationIssue`, `ValidationReport` |
 | `WorkflowSerializer.cs` · `WorkflowDocument.cs` | JSON ⟷ modèle, `LoadResult` · les DTO `internal` |
@@ -410,6 +411,7 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 | `Workflows/WorkflowJournalTests.cs` (18) · `Workflows/InMemoryRunJournalTests.cs` (8) | Ce que le moteur émet et dans quel ordre (dont le `runId` fourni par l'appelant) · l'enveloppe posée par le journal (dont sa sûreté sous `Append` concurrent). |
 | `Workflows/WorkflowProgressTests.cs` (4) · `Workflows/WorkflowLauncherTests.cs` (5) | Le flux d'événements poussé à l'observateur (dont `RunStarted` portant le `runId` du run rendu, 6c·3c) · le montage du lanceur : provenance estampillée, worktree démonté quoi qu'il advienne. |
 | `Workflows/RunProjectionTests.cs` (13) · `Workflows/PathStrategyTests.cs` (5) | Le fold en trajectoire + statut + sélection + contrôle 3 positions, et le `runId` exposé (6c·3c) · l'enrichissement sans doublon et la **résolution en absolu** d'un binaire hors `PATH` minimal, adossée à un vrai binaire POSIX. |
+| `Workflows/GraphProjectionTests.cs` (9) | Le fold sœur en overlay de graphe : structure apprise du `RunStarted` (un nœud par étape, arêtes reflétées), statut par nœud (en cours → issue, non visité, dernière issue + `VisitCount` d'une boucle), et arête marquée traversée par `EdgeChosen`. |
 | `Cursus.Persistence.Tests/` (28) | Le magasin d'artefacts (dont le **tail** d'un artefact qui grossit, 6c·3c), le journal SQLite (dont sa sûreté sous contention, l'aller-retour du `workflow_id`/`ended_at`, et la restitution du `runId` sur `RunStarted`), et des assemblages — les tests de durabilité **referment puis rouvrent** le journal avant de relire. `ProjectRunTests` est le seul où **aucun emplacement n'est composé par le test** : ils viennent tous du `Project` — **preuve d'assemblage concurrent** du 6b. `ProjectHostEndToEndTests` porte les **tests exécutables du §7.12** : ouvrir un `ProjectHost` sur une vraie base, lire (6c·3a), lancer puis lire (6c·3b), et **plier le flux live == plier la relecture** (6c·3c) — le tout **sans Avalonia**. |
 | `Projects/ProjectStoreTests.cs` (13) · `Projects/WorkflowCatalogTests.cs` (8) · `Projects/ProjectRegistryTests.cs` (10) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, et qu'un document cassé ne cache pas les autres · le registre machine (charge/persiste/ajoute/retire, une lecture ne mute jamais, convention XDG). |
 | `Projects/ProjectHostTests.cs` (5) | La jointure workflows × runs du host sur `InMemoryRunJournal` seedé : « jamais lancé » quand rien n'a tourné, le plus récent gagne, chaque run rattaché à son `WorkflowId`, `ReadEvents` rend les événements d'un run (6c·3c), et disposer le host ferme le journal (une connexion, un host). |
@@ -676,9 +678,19 @@ présentation.** Sous l'écran vit un vrai cœur testable — une **projection**
   **trajectoire de visites** (chacune `StepId·Iteration` + issue), **statut** du run, **sélection** partagée
   et **contrôle**. Source-agnostique : le **même fold** consomme le flux live d'un run en cours *et* la
   relecture d'un run passé — « un seul objet, deux alimentations » (parcours §1.4). Une visite en boucle est un
-  **nœud de plus** (l'itération la distingue), jamais un repli — l'écran déroule la traversée. La projection
-  n'a **pas** besoin de la définition : la liste des visites se suffit des événements (le graphe / le
-  non-parcouru viendront avec la vue graphe, §9.4).
+  **nœud de plus** (l'itération la distingue), jamais un repli — l'écran déroule la traversée. `RunProjection`
+  n'a **pas** besoin de la définition : la liste des visites se suffit des événements.
+
+- **`GraphProjection` (`Workflows/Projection/`, Core testable) — la vue sœur, event-fed elle aussi.** Plie le
+  **même** flux en **overlay de graphe** : elle apprend la structure de `RunStarted.Definition` (que
+  `RunProjection` ignore), pose sur chaque nœud son statut (`NotVisited → Running → Succeeded/Failed`, la
+  **dernière issue gagne** pour un nœud rebouclé, plus un `VisitCount`), et marque **traversée** toute arête
+  qu'un `EdgeChosen` a routée. Là où la trajectoire dit *ce qui a été parcouru*, le graphe montre *ce qui ne
+  l'a pas été* — nœuds jamais atteints, arêtes mortes. **Séparée** de `RunProjection`, non une extension :
+  garder l'une agnostique de la définition et donner à l'autre sa propre projection est le premier honneur
+  concret de `D-016` (un module par capacité, chacun adossé à sa projection). Même symétrie live/relecture,
+  puisque tout — définition comprise — passe déjà dans le flux. La coquille visuelle (rendu des nœuds et
+  connecteurs) reste hors test (§7.12) ; §9.4.
 
 - **Les deux alimentations partagent le même fold, et coïncident.** Le flux live est l'`IProgress<WorkflowEvent>`
   que le lanceur pousse déjà (3b, `D-011`) ; la relecture est `ProjectHost.ReadEvents(runId)`. L'écran d'un run
