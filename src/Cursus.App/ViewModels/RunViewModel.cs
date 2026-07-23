@@ -118,7 +118,17 @@ public partial class RunViewModel : ObservableObject, IDisposable
     {
         try
         {
-            await host.LaunchAsync(workflowId, observer: observer, cancellationToken: _cts!.Token);
+            // Le lancement n'est pas asynchrone de bout en bout : il commence par un
+            // travail *synchrone* — provisionnement du worktree git (`GitWorkspaceProvisioner`
+            // bloque exprès), écritures SQLite, `Process.Start()` — avant le premier
+            // `await` qui suspende vraiment. Exécuté sur le thread UI (on y est, appelé
+            // depuis une commande), ce préfixe le gèlerait. `Task.Run` le pousse sur le
+            // pool ; l'observateur, un `Progress` capturé sur le thread UI, replie chaque
+            // événement *sur* l'UI, où toucher les collections bindées reste sûr. La
+            // continuation (le `finally`) revient elle aussi sur le thread UI — d'où le
+            // minuteur (`DispatcherTimer`) et `PullLog` s'y arrêtent sans risque.
+            await Task.Run(() =>
+                host.LaunchAsync(workflowId, observer: observer, cancellationToken: _cts!.Token));
         }
         catch (OperationCanceledException)
         {
