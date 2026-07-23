@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `a9de071` (*rangement de `Workflows/` en sous-namespaces — §4*). Dernier jalon de code : `f2a9762` (*le loader de projets, jalon 6c·1*). Suite de tests : **164 verts** (147 noyau + 17 persistance), build 0 warning.
+> **Statut** : document vivant, à jour du commit `2cab078` (*rangement de `Workflows/` en sous-namespaces — §4*). Dernier jalon de code : *ouvrir un projet en mode run* (jalon 6c·2, §4.15). Suite de tests : **164 verts** (147 noyau + 17 persistance), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -527,7 +527,8 @@ Ce que le code ne dit pas d'emblée :
 La première remontée d'UI, et la première pierre de la **racine machine** (§7.13). L'UI se construit par
 petites marches suivant le flux utilisateur (loader → ouvrir → lancer → sortie → run passé → config) ;
 celle-ci n'en livre que la première : *lister les projets, en ajouter, en retirer, se les rappeler entre
-deux lancements*. Ouvrir un projet en mode run, `ProjectHost`, le lancement d'un workflow restent à venir.
+deux lancements*. Ouvrir un projet en mode run est la marche suivante (§4.15) ; `ProjectHost` et le
+lancement d'un workflow restent au-delà.
 
 - **`ProjectRegistry`** (`Cursus.Core/Projects/`) porte **toute** la logique. Inscrire valide par
   `ProjectStore.Open` et laisse remonter `ProjectNotFoundException` — l'invariant « c'est un projet
@@ -548,6 +549,30 @@ deux lancements*. Ouvrir un projet en mode run, `ProjectHost`, le lancement d'un
   assembly réellement présent). Le second — l'end-to-end headless — reste à écrire.
 - **Frontière tenue.** Toute la logique du loader est prouvée en `[Fact]` dans `Cursus.Core.Tests`, sans
   une ligne d'Avalonia ; la coquille est un binder humble, non testé (assumé, `presentation.md` §1).
+
+### 4.15 Ouvrir un projet en mode run — CONSTRUIT (jalon 6c·2)
+
+La deuxième marche : **sélectionner un projet ouvre sa surface**, qui liste ses workflows par leur nom.
+Volontairement réduite à la **jonction**. Le « dernier passage » de chaque workflow (quand il a tourné,
+avec quelle issue) est la marche d'après, parce qu'il ouvre un chantier noyau — ouvrir le journal SQLite,
+faire naître `ProjectHost`, enrichir la projection (`RunSummary` gagne le nom du workflow ; la colonne
+`ended_at` existe déjà mais n'est pas lue), arbitrer le résultat (« échoué » n'est pas `RunState`, §7.13).
+Lister des noms n'exige, lui, aucune composition : `WorkflowCatalog(project).List()` suffit — d'où
+**`ProjectHost` toujours pas né**, il naîtra sous ce besoin réel, pas pour afficher des noms.
+
+- **`OpenProjectViewModel`** (`Cursus.App/ViewModels/`) est le conteneur d'un projet ouvert — pour
+  l'instant son seul mode run : le nom du projet et les `WorkflowEntry` de `WorkflowCatalog`. Nommé pour
+  le conteneur et non pour le mode : il accueillera le sélecteur run/sessions et l'engrenage de
+  configuration (§1.2 de `parcours.md`), sans se renier.
+- **`ShellViewModel`** gagne une surface courante (`CurrentSurface`, nulle quand rien n'est sélectionné) :
+  changer la sélection reconstruit un `OpenProjectViewModel` jetable, aucun recyclage. La surface est un
+  `ContentControl` qui montre l'un *ou* l'autre — **pas de routeur** (§4.1 de `parcours.md`).
+- **Les sessions quittent la surface principale.** `SessionsView`/`MainViewModel` restent dans le code
+  mais ne sont plus câblés : Run est le mode par défaut, les sessions reviendront **par projet** via le
+  futur sélecteur. Dette assumée, cohérente avec le gel des sessions (§6.1).
+- **Aucune dépendance nouvelle** — `Cursus.App` ne référence toujours que `Cursus.Core`
+  (`ArchitectureTests` reste vert), et **aucune logique métier neuve** : binder humble non testé, la suite
+  reste verte inchangée (164). C'est une marche de pure présentation.
 
 ---
 
@@ -591,11 +616,11 @@ Frontière assumée : `SessionWorkspace` n'a pas de dépendance UI *framework*, 
 
 ### 6.2 `src/Cursus.App/` — l'app Avalonia
 
-Depuis le jalon 6c·1 (§4.14), la fenêtre est **rail des projets | surface** : `MainWindow` porte à gauche le rail bindé sur `ShellViewModel.Projects` (ajout, retrait, sélection), à droite une surface qui héberge la vue sessions. Son code-behind est réduit au **sélecteur de dossier** (il exige un `TopLevel`), qui ne passe qu'un chemin au ViewModel.
+Depuis le jalon 6c·1 (§4.14), la fenêtre est **rail des projets | surface** : `MainWindow` porte à gauche le rail bindé sur `ShellViewModel.Projects` (ajout, retrait, sélection), à droite une surface qui héberge désormais le **projet ouvert** (§4.15) — les sessions n'y sont plus câblées. Son code-behind est réduit au **sélecteur de dossier** (il exige un `TopLevel`), qui ne passe qu'un chemin au ViewModel.
 
 Le travail terminal a été **extrait tel quel** dans le code-behind `Views/SessionsView.axaml.cs`, sans XAML, dont le `DataContext` reste un `MainViewModel` : un dictionnaire `Guid → TerminalControl` garde **un contrôle terminal vivant par session, même masqué** (comportement « façon TMUX ») ; le basculement se fait par `IsVisible`, **jamais par recréation**. `EnsureTerminal` crée le contrôle (Menlo 13, invisible) et **démarre le PTY dans `Loaded`, une seule fois** : `terminal.StartPty(session.ShellPath, session.WorkingDirectory, new[] { "-l" })` — le PTY démarre au premier affichage réel, quand les bounds sont connues. Le `-l` demande un **shell de login** : sur macOS, une app GUI hérite d'un `PATH` tronqué, que seul un login shell ré-enrichit (`landscape.md`, Vague 2).
 
-`App.axaml.cs` instancie `MainWindow` avec `new ShellViewModel(ProjectRegistry.ForCurrentUser())` — **pas de DI**, la composition tient en une ligne. `ShellViewModel` est un adaptateur mince sur le registre (il délègue, traduit un refus d'ajout en message) ; il porte la surface sessions (`MainViewModel`, lui-même deux `[RelayCommand]` sur `SessionWorkspace`) comme enfant. Sélectionner un projet ne change pas encore la surface — c'est la marche suivante.
+`App.axaml.cs` instancie `MainWindow` avec `new ShellViewModel(ProjectRegistry.ForCurrentUser())` — **pas de DI**, la composition tient en une ligne. `ShellViewModel` est un adaptateur mince sur le registre (il délègue, traduit un refus d'ajout en message) ; il porte encore les sessions (`MainViewModel`, deux `[RelayCommand]` sur `SessionWorkspace`) comme enfant, en attendant leur réintégration par projet. Depuis le jalon 6c·2 (§4.15), **sélectionner un projet ouvre son mode run** dans la surface (`CurrentSurface`).
 
 ### 6.3 RoyalTerminal et le gotcha VT
 

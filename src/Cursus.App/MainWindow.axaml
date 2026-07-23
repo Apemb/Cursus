@@ -3,7 +3,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:Cursus.App.ViewModels"
-        xmlns:views="using:Cursus.App.Views"
         xmlns:projects="using:Cursus.Core.Projects"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
         x:Class="Cursus.App.MainWindow"
@@ -64,8 +63,37 @@
             </ListBox>
         </DockPanel>
 
-        <!-- Surface : les sessions (marche suivante : conditionnée au projet sélectionné) -->
-        <views:SessionsView Grid.Column="1" DataContext="{Binding Sessions}" />
+        <!-- Surface : le projet ouvert en mode run, ou un repère quand aucun n'est sélectionné -->
+        <Panel Grid.Column="1">
+            <ContentControl Content="{Binding CurrentSurface}">
+                <ContentControl.ContentTemplate>
+                    <DataTemplate x:DataType="vm:OpenProjectViewModel">
+                        <DockPanel Margin="20">
+                            <TextBlock DockPanel.Dock="Top"
+                                       Text="{Binding Name}"
+                                       FontSize="18" FontWeight="Bold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       Margin="0,0,0,12" />
+                            <ListBox ItemsSource="{Binding Workflows}"
+                                     Background="Transparent"
+                                     BorderThickness="0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="projects:WorkflowEntry">
+                                        <TextBlock Text="{Binding Id}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </DockPanel>
+                    </DataTemplate>
+                </ContentControl.ContentTemplate>
+            </ContentControl>
+
+            <TextBlock Text="Choisissez un projet"
+                       IsVisible="{Binding !HasOpenProject}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextSecondaryBrush}" />
+        </Panel>
 
     </Grid>
 </Window>

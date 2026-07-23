@@ -27,14 +27,34 @@ public partial class ShellViewModel : ObservableObject
     public ObservableCollection<Project> Projects { get; }
 
     /// <summary>
-    /// La surface courante. Sélectionner un projet ne la change pas encore — la
-    /// jonction rail → surface est la marche suivante ; ici la sélection est
-    /// seulement mémorisée.
+    /// Les sessions terminal. Elles ne sont plus la surface câblée depuis que
+    /// sélectionner un projet ouvre son mode run ; on les garde en attendant leur
+    /// réintégration <em>par projet</em>, via le futur sélecteur run/sessions.
     /// </summary>
     public MainViewModel Sessions { get; } = new();
 
+    /// <summary>
+    /// La surface de droite : le projet ouvert, ou <c>null</c> quand aucun n'est
+    /// sélectionné. Un seul objet à la fois — la coquille montre l'un ou l'autre,
+    /// sans routeur.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasOpenProject))]
+    private OpenProjectViewModel? _currentSurface;
+
+    /// <summary>Vrai quand un projet occupe la surface ; pilote l'affichage du repère « choisissez un projet ».</summary>
+    public bool HasOpenProject => CurrentSurface is not null;
+
     [ObservableProperty]
     private Project? _selectedProject;
+
+    /// <summary>
+    /// La jonction rail → surface : choisir un projet l'ouvre sur son mode run,
+    /// le désélectionner rend la surface vide. Une sélection neuve reconstruit la
+    /// surface — pas de recyclage, l'objet ouvert est jetable.
+    /// </summary>
+    partial void OnSelectedProjectChanged(Project? value) =>
+        CurrentSurface = value is null ? null : new OpenProjectViewModel(value);
 
     /// <summary>Le dernier refus d'ajout à afficher ; <c>null</c> si le dernier ajout a réussi.</summary>
     [ObservableProperty]
