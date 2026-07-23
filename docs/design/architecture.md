@@ -5,6 +5,7 @@
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
 > - `docs/design/presentation.md` — le *comment* de la jonction UI : composition, observation d'un run, pièges Avalonia (§7.12 en détient la décision) ;
+> - `docs/design/schemas.md` — **le compagnon visuel** : les cartes d'état (modules, coutures, séquences) en Mermaid, et la convention de schéma-delta des plans. N'ajoute aucune décision ; le présent fichier fait foi ;
 > - `docs/design/parcours.md` — le *quoi* du point de vue de l'utilisateur : la cible d'usage et le parcours réduit du jalon 6 (§7.13 en détient les conséquences) ;
 > - `docs/design/modele-metier.md` — le modèle cible orienté agents (couches, entités, machines à états) ;
 > - `docs/research/agentic-workflows-landscape.md` — les preuves externes (comparatifs, sandboxing, PTY) ;

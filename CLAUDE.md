@@ -61,6 +61,20 @@ affinées.
 Dès qu'un changement crée ou supprime une classe, traverse plusieurs modules, ou implique un choix de
 découpe non évident : **plan validé avant d'écrire le moindre test**.
 
+Ce plan porte **en tête un schéma-delta** : la table « Objets impactés » rendue visuellement, les blocs
+*ajoutés* en vert, *modifiés* en ambre, *supprimés* en rouge, chaque bloc portant sa responsabilité et,
+pour un modifié, la ligne `+ <incrément>` du comportement neuf. La convention (couleurs, anatomie d'un
+nœud, où le schéma périme) et les cartes d'état permanentes vivent dans **`docs/design/schemas.md`** —
+compagnon visuel de l'architecture, sans autorité sur elle. Le schéma se lit sur le vocabulaire du
+modèle §3 de ce fichier (définition vs exécution) : il double la prose du plan, il ne la remplace pas.
+
+## Entretenir la carte visuelle
+
+`docs/design/schemas.md` suit la même règle de fraîcheur que l'architecture, mais avec une nuance : ses
+**cartes d'état** (§1–§5 : couches, ports, modèle, coutures) se mettent à jour quand la structure bouge ;
+ses **schémas-delta** sont par nature éphémères et **ne doivent jamais se figer en carte d'état** — un
+« ajouté » de la marche d'avant devient un mensonge deux marches plus tard.
+
 ## Conventions
 
 | Domaine | Règle |
