@@ -22,7 +22,8 @@ public sealed class GitWorkspaceProvisioner : IWorkspaceProvisioner
         _worktreesRoot = worktreesRoot;
     }
 
-    public IProvisionedWorkspace Provision(string runId, WorkspaceRequest request)
+    public async Task<IProvisionedWorkspace> ProvisionAsync(
+        string runId, WorkspaceRequest request, CancellationToken cancellationToken = default)
     {
         var path = Path.Combine(_worktreesRoot, runId);
         Directory.CreateDirectory(_worktreesRoot);
@@ -36,22 +37,23 @@ public sealed class GitWorkspaceProvisioner : IWorkspaceProvisioner
             _ => throw new ArgumentOutOfRangeException(nameof(request)),
         };
 
-        var result = RunGit(arguments);
+        var result = await RunGitAsync(arguments, cancellationToken).ConfigureAwait(false);
         if (result.Outcome == ScriptOutcome.LaunchFailed)
             throw new GitNotAvailableException();
 
         return new GitProvisionedWorkspace(this, path);
     }
 
-    private ScriptResult RunGit(params string[] arguments)
+    private async Task<ScriptResult> RunGitAsync(string[] arguments, CancellationToken cancellationToken)
     {
         var spec = new ScriptSpec("git", arguments, _repositoryRoot);
         using var stdout = new MemoryStream();
         using var stderr = new MemoryStream();
 
-        // Provisionnement synchrone : git worktree est bref, et c'est du montage,
-        // pas un chemin chaud. Le démontage suit la même voie.
-        return _runner.RunAsync(spec, stdout, stderr).GetAwaiter().GetResult();
+        // git worktree est bref, mais c'est de l'I/O : on l'attend sans détenir le
+        // thread appelant (aucun sync-over-async, D-015). ConfigureAwait(false) : le
+        // montage n'a aucune raison de revenir sur le contexte de l'appelant (l'UI).
+        return await _runner.RunAsync(spec, stdout, stderr, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Le worktree d'un run : porte son <see cref="RunContext"/>, se démonte à la fermeture.</summary>
@@ -70,7 +72,7 @@ public sealed class GitWorkspaceProvisioner : IWorkspaceProvisioner
 
         public RunContext Context { get; }
 
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
             if (_removed)
                 return;
@@ -78,8 +80,10 @@ public sealed class GitWorkspaceProvisioner : IWorkspaceProvisioner
             // --force : le run laisse des fichiers non suivis ou modifiés, et git
             // refuserait sinon de retirer un worktree « sale ». Ce qui devait
             // survivre est déjà commité sur sa branche, qui reste dans le dépôt.
-            _provisioner.RunGit("worktree", "remove", "--force", _path);
+            // Le démontage aussi s'attend, il ne bloque pas (D-015).
             _removed = true;
+            await _provisioner.RunGitAsync(["worktree", "remove", "--force", _path], CancellationToken.None)
+                              .ConfigureAwait(false);
         }
     }
 }

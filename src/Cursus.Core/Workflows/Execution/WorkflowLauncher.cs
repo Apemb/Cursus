@@ -47,11 +47,16 @@ public sealed class WorkflowLauncher
         var runId = Guid.NewGuid().ToString();
 
         // Le worktree monte à un emplacement dérivé du runId : c'est ce qui permet
-        // de le retrouver depuis le journal. Le refermer (using) le démonte, quoi
-        // qu'il advienne du run — le travail à garder est déjà commité sur sa branche.
-        using var workspace = _provisioner.Provision(runId, new WorkspaceRequest.NewWork("HEAD"));
+        // de le retrouver depuis le journal. Le refermer (await using) le démonte,
+        // quoi qu'il advienne du run — le travail à garder est déjà commité sur sa
+        // branche. Montage et démontage s'attendent (I/O git), sans détenir le
+        // thread appelant ; ConfigureAwait(false) garde tout hors du contexte UI.
+        await using var workspace = await _provisioner
+            .ProvisionAsync(runId, new WorkspaceRequest.NewWork("HEAD"), cancellationToken)
+            .ConfigureAwait(false);
 
         return await _engine.ExecuteAsync(
-            definition, workspace.Context, runId, trigger, workflowId, observer, cancellationToken);
+            definition, workspace.Context, runId, trigger, workflowId, observer, cancellationToken)
+            .ConfigureAwait(false);
     }
 }

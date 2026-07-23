@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `8f2c961` (*la jonction UI close — l'écran de run, la projection à 2 alimentations — §4.18*). Dernier jalon de code : *l'écran de run — trajectoire déroulée, log en direct, arrêt à 3 positions* (jalon 6c·3c, §4.18). Suite de tests : **210 verts** (182 Core + 28 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour du commit `0cfe576` (*provisionnement vraiment asynchrone — D-015, suite du jalon 6c·3c*). Dernier jalon de code : *l'écran de run — trajectoire déroulée, log en direct, arrêt à 3 positions* (jalon 6c·3c, §4.18) ; correctif async (D-015, §7.8) par-dessus. Suite de tests : **210 verts** (182 Core + 28 Persistence), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -513,21 +513,22 @@ Ce que la lecture du code ne donne pas d'emblée :
 
 La cible veut **plusieurs workflows de front sur un même projet** — le même workflow sur deux tâches, deux agents modifiant du code en parallèle. Le moteur y était **déjà prêt** : aucun état par run sur ses champs, `RunArtifactStore` rangé par `(runId, stepId, iteration)`, `ProcessRunner` sans état. Restaient deux points, et deux seulement.
 
-**1. Le journal encaissait mal la concurrence.** Sur un même projet, les runs partagent une base, donc une `SqliteConnection` unique, non thread-safe. Un `lock` sérialise `Append` dans `SqliteRunJournal` **et** `InMemoryRunJournal` (le double doit être aussi sûr que le vrai) : négligeable devant un lancement de process, et la seule voie correcte — `Microsoft.Data.Sqlite` n'offre pas de plafond de pool à une connexion, et l'épuisement de pool comme mutex *timeout* au lieu de bloquer. La lecture *pendant* l'écriture (connexion de lecture séparée en WAL) reste pour 6c ; ici le verrou ne couvre que l'écriture.
+**1. Le journal encaissait mal la concurrence.** Sur un même projet, les runs partagent une base, donc une `SqliteConnection` unique, non thread-safe. Un `lock` sérialise `Append` dans `SqliteRunJournal` **et** `InMemoryRunJournal` (le double doit être aussi sûr que le vrai) : négligeable devant un lancement de process, et la seule voie correcte — `Microsoft.Data.Sqlite` n'offre pas de plafond de pool à une connexion, et l'épuisement de pool comme mutex *timeout* au lieu de bloquer. Le verrou ne couvre que l'écriture. ⚠️ *Depuis 6c·3c*, un run vif s'exécute **sur un thread du pool** (l'écran de run lance hors du thread UI, `D-015`), donc `Append` écrit hors du thread UI ; c'est sans risque dans le flux actuel — pendant qu'un run occupe la surface, l'UI ne **lit** pas le journal (le log vient du *fichier* d'artefact). La **lecture concurrente d'un run en cours** (connexion de lecture séparée en WAL) reste non supportée, à rouvrir quand plusieurs runs s'afficheront de front (§7.13).
 
 **2. Le répertoire de travail se partageait.** Les logs (par `runId`) et la base (sérialisée) ne collisionnent pas — mais ce que les **scripts** écrivent (le code source, l'état git), dont Cursus ne choisit pas les noms, si. L'isolation est un **worktree git** par run.
 
 | Type (Core) | Rôle |
 |---|---|
-| `IWorkspaceProvisioner` | `Provision(runId, WorkspaceRequest)` rend un workspace isolé. Collaborateur de l'**appelant**, jamais du moteur. |
+| `IWorkspaceProvisioner` | `ProvisionAsync(runId, WorkspaceRequest, ct)` rend un workspace isolé. Collaborateur de l'**appelant**, jamais du moteur. **Asynchrone** : le montage attend un sous-process git, on l'`await` sans détenir le thread (`D-015`). |
 | `WorkspaceRequest` | `NewWork(BaseRef)` — worktree en **HEAD détaché** sur la base ; `Review(Reference)` — checkout de la ref. Le **nom de branche n'est jamais forgé** par Cursus. |
-| `IProvisionedWorkspace` | Porte le `RunContext` du run (racine = le worktree), démonte à la fermeture (`git worktree remove --force`). |
+| `IProvisionedWorkspace` | Porte le `RunContext` du run (racine = le worktree), démonte à la fermeture (`git worktree remove --force`). **`IAsyncDisposable`** : le démontage aussi s'`await` (`await using`), il ne bloque pas un thread (`D-015`). |
 | `GitWorkspaceProvisioner` | L'implémentation, dans le noyau à côté de `ProcessRunner`. Lance `git` **via `IProcessRunner`** (invariant 3), sous `project.WorktreesRoot` (`.cursus/worktrees`, imbriqué mais gitignoré). |
 
 Ce que le code ne dit pas d'emblée :
 
 - **HEAD détaché pour le neuf, à dessein.** Le nom court d'une branche dev est souvent calculé *en cours* de workflow (un LLM à partir du ticket) : le provisionneur ne peut donc pas le connaître au démarrage. Il ne possède que l'**isolation** ; la branche est baptisée plus tard — par une étape, ou par l'appelant qui connaît la tâche. Le détachement évite aussi le refus git « branch already checked out » quand deux runs partent de la même base — un test le prouve en faisant coexister deux branches.
 - **Le provisionnement est du montage, séquentiel ; l'exécution est concurrente.** La preuve d'assemblage (`ProjectRunTests`) provisionne deux worktrees, puis lance les deux runs en `Task.WhenAll` : ils journalisent dans la même base et écrivent chacun dans son worktree, sans se corrompre. Git worktree add n'est donc jamais appelé en parallèle — pas de verrou de provisionnement à ce stade.
+- **Le montage est asynchrone *pour la bonne raison* (`D-015`).** `ProvisionAsync` `await` le sous-process git au lieu de le bloquer, et la bibliothèque `ConfigureAwait(false)` de bout en bout : un appelant sur le thread d'UI (le lanceur derrière un bouton) reste **réactif** pendant le montage. Sans ça — l'ancienne version bloquait le thread par un `.GetAwaiter().GetResult()` —, il fallait un `Task.Run` côté vue, un cache-misère sur un contrat async mensonger. Il n'y a plus **aucun** `sync-over-async` dans le noyau.
 - **L'appelant possède identité + cycle de vie du workspace.** `ExecuteAsync` prend le `runId` (invariant 8) ; le worktree monte à `<WorktreesRoot>/<runId>`, ce qui permet de le retrouver depuis le journal. Le futur host (§7.12) sera cet appelant, et portera la politique « un run actif par tâche » — hors périmètre ici.
 - **`InMemoryWorkspaceProvisioner` n'existe pas** (contrairement aux autres doubles `InMemory*`) : le moteur ne prend pas de provisionneur, rien ne le drainait.
 
@@ -847,6 +848,8 @@ La rendre valide par construction exigerait un second type pour l'état intermé
 ### 7.8 Domaine sans MVVM, contrat async — TRANCHÉ
 
 Le **modèle** de `Workflows/` est fait de records immuables ; ses collaborateurs (`WorkflowEngine`, `ProcessRunner`, `RunContext`, les deux classes statiques) sont des classes scellées sans état mutable observable. Aucun n'hérite d'`ObservableObject`, contrairement à `SessionWorkspace` — **écarté délibérément**. Le passage async (`70b359c`) n'est pas cosmétique : il conditionne la lecture concurrente des tubes, l'annulation propre, et une UI Avalonia non bloquée.
+
+**Le contrat async est tenu honnêtement (`D-015`)** : aucun `sync-over-async` (pas de `.GetAwaiter().GetResult()` ni `.Result`) — une méthode async attend l'I/O sans détenir un thread —, et la bibliothèque `ConfigureAwait(false)` sur **chaque** `await`, pour que ses continuations courent sur le pool et ne remontent pas sur le contexte de l'appelant (l'UI). C'est ce qui permet à la vue de faire un simple `await`, sans `Task.Run` cache-misère. La règle miroir vaut côté présentation : le `RunViewModel`, lui, **ne** met **pas** `ConfigureAwait(false)`, parce que sa continuation doit précisément revenir sur le thread d'UI (`DispatcherTimer`, propriétés bindées).
 
 ### 7.9 Index des décisions du modèle agent — TRANCHÉ, NON CONSTRUIT
 

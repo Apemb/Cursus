@@ -302,7 +302,7 @@ flowchart TB
   Val["<b>…Validation</b><br/><small>validité du graphe</small><br/>WorkflowValidator · ValidationReport"]
   Jou["<b>…Journaling</b><br/><small>écrire et relire un run</small><br/>IRunJournal · IRunJournalReader · InMemoryRunJournal · JournalEntry"]
   Out["<b>…Output</b><br/><small>puits de sortie par étape</small><br/>IRunOutputStore · IStepOutputSink · InMemoryRunOutputStore"]
-  Wsp["<b>…Workspaces</b><br/><small>worktree isolé d'un run</small><br/>IWorkspaceProvisioner · GitWorkspaceProvisioner"]
+  Wsp["<b>…Workspaces</b><br/><small>worktree isolé d'un run (provisionnement async)</small><br/>IWorkspaceProvisioner · GitWorkspaceProvisioner"]
 
   Exec --> root
   Proj --> root
@@ -366,7 +366,7 @@ n'entre pas dans le moteur (invariant 8).
 ```mermaid
 flowchart TB
   launcher["<b>WorkflowLauncher.LaunchAsync</b><br/><small>forge le runId, assemble le moteur, estampille la provenance</small>"]
-  prov["<b>IWorkspaceProvisioner</b><br/><small>GitWorkspaceProvisioner</small>"]
+  prov["<b>IWorkspaceProvisioner.ProvisionAsync</b><br/><small>GitWorkspaceProvisioner — async, IAsyncDisposable, zéro sync-over-async (D-015)</small>"]
   engine["<b>WorkflowEngine.ExecuteAsync</b><br/><small>(def, RunContext, runId, trigger?, workflowId?, observer?, ct)</small>"]
   runner["<b>IProcessRunner</b><br/><small>ProcessRunner : Process réel, tubes redirigés, tue l'arbre à l'annulation</small>"]
   journal["<b>IRunJournal</b><br/><small>rend durables 5 événements aux frontières d'étape</small>"]

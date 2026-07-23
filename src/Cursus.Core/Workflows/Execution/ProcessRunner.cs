@@ -39,7 +39,8 @@ public sealed class ProcessRunner : IProcessRunner
             // Un binaire introuvable est un résultat d'étape ordinaire — la garde
             // OnFailure le routera — pas une exception que le moteur devrait gérer.
             // Le pourquoi de l'échec devient le contenu stderr de la visite.
-            await stderr.WriteAsync(Encoding.UTF8.GetBytes(failure.Message), CancellationToken.None);
+            await stderr.WriteAsync(Encoding.UTF8.GetBytes(failure.Message), CancellationToken.None)
+                .ConfigureAwait(false);
             return new ScriptResult(CommandNotFound, ScriptOutcome.LaunchFailed);
         }
 
@@ -58,16 +59,16 @@ public sealed class ProcessRunner : IProcessRunner
         var outcome = ScriptOutcome.Completed;
         try
         {
-            await process.WaitForExitAsync(deadline.Token);
+            await process.WaitForExitAsync(deadline.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
             process.Kill(entireProcessTree: true);
-            await process.WaitForExitAsync(CancellationToken.None);
+            await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
 
             // Vider les tubes avant de rendre la main : la destination peut être
             // refermée par l'appelant sitôt l'annulation remontée.
-            await Task.WhenAll(pumpOut, pumpErr);
+            await Task.WhenAll(pumpOut, pumpErr).ConfigureAwait(false);
 
             // Une annulation demandée par l'appelant interrompt le run : elle
             // remonte. Un dépassement de délai, lui, est une issue d'exécution
@@ -76,7 +77,7 @@ public sealed class ProcessRunner : IProcessRunner
             outcome = ScriptOutcome.TimedOut;
         }
 
-        await Task.WhenAll(pumpOut, pumpErr);
+        await Task.WhenAll(pumpOut, pumpErr).ConfigureAwait(false);
         return new ScriptResult(process.ExitCode, outcome, chrono.Elapsed);
     }
 

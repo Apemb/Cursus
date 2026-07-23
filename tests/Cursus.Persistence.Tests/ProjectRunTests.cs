@@ -42,8 +42,8 @@ public sealed class ProjectRunTests : IDisposable
 
         // le provisionnement est du montage (séquentiel) ; l'appelant, qui connaît
         // la tâche, baptise chaque branche — le worktree détaché le permet.
-        using var workspaceA = provisioner.Provision("run-a", new WorkspaceRequest.NewWork("HEAD"));
-        using var workspaceB = provisioner.Provision("run-b", new WorkspaceRequest.NewWork("HEAD"));
+        await using var workspaceA = await provisioner.ProvisionAsync("run-a", new WorkspaceRequest.NewWork("HEAD"));
+        await using var workspaceB = await provisioner.ProvisionAsync("run-b", new WorkspaceRequest.NewWork("HEAD"));
         Git(workspaceA.Context.WorkspaceRoot, "checkout", "-b", "task/ENG-1");
         Git(workspaceB.Context.WorkspaceRoot, "checkout", "-b", "task/ENG-2");
 

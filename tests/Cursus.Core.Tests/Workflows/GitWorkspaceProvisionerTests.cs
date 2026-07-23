@@ -33,13 +33,13 @@ public sealed class GitWorkspaceProvisionerTests : IDisposable
     }
 
     [Fact(DisplayName = "étant donné un dépôt git, quand on provisionne un workspace de nouveau travail sur une base, alors un worktree isolé existe à l'emplacement du run, sur un HEAD détaché à cette base")]
-    public void Provisioning_new_work_creates_a_detached_worktree_at_the_run_location()
+    public async Task Provisioning_new_work_creates_a_detached_worktree_at_the_run_location()
     {
         // arrange
         var provisioner = NewProvisioner();
 
         // act
-        using var workspace = provisioner.Provision("run-1", new WorkspaceRequest.NewWork("HEAD"));
+        await using var workspace = await provisioner.ProvisionAsync("run-1", new WorkspaceRequest.NewWork("HEAD"));
 
         // assert
         var expected = Path.TrimEndingDirectorySeparator(
@@ -52,26 +52,26 @@ public sealed class GitWorkspaceProvisionerTests : IDisposable
     }
 
     [Fact(DisplayName = "étant donné un dépôt git avec une branche existante, quand on provisionne un workspace de review sur cette branche, alors le worktree la checkout")]
-    public void Provisioning_a_review_checks_out_the_existing_branch()
+    public async Task Provisioning_a_review_checks_out_the_existing_branch()
     {
         // arrange — une branche à relire, dérivée du commit initial
         Git("branch", "feature-x");
         var provisioner = NewProvisioner();
 
         // act
-        using var workspace = provisioner.Provision("run-1", new WorkspaceRequest.Review("feature-x"));
+        await using var workspace = await provisioner.ProvisionAsync("run-1", new WorkspaceRequest.Review("feature-x"));
 
         // assert
         Assert.Equal("feature-x", GitAt(workspace.Context.WorkspaceRoot, "rev-parse", "--abbrev-ref", "HEAD"));
     }
 
     [Fact(DisplayName = "étant donné un workspace provisionné, quand on le referme, alors le worktree est retiré et son répertoire disparaît")]
-    public void Closing_a_workspace_removes_the_worktree()
+    public async Task Closing_a_workspace_removes_the_worktree()
     {
         // arrange — un worktree où le run a laissé un fichier non commité
         var provisioner = NewProvisioner();
         string path;
-        using (var workspace = provisioner.Provision("run-1", new WorkspaceRequest.NewWork("HEAD")))
+        await using (var workspace = await provisioner.ProvisionAsync("run-1", new WorkspaceRequest.NewWork("HEAD")))
         {
             path = workspace.Context.WorkspaceRoot;
             File.WriteAllText(Path.Combine(path, "brouillon.txt"), "travail en cours");
@@ -83,7 +83,7 @@ public sealed class GitWorkspaceProvisionerTests : IDisposable
     }
 
     [Fact(DisplayName = "étant donné que git est absent du PATH, quand on provisionne, alors l'échec est explicite plutôt qu'une erreur de process brute")]
-    public void Provisioning_without_git_fails_explicitly()
+    public async Task Provisioning_without_git_fails_explicitly()
     {
         // arrange — un runner qui rend un lancement impossible, comme quand git manque
         var provisioner = new GitWorkspaceProvisioner(
@@ -92,17 +92,17 @@ public sealed class GitWorkspaceProvisionerTests : IDisposable
             WorktreesRoot);
 
         // act / assert
-        Assert.Throws<GitNotAvailableException>(
-            () => provisioner.Provision("run-1", new WorkspaceRequest.NewWork("HEAD")));
+        await Assert.ThrowsAsync<GitNotAvailableException>(
+            () => provisioner.ProvisionAsync("run-1", new WorkspaceRequest.NewWork("HEAD")));
     }
 
     [Fact(DisplayName = "étant donné deux workspaces provisionnés sur un même dépôt, quand chacun écrit dans le sien, alors leurs répertoires sont distincts et leurs fichiers ne collisionnent pas")]
-    public void Two_workspaces_are_isolated_from_each_other()
+    public async Task Two_workspaces_are_isolated_from_each_other()
     {
         // arrange
         var provisioner = NewProvisioner();
-        using var a = provisioner.Provision("run-a", new WorkspaceRequest.NewWork("HEAD"));
-        using var b = provisioner.Provision("run-b", new WorkspaceRequest.NewWork("HEAD"));
+        await using var a = await provisioner.ProvisionAsync("run-a", new WorkspaceRequest.NewWork("HEAD"));
+        await using var b = await provisioner.ProvisionAsync("run-b", new WorkspaceRequest.NewWork("HEAD"));
 
         // act — chacun écrit sous le même nom, dans son propre worktree
         File.WriteAllText(Path.Combine(a.Context.WorkspaceRoot, "travail.txt"), "A");
@@ -115,12 +115,12 @@ public sealed class GitWorkspaceProvisionerTests : IDisposable
     }
 
     [Fact(DisplayName = "étant donné deux runs de nouveau travail, quand chacun crée sa branche nommée dans son worktree, alors les deux branches coexistent")]
-    public void Two_new_work_runs_create_coexisting_branches()
+    public async Task Two_new_work_runs_create_coexisting_branches()
     {
         // arrange
         var provisioner = NewProvisioner();
-        using var a = provisioner.Provision("run-a", new WorkspaceRequest.NewWork("HEAD"));
-        using var b = provisioner.Provision("run-b", new WorkspaceRequest.NewWork("HEAD"));
+        await using var a = await provisioner.ProvisionAsync("run-a", new WorkspaceRequest.NewWork("HEAD"));
+        await using var b = await provisioner.ProvisionAsync("run-b", new WorkspaceRequest.NewWork("HEAD"));
 
         // act — chaque run baptise sa branche une fois son nom connu ; le HEAD
         // détaché le permet sans le refus « branch already checked out »

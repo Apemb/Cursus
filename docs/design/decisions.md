@@ -444,3 +444,55 @@ vérif que `dotnet test` ne peut pas donner. Voisin tracé : le **check des pré
 `claude`…), même logique pure, restitution qui attend sa surface (§9.2-15).
 
 **Renvoi** : `architecture.md` §9.2-15, §6.6, §7.12.
+
+---
+
+## D-015 — Provisionnement vraiment asynchrone ; `ConfigureAwait(false)` en bibliothèque, jamais dans la vue
+
+**Statut** : Tranché, construit (2026-07-23). Renverse le « provisionnement synchrone » d'origine.
+
+**Contexte.** À l'usage, cliquer « Lancer » gelait l'UI. Un premier correctif avait enveloppé le
+lancement dans un `Task.Run` côté vue — déceptif : il déguisait un contrat async mensonger au
+lieu de le réparer. La cause racine était unique : `GitWorkspaceProvisioner` attendait le
+sous-process git par `_runner.RunAsync(...).GetAwaiter().GetResult()` — du **sync-over-async** —,
+appelé *avant* le premier `await` de `LaunchAsync`. Une méthode `async` s'exécute synchronement
+jusqu'à sa première vraie suspension : ce préfixe (montage git, écritures SQLite, `Process.Start`)
+tournait sur le thread d'UI. À l'origine, le montage avait été fait synchrone à dessein (« git
+worktree est bref, c'est du montage »). Cette hypothèse tombe dès qu'un thread d'UI l'appelle.
+
+**Décision.** Rendre la chaîne **asynchrone de bout en bout**, en deux volets indissociables :
+
+1. **Zéro sync-over-async.** `Provision` → `ProvisionAsync` (l'`await` remplace le `GetResult`) ;
+   `IProvisionedWorkspace` passe d'`IDisposable` à **`IAsyncDisposable`**, pour que le démontage
+   (git worktree remove) s'`await` aussi (`await using`) au lieu de bloquer. Plus **aucun**
+   `.GetAwaiter().GetResult()` dans le noyau.
+
+2. **`ConfigureAwait(false)` sur chaque `await` de la bibliothèque** (provisioner, launcher,
+   engine, runner) : les continuations ne capturent pas le contexte de l'appelant et courent sur
+   le pool. Une chaîne async *sans* ça ferait rejouer chaque étape (Emit → SQLite, `Process.Start`
+   suivant) sur le thread d'UI — le premier volet seul ne suffit pas.
+
+Conséquence : la vue fait un simple `await host.LaunchAsync(...)`, **sans `Task.Run`**. Seul un
+préfixe synchrone minimal (un `Process.Start` de git, ~ms) court sur le thread d'UI avant la
+première suspension ; tout le reste court sur le pool.
+
+**Règle miroir, côté présentation.** Le `RunViewModel` **ne** met **pas** `ConfigureAwait(false)` :
+sa continuation (le `finally` : arrêt du `DispatcherTimer`, `PullLog` sur une propriété bindée) doit
+précisément revenir sur le thread d'UI. `ConfigureAwait(false)` est un outil de **bibliothèque**, pas
+de vue.
+
+**Alternatives écartées.**
+- *Garder le `Task.Run` (le correctif précédent, `daf8750`)* — déguise le mensonge au lieu de le
+  réparer ; c'est ce que l'utilisateur a justement refusé.
+- *`ProvisionAsync` async mais `Dispose` synchrone (`IDisposable`)* — le démontage resterait un
+  sync-over-async : à moitié corrigé, et incohérent. D'où `IAsyncDisposable`.
+- *`ConfigureAwait(false)` sans rendre le provisionnement async* — ne corrige rien : le blocage est
+  dans le préfixe *synchrone*, avant tout `await`.
+
+**Conséquences.** Refactor de forme : comportement identique, 210 tests verts après passage des
+signatures et des doubles aux formes async (`await using`, `ProvisionAsync`, `DisposeAsync`,
+`ThrowsAsync`). L'écriture du journal court désormais sur un thread du pool (déjà le cas depuis
+`daf8750`) ; la lecture concurrente d'un run en cours reste non supportée (connexion SQLite unique,
+§7.13). « L'UI ne gèle plus » reste vérifié à la main (pas de harnais Avalonia headless, §9.2-11).
+
+**Renvoi** : `architecture.md` §4.13, §7.8, §9.2 ; `D-011` (le flux qui alimente l'écran).

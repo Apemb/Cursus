@@ -13,5 +13,11 @@ public interface IWorkspaceProvisioner
     /// demande. L'emplacement dérive du <paramref name="runId"/> : c'est ce qui
     /// permet de retrouver le worktree d'un run depuis son journal.
     /// </summary>
-    IProvisionedWorkspace Provision(string runId, WorkspaceRequest request);
+    /// <remarks>
+    /// Asynchrone parce que le montage attend un sous-process git — de l'I/O, qu'on
+    /// <c>await</c> au lieu de bloquer un thread dessus. C'est ce qui garde l'appelant
+    /// (dont un thread d'UI) réactif pendant le montage (voir <c>D-015</c>).
+    /// </remarks>
+    Task<IProvisionedWorkspace> ProvisionAsync(
+        string runId, WorkspaceRequest request, CancellationToken cancellationToken = default);
 }

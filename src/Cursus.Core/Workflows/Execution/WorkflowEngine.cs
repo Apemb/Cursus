@@ -40,7 +40,8 @@ public sealed class WorkflowEngine
 
         try
         {
-            return await TraverseAsync(definition, context, runId, observer, cancellationToken);
+            return await TraverseAsync(definition, context, runId, observer, cancellationToken)
+                .ConfigureAwait(false);
         }
         catch
         {
@@ -101,7 +102,8 @@ public sealed class WorkflowEngine
                     // un répertoire absolu : le moteur est le seul à connaître le
                     // contexte, donc le seul à pouvoir traduire.
                     var script = step.Script with { WorkingDirectory = context.Resolve(step.WorkingSubdirectory) };
-                    result = await _runner.RunAsync(script, sink.Stdout, sink.Stderr, cancellationToken);
+                    result = await _runner.RunAsync(script, sink.Stdout, sink.Stderr, cancellationToken)
+                        .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {

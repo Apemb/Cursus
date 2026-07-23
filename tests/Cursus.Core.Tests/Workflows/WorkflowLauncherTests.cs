@@ -111,10 +111,11 @@ internal sealed class FakeProvisioner : IWorkspaceProvisioner
 
     public FakeWorkspace? Last { get; private set; }
 
-    public IProvisionedWorkspace Provision(string runId, WorkspaceRequest request)
+    public Task<IProvisionedWorkspace> ProvisionAsync(
+        string runId, WorkspaceRequest request, CancellationToken cancellationToken = default)
     {
         Provisioned = true;
-        return Last = new FakeWorkspace();
+        return Task.FromResult<IProvisionedWorkspace>(Last = new FakeWorkspace());
     }
 }
 
@@ -128,9 +129,10 @@ internal sealed class FakeWorkspace : IProvisionedWorkspace
 
     public bool Disposed { get; private set; }
 
-    public void Dispose()
+    public ValueTask DisposeAsync()
     {
         Disposed = true;
         Directory.Delete(_directory, recursive: true);
+        return ValueTask.CompletedTask;
     }
 }
