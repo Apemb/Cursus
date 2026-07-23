@@ -85,8 +85,8 @@ flowchart TB
 ```
 
 L'app touche **une** de ces moitiés côté noyau depuis 6c·3a : elle *lit* le journal
-d'un projet (surface en lecture seule). Elle ne *lance* encore rien — c'est la
-marche 3b.
+d'un projet (surface en lecture seule). Le **lanceur** existe côté noyau (6c·3b),
+mais l'app ne le *déclenche* pas encore — le câblage à l'écran de run est 6c·3c.
 
 ---
 
@@ -153,7 +153,7 @@ flowchart LR
     direction TB
     Engine["<b>WorkflowEngine</b><br/><small>traverse le graphe, orchestre un run</small>"]
     Host["<b>ProjectHost</b><br/><small>racine de composition d'un projet ouvert</small>"]
-    Launcher["<b>Appelant / lanceur</b><br/><small>monte le run — les tests aujourd'hui, l'UI en 3b</small>"]
+    Launcher["<b>WorkflowLauncher</b><br/><small>monte le run ; ProjectHost le compose, l'écran le déclenchera en 6c·3c</small>"]
   end
 
   subgraph ports["Ports (interfaces, DOMAIN)"]
@@ -355,27 +355,31 @@ Le verdict français (`réussi`/`échoué`/`jamais lancé`) est calculé par
 
 ### 5.2 La couture d'exécution — le moteur et ses collaborateurs
 
-Construite et testée dans le noyau, **pas encore câblée à l'UI** (c'est la
-marche 3b). L'appelant provisionne le worktree *avant* et le démonte *après* :
-l'isolation n'entre pas dans le moteur (invariant 8).
+Construite et testée dans le noyau ; le **lanceur** (`WorkflowLauncher`, 6c·3b) en
+est désormais l'appelant de production, composé par `ProjectHost.LaunchAsync`.
+Reste à câbler l'**observateur** à l'écran de run (6c·3c). Le lanceur provisionne le
+worktree *avant* et le démonte *après* : l'isolation n'entre pas dans le moteur
+(invariant 8).
 
 ```mermaid
 flowchart TB
-  caller["<b>Appelant</b><br/><small>les tests aujourd'hui ; le lanceur en 3b</small>"]
+  launcher["<b>WorkflowLauncher.LaunchAsync</b><br/><small>forge le runId, assemble le moteur, estampille la provenance</small>"]
   prov["<b>IWorkspaceProvisioner</b><br/><small>GitWorkspaceProvisioner</small>"]
-  engine["<b>WorkflowEngine.ExecuteAsync</b><br/><small>(def, RunContext, runId, trigger?, ct)</small>"]
-  runner["<b>IProcessRunner</b><br/><small>ProcessRunner : Process réel, tubes redirigés</small>"]
-  journal["<b>IRunJournal</b><br/><small>émet 5 événements aux frontières d'étape</small>"]
+  engine["<b>WorkflowEngine.ExecuteAsync</b><br/><small>(def, RunContext, runId, trigger?, workflowId?, observer?, ct)</small>"]
+  runner["<b>IProcessRunner</b><br/><small>ProcessRunner : Process réel, tubes redirigés, tue l'arbre à l'annulation</small>"]
+  journal["<b>IRunJournal</b><br/><small>rend durables 5 événements aux frontières d'étape</small>"]
   output["<b>IRunOutputStore</b><br/><small>puits ouvert avant chaque étape, sortie qui ruisselle</small>"]
+  observer["<b>IProgress&lt;WorkflowEvent&gt;</b><br/><small>flux live pour l'écran de run (6c·3c)</small>"]
 
-  caller -->|"1 · provisionne le worktree par runId"| prov
-  prov -.->|"RunContext = racine du worktree isolé"| caller
+  launcher -->|"1 · provisionne le worktree par runId"| prov
+  prov -.->|"RunContext = racine du worktree isolé"| launcher
   prov -->|"git via"| runner
-  caller -->|"2 · ExecuteAsync"| engine
+  launcher -->|"2 · ExecuteAsync"| engine
   engine -->|"par étape : RunAsync(ScriptSpec, ct)"| runner
-  engine -->|"RunStarted · StepStarted · StepFinished · RunFinished"| journal
+  engine -->|"Emit : RunStarted · StepStarted · StepFinished · EdgeChosen · RunFinished"| journal
+  engine -.->|"Emit : même point, même ordre"| observer
   engine -->|"ruisselle stdout/stderr"| output
-  caller -->|"3 · démonte le worktree"| prov
+  launcher -->|"3 · démonte le worktree"| prov
 ```
 
 ---

@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `10b7b9c` (*la surface d'un projet montre le dernier passage — §4.16*). Dernier jalon de code : *lire le passé d'un projet, `ProjectHost` naît* (jalon 6c·3a, §4.16). Suite de tests : **174 verts** (152 noyau + 22 persistance), build 0 warning.
+> **Statut** : document vivant, à jour du commit `26710e6` (*le lanceur réifié, `ProjectHost` gagne « lancer » — §4.17*). Dernier jalon de code : *le lanceur — un vrai run naît en production, le moteur pousse sa progression* (jalon 6c·3b, §4.17). Suite de tests : **186 verts** (163 noyau + 23 persistance), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -620,6 +620,40 @@ passage sans instancier Avalonia. 6c·3b l'étendra à lancer/observer.
 `App → Persistence`, **pas** `Core → Avalonia` (`ArchitectureTests` reste vert). Le bundle contrôle
 désormais `libe_sqlite3.dylib` (§7.11) ; il l'embarque, vérifié.
 
+### 4.17 Le lanceur : un vrai run naît en production — CONSTRUIT (jalon 6c·3b)
+
+La seconde marche du « dernier passage », et la première fois qu'un run se lance **hors d'un test**. Jusque-là,
+le seul assemblage d'un vrai run — provisionner un worktree, monter le moteur sur le journal durable et le
+store d'artefacts, exécuter — vivait à la main dans `ProjectRunTests`. Cette marche le réifie, **headless et
+entièrement testable** ; l'écran de run, le bouton et la stratégie `PATH` sont la marche suivante (6c·3c).
+
+- **`workflowId` traverse enfin le moteur.** `ExecuteAsync` gagne `string? workflowId`, passé à `RunStarted`
+  (le champ existait depuis 6c·3a mais restait toujours `null`, faute d'appelant — 3a avait reporté le
+  paramètre exprès). Le producteur qui manquait est le lanceur. Nullable conservé : un run forgé en test,
+  sans catalogue, n'en porte pas. C'est ce qui remplit le « Jamais lancé » de §4.16, **gratuitement**.
+- **Le moteur pousse un flux de progression** (décision `D-011`). `ExecuteAsync` gagne un observateur optionnel
+  `IProgress<WorkflowEvent>` ; toutes les émissions passent par un **unique point** (`Emit`) qui journalise
+  **et** notifie dans le même geste — le flux éphémère (pour l'écran de run de 6c·3c) et le journal durable ne
+  peuvent donc pas diverger. Facultatif : un run headless n'en fournit pas et se déroule à l'identique.
+- **`WorkflowLauncher` (Core) porte le montage.** Il forge l'identité du run, provisionne un worktree neuf
+  (`NewWork("HEAD")`), assemble le moteur, exécute en estampillant la provenance, referme le workspace quoi
+  qu'il advienne. Un run par appel, sans état partagé : la concurrence reste **compositionnelle** (plusieurs
+  runs de front, chacun dans son worktree, comme le prouve le jalon 6b).
+- **`ProjectHost` gagne `LaunchAsync`** (§7.12, « un module par capacité : lancer ») : il charge la définition
+  du catalogue et délègue au lanceur. Chemin heureux — un workflow illisible au lancement (fermer `LoadResult`
+  en union) reste la marche engrenage de configuration.
+
+**Le préréglage câble le lanceur sur le _même_ `SqliteRunJournal` que le lecteur du host** : une seule
+connexion, si bien que ce qui est lancé se relit sans qu'un second magasin diverge, et se ferme d'une seule
+disposition — c'est ce qui **ferme la boucle 3a↔3b**. ⚠️ Ce partage est **séquentiel** (lancer *puis* lire),
+prouvé par l'end-to-end ; une lecture concurrente d'un lancement en cours (runs de front, §7.13) exigera de le
+revoir. L'**arbre de process** était déjà tué à l'annulation depuis le jalon 6a (`ProcessRunner`, `Kill(entireProcessTree)`) :
+il ne reste qu'à câbler l'annulation depuis l'UI, ce qui relève de 6c·3c.
+
+**Le second test exécutable du §7.12 s'étend de _lire_ à _lancer puis lire_** : un end-to-end headless ouvre un
+`ProjectHost` sur un vrai projet-dépôt-git, lance un workflow (ProcessRunner, worktree git, SQLite réels) et
+relit son dernier passage, sans Avalonia.
+
 ---
 
 ## 5. Ajouter un StepKind : la recette
@@ -872,13 +906,14 @@ Retenu : **`Cursus.Persistence`**, qui référence le noyau et implémente ses c
 
 **Coût assumé** : deux projets de plus (bibliothèque + tests), et une native `e_sqlite3` que le bundle macOS doit embarquer depuis que `Cursus.App` référence la persistance (6c·3a) — même piège que `libghostty-vt` (§6.3, §6.6). Le contrôle correspondant dans `build/package-macos.sh` était **volontairement absent** tant que cette référence n'existait pas (il aurait échoué sur un faux positif) ; il est **en place** depuis 6c·3a, et le bundle embarque bien `libe_sqlite3.dylib`, vérifié.
 
-### 7.12 Présentation et composition : `ProjectHost` — TRANCHÉ, CONSTRUIT CÔTÉ LECTURE (6c·3a)
+### 7.12 Présentation et composition : `ProjectHost` — TRANCHÉ, CONSTRUIT (LECTURE 6c·3a, LANCEMENT 6c·3b)
 
-> **Construit au 6c·3a (§4.16)** : `ProjectHost` naît dans `Cursus.Core`, reçoit sa fabrique de journal,
-> `IDisposable`, une capacité (le dernier passage) ; le préréglage vit dans `Cursus.Persistence`
-> (`SqliteProjectHost.Open`) ; les **deux** tests du critère existent — (a) `Core ⊄ Avalonia` au 6c·1,
-> (b) l'end-to-end headless au 6c·3a, cadré lecture. Reste à construire : lancer/observer/annuler (6c·3b).
-> Ce qui suit est la décision de conception, inchangée.
+> **Construit** : `ProjectHost` naît au 6c·3a (§4.16) dans `Cursus.Core`, `IDisposable`, reçoit sa fabrique de
+> journal sans apprendre que c'est du SQLite ; le préréglage vit dans `Cursus.Persistence`
+> (`SqliteProjectHost.Open`). Deux capacités : *lire le dernier passage* (6c·3a) et *lancer* (6c·3b, §4.17,
+> via `WorkflowLauncher`). Les **deux** tests du critère existent — (a) `Core ⊄ Avalonia` au 6c·1, (b)
+> l'end-to-end headless, étendu de *lire* à *lancer puis lire* au 6c·3b. Reste à construire : **observer/annuler
+> depuis l'UI**, c'est-à-dire l'écran de run (6c·3c). Ce qui suit est la décision de conception, inchangée.
 
 Décidé en conception le 2026-07-21, avant le jalon 6, après une passe de recherche à trois lentilles
 (le patron hors iOS, la testabilité réelle en Avalonia, la confrontation au code de ce dépôt). **Le
@@ -901,7 +936,7 @@ qu'un critère si :
 | **Un module par capacité** | La façade n'accueille que ce qui demande une **composition** : lancer/observer/annuler un run. Lister et charger restent `WorkflowCatalog`, déjà testés |
 | **Le flux d'événements fait foi** | Pendant un run, le `WorkflowRun` rendu par `ExecuteAsync` ne sert qu'à savoir que la tâche est finie. Sinon deux écrivains sur le même état |
 | **Un run à la fois** | Non par confort : c'est la seule configuration que le code supporte sans synchronisation (§9.2-14). ⚠️ **Révisé par le parcours** — la cible exige des runs concurrents ; voir §7.13 |
-| **Deux tests rendent le critère exécutable** | (a) `Cursus.Core` ne référence aucun assembly `Avalonia.*` — **construit au 6c·1** (`ArchitectureTests`, §4.14) ; (b) un end-to-end **headless** qui ouvre et lit sans instancier Avalonia — **construit au 6c·3a, cadré lecture** (§4.16) ; 6c·3b l'étendra à lancer/observer. Le second *force* `ProjectHost` à être suffisant |
+| **Deux tests rendent le critère exécutable** | (a) `Cursus.Core` ne référence aucun assembly `Avalonia.*` — **construit au 6c·1** (`ArchitectureTests`, §4.14) ; (b) un end-to-end **headless** qui ouvre sans instancier Avalonia — **construit au 6c·3a (lire), étendu au 6c·3b (lancer puis lire)** (§4.16, §4.17). Le second *force* `ProjectHost` à être suffisant |
 
 **Écarts à retenir, parce qu'ils se rediscuteraient sinon :**
 
@@ -921,8 +956,10 @@ qu'un critère si :
 
 **Ce que la décision a engagé** : `Cursus.App` référence désormais `Cursus.Persistence` (6c·3a) — le
 contrôle de la native `e_sqlite3` dans le bundle est **fait** (§7.11, §9.2-19). La stratégie `PATH`
-(§9.2-15) reste théorique : elle ne devient due qu'au **lancement** de process, donc au 6c·3b — la
-tranche lecture n'exécute rien.
+(§9.2-15) reste théorique : le lanceur de 6c·3b exécute de vrais process, mais **sous `dotnet test`**, où le
+`PATH` est complet — le trou du `PATH` GUI tronqué ne se manifeste que depuis l'**app installée**, dont le
+déclencheur (le bouton) naît en **6c·3c**. C'est donc là, avec la preuve qui la valide, que `PATH` sera due —
+pas plus tôt, faute d'appelant qui l'exerce.
 
 ### 7.13 Ce que le parcours utilisateur impose — TRANCHÉ, NON CONSTRUIT
 
@@ -1143,7 +1180,7 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 16. **Le bundle n'est pas notarisé** (signature ad-hoc) : installable sur la machine qui le construit, refusé par Gatekeeper ailleurs (§6.6).
 17. Hygiène : plan de jalons de `landscape.md` caduc, aucun remote git, pas de CI ni de LICENSE, pas d'icône d'application (§1.3-1.4).
 18. **La définition figée d'un run repasse par le validateur à la relecture** : durcir une règle de validation rendrait d'anciens runs illisibles (§4.10).
-19. ~~**La native `e_sqlite3` n'est pas contrôlée dans le bundle macOS**~~ — ✅ **refermé au 6c·3a** : `Cursus.App` référence `Cursus.Persistence`, `build/package-macos.sh` contrôle `libe_sqlite3.dylib`, et le bundle l'embarque (vérifié). La stratégie `PATH` (trou 15) reste, elle, ouverte — due au lancement (6c·3b).
+19. ~~**La native `e_sqlite3` n'est pas contrôlée dans le bundle macOS**~~ — ✅ **refermé au 6c·3a** : `Cursus.App` référence `Cursus.Persistence`, `build/package-macos.sh` contrôle `libe_sqlite3.dylib`, et le bundle l'embarque (vérifié). La stratégie `PATH` (trou 15) reste, elle, ouverte — le lanceur de 6c·3b tourne sous `dotnet test` (PATH complet) ; le trou ne mord que depuis l'app installée, due donc au 6c·3c (le bouton qui la prouve).
 
 ### 9.3 Questions ouvertes
 
