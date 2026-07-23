@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `0cfe576` (*provisionnement vraiment asynchrone — D-015, suite du jalon 6c·3c*). Dernier jalon de code : *l'écran de run — trajectoire déroulée, log en direct, arrêt à 3 positions* (jalon 6c·3c, §4.18) ; correctif async (D-015, §7.8) par-dessus. Suite de tests : **210 verts** (182 Core + 28 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour du commit `6777212` (*provisionnement vraiment asynchrone — D-015, suite du jalon 6c·3c*). Dernier jalon de code : *l'écran de run — trajectoire déroulée, log en direct, arrêt à 3 positions* (jalon 6c·3c, §4.18) ; correctif async (D-015, §7.8) par-dessus. Suite de tests : **210 verts** (182 Core + 28 Persistence), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
