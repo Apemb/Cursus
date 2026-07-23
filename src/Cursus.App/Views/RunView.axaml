@@ -98,7 +98,8 @@
                                         <DataTemplate x:DataType="vm:GraphEdgeRow">
                                             <TextBlock Text="{Binding Label}"
                                                        Opacity="{Binding Opacity}"
-                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       Foreground="{Binding EdgeBrush}"
+                                                       FontWeight="{Binding EdgeWeight}"
                                                        VerticalAlignment="Center" />
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>

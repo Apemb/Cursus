@@ -108,11 +108,28 @@ public partial class GraphEdgeRow : ObservableObject
     /// <summary>Vrai quand un <c>EdgeChosen</c> a routé par cette arête.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Opacity))]
+    [NotifyPropertyChangedFor(nameof(EdgeBrush))]
+    [NotifyPropertyChangedFor(nameof(EdgeWeight))]
     private bool _traversed;
 
-    /// <summary>Pleine si empruntée, estompée sinon — le chemin mort s'efface sans disparaître.</summary>
-    public double Opacity => Traversed ? 1.0 : 0.35;
+    /// <summary>
+    /// Empruntée ou non se lit d'abord à la <b>couleur</b> et à la <b>graisse</b> — pas
+    /// à la seule opacité. Un chemin mort reste franchement lisible (0.55), juste plus
+    /// discret ; une opacité plus basse le rendait absent, pas discret.
+    /// </summary>
+    public double Opacity => Traversed ? 1.0 : 0.55;
+
+    /// <summary>Le vert « emprunté » quand le routage l'a prise, le gris neutre sinon.</summary>
+    public IBrush EdgeBrush => Traversed ? TakenBrush : MutedBrush;
+
+    /// <summary>Un chemin pris est appuyé (semi-gras) ; un chemin mort reste en graisse normale.</summary>
+    public FontWeight EdgeWeight => Traversed ? FontWeight.SemiBold : FontWeight.Normal;
 
     /// <summary>Recale l'arête sur l'overlay fraîchement plié.</summary>
     public void SyncWith(GraphEdge edge) => Traversed = edge.Traversed;
+
+    // Le vert « emprunté » reprend le vert d'issue des nœuds (§9.5) — l'arête prise
+    // fait partie du chemin qui a coulé ; le gris neutre dit le chemin resté mort.
+    private static readonly IBrush TakenBrush = new SolidColorBrush(Color.Parse("#2F9E44"));
+    private static readonly IBrush MutedBrush = new SolidColorBrush(Color.Parse("#8A8A8E"));
 }
