@@ -74,6 +74,11 @@ nœud, où le schéma périme) et les cartes d'état permanentes vivent dans **`
 compagnon visuel de l'architecture, sans autorité sur elle. Le schéma se lit sur le vocabulaire du
 modèle §3 de ce fichier (définition vs exécution) : il double la prose du plan, il ne la remplace pas.
 
+Le plan **indique son propre chemin de fichier en tout premier** (avant le titre) : le schéma-delta est
+un bloc `mermaid` qui ne se rend en graphique que lorsqu'on **ouvre le fichier** dans un aperçu — jamais
+inline dans le terminal. Sans le chemin sous la main, le lecteur ne peut pas atteindre le seul endroit
+où le schéma existe vraiment. Une ligne `> Fichier : <chemin absolu>` en tête suffit.
+
 ## Entretenir la carte visuelle
 
 `docs/design/schemas.md` suit la même règle de fraîcheur que l'architecture, mais avec une nuance : ses
