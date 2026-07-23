@@ -125,6 +125,25 @@ public class InMemoryRunJournalTests
                 journal.ReadEvents($"run-{r}").Select(entry => entry.Seq));
     }
 
+    [Fact(DisplayName = "étant donné un run clos démarré sous un id de workflow, quand on liste les runs, alors le résumé porte l'instant de clôture et le workflow, comme le journal durable")]
+    public void A_finished_run_is_summarized_with_its_end_instant_and_workflow()
+    {
+        // arrange
+        var clock = new TestClock(new DateTimeOffset(2026, 7, 20, 18, 0, 0, TimeSpan.Zero));
+        var journal = new InMemoryRunJournal(clock);
+        journal.Append("run-1", new WorkflowEvent.RunStarted(
+            new WorkflowDefinition("A", []), "/tmp", RunTrigger.Manual, WorkflowId: "verifier"));
+
+        // act
+        clock.UtcNow = clock.UtcNow.AddMinutes(4);
+        journal.Append("run-1", new WorkflowEvent.RunFinished(RunState.Failed));
+
+        // assert
+        var run = journal.ListRuns().Single();
+        Assert.Equal("verifier", run.WorkflowId);
+        Assert.Equal(clock.UtcNow, run.EndedAt);
+    }
+
     private static WorkflowEvent AnyEvent => new WorkflowEvent.RunFinished(RunState.Completed);
 
     private static WorkflowEvent AnyStart =>

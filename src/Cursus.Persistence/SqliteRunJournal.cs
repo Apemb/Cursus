@@ -61,7 +61,7 @@ public sealed class SqliteRunJournal : IRunJournal, IRunJournalReader, IDisposab
     {
         using var command = _connection.CreateCommand();
         command.CommandText =
-            "SELECT id, started_at, state, abort_reason FROM runs ORDER BY started_at DESC, id DESC;";
+            "SELECT id, started_at, state, abort_reason, ended_at, workflow_id FROM runs ORDER BY started_at DESC, id DESC;";
 
         var runs = new List<RunSummary>();
         using var reader = command.ExecuteReader();
@@ -71,7 +71,9 @@ public sealed class SqliteRunJournal : IRunJournal, IRunJournalReader, IDisposab
                 reader.GetString(0),
                 ReadInstant(reader, 1),
                 reader.IsDBNull(2) ? null : Enum.Parse<RunState>(reader.GetString(2)),
-                reader.IsDBNull(3) ? null : Enum.Parse<AbortReason>(reader.GetString(3))));
+                reader.IsDBNull(3) ? null : Enum.Parse<AbortReason>(reader.GetString(3)),
+                reader.IsDBNull(4) ? null : ReadInstant(reader, 4),
+                reader.IsDBNull(5) ? null : reader.GetString(5)));
         }
 
         return runs;
@@ -126,14 +128,15 @@ public sealed class SqliteRunJournal : IRunJournal, IRunJournalReader, IDisposab
             case WorkflowEvent.RunStarted started:
                 Execute(transaction,
                     """
-                    INSERT INTO runs (id, definition_json, workspace_root, trigger_kind, trigger_task_key, started_at)
-                    VALUES ($id, $definition, $root, $triggerKind, $taskKey, $at);
+                    INSERT INTO runs (id, definition_json, workspace_root, trigger_kind, trigger_task_key, workflow_id, started_at)
+                    VALUES ($id, $definition, $root, $triggerKind, $taskKey, $workflowId, $at);
                     """,
                     ("$id", runId),
                     ("$definition", WorkflowSerializer.Write(started.Definition)),
                     ("$root", started.WorkspaceRoot),
                     ("$triggerKind", started.Trigger.Kind.ToString()),
                     ("$taskKey", started.Trigger.TaskKey),
+                    ("$workflowId", started.WorkflowId),
                     ("$at", Format(at)));
                 break;
 
@@ -203,6 +206,7 @@ public sealed class SqliteRunJournal : IRunJournal, IRunJournalReader, IDisposab
                 workspace_root   TEXT NOT NULL,
                 trigger_kind     TEXT NOT NULL,
                 trigger_task_key TEXT,
+                workflow_id      TEXT,
                 started_at       TEXT NOT NULL,
                 ended_at         TEXT,
                 state            TEXT,

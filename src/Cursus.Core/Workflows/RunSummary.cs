@@ -9,8 +9,19 @@ namespace Cursus.Core.Workflows;
 /// reste indiscernable d'un run en cours — la reprise après incident n'est pas
 /// traitée.
 /// </param>
+/// <param name="EndedAt">
+/// L'instant de clôture, absent tant que le run n'est pas clos. Va de pair avec
+/// <paramref name="State"/> : les deux apparaissent au <c>RunFinished</c>.
+/// </param>
+/// <param name="WorkflowId">
+/// Le workflow du catalogue dont ce run est issu, ou <c>null</c> pour un run que
+/// rien n'a nommé. C'est lui qui permet de retrouver « le dernier passage de
+/// verifier » sans relire les événements.
+/// </param>
 public sealed record RunSummary(
     string RunId,
     DateTimeOffset StartedAt,
     RunState? State = null,
-    AbortReason? AbortReason = null);
+    AbortReason? AbortReason = null,
+    DateTimeOffset? EndedAt = null,
+    string? WorkflowId = null);

@@ -33,7 +33,7 @@ internal static class RunEventCodec
     internal static string Encode(WorkflowEvent @event) => @event switch
     {
         WorkflowEvent.RunStarted e => Write(new RunStartedPayload(
-            e.WorkspaceRoot, e.Trigger.Kind.ToString(), e.Trigger.TaskKey)),
+            e.WorkspaceRoot, e.Trigger.Kind.ToString(), e.Trigger.TaskKey, e.WorkflowId)),
 
         WorkflowEvent.StepStarted e => Write(new StepStartedPayload(e.StepId, e.Iteration)),
 
@@ -68,7 +68,8 @@ internal static class RunEventCodec
                 return new WorkflowEvent.RunStarted(
                     definition(),
                     p.WorkspaceRoot,
-                    new RunTrigger(Enum.Parse<RunTriggerKind>(p.TriggerKind), p.TaskKey));
+                    new RunTrigger(Enum.Parse<RunTriggerKind>(p.TriggerKind), p.TaskKey),
+                    p.WorkflowId);
             }
 
             case nameof(WorkflowEvent.StepStarted):
@@ -116,7 +117,8 @@ internal static class RunEventCodec
 
     // --- DTO de payload, un par kind ---
 
-    private sealed record RunStartedPayload(string WorkspaceRoot, string TriggerKind, string? TaskKey);
+    private sealed record RunStartedPayload(
+        string WorkspaceRoot, string TriggerKind, string? TaskKey, string? WorkflowId);
 
     private sealed record StepStartedPayload(string StepId, int Iteration);
 

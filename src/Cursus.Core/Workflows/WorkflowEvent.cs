@@ -12,10 +12,17 @@ public abstract record WorkflowEvent
     /// telle qu'elle était : relire un run six mois plus tard doit dire ce qui
     /// a tourné, pas ce que le fichier est devenu depuis.
     /// </summary>
+    /// <param name="WorkflowId">
+    /// Le workflow du catalogue dont ce run est issu (« verifier »), à côté du
+    /// trigger et du workspace comme provenance. La définition, elle, reste un
+    /// graphe anonyme : c'est le run qui sait d'où il vient, pas le graphe.
+    /// Absent quand rien ne l'a nommé — un run forgé en test, sans catalogue.
+    /// </param>
     public sealed record RunStarted(
         WorkflowDefinition Definition,
         string WorkspaceRoot,
-        RunTrigger Trigger) : WorkflowEvent;
+        RunTrigger Trigger,
+        string? WorkflowId = null) : WorkflowEvent;
 
     /// <summary>
     /// Une visite d'étape commence. Une étape en boucle en engendre autant que

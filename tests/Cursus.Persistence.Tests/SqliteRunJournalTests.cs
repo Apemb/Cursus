@@ -43,6 +43,24 @@ public class SqliteRunJournalTests : IDisposable
         Assert.Equal("ENG-1234", started.Trigger.TaskKey);
     }
 
+    [Fact(DisplayName = "étant donné un démarrage portant un id de workflow, quand on relit le run après réouverture, alors ce workflow_id est restitué")]
+    public void A_start_reads_back_with_its_workflow_id()
+    {
+        // arrange
+        using (var journal = NewJournal())
+        {
+            journal.Append("run-1", new WorkflowEvent.RunStarted(
+                AnyDefinition, "/un/workspace", RunTrigger.Manual, WorkflowId: "verifier"));
+        }
+
+        // act
+        using var reopened = NewJournal();
+        var started = Assert.IsType<WorkflowEvent.RunStarted>(reopened.ReadEvents("run-1").Single().Event);
+
+        // assert
+        Assert.Equal("verifier", started.WorkflowId);
+    }
+
     [Fact(DisplayName = "étant donné un run entier journalisé puis le journal refermé et rouvert, quand on le relit, alors les événements reviennent dans l'ordre de leur séquence")]
     public void A_whole_run_survives_a_reopen_in_sequence_order()
     {
@@ -147,6 +165,50 @@ public class SqliteRunJournalTests : IDisposable
         Assert.Null(runs["en-cours"].State);
         Assert.Equal(RunState.Aborted, runs["acheve"].State);
         Assert.Equal(AbortReason.LoopNotConverging, runs["acheve"].AbortReason);
+    }
+
+    [Fact(DisplayName = "étant donné un run achevé et un run encore en cours, quand on liste les runs, alors seul l'achevé porte un instant de clôture")]
+    public void Only_a_finished_run_is_listed_with_an_end_instant()
+    {
+        // arrange
+        using var journal = NewJournal();
+        journal.Append("en-cours", AnyStart);
+        journal.Append("acheve", AnyStart);
+
+        // act
+        journal.Append("acheve", new WorkflowEvent.RunFinished(RunState.Completed));
+
+        // assert
+        var runs = journal.ListRuns().ToDictionary(run => run.RunId);
+        Assert.NotNull(runs["acheve"].EndedAt);
+        Assert.Null(runs["en-cours"].EndedAt);
+    }
+
+    [Fact(DisplayName = "étant donné un run démarré sous un id de workflow, quand on liste les runs, alors le résumé rattache le run à ce workflow")]
+    public void A_run_is_listed_with_the_workflow_it_came_from()
+    {
+        // arrange
+        using var journal = NewJournal();
+
+        // act
+        journal.Append("run-1", new WorkflowEvent.RunStarted(
+            AnyDefinition, "/tmp", RunTrigger.Manual, WorkflowId: "verifier"));
+
+        // assert
+        Assert.Equal("verifier", journal.ListRuns().Single().WorkflowId);
+    }
+
+    [Fact(DisplayName = "étant donné un run démarré sans id de workflow, quand on liste les runs, alors son résumé n'en rattache aucun")]
+    public void A_run_started_without_a_workflow_is_listed_without_one()
+    {
+        // arrange
+        using var journal = NewJournal();
+
+        // act
+        journal.Append("run-1", AnyStart);
+
+        // assert
+        Assert.Null(journal.ListRuns().Single().WorkflowId);
     }
 
     [Fact(DisplayName = "étant donné plusieurs runs journalisés en concurrence sur une même base, quand tous se terminent, alors chacun se relit intégralement, avec sa séquence propre continue, sans perte ni doublon")]
