@@ -25,13 +25,13 @@ namespace Cursus.App.ViewModels;
 public partial class ShellViewModel : ObservableObject, IDisposable
 {
     private readonly ProjectRegistry _registry;
-    private readonly Func<Project, ProjectHost> _openHost;
-    private ProjectHost? _currentHost;
+    private readonly Func<Project, ProjectWorkspace> _openWorkspace;
+    private ProjectWorkspace? _currentWorkspace;
 
-    public ShellViewModel(ProjectRegistry registry, Func<Project, ProjectHost> openHost)
+    public ShellViewModel(ProjectRegistry registry, Func<Project, ProjectWorkspace> openWorkspace)
     {
         _registry = registry;
-        _openHost = openHost;
+        _openWorkspace = openWorkspace;
         Projects = new ObservableCollection<Project>(registry.Projects);
     }
 
@@ -68,21 +68,29 @@ public partial class ShellViewModel : ObservableObject, IDisposable
     /// </summary>
     partial void OnSelectedProjectChanged(Project? value)
     {
-        _currentHost?.Dispose();
+        _currentWorkspace?.Dispose();
 
         if (value is null)
         {
-            _currentHost = null;
+            _currentWorkspace = null;
             CurrentSurface = null;
             return;
         }
 
-        _currentHost = _openHost(value);
-        CurrentSurface = new OpenProjectViewModel(value.Name, _currentHost.LastRunPerWorkflow());
+        var workspace = _currentWorkspace = _openWorkspace(value);
+
+        // Les fabriques de run capturent le host et le magasin d'artefacts du
+        // projet : la surface obtient des RunViewModel déjà câblés, sans jamais
+        // toucher au host elle-même (règle de sens unique).
+        CurrentSurface = new OpenProjectViewModel(
+            value.Name,
+            workspace.Host.LastRunPerWorkflow(),
+            workflowId => RunViewModel.StartLive(workflowId, workspace.Host, workspace.Artifacts),
+            row => RunViewModel.Replay(row.LastRun!, workspace.Host, workspace.Artifacts));
     }
 
-    /// <summary>Ferme le host encore ouvert : sa connexion SQLite ne doit pas fuir à la fermeture.</summary>
-    public void Dispose() => _currentHost?.Dispose();
+    /// <summary>Ferme le workspace encore ouvert : sa connexion SQLite ne doit pas fuir à la fermeture.</summary>
+    public void Dispose() => _currentWorkspace?.Dispose();
 
     /// <summary>Le dernier refus d'ajout à afficher ; <c>null</c> si le dernier ajout a réussi.</summary>
     [ObservableProperty]

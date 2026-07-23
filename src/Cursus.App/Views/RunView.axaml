@@ -1,0 +1,87 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cursus.App.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="740" d:DesignHeight="560"
+             x:Class="Cursus.App.Views.RunView"
+             x:DataType="vm:RunViewModel">
+
+    <DockPanel>
+
+        <!-- En-tête du run : nom, statut, et le contrôle d'arrêt à trois positions -->
+        <Border DockPanel.Dock="Top" Padding="20,14"
+                BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="{Binding WorkflowName}"
+                               FontSize="16" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="{Binding Status}"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+
+                <!-- Contrôle à trois positions : « Arrêter » actionnable, « Arrêt en
+                     cours… » désactivé, « Arrêté » figé. Effacé sur un run abouti. -->
+                <Button Grid.Column="2"
+                        Content="{Binding StopLabel}"
+                        Command="{Binding StopCommand}"
+                        IsEnabled="{Binding CanStop}"
+                        IsVisible="{Binding IsControlVisible}"
+                        VerticalAlignment="Center"
+                        Padding="14,7" />
+            </Grid>
+        </Border>
+
+        <!-- Trajectoire déroulée : une puce par visite, dans l'ordre de démarrage.
+             La sélection est partagée avec le log ci-dessous. -->
+        <Border DockPanel.Dock="Top" Padding="14,10"
+                BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,0,0,1">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <ListBox ItemsSource="{Binding Trajectory}"
+                         SelectedItem="{Binding SelectedVisit, Mode=TwoWay}"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Padding="0">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="6" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:RunVisitRow">
+                            <StackPanel Orientation="Horizontal" Spacing="7" Margin="4,3">
+                                <TextBlock Text="{Binding Glyph}"
+                                           Foreground="{Binding StatusBrush}"
+                                           FontWeight="Bold"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Label}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Log de la visite sélectionnée. Fond sombre : le terminal est l'exception
+             assumée au thème clair (presentation.md §9.5). -->
+        <Panel Background="{DynamicResource TerminalBackgroundBrush}">
+            <ScrollViewer Padding="16,12">
+                <SelectableTextBlock Text="{Binding Log}"
+                                     FontFamily="Menlo, Cascadia Code, Consolas, monospace"
+                                     FontSize="12.5"
+                                     Foreground="{DynamicResource TerminalTextBrush}"
+                                     TextWrapping="NoWrap" />
+            </ScrollViewer>
+
+            <TextBlock Text="En attente de sortie…"
+                       IsVisible="{Binding !HasOutput}"
+                       Foreground="{DynamicResource TerminalPlaceholderBrush}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Panel>
+
+    </DockPanel>
+</UserControl>

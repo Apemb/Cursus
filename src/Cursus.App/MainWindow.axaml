@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:Cursus.App.ViewModels"
+        xmlns:views="using:Cursus.App.Views"
         xmlns:projects="using:Cursus.Core.Projects"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
         x:Class="Cursus.App.MainWindow"
@@ -68,28 +69,59 @@
             <ContentControl Content="{Binding CurrentSurface}">
                 <ContentControl.ContentTemplate>
                     <DataTemplate x:DataType="vm:OpenProjectViewModel">
-                        <DockPanel Margin="20">
-                            <TextBlock DockPanel.Dock="Top"
-                                       Text="{Binding Name}"
-                                       FontSize="18" FontWeight="Bold"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       Margin="0,0,0,12" />
-                            <ListBox ItemsSource="{Binding Workflows}"
-                                     Background="Transparent"
-                                     BorderThickness="0">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:WorkflowRowViewModel">
-                                        <StackPanel Spacing="2" Margin="0,4">
-                                            <TextBlock Text="{Binding Name}"
-                                                       Foreground="{DynamicResource TextPrimaryBrush}" />
-                                            <TextBlock Text="{Binding LastPassage}"
-                                                       FontSize="11"
-                                                       Foreground="{DynamicResource TextSecondaryBrush}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                        </DockPanel>
+                        <Panel>
+
+                            <!-- Liste des workflows : le contenu par défaut de la surface -->
+                            <DockPanel Margin="20" IsVisible="{Binding !IsShowingRun}">
+                                <TextBlock DockPanel.Dock="Top"
+                                           Text="{Binding Name}"
+                                           FontSize="18" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Margin="0,0,0,12" />
+                                <ListBox ItemsSource="{Binding Workflows}"
+                                         Background="Transparent"
+                                         BorderThickness="0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:WorkflowRowViewModel">
+                                            <Grid ColumnDefinitions="*,Auto" MinHeight="40">
+                                                <!-- Le passage se rouvre en relecture ; le workflow se lance -->
+                                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                    <Button Content="{Binding LastPassage}"
+                                                            IsEnabled="{Binding HasLastRun}"
+                                                            Background="Transparent" BorderThickness="0"
+                                                            Padding="0" FontSize="11"
+                                                            HorizontalContentAlignment="Left"
+                                                            Foreground="{DynamicResource TextSecondaryBrush}"
+                                                            Command="{Binding $parent[ListBox].((vm:OpenProjectViewModel)DataContext).OpenPastRunCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </StackPanel>
+                                                <Button Grid.Column="1"
+                                                        Content="▸ Lancer"
+                                                        VerticalAlignment="Center"
+                                                        Padding="12,6"
+                                                        Command="{Binding $parent[ListBox].((vm:OpenProjectViewModel)DataContext).StartRunCommand}"
+                                                        CommandParameter="{Binding}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </DockPanel>
+
+                            <!-- Le run courant : même surface, autre contenu (pas de routeur) -->
+                            <DockPanel IsVisible="{Binding IsShowingRun}">
+                                <Border DockPanel.Dock="Top" Padding="12,8"
+                                        BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,0,0,1">
+                                    <Button Content="‹ Retour à la liste"
+                                            Background="Transparent" BorderThickness="0"
+                                            Foreground="{DynamicResource TextSecondaryBrush}"
+                                            Command="{Binding CloseRunCommand}" />
+                                </Border>
+                                <views:RunView DataContext="{Binding CurrentRun}" />
+                            </DockPanel>
+
+                        </Panel>
                     </DataTemplate>
                 </ContentControl.ContentTemplate>
             </ContentControl>

@@ -14,22 +14,26 @@ namespace Cursus.App.ViewModels;
 /// </summary>
 public sealed class WorkflowRowViewModel
 {
-    private readonly RunSummary? _lastRun;
-
     public WorkflowRowViewModel(WorkflowLastRun workflow)
     {
         Name = workflow.Workflow.Id;
-        _lastRun = workflow.LastRun;
+        LastRun = workflow.LastRun;
     }
 
     /// <summary>Le nom du workflow (son fichier), en tête de ligne.</summary>
     public string Name { get; }
 
+    /// <summary>Le dernier passage du workflow — <c>null</c> s'il n'a jamais tourné ; ce que la relecture rouvre.</summary>
+    public RunSummary? LastRun { get; }
+
+    /// <summary>Vrai quand un passage existe à rouvrir — masque le geste « rouvrir » sur un workflow jamais lancé.</summary>
+    public bool HasLastRun => LastRun is not null;
+
     /// <summary>
     /// Le dernier passage en une phrase — « Échoué le 22/07 à 18:04 », ou
     /// « Jamais lancé » quand rien n'a encore tourné.
     /// </summary>
-    public string LastPassage => _lastRun is null ? "Jamais lancé" : $"{Verdict(_lastRun)} {When(_lastRun)}";
+    public string LastPassage => LastRun is null ? "Jamais lancé" : $"{Verdict(LastRun)} {When(LastRun)}";
 
     /// <summary>
     /// Le verdict lisible d'un run. <c>Failed</c> est déjà posé par le moteur

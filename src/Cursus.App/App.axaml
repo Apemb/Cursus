@@ -21,5 +21,7 @@
         <SolidColorBrush x:Key="DangerBrush" Color="#C0392B" />
         <SolidColorBrush x:Key="TerminalBackgroundBrush" Color="#1E1E1E" />
         <SolidColorBrush x:Key="TerminalPlaceholderBrush" Color="#8A8A8E" />
+        <!-- Texte du log sur fond terminal : assez clair pour se lire, sans le blanc pur. -->
+        <SolidColorBrush x:Key="TerminalTextBrush" Color="#E6E6E6" />
     </Application.Resources>
 </Application>

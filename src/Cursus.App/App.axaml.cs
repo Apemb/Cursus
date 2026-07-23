@@ -24,7 +24,11 @@ public partial class App : Application
             // reçoivent leurs dépendances construites, ils ne composent jamais.
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new ShellViewModel(ProjectRegistry.ForCurrentUser(), SqliteProjectHost.Open),
+                DataContext = new ShellViewModel(
+                    ProjectRegistry.ForCurrentUser(),
+                    project => new ProjectWorkspace(
+                        SqliteProjectHost.Open(project),
+                        new RunArtifactStore(project.ArtifactsRoot))),
             };
         }
 
