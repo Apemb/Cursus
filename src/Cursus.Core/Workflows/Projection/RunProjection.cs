@@ -20,8 +20,12 @@ public sealed class RunProjection
     /// </summary>
     public RunState? State { get; private set; }
 
+    /// <summary>La raison d'un arrêt, quand le run s'est clos sur <c>Aborted</c> — sépare « Arrêté » de « Planté ».</summary>
+    public AbortReason? AbortReason { get; private set; }
+
     private readonly List<RunVisit> _trajectory = [];
     private (string StepId, int Iteration)? _explicitSelection;
+    private bool _stopRequested;
 
     /// <summary>Les visites, dans l'ordre où elles ont commencé.</summary>
     public IReadOnlyList<RunVisit> Trajectory => _trajectory;
@@ -41,6 +45,22 @@ public sealed class RunProjection
     /// à la clôture d'une visite qui tournait quand on l'a choisie.
     /// </summary>
     public void Select(RunVisit visit) => _explicitSelection = (visit.StepId, visit.Iteration);
+
+    /// <summary>
+    /// La position du contrôle d'arrêt — <c>null</c> quand elle ne s'applique pas
+    /// (run abouti normalement : l'écran montre alors le verdict, pas le contrôle).
+    /// </summary>
+    public RunControl? Control => IsRunning
+        ? _stopRequested ? RunControl.Stopping : RunControl.Running
+        : State == RunState.Aborted && AbortReason == Workflows.AbortReason.Canceled
+            ? RunControl.Stopped
+            : null;
+
+    /// <summary>Demande l'arrêt : l'étape courante finira, aucune autre ne démarrera.</summary>
+    public void RequestStop() => _stopRequested = true;
+
+    /// <summary>Annule la demande d'arrêt — on repasse par le milieu, on n'y reste pas.</summary>
+    public void RevokeStop() => _stopRequested = false;
 
     /// <summary>Absorbe un événement et met à jour l'état projeté.</summary>
     public void Apply(WorkflowEvent @event)
@@ -62,6 +82,7 @@ public sealed class RunProjection
             case WorkflowEvent.RunFinished finished:
                 IsRunning = false;
                 State = finished.State;
+                AbortReason = finished.AbortReason;
                 break;
         }
     }

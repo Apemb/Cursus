@@ -129,6 +129,78 @@ public sealed class RunProjectionTests
         Assert.False(projection.Selected!.IsRunning);
     }
 
+    [Fact(DisplayName = "étant donné un run en cours sans demande d'arrêt, quand on lit le contrôle, alors il est « en cours »")]
+    public void A_running_run_without_a_stop_request_is_controlled_as_running()
+    {
+        // arrange / act
+        var projection = Started();
+
+        // assert
+        Assert.Equal(RunControl.Running, projection.Control);
+    }
+
+    [Fact(DisplayName = "étant donné un run en cours, quand on demande l'arrêt, alors le contrôle passe « arrêt en cours »")]
+    public void Requesting_a_stop_moves_the_control_to_stopping()
+    {
+        // arrange
+        var projection = Started();
+
+        // act
+        projection.RequestStop();
+
+        // assert — l'arrêt est demandé mais pas encore obtenu (l'étape courante finit)
+        Assert.Equal(RunControl.Stopping, projection.Control);
+    }
+
+    [Fact(DisplayName = "étant donné une demande d'arrêt, quand on la révoque, alors le contrôle revient « en cours »")]
+    public void Revoking_a_stop_returns_the_control_to_running()
+    {
+        // arrange
+        var projection = Started();
+        projection.RequestStop();
+
+        // act
+        projection.RevokeStop();
+
+        // assert — on repasse par le milieu, on n'y reste pas
+        Assert.Equal(RunControl.Running, projection.Control);
+    }
+
+    [Fact(DisplayName = "étant donné une demande d'arrêt, quand RunFinished(Aborted, Canceled) arrive, alors le contrôle est « arrêté »")]
+    public void A_canceled_finish_lands_the_control_on_stopped()
+    {
+        // arrange
+        var projection = Started();
+        projection.RequestStop();
+
+        // act
+        projection.Apply(new WorkflowEvent.RunFinished(RunState.Aborted, AbortReason.Canceled));
+
+        // assert
+        Assert.Equal(RunControl.Stopped, projection.Control);
+    }
+
+    [Fact(DisplayName = "étant donné un run qui se termine normalement, quand RunFinished(Completed) arrive, alors le contrôle n'est ni « en cours » ni « arrêté »")]
+    public void A_normal_finish_leaves_no_control_position()
+    {
+        // arrange
+        var projection = Started();
+
+        // act
+        projection.Apply(new WorkflowEvent.RunFinished(RunState.Completed));
+
+        // assert — « Arrêté » n'est pas « Réussi » : un run abouti n'a pas de contrôle, il a un verdict
+        Assert.Null(projection.Control);
+    }
+
+    /// <summary>Une projection sur un run qui vient de démarrer — le décor commun des tests de contrôle.</summary>
+    private static RunProjection Started()
+    {
+        var projection = new RunProjection();
+        projection.Apply(new WorkflowEvent.RunStarted(AnyDefinition, "/tmp", RunTrigger.Manual, "verifier"));
+        return projection;
+    }
+
     private static StepOutput NoOutput => new([]);
 
     private static WorkflowDefinition AnyDefinition => new("A", new[]
