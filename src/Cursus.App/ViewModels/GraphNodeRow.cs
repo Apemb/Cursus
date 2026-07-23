@@ -16,12 +16,13 @@ namespace Cursus.App.ViewModels;
 /// </summary>
 public partial class GraphNodeRow : ObservableObject
 {
-    public GraphNodeRow(GraphNode node, double x, double y)
+    public GraphNodeRow(GraphNode node, double x, double y, double width)
     {
         StepId = node.StepId;
         Name = node.Name;
         X = x;
         Y = y;
+        Width = width;
         SyncWith(node);
     }
 
@@ -29,11 +30,14 @@ public partial class GraphNodeRow : ObservableObject
 
     public string Name { get; }
 
-    /// <summary>Abscisse du nœud sur le canevas — colonne × pas, posée par le ViewModel.</summary>
+    /// <summary>Abscisse du nœud sur le canevas — début de sa colonne, posée par le ViewModel.</summary>
     public double X { get; }
 
     /// <summary>Ordonnée du nœud sur le canevas — ligne × pas, posée par le ViewModel.</summary>
     public double Y { get; }
+
+    /// <summary>Largeur de la boîte — ajustée à la colonne (au plus large de ses libellés). Les connecteurs s'accrochent à ce bord.</summary>
+    public double Width { get; }
 
     /// <summary>L'état du nœud — pilote le glyphe et sa couleur. <c>NotVisited</c> tant que le run ne l'a pas atteint.</summary>
     [ObservableProperty]

@@ -113,11 +113,12 @@
                         </ItemsControl.Styles>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:GraphNodeRow">
-                                <!-- Boîte à largeur fixe (Width doit égaler NodeWidth du
-                                     RunGraphViewModel — les connecteurs s'y accrochent). Grille
-                                     Auto/*/Auto : la colonne * borne le libellé, donc l'ellipse
-                                     tronque au lieu de déborder. Infobulle = nom complet. -->
-                                <Border Width="150" Height="44"
+                                <!-- Largeur posée par le ViewModel (la colonne s'ajuste au
+                                     plus large de ses libellés ; les connecteurs s'accrochent
+                                     à ce bord). Grille Auto/*/Auto : la colonne * borne le
+                                     libellé — l'ellipse ne sert que de filet au-delà du
+                                     plafond de largeur. Infobulle = nom complet. -->
+                                <Border Width="{Binding Width}" Height="44"
                                         Background="#FFFFFF"
                                         BorderBrush="{DynamicResource SeparatorBrush}"
                                         BorderThickness="1" CornerRadius="8"
@@ -133,6 +134,7 @@
                                         <TextBlock Grid.Column="1"
                                                    Text="{Binding Label}"
                                                    Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   FontSize="13"
                                                    TextTrimming="CharacterEllipsis"
                                                    VerticalAlignment="Center" />
                                         <TextBlock Grid.Column="2"
