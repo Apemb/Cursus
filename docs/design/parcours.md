@@ -253,8 +253,12 @@ gauche les liste. Un bouton pour en ajouter : un sélecteur de dossier, qui refu
 `.cursus/`.
 
 **Je choisis un projet.** Il s'ouvre sur son mode run, qui montre ses workflows — `build`, `verifier` — et
-pour chacun la trace de son dernier passage : quand, et comment il s'est terminé. Le journal SQLite le sait
-déjà, il n'y a rien à construire côté noyau pour l'afficher.
+pour chacun la trace de son dernier passage : quand, et comment il s'est terminé. ⚠️ *Rédaction initiale
+corrigée au jalon 6c·3a* : contrairement à ce qui était écrit ici (« le journal le sait déjà, rien à
+construire côté noyau »), le journal **ne rattachait aucun run à un workflow** — `WorkflowDefinition` est un
+graphe anonyme — et n'exposait pas l'instant de fin. Il a fallu ajouter `WorkflowId` à la provenance du run
+et enrichir `RunSummary` (§4.16 d'`architecture.md`). Le reste, en revanche, était bien là : le moteur pose
+déjà l'issue, voir ci-dessous.
 
 **Je lance `verifier`.** L'écran de run s'ouvre : ses deux étapes, leur nom métier — « Compiler sans le
 moindre avertissement », « Passer toute la suite au vert » — et leur statut.
@@ -263,10 +267,13 @@ moindre avertissement », « Passer toute la suite au vert » — et leur statut
 chose qu'un sablier : sur trois minutes de compilation puis de tests, savoir *où en est la suite* est toute
 la valeur. Un bouton pour arrêter, qui doit tuer l'arbre de process et non le seul `/bin/sh`.
 
-**Ça échoue.** `tester` finit rouge. L'écran affiche **« échoué »** — et pas l'état brut du run, qui dira
-`Completed` parce que la traversée s'est arrêtée là où il n'y avait plus d'arête. Ce sont deux vérités
-différentes : le noyau a raison sur la traversée, l'écran a raison sur le résultat, et l'arbitrage
-appartient à la présentation. Je lis la sortie sur place, je sélectionne la ligne d'erreur, je la copie.
+**Ça échoue.** `tester` finit rouge. L'écran affiche **« échoué »**. ⚠️ *Corrigé au 6c·3a* : ce document
+supposait que l'état brut dirait `Completed` (« la traversée s'est arrêtée là où il n'y avait plus
+d'arête ») et que la présentation devrait le rectifier. C'est faux — le moteur pose déjà `RunState.Failed`
+quand l'étape terminale échoue sans arête de secours (`result.IsSuccess ? Completed : Failed`). L'arbitrage
+appartient bien à la présentation, mais il est réduit à une **table de libellés** `(RunState, AbortReason)
+→ mot` : le noyau a déjà tranché réussi/échoué, l'écran ne fait que le nommer — et « Arrêté » n'est pas
+« Échoué », le noyau les sépare aussi. Je lis la sortie sur place, je sélectionne la ligne d'erreur, je la copie.
 
 **Je reviens demain.** Le projet se rouvre, `verifier` porte « échoué hier à 18 h 04 », et ouvrir ce run
 passé rend exactement le même écran — mêmes étapes, mêmes sorties. C'est le retour sur investissement du

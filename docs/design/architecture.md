@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `2cab078` (*rangement de `Workflows/` en sous-namespaces — §4*). Dernier jalon de code : *ouvrir un projet en mode run* (jalon 6c·2, §4.15). Suite de tests : **164 verts** (147 noyau + 17 persistance), build 0 warning.
+> **Statut** : document vivant, à jour du commit `10b7b9c` (*la surface d'un projet montre le dernier passage — §4.16*). Dernier jalon de code : *lire le passé d'un projet, `ProjectHost` naît* (jalon 6c·3a, §4.16). Suite de tests : **174 verts** (152 noyau + 22 persistance), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -42,7 +42,7 @@
 | Persistance | `src/Cursus.Persistence/` (3 fichiers) | Journal SQLite (écriture sérialisée) et magasin d'artefacts sur disque. **17 tests.** Un run survit au process. |
 | Sessions / PTY | `src/Cursus.Core/Sessions/` (5 fichiers) + `src/Cursus.App/` | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal ; logique de sessions testée (**13 tests**). Antérieure au pivot. |
 
-Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2), et **`Cursus.App` ne référence pas encore `Cursus.Persistence`**.
+Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2). Depuis 6c·3a, **`Cursus.App` référence `Cursus.Persistence`** : l'app lit le journal d'un projet pour afficher le dernier passage de ses workflows (§4.16) — en lecture seule, aucun lancement encore.
 
 **Le dépôt est lui-même un projet Cursus** : `.cursus/` porte son `project.json` et deux workflows réels (`build`, `verifier`), gardés valides par `CursusProjectTests`.
 
@@ -558,7 +558,8 @@ avec quelle issue) est la marche d'après, parce qu'il ouvre un chantier noyau �
 faire naître `ProjectHost`, enrichir la projection (`RunSummary` gagne le nom du workflow ; la colonne
 `ended_at` existe déjà mais n'est pas lue), arbitrer le résultat (« échoué » n'est pas `RunState`, §7.13).
 Lister des noms n'exige, lui, aucune composition : `WorkflowCatalog(project).List()` suffit — d'où
-**`ProjectHost` toujours pas né**, il naîtra sous ce besoin réel, pas pour afficher des noms.
+**`ProjectHost` toujours pas né** à ce stade, il naîtra sous ce besoin réel, pas pour afficher des noms.
+*(Ce qui suit — le dernier passage, la naissance du host — est la marche 6c·3a, §4.16.)*
 
 - **`OpenProjectViewModel`** (`Cursus.App/ViewModels/`) est le conteneur d'un projet ouvert — pour
   l'instant son seul mode run : le nom du projet et les `WorkflowEntry` de `WorkflowCatalog`. Nommé pour
@@ -573,6 +574,48 @@ Lister des noms n'exige, lui, aucune composition : `WorkflowCatalog(project).Lis
 - **Aucune dépendance nouvelle** — `Cursus.App` ne référence toujours que `Cursus.Core`
   (`ArchitectureTests` reste vert), et **aucune logique métier neuve** : binder humble non testé, la suite
   reste verte inchangée (164). C'est une marche de pure présentation.
+
+### 4.16 Lire le passé d'un projet, `ProjectHost` naît — CONSTRUIT (jalon 6c·3a)
+
+La première des deux marches du « dernier passage » (l'autre, *lancer*, est 6c·3b) — et la première fois
+que `Cursus.App` consomme le noyau déterministe : il référence désormais `Cursus.Persistence`. Elle affiche,
+sous chaque workflow, la trace de son dernier run (« Échoué le 22/07 à 18:04 ») ou « Jamais lancé ». Sur le
+dépôt réel, tout est « Jamais lancé » : le journal est vide tant que 6c·3b ne lance pas. La valeur de la
+marche est ailleurs — **retirer le risque du plombage SQLite-dans-le-bundle sous une surface lecture seule**.
+
+Ce que le code a démenti, et qui a façonné la marche — le parcours §3 se trompait doublement en affirmant
+« le journal le sait déjà, rien à construire côté noyau » :
+
+- **Un run journalisé ne portait aucune identité de workflow.** `WorkflowDefinition` est un graphe anonyme,
+  `RunTrigger` porte une clé de *tâche*. On ajoute `WorkflowId` à `RunStarted` comme **provenance du run**
+  (à côté du trigger et du workspace), nullable, et non sur la définition — écarté, car nommer le graphe le
+  ferait diverger du nom de fichier, seul identifiant du catalogue. `ExecuteAsync` n'est **pas** touché : le
+  seul producteur d'un `workflow_id` est le lanceur de 6c·3b.
+- **`RunSummary` n'exposait ni l'instant de fin ni le workflow.** Il gagne `EndedAt` (la colonne `ended_at`
+  existait depuis le jalon 4, `ListRuns` ne la lisait pas) et `WorkflowId` ; le codec fait l'aller-retour,
+  le double `InMemoryRunJournal` reste iso.
+- **L'arbitrage du résultat était déjà fait par le moteur.** `WorkflowEngine` pose `RunState.Failed` quand
+  l'étape terminale échoue sans arête (`result.IsSuccess ? Completed : Failed`). Il ne reste donc, côté
+  présentation, qu'une table `(RunState, AbortReason?) → libellé` dans `WorkflowRowViewModel` — l'écran
+  arbitre, il ne recopie pas l'état brut (parcours §4), et « Arrêté » n'est pas « Échoué ».
+
+**`ProjectHost` naît**, épousant §7.12 : dans `Cursus.Core`, `IDisposable`, il reçoit une
+`Func<IRunJournalReader>` et n'apprend jamais que c'est du SQLite. Le préréglage qui lie cette fabrique au
+`SqliteRunJournal` du projet vit dans `Cursus.Persistence` (`SqliteProjectHost.Open`) — le seul lieu des
+deux mondes, pas de quatrième projet. Une seule capacité en 6c·3a : `LastRunPerWorkflow` (jointure
+workflows × runs, le plus récent gagne). Lancer/observer/annuler restent à 6c·3b. `ShellViewModel` tient,
+en attendant la réification de la racine multi-projets (§7.13), le rôle de **constructeur/disposeur de
+hosts** — un host par projet sélectionné, disposé au changement (une connexion SQLite, jamais deux) ; la
+surface reçoit la projection (`WorkflowLastRun`), pas le host (règle de sens unique).
+
+**Le second test exécutable du §7.12 existe désormais, cadré lecture** : un end-to-end **headless**
+(`Cursus.Persistence.Tests`) ouvre un `ProjectHost` sur une vraie base via le préréglage et lit le dernier
+passage sans instancier Avalonia. 6c·3b l'étendra à lancer/observer.
+
+**Frontière et plombage.** Toute la logique (enrichissement du journal, jointure du host) est prouvée en
+`[Fact]` ; `WorkflowRowViewModel` et le câblage restent non testés (vue, §7.12). La dépendance nouvelle est
+`App → Persistence`, **pas** `Core → Avalonia` (`ArchitectureTests` reste vert). Le bundle contrôle
+désormais `libe_sqlite3.dylib` (§7.11) ; il l'embarque, vérifié.
 
 ---
 
@@ -824,9 +867,15 @@ Retenu : **`Cursus.Persistence`**, qui référence le noyau et implémente ses c
 
 > ⚠️ **Nuance à ne pas confondre.** `Cursus.Core` *en tant que projet* n'a jamais eu zéro dépendance : `CommunityToolkit.Mvvm` y est référencé pour `Sessions/`. La propriété protégée ici est celle de `Workflows/`, et le découpage en projets ne la rend vérifiable qu'entre projets — **rien n'empêche aujourd'hui `Workflows/` d'utiliser `CommunityToolkit.Mvvm`**, sinon la discipline. La séparation `Sessions/` ⟷ `Workflows/` en deux projets distincts n'a pas été faite ; elle deviendra pertinente au moment de la jonction (§2.2).
 
-**Coût assumé** : deux projets de plus (bibliothèque + tests), et une native `e_sqlite3` que le bundle macOS devra embarquer le jour où `Cursus.App` référencera la persistance — même piège que `libghostty-vt` (§6.3, §6.6). Le contrôle correspondant dans `build/package-macos.sh` est **volontairement absent** tant que cette référence n'existe pas : il échouerait sur un faux positif.
+**Coût assumé** : deux projets de plus (bibliothèque + tests), et une native `e_sqlite3` que le bundle macOS doit embarquer depuis que `Cursus.App` référence la persistance (6c·3a) — même piège que `libghostty-vt` (§6.3, §6.6). Le contrôle correspondant dans `build/package-macos.sh` était **volontairement absent** tant que cette référence n'existait pas (il aurait échoué sur un faux positif) ; il est **en place** depuis 6c·3a, et le bundle embarque bien `libe_sqlite3.dylib`, vérifié.
 
-### 7.12 Présentation et composition : `ProjectHost` — TRANCHÉ, NON CONSTRUIT
+### 7.12 Présentation et composition : `ProjectHost` — TRANCHÉ, CONSTRUIT CÔTÉ LECTURE (6c·3a)
+
+> **Construit au 6c·3a (§4.16)** : `ProjectHost` naît dans `Cursus.Core`, reçoit sa fabrique de journal,
+> `IDisposable`, une capacité (le dernier passage) ; le préréglage vit dans `Cursus.Persistence`
+> (`SqliteProjectHost.Open`) ; les **deux** tests du critère existent — (a) `Core ⊄ Avalonia` au 6c·1,
+> (b) l'end-to-end headless au 6c·3a, cadré lecture. Reste à construire : lancer/observer/annuler (6c·3b).
+> Ce qui suit est la décision de conception, inchangée.
 
 Décidé en conception le 2026-07-21, avant le jalon 6, après une passe de recherche à trois lentilles
 (le patron hors iOS, la testabilité réelle en Avalonia, la confrontation au code de ce dépôt). **Le
@@ -849,7 +898,7 @@ qu'un critère si :
 | **Un module par capacité** | La façade n'accueille que ce qui demande une **composition** : lancer/observer/annuler un run. Lister et charger restent `WorkflowCatalog`, déjà testés |
 | **Le flux d'événements fait foi** | Pendant un run, le `WorkflowRun` rendu par `ExecuteAsync` ne sert qu'à savoir que la tâche est finie. Sinon deux écrivains sur le même état |
 | **Un run à la fois** | Non par confort : c'est la seule configuration que le code supporte sans synchronisation (§9.2-14). ⚠️ **Révisé par le parcours** — la cible exige des runs concurrents ; voir §7.13 |
-| **Deux tests rendent le critère exécutable** | (a) `Cursus.Core` ne référence aucun assembly `Avalonia.*` — **construit au 6c·1** (`ArchitectureTests`, §4.14) ; (b) un end-to-end **headless** qui ouvre, charge, lance et observe un run sans instancier Avalonia — *pas encore*. Le second *force* `ProjectHost` à être suffisant |
+| **Deux tests rendent le critère exécutable** | (a) `Cursus.Core` ne référence aucun assembly `Avalonia.*` — **construit au 6c·1** (`ArchitectureTests`, §4.14) ; (b) un end-to-end **headless** qui ouvre et lit sans instancier Avalonia — **construit au 6c·3a, cadré lecture** (§4.16) ; 6c·3b l'étendra à lancer/observer. Le second *force* `ProjectHost` à être suffisant |
 
 **Écarts à retenir, parce qu'ils se rediscuteraient sinon :**
 
@@ -867,9 +916,10 @@ qu'un critère si :
   la forme des sessions n'étant pas connue (`SessionKind.Agent` est mort, §2). L'invariant ne vaut que
   pour le neuf (§6.1).
 
-**Ce que la décision engage, et qui n'existe pas encore** : `Cursus.App` devra référencer
-`Cursus.Persistence` — donc le contrôle de la native `e_sqlite3` dans le bundle devient dû (§7.11,
-§9.2-19), et la stratégie `PATH` (§9.2-15) cesse d'être théorique.
+**Ce que la décision a engagé** : `Cursus.App` référence désormais `Cursus.Persistence` (6c·3a) — le
+contrôle de la native `e_sqlite3` dans le bundle est **fait** (§7.11, §9.2-19). La stratégie `PATH`
+(§9.2-15) reste théorique : elle ne devient due qu'au **lancement** de process, donc au 6c·3b — la
+tranche lecture n'exécute rien.
 
 ### 7.13 Ce que le parcours utilisateur impose — TRANCHÉ, NON CONSTRUIT
 
@@ -1072,7 +1122,7 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 
 ### 9.2 Les trous, en un endroit unique
 
-1. **Les deux moitiés du dépôt ne sont pas reliées** (§2) : aucun adaptateur entre `StartPty` et `IProcessRunner`, aucune UI de workflow, `SessionKind.Agent` mort. La couture elle-même est une question ouverte (§2.2).
+1. **Les deux moitiés du dépôt ne sont pas reliées** (§2) : aucun adaptateur entre `StartPty` et `IProcessRunner`, `SessionKind.Agent` mort. La couture elle-même est une question ouverte (§2.2). ⚠️ *Nuance depuis 6c·3a* : une **UI de workflow en lecture** existe désormais — l'app lit le journal pour afficher le dernier passage (§4.16) —, mais elle ne **lance** rien ; la moitié sessions/PTY, elle, reste disjointe.
 2. ~~**Aucun point d'entrée qui lise un fichier**~~, ~~**aucun exemple commité**~~ — **refermés au jalon 5** (§4.11). Reste ouvert : **aucun schéma JSON publié** pour outiller un éditeur, et aucun consommateur du catalogue hors des tests.
 3. ~~**Aucune persistance**~~ — **refermé au jalon 4** (§4.10). Restent ouverts : pas de `StepRunId` ni de `contentHash`, **aucun versionnement de schéma**, aucune purge, et un `state` à `NULL` qui confond « en cours » et « tué par un crash ».
 4. ~~**Aucune sortie incrémentale pendant un run**~~ — **refermé au jalon 6a** (§4.12). La sortie ruisselle désormais vers un fichier ouvert au démarrage de l'étape ; `ScriptResult` ne la porte plus, un `StepOutput` en porte les artefacts, et un script bavard fait grossir un fichier au lieu de faire tomber l'application. Le changement de type annoncé a bien eu lieu, avec une révision : ce n'est pas `ScriptResult` qui porte le chemin (il redevient purement factuel) mais `StepOutput`, séparé — l'emplacement de la sortie n'est pas l'affaire du process. Le journal, lui, n'émet toujours ses événements qu'aux **frontières d'étape** (§4.10) ; c'est le *fichier* qui se suit à la trace, pas un flux d'événements. **Reste ouvert, et propre à 6c** : l'**affichage** en direct de ce fichier — le flux *vivant* (décorateur d'`IRunJournal` vers un `Channel`, §7.12) distinct du flux *durable* posé ici.
@@ -1090,7 +1140,7 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 16. **Le bundle n'est pas notarisé** (signature ad-hoc) : installable sur la machine qui le construit, refusé par Gatekeeper ailleurs (§6.6).
 17. Hygiène : plan de jalons de `landscape.md` caduc, aucun remote git, pas de CI ni de LICENSE, pas d'icône d'application (§1.3-1.4).
 18. **La définition figée d'un run repasse par le validateur à la relecture** : durcir une règle de validation rendrait d'anciens runs illisibles (§4.10).
-19. **La native `e_sqlite3` n'est pas contrôlée dans le bundle macOS**, faute de référence de `Cursus.App` vers `Cursus.Persistence` (§7.11). À poser au jalon qui crée cette référence.
+19. ~~**La native `e_sqlite3` n'est pas contrôlée dans le bundle macOS**~~ — ✅ **refermé au 6c·3a** : `Cursus.App` référence `Cursus.Persistence`, `build/package-macos.sh` contrôle `libe_sqlite3.dylib`, et le bundle l'embarque (vérifié). La stratégie `PATH` (trou 15) reste, elle, ouverte — due au lancement (6c·3b).
 
 ### 9.3 Questions ouvertes
 
