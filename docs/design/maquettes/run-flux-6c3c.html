@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cursus — écran de run, visualisation du flux (maquette 6c·3c)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  * { margin: 0; }
+  body { padding: 24px 0 32px; background: #faf9f5; }
+  img, svg { display: block; max-width: 100%; }
+  .archive-note {
+    max-width: 1180px; margin: 0 auto 24px; padding: 14px 20px;
+    border: 1px solid currentColor; border-left-width: 4px; border-radius: 7px;
+    font: 14px/1.6 ui-sans-serif, -apple-system, sans-serif;
+    color: #a9700f;
+  }
+  @media (prefers-color-scheme: dark) { .archive-note { color: #d8a842; } }
+  .archive-note code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .9em; }
+  .archive-note strong { font-weight: 650; }
+  @media (max-width: 1228px) { .archive-note { margin-inline: 24px; } }
+</style>
+</head>
+<body>
+<div class="archive-note">
+  <strong>Instantané du 23 juillet 2026 — sans autorité.</strong>
+  Cette maquette a servi à <em>trancher la visualisation du flux</em> de l'écran de run : la traversée déroulée
+  (une boucle = la même étape qui réapparaît, une visite par nœud), le nœud sélectionné qui pilote le log, et
+  l'exception sombre du terminal. Elle ne spécifie rien. Elle est en HTML quand Cursus est en XAML, et aucun
+  pipeline ne traduit l'un vers l'autre. Les décisions qu'elle produit vivent dans
+  <code>docs/design/parcours.md</code> et <code>docs/design/presentation.md</code> §9 — <strong>ce sont eux qui
+  font foi</strong>, et eux seuls qui sont tenus à jour. Un écart entre cette page et ces documents se tranche
+  toujours en faveur des documents.
+</div>
+
+<style>
+  /* Maquette jetable de l'écran de run (marche 6c·3c). HTML/CSS ≠ XAML :
+     elle sert à trancher la disposition, pas à être portée telle quelle.
+     Thème clair assumé (presentation.md §9.1) ; le log fait l'exception
+     sombre du terminal (§9.5).
+
+     Révision : le pipeline déroule la TRAVERSÉE (une boucle = la même étape
+     qui réapparaît, une visite par nœud), et le log ne dépend que du nœud
+     SÉLECTIONNÉ — présent (en direct) ou passé (figé). */
+  :root {
+    --rail: #E7E7EA; --sidebar: #F1F1F3; --surface: #FBFBFD; --sep: #D6D6DA;
+    --ink: #1D1D1F; --ink-2: #86868B; --danger: #C0392B;
+    --term-bg: #1E1E1E; --term-ink: #E4E4E4; --term-dim: #8A8A8E;
+
+    --ok: #2E9E5B; --ok-soft: #E4F4EA;
+    --run: #0A6CFF; --run-soft: #E4EEFF;
+    --wait: #A0A0A6; --wait-soft: #ECECEF;
+    --fail: #C0392B; --fail-soft: #F7E7E5;
+    --loop: #B26A00; --loop-soft: #FBEFDD;
+
+    --radius: 10px;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, "Cascadia Code", monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+
+  .frame {
+    font-family: var(--font); color: var(--ink); background: var(--surface);
+    width: 100%; max-width: 1180px; margin: 0 auto;
+    border: 1px solid var(--sep); border-radius: 14px; overflow: hidden;
+    box-shadow: 0 24px 60px -30px rgba(0,0,0,.35);
+  }
+  .app { display: grid; grid-template-columns: 220px 1fr; min-height: 720px; }
+
+  /* ---- rail (contexte) ---- */
+  .rail { background: var(--rail); border-right: 1px solid var(--sep); display: flex; flex-direction: column; }
+  .rail-head { padding: 14px 16px; border-bottom: 1px solid var(--sep); }
+  .rail-title { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+  .rail-add { margin-top: 12px; width: 100%; padding: 8px; border: 1px solid var(--sep);
+    background: #fff; border-radius: 8px; font: inherit; font-size: 13px; color: var(--ink); }
+  .rail-list { padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+  .rail-item { padding: 8px 10px; border-radius: 7px; }
+  .rail-item.sel { background: #fff; box-shadow: inset 0 0 0 1px var(--sep); }
+  .rail-item .n { font-size: 13px; }
+  .rail-item .p { font-size: 11px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---- surface : l'écran de run ---- */
+  .run { display: grid; grid-template-rows: auto auto auto 1fr; min-width: 0; }
+
+  .run-head { padding: 18px 22px 14px; border-bottom: 1px solid var(--sep); }
+  .crumbs { font-size: 12px; color: var(--ink-2); margin-bottom: 8px; }
+  .crumbs b { color: var(--ink); font-weight: 600; }
+  .run-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .run-title { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+
+  .pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px;
+    border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .pill.run { background: var(--run-soft); color: var(--run); }
+  .pill.run .dot { background: var(--run); animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+
+  .run-meta { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+  .meta { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .meta b { color: var(--ink); font-weight: 600; font-family: var(--mono); font-size: 11.5px; }
+  .btn-stop { height: 30px; padding: 0 14px; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600;
+    color: var(--danger); background: #fff; border: 1px solid var(--danger); cursor: pointer; }
+
+  /* ---- bandeau de boucle : dit que ce workflow a un cycle ---- */
+  .loop-banner { display: flex; align-items: center; gap: 10px; margin: 14px 22px 0;
+    padding: 9px 13px; background: var(--loop-soft); border: 1px solid #EBD4AE; border-radius: 9px;
+    font-size: 12.5px; color: #6B4A12; }
+  .loop-banner .tag { font-family: var(--mono); font-weight: 700; }
+
+  /* ---- pipeline : la traversée déroulée ---- */
+  .pipe-wrap { padding: 18px 22px 14px; overflow-x: auto; }
+  .pipe { display: flex; align-items: stretch; min-width: min-content; }
+
+  .node { width: 150px; background: #fff; border: 1px solid var(--sep); border-radius: var(--radius);
+    padding: 11px 12px; position: relative; cursor: pointer; flex: 0 0 auto; }
+  .node .top { display: flex; align-items: center; gap: 8px; }
+  .node .name { font-size: 13px; font-weight: 600; letter-spacing: -.01em; }
+  .node .visit { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--loop);
+    background: var(--loop-soft); padding: 1px 5px; border-radius: 5px; }
+  .node .sub { margin-top: 7px; font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums;
+    display: flex; gap: 9px; }
+  .node .sub .code { font-family: var(--mono); }
+
+  .badge { width: 19px; height: 19px; border-radius: 50%; flex: 0 0 auto; display: grid; place-items: center;
+    font-size: 11px; font-weight: 700; color: #fff; }
+  .badge.ok { background: var(--ok); }
+  .badge.fail { background: var(--fail); }
+  .badge.wait { background: transparent; border: 1.5px dashed var(--wait); color: var(--wait); }
+  .spin { width: 19px; height: 19px; border-radius: 50%; border: 2px solid var(--run-soft);
+    border-top-color: var(--run); animation: spin .8s linear infinite; flex: 0 0 auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .node.active { border-color: var(--run); box-shadow: 0 0 0 3px var(--run-soft); }
+  .node.ghost { background: #FCFCFD; border-style: dashed; opacity: .65; cursor: default; }
+  .node.ghost .name { color: var(--ink-2); }
+  /* le nœud SÉLECTIONNÉ pilote le log — anneau neutre, distinct du bleu « en cours » */
+  .node.selected { box-shadow: 0 0 0 3px #C9C9CF, 0 6px 16px -8px rgba(0,0,0,.3); border-color: #8E8E93; }
+  .node.selected.active { box-shadow: 0 0 0 3px var(--run), 0 6px 16px -8px rgba(10,108,255,.4); }
+  .node .selflag { position: absolute; top: -9px; left: 11px; font-size: 9.5px; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase; background: #6E6E73; color: #fff;
+    padding: 1px 6px; border-radius: 5px; }
+  .node.active .selflag { background: var(--run); }
+
+  /* connecteurs : code de sortie qui a choisi l'arête */
+  .link { width: 40px; align-self: center; position: relative; flex: 0 0 auto; height: 2px; background: var(--sep); }
+  .link.loop { background: #E3C48A; }
+  .link .exit { position: absolute; top: -9px; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 10.5px; background: var(--surface); padding: 0 4px;
+    border-radius: 4px; color: var(--ink-2); }
+  .link.loop .exit { color: var(--loop); font-weight: 600; }
+
+  .legend { display: flex; gap: 18px; padding: 0 22px 14px; flex-wrap: wrap; }
+  .legend .it { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--ink-2); }
+  .legend .sw { width: 12px; height: 12px; border-radius: 50%; }
+
+  /* ---- log : l'exception sombre, piloté par le nœud sélectionné ---- */
+  .console { display: grid; grid-template-rows: auto 1fr; background: var(--term-bg);
+    border-top: 1px solid var(--sep); min-height: 230px; }
+  .console-bar { display: flex; align-items: center; gap: 12px; padding: 9px 16px;
+    border-bottom: 1px solid #000; color: var(--term-dim); font-size: 12px; }
+  .console-bar .frozen { display: inline-flex; align-items: center; gap: 6px; color: #E3C48A; font-weight: 600; }
+  .console-bar .frozen .sq { width: 8px; height: 8px; border-radius: 2px; background: #E3C48A; }
+  .console-bar .which { color: var(--term-ink); font-weight: 600; }
+  .console-bar .verdict { color: #E58C82; font-family: var(--mono); font-size: 11px; }
+  .console-bar .src { margin-left: auto; font-family: var(--mono); font-size: 11px; }
+  .console-bar .to-live { color: #7FB0FF; font-size: 11.5px; cursor: pointer; }
+
+  .log { padding: 12px 16px 16px; font-family: var(--mono); font-size: 12.5px; line-height: 1.65;
+    color: var(--term-ink); overflow: auto; }
+  .log .l { white-space: pre-wrap; }
+  .log .ev { color: #7FB0FF; }
+  .log .ok { color: #6FD08C; }
+  .log .ko { color: #E58C82; }
+  .log .arr { color: #C9A0FF; }
+  .log .cmd { color: #E4E4E4; opacity: .9; }
+  .log .dim { color: var(--term-dim); }
+
+  .wiring { padding: 12px 22px; background: var(--sidebar); border-top: 1px solid var(--sep);
+    font-size: 11.5px; color: var(--ink-2); display: flex; gap: 22px; flex-wrap: wrap; }
+  .wiring b { color: var(--ink); font-weight: 600; }
+  .wiring code { font-family: var(--mono); font-size: 11px; color: var(--ink); }
+
+  @media (prefers-reduced-motion: reduce) { .pill .dot, .spin { animation: none; } }
+</style>
+
+<div class="frame">
+  <div class="app">
+
+    <aside class="rail">
+      <div class="rail-head">
+        <div class="rail-title">Cursus</div>
+        <button class="rail-add">＋&nbsp;&nbsp;Ajouter un projet</button>
+      </div>
+      <div class="rail-list">
+        <div class="rail-item sel"><div class="n">Démo</div><div class="p">~/Development/Experiences/Cursus</div></div>
+        <div class="rail-item"><div class="n">site-vitrine</div><div class="p">~/Sites/vitrine</div></div>
+      </div>
+    </aside>
+
+    <section class="run">
+
+      <header class="run-head">
+        <div class="crumbs">Démo&nbsp; ›&nbsp; workflows&nbsp; ›&nbsp; <b>vérifier-et-corriger</b></div>
+        <div class="run-title-row">
+          <div class="run-title">vérifier-et-corriger</div>
+          <span class="pill run"><span class="dot"></span>En cours</span>
+          <div class="run-meta">
+            <span class="meta">run <b>a3f1c8</b></span>
+            <span class="meta">démarré à <b>14:32:07</b></span>
+            <span class="meta">écoulé <b>01:12</b></span>
+            <button class="btn-stop">■&nbsp; Arrêter</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- le workflow a un cycle : le dire franchement -->
+      <div class="loop-banner">
+        <span class="tag">↺ boucle</span>
+        <span><b>Tester</b> &nbsp;⇄&nbsp; <b>Corriger</b> — sortie ≠0 renvoie corriger puis réessaie&nbsp;·&nbsp;
+          visite <b>3 / 5</b> max avant abandon</span>
+      </div>
+
+      <!-- pipeline : la traversée déroulée, une visite par nœud -->
+      <div class="pipe-wrap">
+        <div class="pipe">
+
+          <div class="node">
+            <div class="top"><span class="badge ok">✓</span><span class="name">Préparer</span></div>
+            <div class="sub"><span class="code">sortie 0</span><span>0,3&nbsp;s</span></div>
+          </div>
+          <div class="link"><span class="exit">0</span></div>
+
+          <div class="node">
+            <div class="top"><span class="badge ok">✓</span><span class="name">Compiler</span></div>
+            <div class="sub"><span class="code">sortie 0</span><span>12,1&nbsp;s</span></div>
+          </div>
+          <div class="link"><span class="exit">0</span></div>
+
+          <!-- première visite de Tester : échec → boucle -->
+          <div class="node">
+            <div class="top"><span class="badge fail">✕</span><span class="name">Tester</span><span class="visit">↺1</span></div>
+            <div class="sub"><span class="code">sortie 1</span><span>8,4&nbsp;s</span></div>
+          </div>
+          <div class="link loop"><span class="exit">1</span></div>
+
+          <div class="node">
+            <div class="top"><span class="badge ok">✓</span><span class="name">Corriger</span><span class="visit">↺1</span></div>
+            <div class="sub"><span class="code">sortie 0</span><span>2,1&nbsp;s</span></div>
+          </div>
+          <div class="link loop"><span class="exit">0</span></div>
+
+          <!-- deuxième visite de Tester : SÉLECTIONNÉE — log figé de ce passé -->
+          <div class="node selected">
+            <span class="selflag">sélectionné</span>
+            <div class="top"><span class="badge fail">✕</span><span class="name">Tester</span><span class="visit">↺2</span></div>
+            <div class="sub"><span class="code">sortie 1</span><span>8,1&nbsp;s</span></div>
+          </div>
+          <div class="link loop"><span class="exit">1</span></div>
+
+          <div class="node">
+            <div class="top"><span class="badge ok">✓</span><span class="name">Corriger</span><span class="visit">↺2</span></div>
+            <div class="sub"><span class="code">sortie 0</span><span>1,9&nbsp;s</span></div>
+          </div>
+          <div class="link loop"><span class="exit">0</span></div>
+
+          <!-- troisième visite de Tester : en cours -->
+          <div class="node active">
+            <div class="top"><span class="spin"></span><span class="name">Tester</span><span class="visit">↺3</span></div>
+            <div class="sub"><span class="code">en cours</span><span>—</span></div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="legend">
+        <span class="it"><span class="sw" style="background:var(--ok)"></span>Réussi</span>
+        <span class="it"><span class="sw" style="background:var(--run)"></span>En cours</span>
+        <span class="it"><span class="sw" style="background:var(--fail)"></span>Échoué</span>
+        <span class="it"><span class="sw" style="background:var(--loop-soft);border:1px solid #E3C48A"></span><span style="font-family:var(--mono)">↺n</span>&nbsp;n-ième visite</span>
+        <span class="it"><span class="sw" style="background:var(--sep)"></span>arête&nbsp;·&nbsp;<span style="font-family:var(--mono)">code de sortie</span></span>
+      </div>
+
+      <!-- log : dépend UNIQUEMENT du nœud sélectionné. Ici un passé → figé. -->
+      <div class="console">
+        <div class="console-bar">
+          <span class="frozen"><span class="sq"></span>visite passée · figée</span>
+          <span>journal de&nbsp; <span class="which">Tester</span>&nbsp;·&nbsp;visite 2</span>
+          <span class="verdict">sortie 1</span>
+          <span class="src">.cursus/runs/a3f1c8/tester.2.out</span>
+        </div>
+        <div class="log">
+<div class="l"><span class="ev">▶ Tester</span> <span class="dim">· visite 2</span></div>
+<div class="l"><span class="cmd">  $ dotnet test</span></div>
+<div class="l"><span class="dim">  Restauration terminée (0,4 s)</span></div>
+<div class="l"><span class="dim">  Cursus.Core.Tests   réussi (2,0 s)</span></div>
+<div class="l"><span class="ko">  Cursus.Persistence.Tests   ÉCHEC (1,9 s)</span></div>
+<div class="l"><span class="ko">    ✕ le journal relit un run après un lancement — Attendu 174, obtenu 173</span></div>
+<div class="l"><span class="dim">  Total: 197  Réussis: 196  Échecs: 1</span></div>
+<div class="l"><span class="ko">✕ Tester · sortie 1 · 8,1 s</span></div>
+<div class="l"><span class="arr">→ arête 1 → Corriger</span> <span class="dim">(la boucle repart)</span></div>
+        </div>
+      </div>
+
+      <div class="wiring">
+        <span><b>Pipeline</b> ← flux d'événements du moteur (<code>IProgress&lt;WorkflowEvent&gt;</code>, 6c·3b) — une boucle = la même étape ré-émise, une visite par nœud</span>
+        <span><b>Log</b> ← <code>tail</code> du fichier d'artefact de la <b>visite sélectionnée</b> (<code>RunArtifactStore</code>, un fichier par visite — 6a)</span>
+        <span><b>En direct</b> seulement si le nœud sélectionné est celui qui tourne ; un passé est figé</span>
+      </div>
+
+    </section>
+  </div>
+</div>
+
+</body>
+</html>

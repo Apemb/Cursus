@@ -13,6 +13,7 @@
 > - `docs/research/trackers/synthese.md` — les quatre trackers superposés (Linear, Jira, GitHub, GitLab) et ce que leur terrain impose au port de tâches (§7.13 en détient les conséquences) ;
 > - `docs/reference/royalterminal-0.4.0.md` — l'API RoyalTerminal sondée, faute de documentation éditeur ;
 > - `docs/design/maquettes/jalon-6.html` — **archive sans autorité**, à ouvrir dans un navigateur : les maquettes du 2026-07-21, conservées pour le visuel. **Non tenues à jour** ; les décisions qu'elles ont produites sont dans `parcours.md` et `presentation.md` §9, qui font seuls foi ;
+> - `docs/design/maquettes/run-flux-6c3c.html` — **archive sans autorité** (2026-07-23) : la visualisation du flux de l'écran de run — traversée déroulée (une visite par nœud, boucle explicite), nœud sélectionné pilotant le log, exception sombre du terminal. Même statut que ci-dessus : conservée pour le visuel, non tenue à jour, sans valeur de spécification ;
 > - `CLAUDE.md` (racine) — le contrat de travail, qui désigne le présent fichier comme référence et impose son entretien (§8).
 >
 > Trois registres tenus partout : **CONSTRUIT** / **TRANCHÉ, NON CONSTRUIT** / **QUESTION OUVERTE**.
