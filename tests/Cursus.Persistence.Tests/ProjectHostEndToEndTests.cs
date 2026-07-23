@@ -1,14 +1,15 @@
+using System.Diagnostics;
+
 using Cursus.Core.Projects;
 using Cursus.Core.Workflows;
 
 namespace Cursus.Persistence.Tests;
 
 /// <summary>
-/// Le premier des deux tests que §7.12 exige pour rendre <c>ProjectHost</c>
-/// exécutable : un end-to-end <b>headless</b>, sur une <b>vraie</b> base SQLite,
-/// sans instancier Avalonia. Il force le préréglage de <c>Cursus.Persistence</c>
-/// à suffire — ouvrir le journal d'un projet et lire son passé. Cadré ici sur la
-/// lecture ; 3b y ajoutera lancer/observer.
+/// Les deux tests que §7.12 exige pour rendre <c>ProjectHost</c> exécutable : des
+/// end-to-end <b>headless</b>, sur une <b>vraie</b> base SQLite, sans instancier
+/// Avalonia. Ils forcent le préréglage de <c>Cursus.Persistence</c> à suffire —
+/// lire le passé d'un projet (6c·3a), puis <b>lancer</b> un run et le relire (6c·3b).
 /// </summary>
 public sealed class ProjectHostEndToEndTests : IDisposable
 {
@@ -36,9 +37,71 @@ public sealed class ProjectHostEndToEndTests : IDisposable
         Assert.Equal(RunState.Failed, passage.LastRun!.State);
     }
 
+    [Fact(DisplayName = "étant donné un projet-dépôt-git ouvert par le préréglage, quand on lance un de ses workflows puis relit le dernier passage, alors le run atteint son état terminal et se relit rattaché à ce workflow, sans Avalonia")]
+    public async Task A_project_host_launches_a_workflow_and_reads_it_back_over_a_real_database()
+    {
+        // arrange — un vrai projet, un workflow qui écrit un fichier, le tout érigé
+        // en dépôt git (le provisionnement monte un worktree à partir de HEAD)
+        var project = ProjectStore.Create(_root, "Démo");
+        File.WriteAllText(
+            Path.Combine(project.WorkflowsDirectory, "verifier.json"),
+            """
+            {
+              "entryStep": "verifier",
+              "steps": [
+                { "id": "verifier", "name": "Vérifier", "maxVisits": 1,
+                  "script": { "fileName": "/bin/sh", "arguments": ["-c", "echo ok > resultat.txt"] },
+                  "edges": [] }
+              ]
+            }
+            """);
+        InitRepository();
+
+        // act — le host ouvert par le seul préréglage lance, puis relit son propre journal
+        using var host = SqliteProjectHost.Open(project);
+        var run = await host.LaunchAsync("verifier");
+        var passage = host.LastRunPerWorkflow().Single(passage => passage.Workflow.Id == "verifier");
+
+        // assert — le run a abouti, et le « jamais lancé » de 3a s'est rempli
+        Assert.Equal(RunState.Completed, run.State);
+        Assert.Equal(run.RunId, passage.LastRun!.RunId);
+        Assert.Equal(RunState.Completed, passage.LastRun!.State);
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
     // --- helpers ---
+
+    /// <summary>Érige la racine du projet en dépôt git avec un commit initial — la base des worktrees.</summary>
+    private void InitRepository()
+    {
+        Git("init");
+        Git("config", "user.email", "test@cursus.dev");
+        Git("config", "user.name", "Cursus Test");
+        Git("add", "-A");
+        Git("commit", "-m", "commit initial");
+    }
+
+    /// <summary>git piloté en direct pour le décor — hors production, l'invariant 3 ne s'y applique pas.</summary>
+    private void Git(params string[] arguments)
+    {
+        var startInfo = new ProcessStartInfo("git")
+        {
+            WorkingDirectory = _root,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        foreach (var argument in arguments)
+            startInfo.ArgumentList.Add(argument);
+
+        using var process = Process.Start(startInfo)!;
+        var stderr = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        if (process.ExitCode != 0)
+            throw new InvalidOperationException(
+                $"git {string.Join(' ', arguments)} a échoué ({process.ExitCode}) : {stderr}");
+    }
 
     private static void Deposit(Project project, string id) =>
         File.WriteAllText(Path.Combine(project.WorkflowsDirectory, $"{id}.json"), AnyDocument);
