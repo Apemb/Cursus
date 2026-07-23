@@ -38,8 +38,8 @@
 | Moitié | Emplacement | État |
 |---|---|---|
 | Noyau déterministe | `src/Cursus.Core/Workflows/` (38 fichiers, rangés en vocabulaire racine + 6 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel, contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal, puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b). **100 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
-| Projet & catalogue | `src/Cursus.Core/Projects/` (6 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees. **23 tests.** Voir §4.11. |
-| Persistance | `src/Cursus.Persistence/` (3 fichiers) | Journal SQLite (écriture sérialisée) et magasin d'artefacts sur disque. **17 tests.** Un run survit au process. |
+| Projet & catalogue | `src/Cursus.Core/Projects/` (9 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert (6c·3a, §4.16). **37 tests.** Voir §4.11, §4.14, §4.16. |
+| Persistance | `src/Cursus.Persistence/` (4 fichiers) | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque, et le préréglage SQLite de `ProjectHost` (6c·3a). **22 tests.** Un run survit au process. |
 | Sessions / PTY | `src/Cursus.Core/Sessions/` (5 fichiers) + `src/Cursus.App/` | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal ; logique de sessions testée (**13 tests**). Antérieure au pivot. |
 
 Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2). Depuis 6c·3a, **`Cursus.App` référence `Cursus.Persistence`** : l'app lit le journal d'un projet pour afficher le dernier passage de ses workflows (§4.16) — en lecture seule, aucun lancement encore.
@@ -58,9 +58,9 @@ graph TD
         Projects["Projects/<br/>Project, ProjectStore,<br/>WorkflowCatalog, WorkflowEntry"]
     end
     Projects --> Workflows
-    Persistence["Cursus.Persistence<br/>SqliteRunJournal, RunEventCodec,<br/>RunArtifactStore<br/><i>(Microsoft.Data.Sqlite)</i>"] --> CoreLib
+    Persistence["Cursus.Persistence<br/>SqliteRunJournal, RunEventCodec,<br/>RunArtifactStore, SqliteProjectHost<br/><i>(Microsoft.Data.Sqlite)</i>"] --> CoreLib
     App["Cursus.App<br/>(Avalonia, RoyalTerminal)"] --> CoreLib
-    App -. "PAS encore<br/>de référence" .- Persistence
+    App -- "lecture du journal (6c·3a)" --> Persistence
     Sessions -. "aucune référence,<br/>dans aucun sens" .- Workflows
 
     style Workflows fill:#1f6f4a,color:#fff
@@ -80,7 +80,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 164 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 174 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -401,8 +401,9 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 | `Workflows/WorkflowValidatorTests.cs` (11) | La motivation de chaque règle et l'**ordre exact** d'un rapport multi-issues. |
 | `SessionWorkspaceTests` · `ShellResolverTests` · `TerminalSessionTests` (13) | La politique de sélection après fermeture (`min(index, count-1)`, sinon `null`), la numérotation « Session N », la cascade `$SHELL` → `/bin/zsh` → `/bin/bash` avec prédicat d'existence injecté. |
 | `Workflows/WorkflowJournalTests.cs` (16) · `Workflows/InMemoryRunJournalTests.cs` (7) | Ce que le moteur émet et dans quel ordre (dont le `runId` fourni par l'appelant) · l'enveloppe posée par le journal (dont sa sûreté sous `Append` concurrent). |
-| `Cursus.Persistence.Tests/` (17) | Le magasin d'artefacts, le journal SQLite (dont sa sûreté sous contention), et l'assemblage — les tests de durabilité **referment puis rouvrent** le journal avant de relire. `ProjectRunTests` est le seul où **aucun emplacement n'est composé par le test** : ils viennent tous du `Project` — et c'est la **preuve d'assemblage concurrent** du jalon 6b (deux runs de front, chacun dans son worktree). |
-| `Projects/ProjectStoreTests.cs` (13) · `Projects/WorkflowCatalogTests.cs` (8) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, et qu'un document cassé ne cache pas les autres. |
+| `Cursus.Persistence.Tests/` (22) | Le magasin d'artefacts, le journal SQLite (dont sa sûreté sous contention et l'aller-retour du `workflow_id`/`ended_at`), et deux assemblages — les tests de durabilité **referment puis rouvrent** le journal avant de relire. `ProjectRunTests` est le seul où **aucun emplacement n'est composé par le test** : ils viennent tous du `Project` — **preuve d'assemblage concurrent** du 6b (deux runs de front, chacun dans son worktree). `ProjectHostEndToEndTests` est le **second test exécutable du §7.12** (6c·3a) : ouvrir un `ProjectHost` sur une vraie base et lire le dernier passage, **sans Avalonia**. |
+| `Projects/ProjectStoreTests.cs` (13) · `Projects/WorkflowCatalogTests.cs` (8) · `Projects/ProjectRegistryTests.cs` (10) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, et qu'un document cassé ne cache pas les autres · le registre machine (charge/persiste/ajoute/retire, une lecture ne mute jamais, convention XDG). |
+| `Projects/ProjectHostTests.cs` (4) | La jointure workflows × runs du host sur `InMemoryRunJournal` seedé : « jamais lancé » quand rien n'a tourné, le plus récent gagne, chaque run rattaché à son `WorkflowId`, et disposer le host ferme le journal (une connexion, un host). |
 | `Projects/CursusProjectTests.cs` (2) | Que **ce dépôt** s'ouvre comme projet Cursus et que ses workflows commités valident. Le seul test qui lise le dépôt lui-même — garde-fou contre des exemples qui pourrissent. |
 | `Projects/ProjectRegistryTests.cs` (10) | Le registre machine (6c·1) : inscrire un projet valide, refuser un dossier sans `.cursus/`, dédoublonner par racine normalisée, retirer sans toucher au dépôt · persister et **recharger** entre deux instances · démarrage à froid sans fichier · un chemin qui ne résout plus est **ignoré de la liste mais conservé dans le fichier** (une lecture ne mute rien) · et la résolution du dossier machine (`$XDG_CONFIG_HOME` sinon `~/.config`, vide = absent), **jamais** `~/Library/Application Support`. |
 | `ArchitectureTests.cs` (1) | Le garde-fou de la couche de présentation (§7.12, 6c·1) : `Cursus.Core` ne référence **aucun** assembly `Avalonia.*`. Non-vacuité vérifiée en le retournant un instant sur un assembly réellement présent. |
@@ -694,7 +695,7 @@ RoyalTerminal étant livré **sans aucune documentation**, cette connaissance a 
 
 `build/package-macos.sh` produit `Cursus.app` (~123 Mo) : publication `osx-arm64` self-contained dans `Contents/MacOS`, `build/Info.plist` recopié, signature **ad-hoc**. `--install` copie en plus dans `/Applications`.
 
-Trois choix à connaître : **pas de trimming** (il casse régulièrement Avalonia, qui résout contrôles et convertisseurs par réflexion) ; **signature ad-hoc et non notarisée**, suffisante sur la machine qui construit, refusée par Gatekeeper ailleurs — la distribution exigerait un compte développeur Apple ; et un **garde-fou qui échoue le build** si `libghostty-vt.dylib`, `libAvaloniaNative.dylib` ou `libSkiaSharp.dylib` manquent du bundle. Ce dernier existe parce que l'absence de la native VT est **silencieuse** : l'app se lance parfaitement et retombe sur le moteur managé, avec le bug DECCKM des flèches (§6.3).
+Trois choix à connaître : **pas de trimming** (il casse régulièrement Avalonia, qui résout contrôles et convertisseurs par réflexion) ; **signature ad-hoc et non notarisée**, suffisante sur la machine qui construit, refusée par Gatekeeper ailleurs — la distribution exigerait un compte développeur Apple ; et un **garde-fou qui échoue le build** si `libghostty-vt.dylib`, `libAvaloniaNative.dylib` ou `libSkiaSharp.dylib` manquent du bundle. Ce dernier existe parce que l'absence de la native VT est **silencieuse** : l'app se lance parfaitement et retombe sur le moteur managé, avec le bug DECCKM des flèches (§6.3). Depuis 6c·3a, la liste contrôle une **quatrième** dylib, `libe_sqlite3.dylib` (la native SQLite), pour la même raison : l'app se lance mais lève dès qu'on ouvre le journal d'un projet si elle manque (§7.11, §9.2-19).
 
 **Ce que le jalon 0 a mesuré.** Il existait pour observer quatre risques d'environnement anticipés dans ce document sans preuve. Résultats sur Darwin 25.5.0 / Apple Silicon :
 
@@ -1099,7 +1100,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **164 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **174 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 
