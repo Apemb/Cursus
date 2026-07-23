@@ -541,3 +541,48 @@ testabilité : c'est de la **recomposabilité d'agencement**, orthogonale à ell
 
 **Renvoi** : `architecture.md` §7.12 (directive de découpage, côté présentation), §4.18 ;
 `parcours.md` §1.4, §4 ; `D-013` (la projection source-agnostique, la brique type).
+
+---
+
+## D-017 — Le calcul de disposition du graphe vit en Core, testé ; le pixel reste en App, non testé
+
+**Contexte.** La vue graphe existe mais **rend brut** (§4.18, §9.4) : les nœuds empilés en flux
+vertical, ordre de définition, arêtes en texte. Le premier chantier de la passe visuelle est un
+**layout véritable** — placer les étapes en 2D, dessiner des connecteurs, montrer les boucles. Se
+posait la question : *ce placement est-il de la vue (non testée, §7.12) ou du calcul (testé) ?* Et
+s'il est du calcul, **où** vit-il, alors qu'il n'existe pas de projet `Cursus.App.Tests` ?
+
+**Décision.** On **coupe le layout en deux** à la frontière testé/non-testé :
+
+- **La grille abstraite** — `(colonne, ligne)` par nœud, arêtes classées avant/retour — est un
+  **calcul pur de la structure**, à propriétés de correction (la profondeur respecte les arêtes ; un
+  cycle ne fait pas diverger ; un îlot reçoit une place). Elle vit en **Core**, dans
+  `Workflows.Projection` (`GraphLayout`), **testée** (`GraphLayoutTests`), sans une ligne d'Avalonia,
+  **sans pixel**.
+- **Le pixel** — largeur de colonne, hauteur de ligne, taille de nœud, tracé des connecteurs — est du
+  **réglage à l'œil**. Il vit en **App** (`RunGraphViewModel` multiplie la grille par ses constantes,
+  `RunView.axaml` trace sur un `Canvas`), **non testé** (§7.12).
+
+**Pourquoi.** La frontière testé/non-testé (§7.12) ne suit pas la frontière Core/App par hasard : elle
+suit *ce qui a une bonne réponse vérifiable*. La colonne d'un nœud dans un DAG **est un fait** (le
+plus-long-chemin) ; la largeur d'une colonne en pixels **est un goût**. Mettre le calcul en Core lui
+donne sa couverture là où elle vaut ; laisser le pixel en App évite de tester un réglage. `GraphLayout`
+est **statique** (fonction de la structure) là où `GraphProjection` est **dynamique** (plie le flux) :
+deux responsabilités, deux types — pas une extension.
+
+**Alternatives écartées.**
+- *Layout côté vue (converter / code-behind)* — non testable, alors que c'est l'algorithme qui **mérite**
+  la couverture (cycles, convergences, îlots). On perd le test sur exactement la partie fragile.
+- *Créer `Cursus.App.Tests` pour y tester le layout* — un projet entier pour une pièce de structure pure
+  sans Avalonia ; sa place est en Core, là où le support d'affichage testé (`GraphProjection`) vit déjà.
+- *Étendre `GraphProjection` avec la disposition* — mêle géométrie statique et statut dynamique,
+  recalcule à chaque événement une disposition inchangée. Type séparé.
+- *Layout Sugiyama complet (minimisation des croisements)* — au-delà du besoin d'un premier layout
+  véritable ; l'ordre de définition dans la colonne suffit et laisse la place à un raffinement ultérieur.
+
+**Conséquences.** `GraphLayout` rend `Placements` (`NodePlacement`), `Edges` (`LaidOutEdge` avec
+`IsBackEdge`), `ColumnCount`, `RowCount`. `GraphEdgeRow` (l'arête-texte par nœud) disparaît au profit
+de connecteurs tracés au niveau graphe. Applique la frontière §7.12 à un cas neuf ; ne renverse rien.
+
+**Renvoi** : `architecture.md` §4.18 (`GraphLayout`, la sœur statique), §7.12 (frontière testé/non-testé) ;
+`D-016` (module + projection dédiés, qu'on prolonge ici) ; `schemas.md` §5.2.

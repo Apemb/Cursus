@@ -297,7 +297,7 @@ flowchart TB
   root["<b>Cursus.Core.Workflows (racine)</b><br/><small>le vocabulaire que tout le monde importe — dont le modèle §3</small><br/>Graphe : WorkflowDefinition · StepDefinition · Edge · Guard<br/>Run : WorkflowRun · StepRun · RunSummary · RunTrigger · WorkflowEvent<br/>Script/sortie : ScriptSpec · ScriptResult · ScriptOutcome · StepOutput · OutputArtifact"]
 
   Exec["<b>…Execution</b><br/><small>lance et route un run</small><br/>WorkflowEngine · WorkflowLauncher · RunContext · IProcessRunner · ProcessRunner · PathStrategy · IClock"]
-  Proj["<b>…Projection</b><br/><small>deux projections sœurs, event-fed</small><br/>RunProjection · RunVisit · RunControl<br/>GraphProjection · GraphNode · GraphEdge"]
+  Proj["<b>…Projection</b><br/><small>deux projections sœurs (event-fed) + un calcul de disposition (statique)</small><br/>RunProjection · RunVisit · RunControl<br/>GraphProjection · GraphNode · GraphEdge<br/>GraphLayout · NodePlacement · LaidOutEdge"]
   Ser["<b>…Serialization</b><br/><small>JSON ⟷ modèle</small><br/>WorkflowSerializer · WorkflowDocument"]
   Val["<b>…Validation</b><br/><small>validité du graphe</small><br/>WorkflowValidator · ValidationReport"]
   Jou["<b>…Journaling</b><br/><small>écrire et relire un run</small><br/>IRunJournal · IRunJournalReader · InMemoryRunJournal · JournalEntry"]

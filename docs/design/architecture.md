@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `4de576a` (*la vue graphe brute — D-016*). Dernier jalon de code : *la vue graphe — 2e projection sœur `GraphProjection` (event-fed) + rendu brut du non-parcouru* (§4.18), par-dessus l'écran de run (6c·3c) et le correctif async (D-015, §7.8). Suite de tests : **219 verts** (191 Core + 28 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour du commit `4de576a` (*la vue graphe brute — D-016*). Dernier jalon de code : *le calcul de disposition du graphe — `GraphLayout`, sœur **statique** de `GraphProjection`, layering par couches + arêtes-retour, cœur testable du rendu à venir* (§4.18, `D-017`), par-dessus la vue graphe brute (§4.18) et l'écran de run (6c·3c). Suite de tests : **231 verts** (203 Core + 28 Persistence), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -40,7 +40,7 @@
 
 | Moitié | Emplacement | État |
 |---|---|---|
-| Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 7 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **deux projections sœurs** (`Projection/`, event-fed) : `RunProjection` plie le flux en trajectoire + statut + contrôle 3 positions (6c·3c), `GraphProjection` le plie en overlay de graphe qui montre le **non-parcouru** (vue graphe). **140 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
+| Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 7 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **deux projections sœurs** (`Projection/`, event-fed) : `RunProjection` plie le flux en trajectoire + statut + contrôle 3 positions (6c·3c), `GraphProjection` le plie en overlay de graphe qui montre le **non-parcouru** (vue graphe) ; à côté, `GraphLayout` en dispose la structure sur une grille par couches (calcul **pur**, statique, arêtes-retour comprises). **152 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
 | Projet & catalogue | `src/Cursus.Core/Projects/` (9 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert : lire le passé, **lancer** (6c·3b), **relire les événements** d'un run (`ReadEvents`, 6c·3c). **38 tests.** Voir §4.11, §4.14, §4.16, §4.17. |
 | Persistance | `src/Cursus.Persistence/` | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque avec **suiveur de tail** (6c·3c), et le préréglage SQLite de `ProjectHost`. **28 tests.** Un run survit au process ; le flux live d'un run et sa relecture donnent la **même** projection (preuve end-to-end, 6c·3c). |
 | Écran de run & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et l'**écran de run** (6c·3c) : cliquer un workflow le lance et déroule sa trajectoire, le log de la visite sélectionnée se suit en direct, un contrôle à trois positions l'arrête ; un run passé se rouvre en relecture. Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
@@ -83,7 +83,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 219 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 231 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -176,7 +176,7 @@ Namespace racine `Cursus.Core.Workflows` pour le **vocabulaire partagé**, plus 
 |---|---|
 | `Cursus.Core.Workflows` (racine) | Le vocabulaire : définition du graphe (`WorkflowDefinition`, `StepDefinition`, `Edge`, `Guard`, `UnknownStepException`), état d'un run (`WorkflowRun`, `StepRun`, `RunSummary`, `RunTrigger`, `WorkflowEvent`), contrat de script/sortie (`ScriptSpec`, `ScriptResult`, `ScriptOutcome`, `StepOutput`, `OutputArtifact`) |
 | `…Execution` | `WorkflowEngine`, `WorkflowLauncher`, `RunContext`, `IClock`, `IProcessRunner`, `ProcessRunner`, `PathStrategy`, `PathEscapesWorkspaceException` |
-| `…Projection` | `RunProjection` (plie le flux en trajectoire + statut + sélection + contrôle), `RunVisit`, `RunControl` (enum 3 positions) ; **`GraphProjection`** (plie le même flux en overlay de graphe : structure + statut par nœud + arêtes traversées), `GraphNode`, `GraphEdge`, `GraphNodeStatus`. Deux projections sœurs, cœur testable de l'écran de run (§4.18) |
+| `…Projection` | `RunProjection` (plie le flux en trajectoire + statut + sélection + contrôle), `RunVisit`, `RunControl` (enum 3 positions) ; **`GraphProjection`** (plie le même flux en overlay de graphe : structure + statut par nœud + arêtes traversées), `GraphNode`, `GraphEdge`, `GraphNodeStatus` ; **`GraphLayout`** (dispose la structure sur une grille par couches — calcul **pur/statique**), `NodePlacement`, `LaidOutEdge`. Deux projections sœurs + un calcul de disposition, cœur testable de l'écran de run (§4.18) |
 | `…Serialization` | `WorkflowSerializer`, `WorkflowDocument`, `UnknownGuardException` |
 | `…Validation` | `WorkflowValidator`, `ValidationReport` (+ `ValidationIssueKind`, `ValidationIssue`) |
 | `…Journaling` | `IRunJournal`, `IRunJournalReader`, `InMemoryRunJournal`, `JournalEntry` |
@@ -204,6 +204,7 @@ Namespace racine `Cursus.Core.Workflows` pour le **vocabulaire partagé**, plus 
 | `WorkflowLauncher.cs` | Le montage d'un vrai run : forge le runId, provisionne un worktree, assemble le moteur, estampille la provenance. Voir §4.17 |
 | `Projection/RunProjection.cs` · `RunVisit.cs` · `RunControl.cs` | Plie une séquence de `WorkflowEvent` en trajectoire + statut + contrôle 3 positions, source-agnostique (flux live ou relecture). Voir §4.18, `D-013` |
 | `Projection/GraphProjection.cs` · `GraphNode.cs` | Plie le **même** flux en overlay de graphe : structure apprise du `RunStarted`, statut par nœud (dernière issue + `VisitCount`), arêtes traversées (`EdgeChosen`). Vue sœur qui montre le **non-parcouru**. Voir §4.18, `D-016` |
+| `Projection/GraphLayout.cs` | Dispose un `WorkflowDefinition` sur une grille par couches : profondeur en plus-long-chemin, ordre dans la couche, arêtes classées **avant/retour** (les boucles retirées pour ne pas diverger). Calcul **pur/statique**, sans pixel. Voir §4.18, `D-017` |
 | `WorkflowRun.cs` · `StepRun.cs` | `RunState`, `AbortReason`, historique · une visite (`Result` + `Output`) |
 | `WorkflowValidator.cs` · `ValidationReport.cs` | Validité du graphe · `ValidationIssueKind` (9 valeurs), `ValidationIssue`, `ValidationReport` |
 | `WorkflowSerializer.cs` · `WorkflowDocument.cs` | JSON ⟷ modèle, `LoadResult` · les DTO `internal` |
@@ -412,6 +413,7 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 | `Workflows/WorkflowProgressTests.cs` (4) · `Workflows/WorkflowLauncherTests.cs` (5) | Le flux d'événements poussé à l'observateur (dont `RunStarted` portant le `runId` du run rendu, 6c·3c) · le montage du lanceur : provenance estampillée, worktree démonté quoi qu'il advienne. |
 | `Workflows/RunProjectionTests.cs` (13) · `Workflows/PathStrategyTests.cs` (5) | Le fold en trajectoire + statut + sélection + contrôle 3 positions, et le `runId` exposé (6c·3c) · l'enrichissement sans doublon et la **résolution en absolu** d'un binaire hors `PATH` minimal, adossée à un vrai binaire POSIX. |
 | `Workflows/GraphProjectionTests.cs` (9) | Le fold sœur en overlay de graphe : structure apprise du `RunStarted` (un nœud par étape, arêtes reflétées), statut par nœud (en cours → issue, non visité, dernière issue + `VisitCount` d'une boucle), et arête marquée traversée par `EdgeChosen`. |
+| `Workflows/GraphLayoutTests.cs` (12) | Le calcul de disposition : profondeur en plus-long-chemin (chaîne, diamant, chemin long qui gagne), ordre en colonne par définition, **arêtes-retour** repérées sur les boucles (le calcul termine), îlots placés quand même, dimensions de la grille. |
 | `Cursus.Persistence.Tests/` (28) | Le magasin d'artefacts (dont le **tail** d'un artefact qui grossit, 6c·3c), le journal SQLite (dont sa sûreté sous contention, l'aller-retour du `workflow_id`/`ended_at`, et la restitution du `runId` sur `RunStarted`), et des assemblages — les tests de durabilité **referment puis rouvrent** le journal avant de relire. `ProjectRunTests` est le seul où **aucun emplacement n'est composé par le test** : ils viennent tous du `Project` — **preuve d'assemblage concurrent** du 6b. `ProjectHostEndToEndTests` porte les **tests exécutables du §7.12** : ouvrir un `ProjectHost` sur une vraie base, lire (6c·3a), lancer puis lire (6c·3b), et **plier le flux live == plier la relecture** (6c·3c) — le tout **sans Avalonia**. |
 | `Projects/ProjectStoreTests.cs` (13) · `Projects/WorkflowCatalogTests.cs` (8) · `Projects/ProjectRegistryTests.cs` (10) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, et qu'un document cassé ne cache pas les autres · le registre machine (charge/persiste/ajoute/retire, une lecture ne mute jamais, convention XDG). |
 | `Projects/ProjectHostTests.cs` (5) | La jointure workflows × runs du host sur `InMemoryRunJournal` seedé : « jamais lancé » quand rien n'a tourné, le plus récent gagne, chaque run rattaché à son `WorkflowId`, `ReadEvents` rend les événements d'un run (6c·3c), et disposer le host ferme le journal (une connexion, un host). |
@@ -691,6 +693,20 @@ présentation.** Sous l'écran vit un vrai cœur testable — une **projection**
   concret de `D-016` (un module par capacité, chacun adossé à sa projection). Même symétrie live/relecture,
   puisque tout — définition comprise — passe déjà dans le flux. La coquille visuelle (rendu des nœuds et
   connecteurs) reste hors test (§7.12) ; §9.4.
+
+- **`GraphLayout` (`Workflows/Projection/`, Core testable) — la sœur *statique* de la projection.** Là où
+  `GraphProjection` plie le flux (dynamique, statut par événement), `GraphLayout` dispose la **structure** sur
+  une grille par couches — **fonction pure** de la définition, calculée une fois (au `RunStarted`, où la
+  structure est connue). Elle rend une grille **abstraite** `(colonne, ligne)` : profondeur en **plus-long-chemin**
+  (une convergence se pose après ses deux prédécesseurs, pas sous une arête qui l'enjambe), ordre dans la
+  colonne par ordre de définition, et **classement des arêtes** avant/retour. Les boucles sont traitées de
+  front : un parcours en profondeur repère les **arêtes-retour** (celles vers un nœud encore sur la pile), on
+  les retire pour disposer sur un DAG — sinon le layering diverge sur `Tester⇄Corriger` — et `IsBackEdge` reste
+  **dans le résultat** pour que l'App les dessine à part. Un îlot non atteint reçoit une place comme les autres
+  (c'est justement ce que la vue graphe existe pour montrer). La **frontière testé/non-testé** passe là :
+  Core rend la grille abstraite (fait vérifiable), l'App multiplie par ses constantes de pixels et trace
+  (réglage à l'œil, §7.12) — c'est la décision `D-017`. Séparée de `GraphProjection`, non une extension :
+  géométrie statique et statut dynamique sont deux responsabilités.
 
 - **Les deux alimentations partagent le même fold, et coïncident.** Le flux live est l'`IProgress<WorkflowEvent>`
   que le lanceur pousse déjà (3b, `D-011`) ; la relecture est `ProjectHost.ReadEvents(runId)`. L'écran d'un run
@@ -1233,7 +1249,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **219 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **231 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 
