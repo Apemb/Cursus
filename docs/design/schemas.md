@@ -230,7 +230,7 @@ flowchart LR
   subgraph def["DÉFINITION — déclarée · statique · portable"]
     direction TB
     WDef["<b>WorkflowDefinition</b><br/><small>le graphe : point d'entrée + étapes</small>"]
-    SDef["<b>StepDefinition</b><br/><small>un nœud : script, MaxVisits, arêtes sortantes</small>"]
+    SDef["<b>StepDefinition</b><br/><small>un nœud : titre court, description?, script, MaxVisits, arêtes sortantes</small>"]
     Edge["<b>Edge + Guard</b><br/><small>arête gardée : telle issue → telle cible</small>"]
     Spec["<b>ScriptSpec</b><br/><small>ce qu'on lance : fichier, args, env, timeout</small>"]
     WDef -->|"1..* Steps"| SDef

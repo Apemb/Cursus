@@ -72,7 +72,8 @@ public static class WorkflowSerializer
                     : null),
             step.MaxVisits,
             (step.Edges ?? []).Select(ToEdge).ToList(),
-            step.WorkingSubdirectory);
+            step.WorkingSubdirectory,
+            step.Description);
 
     private static Edge ToEdge(EdgeDocument edge) =>
         new(ToGuard(edge.Guard), edge.Target ?? "");
@@ -108,6 +109,7 @@ public static class WorkflowSerializer
         new(
             step.Id,
             step.Name,
+            step.Description,
             step.MaxVisits,
             new ScriptDocument(
                 step.Script.FileName,

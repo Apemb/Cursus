@@ -11,6 +11,7 @@ internal sealed record WorkflowDocument(string? EntryStep, IReadOnlyList<StepDoc
 internal sealed record StepDocument(
     string? Id,
     string? Name,
+    string? Description,
     int MaxVisits,
     ScriptDocument? Script,
     IReadOnlyList<EdgeDocument>? Edges,

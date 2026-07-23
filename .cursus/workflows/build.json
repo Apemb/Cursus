@@ -3,7 +3,8 @@
   "steps": [
     {
       "id": "compiler",
-      "name": "Compiler sans le moindre avertissement",
+      "name": "Compiler",
+      "description": "Compiler sans le moindre avertissement",
       "maxVisits": 1,
       "script": {
         "fileName": "/bin/sh",

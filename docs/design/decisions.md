@@ -586,3 +586,45 @@ de connecteurs tracés au niveau graphe. Applique la frontière §7.12 à un cas
 
 **Renvoi** : `architecture.md` §4.18 (`GraphLayout`, la sœur statique), §7.12 (frontière testé/non-testé) ;
 `D-016` (module + projection dédiés, qu'on prolonge ici) ; `schemas.md` §5.2.
+
+## D-018 — Le `name` d'une étape est un titre court ; une `description` optionnelle porte la phrase longue
+
+**Contexte.** On ouvre l'arc **authoring** (créer/modifier projet · workflow · étape), et le premier
+jalon touche le record que l'éditeur éditera : `StepDefinition`. Or son champ `Name` servait, dans les
+faits, de **phrase descriptive** — les workflows commités portaient `"name": "Compiler sans le moindre
+avertissement"`. Deux symptômes : le graphe, qui affiche `Name` dans une boîte, **débordait** (contourné
+à la passe visuelle par une mesure du libellé + ellipse) ; et la trajectoire, qui affiche l'`id`,
+divergeait du graphe sur *ce qu'est* le libellé d'une étape. Construire des formulaires d'étape sur ce
+modèle, c'était les bâtir sur un champ qu'on savait mal taillé.
+
+**Décision.** On **sépare les deux registres** dans `StepDefinition` :
+- **`Name` redevient un titre court** (« Compiler », « Tester ») — ce que le graphe met dans une boîte ;
+- une **`Description?` optionnelle** porte le texte long, ce que `Name` charriait avant.
+
+Le champ est ajouté **en fin** du record (`… WorkingSubdirectory = null, Description = null`) : optionnel
+donc compatible avec toutes les constructions positionnelles existantes. Le format de fichier gagne une
+clé `description`, placée **après `name`** dans le DTO (ordre JSON naturel), écrite **explicitement même
+nulle** (convention du format, cf. `environment`/`timeoutSeconds`/`workingSubdirectory`).
+
+**Pourquoi.** Deux besoins distincts — un libellé qui tient dans un nœud, une explication qui peut être
+longue — méritent deux champs, pas un seul surchargé. Trancher **maintenant**, avant l'éditeur, évite de
+dessiner des formulaires sur un modèle à migrer ensuite (double coût). Et le débordement du graphe se
+règle **à la source, par la donnée** : un `Name` court rend une boîte courte, sans toucher une ligne de
+vue (la mesure + ellipse restent en filet).
+
+**Alternatives écartées.**
+- *Garder `name` = phrase et régler l'affichage côté vue* (troncature, retour ligne) — soigne le symptôme,
+  laisse le modèle faux, et n'offre nulle part où écrire une vraie description.
+- *Insérer `Description` juste après `Name` dans le record* (plus naturel sémantiquement) — churnerait
+  chaque construction positionnelle de la suite pour un gain esthétique ; l'ajout en fin ne casse rien.
+- *Faire descendre `Description` dans les projections* (`GraphNode`, `RunVisit`) pour l'afficher tout de
+  suite — YAGNI : rien ne la consomme encore, l'éditeur la lira depuis la définition. Reporté, non écarté.
+
+**Conséquences.** `StepDefinition` gagne `Description?` ; `WorkflowSerializer` la lit et l'écrit ;
+`StepDocument` gagne le champ. Les 2 workflows commités sont **migrés** (`name` court + `description`).
+`WorkflowValidator` **inchangé** (la description ne porte aucun invariant). La trajectoire affiche encore
+l'`id` : l'**unifier sur `Name`** (faire descendre `Name` dans `RunProjection`) est la polish « cohérence
+graphe↔liste », **différée** hors de ce jalon.
+
+**Renvoi** : `architecture.md` §4.1 (le record), §4.2 (format + convention des nuls) ; `schemas.md` §5.2 ;
+prochaine pierre de l'arc — `D-01x` à venir : persistance de catalogue + modèle d'édition (brouillons permis).

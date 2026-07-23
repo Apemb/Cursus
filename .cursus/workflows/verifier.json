@@ -3,7 +3,8 @@
   "steps": [
     {
       "id": "compiler",
-      "name": "Compiler sans le moindre avertissement",
+      "name": "Compiler",
+      "description": "Compiler sans le moindre avertissement",
       "maxVisits": 1,
       "script": {
         "fileName": "/bin/sh",
@@ -16,7 +17,8 @@
     },
     {
       "id": "tester",
-      "name": "Passer toute la suite au vert",
+      "name": "Tester",
+      "description": "Passer toute la suite au vert",
       "maxVisits": 1,
       "script": {
         "fileName": "/bin/sh",

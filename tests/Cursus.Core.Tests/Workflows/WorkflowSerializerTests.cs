@@ -165,8 +165,8 @@ public class WorkflowSerializerTests
         Assert.Equal(TimeSpan.FromMinutes(5), step.Script.Timeout);
     }
 
-    [Fact(DisplayName = "étant donné un script sans délai ni sous-chemin, quand on lit le document, alors l'étape n'en déclare aucun")]
-    public void An_omitted_timeout_or_subdirectory_stays_absent()
+    [Fact(DisplayName = "étant donné un script sans délai, sous-chemin ni description, quand on lit le document, alors l'étape n'en déclare aucun")]
+    public void An_omitted_timeout_subdirectory_or_description_stays_absent()
     {
         // arrange
         const string document = """
@@ -179,9 +179,33 @@ public class WorkflowSerializerTests
         // act
         var step = WorkflowSerializer.Read(document).Definition!.GetStep("A");
 
-        // assert — l'absence de délai signifie « aucune limite », pas « zéro ».
+        // assert — l'absence de délai signifie « aucune limite », pas « zéro » ;
+        // une description omise est simplement absente.
         Assert.Null(step.Script.Timeout);
         Assert.Null(step.WorkingSubdirectory);
+        Assert.Null(step.Description);
+    }
+
+    [Fact(DisplayName = "étant donné un document dont une étape porte une description, quand on le lit, alors l'étape porte cette description")]
+    public void A_step_description_is_carried_over()
+    {
+        // arrange — « name » est le titre court, « description » la phrase longue.
+        const string document = """
+            {
+              "entryStep": "A",
+              "steps": [
+                { "id": "A", "name": "Compiler", "description": "Compiler sans le moindre avertissement",
+                  "maxVisits": 1, "script": { "fileName": "/usr/bin/true" } }
+              ]
+            }
+            """;
+
+        // act
+        var step = WorkflowSerializer.Read(document).Definition!.GetStep("A");
+
+        // assert
+        Assert.Equal("Compiler", step.Name);
+        Assert.Equal("Compiler sans le moindre avertissement", step.Description);
     }
 
     [Fact(DisplayName = "étant donné un document au repos, quand on le lit puis qu'on le réécrit, alors on retrouve le même document")]
@@ -198,6 +222,7 @@ public class WorkflowSerializerTests
                 {
                   "id": "preparer",
                   "name": "Préparer",
+                  "description": null,
                   "maxVisits": 1,
                   "script": {
                     "fileName": "/bin/sh",
@@ -225,6 +250,7 @@ public class WorkflowSerializerTests
                 {
                   "id": "tester",
                   "name": "Tester",
+                  "description": null,
                   "maxVisits": 3,
                   "script": {
                     "fileName": "/usr/bin/make",
@@ -265,7 +291,8 @@ public class WorkflowSerializerTests
                 new ScriptSpec("/bin/sh", ["-c", "make lint"], Timeout: TimeSpan.FromSeconds(30)),
                 MaxVisits: 2,
                 [new Edge(Guard.OnExitCode(7), "B"), new Edge(Guard.Default, "A")],
-                WorkingSubdirectory: "src"),
+                WorkingSubdirectory: "src",
+                Description: "Analyser le code sous toutes ses coutures"),
             new StepDefinition("B", "Broyer", new ScriptSpec("/usr/bin/true", []), MaxVisits: 1, []),
         });
 

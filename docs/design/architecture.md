@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `067d07a` (*le layout véritable du graphe — D-017*). Dernier jalon de code : *le layout véritable du graphe — `GraphLayout` (layering par couches + arêtes-retour, **testé** en Core, sœur **statique** de `GraphProjection`) rendu en 2D sur un `Canvas`* (§4.18, `D-017`), par-dessus la vue graphe brute et l'écran de run (6c·3c). Suite de tests : **231 verts** (203 Core + 28 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour du commit `55e1712` (*le modèle « titre court » des étapes — D-018*). Dernier jalon de code : *jalon éditeur ·1 — `StepDefinition.Name` redevient un **titre court**, une `Description?` optionnelle porte la phrase longue ; sérialiseur bidirectionnel et 2 workflows commités migrés* (§4.2, `D-018`) — première pierre de l'arc **authoring** (créer/modifier projet · workflow · étape), par-dessus le layout véritable du graphe (§4.18, `D-017`). Suite de tests : **232 verts** (204 Core + 28 Persistence), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -40,7 +40,7 @@
 
 | Moitié | Emplacement | État |
 |---|---|---|
-| Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 7 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **deux projections sœurs** (`Projection/`, event-fed) : `RunProjection` plie le flux en trajectoire + statut + contrôle 3 positions (6c·3c), `GraphProjection` le plie en overlay de graphe qui montre le **non-parcouru** (vue graphe) ; à côté, `GraphLayout` en dispose la structure sur une grille par couches (calcul **pur**, statique, arêtes-retour comprises). **152 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
+| Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 7 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **deux projections sœurs** (`Projection/`, event-fed) : `RunProjection` plie le flux en trajectoire + statut + contrôle 3 positions (6c·3c), `GraphProjection` le plie en overlay de graphe qui montre le **non-parcouru** (vue graphe) ; à côté, `GraphLayout` en dispose la structure sur une grille par couches (calcul **pur**, statique, arêtes-retour comprises). **153 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
 | Projet & catalogue | `src/Cursus.Core/Projects/` (9 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert : lire le passé, **lancer** (6c·3b), **relire les événements** d'un run (`ReadEvents`, 6c·3c). **38 tests.** Voir §4.11, §4.14, §4.16, §4.17. |
 | Persistance | `src/Cursus.Persistence/` | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque avec **suiveur de tail** (6c·3c), et le préréglage SQLite de `ProjectHost`. **28 tests.** Un run survit au process ; le flux live d'un run et sa relecture donnent la **même** projection (preuve end-to-end, 6c·3c). |
 | Écran de run & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et l'**écran de run** (6c·3c) : cliquer un workflow le lance et déroule sa trajectoire, le log de la visite sélectionnée se suit en direct, un contrôle à trois positions l'arrête ; un run passé se rouvre en relecture. Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
@@ -83,7 +83,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 231 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 232 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -190,7 +190,7 @@ Namespace racine `Cursus.Core.Workflows` pour le **vocabulaire partagé**, plus 
 | Fichier | Rôle |
 |---|---|
 | `WorkflowDefinition.cs` | Le graphe : `EntryStep`, `Steps`, `GetStep(id)` |
-| `StepDefinition.cs` | Un nœud : `Id`, `Name`, `Script`, `MaxVisits`, `OutEdges`, `WorkingSubdirectory?` (relatif) |
+| `StepDefinition.cs` | Un nœud : `Id`, `Name` (**titre court**), `Script`, `MaxVisits`, `OutEdges`, `WorkingSubdirectory?` (relatif), `Description?` (phrase longue optionnelle) |
 | `Edge.cs` · `Guard.cs` | `record Edge(Guard, string Target)` · garde abstraite `Matches(ScriptResult)` |
 | `ScriptSpec.cs` | Ce qu'on lance : `FileName`, `Arguments`, `WorkingDirectory?`, `Environment?`, `Timeout?` |
 | `ScriptOutcome.cs` · `ScriptResult.cs` | `Completed`/`TimedOut`/`LaunchFailed` · ce que le process a fait (`ExitCode`, `Outcome`, `Duration`) + `IsSuccess` |
@@ -229,6 +229,7 @@ C'est aujourd'hui l'interface utilisateur du noyau. Deux exemples réels sont co
     {
       "id": "preparer",
       "name": "Préparer",
+      "description": "Installer les dépendances avant toute chose",
       "maxVisits": 1,
       "script": { "fileName": "/bin/sh", "arguments": ["-c", "make deps"] },
       "edges": [
@@ -277,7 +278,8 @@ Règles du format, non devinables :
 
 - Les gardes sont des **chaînes préfixées** : `"success"`, `"failure"`, `"default"`, `"exit:<n>"`. Le préfixe laisse la place à d'autres familles (`"stdout:…"`) sans changer la forme du document.
 - Le document est délibérément distinct du modèle. Écarts : `edges` ⟷ `OutEdges` (**écart non justifié dans le dépôt** — ni commentaire, ni message de commit ; probablement stylistique) ; `timeoutSeconds` (double) ⟷ `Timeout` (TimeSpan), unité explicite dans le fichier ; **pas de `workingDirectory`** dans le document, le sous-chemin étant au niveau *step* et non *script* (§7.3).
-- Retombées du mapping : `Name ?? Id ?? ""`, `EntryStep ?? ""`, `Steps ?? []`, `Arguments ?? []`.
+- Retombées du mapping : `Name ?? Id ?? ""`, `EntryStep ?? ""`, `Steps ?? []`, `Arguments ?? []`. `Description` n'a **pas** de retombée : optionnelle, elle reste `null` quand absente (`D-018` — `name` est un titre court, `description` la phrase longue).
+- **Les nuls s'écrivent explicitement** : `Write` émet `"environment": null`, `"timeoutSeconds": null`, `"workingSubdirectory": null`, `"description": null` plutôt que d'omettre la clé. Convention assumée, verrouillée par l'aller-retour caractère pour caractère (`WorkflowSerializerTests`) : un champ ajouté au document suit la même règle.
 - Les DTO (`WorkflowDocument.cs`) sont `internal` et **tous nullables sauf `StepDocument.MaxVisits` (`int`)** : un `maxVisits` omis vaut donc **0**, que le validateur transforme en `NonPositiveMaxVisits`. C'est le seul champ sans retombée — à assumer ou à rouvrir.
 - Options JSON : camelCase, case-insensitive, `WriteIndented`, `Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)` pour que « Préparer » reste lisible dans le fichier.
 
@@ -405,7 +407,7 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 | `Workflows/InMemoryRunOutputStoreTests.cs` (2) | Le puits volatile : une sortie écrite se relit avec sa taille ; un flux muet a un `Path` absent. |
 | `Workflows/WorkflowEngineTests.cs` (18) | La traversée sur `StubProcessRunner` : le stub **enregistre les `ScriptSpec` reçues** (donc assert de la composition du `WorkingDirectory`), **répète le dernier résultat** une fois la liste épuisée (« le runner réussit toujours »), et `CancelAfterRun` simule une annulation **pendant** le run. Boucle convergente, boucle bornée à `[1,2,3]`, `TimedOut` routé par `OnFailure`, `LaunchFailed` terminal. |
 | `Workflows/WorkflowExecutionTests.cs` (2) | Assemblage **sans aucun double**, sur `/bin/sh` : un graphe déclaré en C#, puis la chaîne JSON → `Read` → `ExecuteAsync` **depuis un document en mémoire**, artefacts réellement écrits sur disque aux bons endroits. La variante partant d'un **fichier** est dans `ProjectRunTests`. |
-| `Workflows/WorkflowSerializerTests.cs` (14) | L'aller-retour caractère pour caractère (`Read`→`Write`) et l'idempotence (`Write`→`Read`→`Write`), le document servant de référentiel de comparaison ; les formes de malformation ; « absence de timeout ≠ zéro ». |
+| `Workflows/WorkflowSerializerTests.cs` (15) | L'aller-retour caractère pour caractère (`Read`→`Write`) et l'idempotence (`Write`→`Read`→`Write`), le document servant de référentiel de comparaison ; les formes de malformation ; « absence de timeout ≠ zéro » ; la **description** portée, absente, et survivant à l'aller-retour (`D-018`). |
 | `Workflows/RunContextTests.cs` (10) | Les **justifications absentes du code** du refus d'une racine relative ou inexistante. |
 | `Workflows/WorkflowValidatorTests.cs` (11) | La motivation de chaque règle et l'**ordre exact** d'un rapport multi-issues. |
 | `SessionWorkspaceTests` · `ShellResolverTests` · `TerminalSessionTests` (13) | La politique de sélection après fermeture (`min(index, count-1)`, sinon `null`), la numérotation « Session N », la cascade `$SHELL` → `/bin/zsh` → `/bin/bash` avec prédicat d'existence injecté. |
@@ -1252,7 +1254,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **231 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **232 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 
