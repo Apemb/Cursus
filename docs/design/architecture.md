@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `4de576a` (*la vue graphe brute — D-016*). Dernier jalon de code : *le calcul de disposition du graphe — `GraphLayout`, sœur **statique** de `GraphProjection`, layering par couches + arêtes-retour, cœur testable du rendu à venir* (§4.18, `D-017`), par-dessus la vue graphe brute (§4.18) et l'écran de run (6c·3c). Suite de tests : **231 verts** (203 Core + 28 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour du commit `067d07a` (*le layout véritable du graphe — D-017*). Dernier jalon de code : *le layout véritable du graphe — `GraphLayout` (layering par couches + arêtes-retour, **testé** en Core, sœur **statique** de `GraphProjection`) rendu en 2D sur un `Canvas`* (§4.18, `D-017`), par-dessus la vue graphe brute et l'écran de run (6c·3c). Suite de tests : **231 verts** (203 Core + 28 Persistence), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -735,10 +735,12 @@ présentation.** Sous l'écran vit un vrai cœur testable — une **projection**
 - **La présentation (App, non testée §7.12).** `RunViewModel` — adaptateur : **une** classe, deux alimentations
   (`StartLive` sur `LaunchAsync` + `Progress` marshalé au thread UI ; `Replay` sur `ReadEvents`). Il **fanne**
   chaque événement à deux modules sœurs : `RunVisitRow` — une visite bindable (glyphe + couleur sémantique) —, et
-  `RunGraphViewModel`/`GraphNodeRow` — le **module graphe**, brique adossée à sa propre `GraphProjection`
-  (`D-016`), qui reflète les nœuds (statut colorié, `×n` d'une boucle, arêtes estompées si non prises).
-  `RunView.axaml` — trajectoire déroulée, **graphe brut** (flux vertical, non stylé), log sur fond terminal
-  sombre en bas (§9.5). `OpenProjectViewModel` tient deux contenus d'une même surface **sans routeur**
+  `RunGraphViewModel`/`GraphNodeRow`/`GraphConnectorRow` — le **module graphe**, brique adossée à sa propre
+  `GraphProjection` (statut) **et** à `GraphLayout` (disposition, `D-017`). Il traduit la grille abstraite de Core
+  en **pixels** — c'est ici que vivent les constantes de pas et le tracé des connecteurs (`GraphLayout` n'en sait
+  rien) —, positionne chaque nœud (statut colorié, `×n` d'une boucle) et bâtit les connecteurs (vert si pris, gris
+  sinon, tiretés-arqués pour une boucle). `RunView.axaml` — trajectoire déroulée, **graphe disposé en 2D sur un
+  `Canvas`** (colonnes de profondeur, connecteurs tracés), log sur fond terminal sombre en bas (§9.5). `OpenProjectViewModel` tient deux contenus d'une même surface **sans routeur**
   (liste ⇄ run). `ProjectWorkspace` regroupe host + magasin d'artefacts, que la racine de composition (App) lie
   au préréglage — l'UI ne connaît ni SQLite ni le disque.
 
@@ -746,12 +748,13 @@ présentation.** Sous l'écran vit un vrai cœur testable — une **projection**
 cours) ; l'App le mappe en « Réussi »/« Échoué »/« Arrêté »/« Planté ». L'écran **arbitre** le résultat, il ne
 le recopie pas (parcours §4).
 
-**Différé, tracé** : le **rendu véritable** de la vue graphe (disposition, connecteurs courbes façon maquette
-`run-flux-6c3c.html`) et sa **sélection partagée** avec la liste — le graphe est aujourd'hui **construit mais
-brut** (projection testée + flux vertical non stylé, §9.4), le stylage relève de la passe visuelle ; le
-basculeur / la mise en sœurs côte à côte des deux vues ; l'entrelacement fin stdout/stderr du log (pas
-d'horodatage à l'octet) ; le tail en direct *intra-étape* d'un run rouvert (un passé est figé). **Non vérifié par `dotnet test`** (manuel) : le
-comportement interactif de l'écran, et la **preuve `PATH` sur bundle** (§9.2-15).
+**Différé, tracé** : la **sélection partagée** graphe ↔ liste (cliquer un nœud pilote le log) ; le raffinement
+du tracé du graphe — **minimisation des croisements** (barycentre, façon Sugiyama complet ; aujourd'hui l'ordre
+en colonne suit la définition) et connecteurs courbes façon maquette `run-flux-6c3c.html` (aujourd'hui segments
+droits + arcs de boucle) ; le basculeur / la mise en sœurs côte à côte des deux vues ; l'entrelacement fin
+stdout/stderr du log (pas d'horodatage à l'octet) ; le tail en direct *intra-étape* d'un run rouvert (un passé
+est figé). **Non vérifié par `dotnet test`** (manuel) : le comportement interactif de l'écran, le rendu 2D du
+graphe, et la **preuve `PATH` sur bundle** (§9.2-15).
 
 ---
 
@@ -1363,7 +1366,7 @@ coquille, et les trois écrans (ouverture, workflows d'un projet, run).
 - **la liste n'est pas un pis-aller à 80 % de la valeur.** Un workflow à six étapes avec une boucle produit **huit visites** : le graphe et la trajectoire cessent d'être le même objet, et `StepRun(StepId, **Iteration**, Result)` montre que le noyau modélise déjà la seconde. La liste **est** la bonne représentation de la trajectoire ; le graphe reste le seul à montrer ce qui n'a **pas** été parcouru. Ce sont deux vues sœurs, pas un original et sa dégradation (`presentation.md` §4.5) ;
 - **le coût était surestimé.** Ce qui est cher dans un éditeur, c'est l'*interaction* — déplacer un nœud, recalculer les arêtes. En lecture seule, le placement est un tri topologique par niveaux : de la logique pure, testable en `[Fact]`. Réserve réelle mais bornée : ce tri **suppose un graphe acyclique**, et une boucle n'en est pas un — il faut détecter l'arête de retour et l'exclure avant de répartir. De l'ordre de **150 lignes**, plus le rendu.
 
-Conséquence : 6c livre la liste **et le graphe brut** (projection `GraphProjection` testée + rendu en flux vertical, `D-016`, §4.18) ; seul le **layout véritable** — le tri topologique par niveaux ci-dessus, ~150 lignes — reste différé, greffable ensuite sans rien restructurer (la projection expose déjà nœuds, arêtes et statut ; le layout n'ajoute qu'un placement). Il devient le **premier candidat de la passe visuelle**, devant les paliers d'édition (`parcours.md` §7) — parce que **le placement écrit pour la lecture est réutilisé par le canevas du jalon 8**, et qu'il fait donc tomber le risque de cet algorithme bien avant qu'il soit sur le chemin critique.
+Conséquence : 6c a livré la liste **et le graphe brut** (projection `GraphProjection` testée + rendu en flux vertical, `D-016`, §4.18) ; le **layout véritable** — désormais **construit** en tant que `GraphLayout` (layering par couches testé en Core, `D-017`) rendu sur un `Canvas` — était le **premier candidat de la passe visuelle**, et il est **fait**. La grille abstraite qu'il expose (placement + arêtes classées) est celle que le canevas de l'écran de run consomme aujourd'hui, et que le jalon 8 réutilisera — le risque de cet algorithme est tombé avant d'être sur le chemin critique. Restent devant, dans la passe visuelle : la sélection partagée et la minimisation des croisements (§4.18, « Différé »).
 
 ⚠️ Le second coût caché autrefois listé ici — le runner qui ne sait pas streamer — n'en est plus un : il est devenu le jalon **6a**, et c'est là que se repose la couture PTY du §2.2.
 

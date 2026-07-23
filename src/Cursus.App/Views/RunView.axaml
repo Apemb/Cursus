@@ -66,48 +66,80 @@
             </ScrollViewer>
         </Border>
 
-        <!-- Vue graphe : la sœur de la trajectoire. Rendu brut et non stylé (§7.12) —
-             flux vertical des nœuds dans l'ordre de la définition, coloriés par statut,
-             leurs arêtes estompées tant que le routage ne les a pas prises. Elle montre
-             ce que la liste ne peut pas : les nœuds jamais atteints, les chemins morts. -->
+        <!-- Vue graphe : la sœur de la trajectoire, disposée en 2D (§7.12, D-017). Les
+             nœuds sont placés par colonnes (profondeur, gauche→droite) par le layout de
+             Core ; les connecteurs les relient — vert quand le routage les a pris, gris
+             sinon, tiretés-arqués pour une boucle. Elle montre ce que la liste ne peut
+             pas : les nœuds jamais atteints, les chemins morts, les cycles. Le canevas se
+             dimensionne sur le graphe ; il défile s'il déborde. -->
         <Border DockPanel.Dock="Top" Padding="14,10"
                 BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,0,0,1">
-            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{Binding Graph.Nodes}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:GraphNodeRow">
-                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
-                                <TextBlock Text="{Binding Glyph}"
-                                           Foreground="{Binding StatusBrush}"
-                                           FontWeight="Bold" Width="14"
-                                           VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding Label}"
-                                           Foreground="{DynamicResource TextPrimaryBrush}"
-                                           VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding VisitBadge}"
-                                           IsVisible="{Binding HasRevisits}"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           VerticalAlignment="Center" />
-                                <ItemsControl ItemsSource="{Binding OutEdges}" VerticalAlignment="Center">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" Spacing="8" />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:GraphEdgeRow">
-                                            <TextBlock Text="{Binding Label}"
-                                                       Opacity="{Binding Opacity}"
-                                                       Foreground="{Binding EdgeBrush}"
-                                                       FontWeight="{Binding EdgeWeight}"
-                                                       VerticalAlignment="Center" />
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+            <ScrollViewer MaxHeight="260"
+                          HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <Panel Width="{Binding Graph.CanvasWidth}" Height="{Binding Graph.CanvasHeight}"
+                       HorizontalAlignment="Left" VerticalAlignment="Top">
+
+                    <!-- Couche des connecteurs, derrière : chaque Path porte sa géométrie
+                         absolue, donc un simple Canvas sans positionnement par item. -->
+                    <ItemsControl ItemsSource="{Binding Graph.Connectors}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:GraphConnectorRow">
+                                <Path Data="{Binding Geometry}"
+                                      Stroke="{Binding Stroke}"
+                                      StrokeThickness="{Binding Thickness}"
+                                      StrokeDashArray="{Binding Dashes}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Couche des nœuds, devant : positionnés en Canvas.Left/Top depuis
+                         la place pixel que le ViewModel a posée. -->
+                    <ItemsControl ItemsSource="{Binding Graph.Nodes}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.Styles>
+                            <Style Selector="ContentPresenter" x:DataType="vm:GraphNodeRow">
+                                <Setter Property="Canvas.Left" Value="{Binding X}" />
+                                <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                            </Style>
+                        </ItemsControl.Styles>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:GraphNodeRow">
+                                <Border Width="132" Height="44"
+                                        Background="#FFFFFF"
+                                        BorderBrush="{DynamicResource SeparatorBrush}"
+                                        BorderThickness="1" CornerRadius="8"
+                                        Padding="10,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="7"
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Glyph}"
+                                                   Foreground="{Binding StatusBrush}"
+                                                   FontWeight="Bold"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Label}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding VisitBadge}"
+                                                   IsVisible="{Binding HasRevisits}"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                </Panel>
             </ScrollViewer>
         </Border>
 
