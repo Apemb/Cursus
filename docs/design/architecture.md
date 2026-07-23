@@ -1029,6 +1029,15 @@ contrôle de la native `e_sqlite3` dans le bundle est **fait** (§7.11, §9.2-19
 (§9.2-15) est **construite** en 6c·3c (`PathStrategy`, `D-014`) : sa part pure est testée ; **reste sa preuve
 sur l'app installée** (§9.2-15), seule vérif que `dotnet test` ne peut pas donner (le `PATH` y est complet).
 
+**Directive de découpage, côté présentation (`D-016`) — TRANCHÉ, DÉJÀ HONORÉ.** Le même principe — un
+module par capacité, aucun ne connaît la racine — vaut pour les **briques d'écran** : trajectoire/graphe,
+liste, log de la visite sélectionnée, contrôle à trois positions, liste des workflows, historique d'un
+workflow sont des composants adossés **chacun à sa projection**, ignorant quel écran les héberge. Un écran
+est leur **composition**, pas leur propriétaire — pour qu'on réarrange les surfaces à l'usage sans toucher
+la logique (la sélection partagée graphe/liste, §4.18, en est déjà une instance). C'est une **directive sur
+le neuf**, que l'écran de run honore déjà (`RunViewModel`/`RunVisitRow`, vues sœurs) ; elle n'ajoute aucun
+test — la recomposabilité d'agencement est **orthogonale** à la testabilité que ce § garantit.
+
 ### 7.13 Ce que le parcours utilisateur impose — TRANCHÉ, NON CONSTRUIT
 
 Conception du 2026-07-21, le lendemain de §7.12. **Le parcours lui-même est dans

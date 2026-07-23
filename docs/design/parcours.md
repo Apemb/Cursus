@@ -316,6 +316,17 @@ deux se tranche en faveur de ce document.
    de journée à une autre portée (§1.4).
 10. **Les quotas se comptent par (fournisseur, modèle)**, et l'étape nomme le sien (§1.6).
 
+**Une question laissée ouverte à dessein.** *Où vit l'historique complet d'un workflow* — tous ses runs
+passés, pas seulement le dernier (§1.3 ne montre que la trace du dernier) — n'est **pas** tranché. Deux
+formes propres : **(a)** déplier le workflow dans la vue workflows (clic → ses runs anti-chronologiques →
+un run), **(b)** un sous-écran propre au workflow (son historique seul, **sans** la config, qui reste à
+l'engrenage §1.2 — l'y remettre rouvrirait la décision #2). On ne tranche pas sur plan : c'est une
+disposition qui se juge **à l'usage**, et le découpage de l'UI en modules recomposables (`D-016`) rend
+l'essai gratuit — passer de (a) à (b) ré-agence des briques, il ne réécrit pas de logique. Ce qu'il ne
+faut **pas** faire, en revanche, est tranché : un « écran Workflow » unique qui mêlerait graphe + config +
+historique remettrait l'édition sur le chemin critique (décision #2) — les trois vivent sur des surfaces
+distinctes de niveau projet.
+
 ## 5. Manques assumés du jalon 6
 
 - **Aucune tâche, aucun tracker.** On lance à la main, depuis la liste des workflows.

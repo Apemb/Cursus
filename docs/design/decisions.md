@@ -496,3 +496,48 @@ signatures et des doubles aux formes async (`await using`, `ProvisionAsync`, `Di
 §7.13). « L'UI ne gèle plus » reste vérifié à la main (pas de harnais Avalonia headless, §9.2-11).
 
 **Renvoi** : `architecture.md` §4.13, §7.8, §9.2 ; `D-011` (le flux qui alimente l'écran).
+
+---
+
+## D-016 — L'UI se découpe en modules recomposables, pas en écrans monolithiques
+
+**Contexte.** Toute la logique vit dans `Cursus.Core` : projections source-agnostiques (`D-013`),
+`ProjectHost` comme racine de composition (§7.12). L'utilisateur en tire un constat juste — cet
+emplacement rend l'UI *déplaçable* : un mode headless, une CLI, ou une autre disposition d'écrans se
+construisent sans réécrire une ligne de métier. Mais il pointe la moitié manquante : **ça ne suffit
+pas si la couche présentation elle-même est faite d'écrans monolithiques**. Un écran qui possède tout
+son contenu fige une disposition qu'on voudra bouger à l'usage, et le rend indolore côté *données*
+tout en le laissant coûteux côté *vue*.
+
+**Décision.** Chaque brique d'écran — trajectoire/graphe, liste, log de la visite sélectionnée,
+contrôle à trois positions, liste des workflows, historique d'un workflow — est un **composant adossé
+à sa propre projection/adaptateur**, qui **ignore quel écran l'héberge** et quels autres composants
+l'entourent. Un écran est une **composition** de ces briques, jamais leur propriétaire. Corollaire :
+on réarrange les surfaces — déplacer le graphe, sortir l'historique d'un workflow dans un sous-écran
+ou le déplier en place — **sans toucher la logique**, pour trancher les dispositions *à l'usage*
+plutôt que sur plan.
+
+C'est l'**extension côté présentation** du principe déjà acté côté noyau au §7.12 (« un module par
+capacité », « règle de sens unique : aucun module ne connaît la racine »). La sélection partagée
+graphe/liste (parcours §1.4) en est déjà une instance : deux rendus d'un seul état, qui n'ont pas
+besoin de se connaître.
+
+**Pourquoi maintenant.** La discussion de navigation — *où vit l'historique complet d'un workflow*,
+(a) le déplier dans la vue workflows vs (b) un sous-écran propre — a montré qu'on ne veut pas figer
+sur plan des agencements qui se jugent à l'usage. Ce découpage rend le report **gratuit** : essayer
+(a) puis (b) ré-agence des briques, il ne refond pas d'écran.
+
+**Alternatives écartées.**
+- *Écrans monolithiques (un ViewModel par écran, propriétaire de tout son contenu)* — fige la
+  disposition ; changer d'agencement = réécrire l'écran. C'est précisément ce que l'emplacement de la
+  logique dans `Core` rend indolore côté données et que ce découpage rend indolore côté vue.
+- *Un routeur / une pile de navigation pour « bouger » les écrans* — déjà écarté au parcours §4 (pas
+  de routeur, §D implicite) : la recomposition se fait par **composition de vues**, pas par navigation.
+
+**Conséquences.** Contrainte **sur le neuf**, aucune dette rétroactive : l'écran de run l'honore déjà
+(`RunViewModel`/`RunVisitRow`, graphe/liste comme vues sœurs à sélection partagée). Chaque brique se
+teste par sa projection `Core` ; la vue reste non testée (§7.12). Ne pas confondre avec la
+testabilité : c'est de la **recomposabilité d'agencement**, orthogonale à elle.
+
+**Renvoi** : `architecture.md` §7.12 (directive de découpage, côté présentation), §4.18 ;
+`parcours.md` §1.4, §4 ; `D-013` (la projection source-agnostique, la brique type).
