@@ -386,11 +386,13 @@ flowchart TB
 
 ### 5.3 La couture de l'écran de run — une projection, deux alimentations (6c·3c)
 
-L'écran d'un run *en cours* et celui d'un run *passé* sont **le même écran** : une
-seule `RunProjection` (Core testable) plie une séquence de `WorkflowEvent` en
-trajectoire + statut + contrôle, sans savoir d'où elle vient. Deux alimentations
-entrent par la **même porte** `Apply` — le flux live (§5.2) ou la relecture
-`ReadEvents` — et donnent la même projection (`D-013`, prouvé end-to-end). Le
+L'écran d'un run *en cours* et celui d'un run *passé* sont **le même écran** :
+`RunViewModel.Ingest` **fanne** chaque `WorkflowEvent` à **deux projections sœurs**
+(Core testables) — `RunProjection` le plie en trajectoire + statut + contrôle,
+`GraphProjection` le plie en overlay de graphe (le non-parcouru) —, sans qu'aucune
+sache d'où vient le flux. Deux alimentations entrent par la **même porte** `Ingest`
+— le flux live (§5.2) ou la relecture `ReadEvents` — et donnent les mêmes projections
+(`D-013`, prouvé end-to-end pour la trajectoire). Le
 **log**, lui, est un second flux, distinct du pipeline : il tail le fichier
 d'artefact de la **visite sélectionnée** (vif si elle tourne, figé sinon).
 
@@ -398,14 +400,16 @@ d'artefact de la **visite sélectionnée** (vif si elle tourne, figé sinon).
 flowchart TB
   live["<b>flux live</b><br/><small>ProjectHost.LaunchAsync + IProgress (marshalé thread UI)</small>"]
   replay["<b>relecture</b><br/><small>ProjectHost.ReadEvents(runId)</small>"]
-  proj["<b>RunProjection</b><br/><small>Apply : plie en trajectoire de visites + statut + contrôle 3 positions. Source-agnostique. Porte le runId (RunStarted).</small>"]
-  vm["<b>RunViewModel</b><br/><small>adaptateur (§7.12) : StartLive OU Replay ; commande d'arrêt → CancellationToken</small>"]
+  vm["<b>RunViewModel</b><br/><small>adaptateur (§7.12) : StartLive OU Replay ; Ingest FANNE l'événement aux deux projections ; commande d'arrêt → CancellationToken</small>"]
+  proj["<b>RunProjection</b><br/><small>Apply : plie en trajectoire de visites + statut + contrôle 3 positions. Porte le runId (RunStarted).</small>"]
+  graph["<b>GraphProjection</b><br/><small>Apply : plie le même flux en overlay de graphe — statut par nœud + arêtes traversées. Montre le non-parcouru. (D-016)</small>"]
   tail["<b>ArtifactTail</b><br/><small>RunArtifactStore.Follow(runId, visite) — tiré par un minuteur</small>"]
-  view["<b>RunView.axaml</b><br/><small>trajectoire déroulée en haut, log sur fond terminal en bas</small>"]
+  view["<b>RunView.axaml</b><br/><small>trajectoire + graphe brut (vue sœur) en haut, log sur fond terminal en bas</small>"]
 
-  live -->|"Apply(event)"| proj
-  replay -->|"Apply(event)"| proj
-  proj --> vm
+  live -->|"Ingest(event)"| vm
+  replay -->|"Ingest(event)"| vm
+  vm -->|"Apply"| proj
+  vm -->|"Apply"| graph
   vm -->|"log ← visite sélectionnée"| tail
   vm --> view
 ```

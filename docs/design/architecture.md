@@ -45,7 +45,7 @@
 | Persistance | `src/Cursus.Persistence/` | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque avec **suiveur de tail** (6c·3c), et le préréglage SQLite de `ProjectHost`. **28 tests.** Un run survit au process ; le flux live d'un run et sa relecture donnent la **même** projection (preuve end-to-end, 6c·3c). |
 | Écran de run & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et l'**écran de run** (6c·3c) : cliquer un workflow le lance et déroule sa trajectoire, le log de la visite sélectionnée se suit en direct, un contrôle à trois positions l'arrête ; un run passé se rouvre en relecture. Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
 
-Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2). Depuis 6c·3a, **`Cursus.App` référence `Cursus.Persistence`** ; depuis 6c·3c la jonction UI est **close** (§9.4) : l'app lit le passé d'un projet, **lance** ses workflows, **suit** le flux d'un run en direct et **tail** le log de ses visites (§4.18).
+Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2). Depuis 6c·3a, **`Cursus.App` référence `Cursus.Persistence`** ; depuis 6c·3c la jonction UI est **close** (§9.4) : l'app lit le passé d'un projet, **lance** ses workflows, **suit** le flux d'un run en direct, **tail** le log de ses visites, et en montre le **graphe** — vue sœur brute du non-parcouru (§4.18).
 
 **Le dépôt est lui-même un projet Cursus** : `.cursus/` porte son `project.json` et deux workflows réels (`build`, `verifier`), gardés valides par `CursusProjectTests`.
 
@@ -717,19 +717,24 @@ présentation.** Sous l'écran vit un vrai cœur testable — une **projection**
   figé. Deux flux, deux bindings : le pipeline ← événements, le log ← fichier.
 
 - **La présentation (App, non testée §7.12).** `RunViewModel` — adaptateur : **une** classe, deux alimentations
-  (`StartLive` sur `LaunchAsync` + `Progress` marshalé au thread UI ; `Replay` sur `ReadEvents`). `RunVisitRow`
-  — une visite bindable (glyphe + couleur sémantique). `RunView.axaml` — trajectoire déroulée en haut, log sur
-  fond terminal sombre en bas (§9.5). `OpenProjectViewModel` tient deux contenus d'une même surface **sans
-  routeur** (liste ⇄ run). `ProjectWorkspace` regroupe host + magasin d'artefacts, que la racine de composition
-  (App) lie au préréglage — l'UI ne connaît ni SQLite ni le disque.
+  (`StartLive` sur `LaunchAsync` + `Progress` marshalé au thread UI ; `Replay` sur `ReadEvents`). Il **fanne**
+  chaque événement à deux modules sœurs : `RunVisitRow` — une visite bindable (glyphe + couleur sémantique) —, et
+  `RunGraphViewModel`/`GraphNodeRow` — le **module graphe**, brique adossée à sa propre `GraphProjection`
+  (`D-016`), qui reflète les nœuds (statut colorié, `×n` d'une boucle, arêtes estompées si non prises).
+  `RunView.axaml` — trajectoire déroulée, **graphe brut** (flux vertical, non stylé), log sur fond terminal
+  sombre en bas (§9.5). `OpenProjectViewModel` tient deux contenus d'une même surface **sans routeur**
+  (liste ⇄ run). `ProjectWorkspace` regroupe host + magasin d'artefacts, que la racine de composition (App) lie
+  au préréglage — l'UI ne connaît ni SQLite ni le disque.
 
 **Le verdict lisible reste en présentation.** La projection expose l'**état brut** (`RunState?`, visite en
 cours) ; l'App le mappe en « Réussi »/« Échoué »/« Arrêté »/« Planté ». L'écran **arbitre** le résultat, il ne
 le recopie pas (parcours §4).
 
-**Différé, tracé** : la **vue graphe** (2e vue sœur, montre le non-parcouru — 6c ne livre que la liste, §9.4) et
-son basculeur ; l'entrelacement fin stdout/stderr du log (pas d'horodatage à l'octet) ; le tail en direct
-*intra-étape* d'un run rouvert (un passé est figé). **Non vérifié par `dotnet test`** (manuel) : le
+**Différé, tracé** : le **rendu véritable** de la vue graphe (disposition, connecteurs courbes façon maquette
+`run-flux-6c3c.html`) et sa **sélection partagée** avec la liste — le graphe est aujourd'hui **construit mais
+brut** (projection testée + flux vertical non stylé, §9.4), le stylage relève de la passe visuelle ; le
+basculeur / la mise en sœurs côte à côte des deux vues ; l'entrelacement fin stdout/stderr du log (pas
+d'horodatage à l'octet) ; le tail en direct *intra-étape* d'un run rouvert (un passé est figé). **Non vérifié par `dotnet test`** (manuel) : le
 comportement interactif de l'écran, et la **preuve `PATH` sur bundle** (§9.2-15).
 
 ---

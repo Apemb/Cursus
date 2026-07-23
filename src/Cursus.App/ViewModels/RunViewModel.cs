@@ -60,6 +60,13 @@ public partial class RunViewModel : ObservableObject, IDisposable
     public ObservableCollection<RunVisitRow> Trajectory { get; } = new();
 
     /// <summary>
+    /// La vue sœur : le graphe, qui montre ce que la liste ne peut pas — le non-parcouru.
+    /// Module à part (<c>D-016</c>), adossé à sa propre projection ; l'écran lui fanne le
+    /// même flux d'événements qu'à la trajectoire.
+    /// </summary>
+    public RunGraphViewModel Graph { get; } = new();
+
+    /// <summary>
     /// La visite dont le détail (log) est montré. Suit ce qui tourne par défaut —
     /// chaque nouvelle visite prend le focus — jusqu'à ce qu'on en fige une à la main.
     /// </summary>
@@ -144,6 +151,7 @@ public partial class RunViewModel : ObservableObject, IDisposable
     private void Ingest(WorkflowEvent @event)
     {
         _projection.Apply(@event);
+        Graph.Apply(@event); // le module graphe plie le même flux, en parallèle
 
         if (@event is WorkflowEvent.StepStarted started)
         {

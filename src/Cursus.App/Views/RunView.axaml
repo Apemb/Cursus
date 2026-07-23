@@ -66,6 +66,50 @@
             </ScrollViewer>
         </Border>
 
+        <!-- Vue graphe : la sœur de la trajectoire. Rendu brut et non stylé (§7.12) —
+             flux vertical des nœuds dans l'ordre de la définition, coloriés par statut,
+             leurs arêtes estompées tant que le routage ne les a pas prises. Elle montre
+             ce que la liste ne peut pas : les nœuds jamais atteints, les chemins morts. -->
+        <Border DockPanel.Dock="Top" Padding="14,10"
+                BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,0,0,1">
+            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Graph.Nodes}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:GraphNodeRow">
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                <TextBlock Text="{Binding Glyph}"
+                                           Foreground="{Binding StatusBrush}"
+                                           FontWeight="Bold" Width="14"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Label}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding VisitBadge}"
+                                           IsVisible="{Binding HasRevisits}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" />
+                                <ItemsControl ItemsSource="{Binding OutEdges}" VerticalAlignment="Center">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="8" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:GraphEdgeRow">
+                                            <TextBlock Text="{Binding Label}"
+                                                       Opacity="{Binding Opacity}"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
         <!-- Log de la visite sélectionnée. Fond sombre : le terminal est l'exception
              assumée au thème clair (presentation.md §9.5). -->
         <Panel Background="{DynamicResource TerminalBackgroundBrush}">
