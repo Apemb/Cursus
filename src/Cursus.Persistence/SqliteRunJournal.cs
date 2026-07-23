@@ -94,7 +94,7 @@ public sealed class SqliteRunJournal : IRunJournal, IRunJournalReader, IDisposab
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-            var @event = RunEventCodec.Decode(reader.GetString(2), reader.GetString(3), () => definition.Value);
+            var @event = RunEventCodec.Decode(reader.GetString(2), reader.GetString(3), () => definition.Value, runId);
             entries.Add(new JournalEntry(runId, reader.GetInt64(0), ReadInstant(reader, 1), @event));
         }
 

@@ -18,11 +18,18 @@ public abstract record WorkflowEvent
     /// graphe anonyme : c'est le run qui sait d'où il vient, pas le graphe.
     /// Absent quand rien ne l'a nommé — un run forgé en test, sans catalogue.
     /// </param>
+    /// <param name="RunId">
+    /// L'identité du run, annoncée dès son ouverture pour que le flux live soit
+    /// auto-descriptif : un observateur qui plie ce flux sait <em>quel</em> run il
+    /// suit, donc où en tailer les artefacts. La relecture, elle, connaît déjà le
+    /// runId (c'est la clé de <c>ReadEvents</c>). Absent d'un run forgé en test.
+    /// </param>
     public sealed record RunStarted(
         WorkflowDefinition Definition,
         string WorkspaceRoot,
         RunTrigger Trigger,
-        string? WorkflowId = null) : WorkflowEvent;
+        string? WorkflowId = null,
+        string? RunId = null) : WorkflowEvent;
 
     /// <summary>
     /// Une visite d'étape commence. Une étape en boucle en engendre autant que

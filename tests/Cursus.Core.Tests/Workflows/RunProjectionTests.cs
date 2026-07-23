@@ -193,6 +193,20 @@ public sealed class RunProjectionTests
         Assert.Null(projection.Control);
     }
 
+    [Fact(DisplayName = "étant donné un RunStarted portant un runId, quand on l'applique, alors la projection expose ce runId")]
+    public void A_started_run_exposes_the_run_identity_it_carries()
+    {
+        // arrange
+        var projection = new RunProjection();
+
+        // act — le flux live doit dire *quel* run il plie, pour que la vue sache
+        // où suivre ses artefacts (le tail du log est indexé par le runId)
+        projection.Apply(new WorkflowEvent.RunStarted(AnyDefinition, "/tmp", RunTrigger.Manual, "verifier", "run-42"));
+
+        // assert
+        Assert.Equal("run-42", projection.RunId);
+    }
+
     /// <summary>Une projection sur un run qui vient de démarrer — le décor commun des tests de contrôle.</summary>
     private static RunProjection Started()
     {

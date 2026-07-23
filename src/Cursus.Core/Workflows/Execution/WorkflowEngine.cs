@@ -36,7 +36,7 @@ public sealed class WorkflowEngine
         // isolé à ce nom, avant même que le run démarre. Le workflowId, lui, est
         // la provenance : de quel workflow du catalogue ce run est issu.
         Emit(runId, new WorkflowEvent.RunStarted(
-            definition, context.WorkspaceRoot, trigger ?? RunTrigger.Manual, workflowId), observer);
+            definition, context.WorkspaceRoot, trigger ?? RunTrigger.Manual, workflowId, runId), observer);
 
         try
         {

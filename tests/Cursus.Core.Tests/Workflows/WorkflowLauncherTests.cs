@@ -82,6 +82,23 @@ public class WorkflowLauncherTests
         Assert.IsType<WorkflowEvent.RunStarted>(observer.Events[0]);
         Assert.IsType<WorkflowEvent.RunFinished>(observer.Events[^1]);
     }
+
+    [Fact(DisplayName = "étant donné un run lancé avec un observateur, quand il démarre, alors le RunStarted émis porte l'identité du run rendu")]
+    public async Task The_emitted_run_started_carries_the_returned_run_identity()
+    {
+        // arrange
+        var observer = new RecordingObserver();
+        var launcher = new WorkflowLauncher(
+            new StubProcessRunner(Exit(0)), new InMemoryRunJournal(), new InMemoryRunOutputStore(), new FakeProvisioner());
+        var definition = new WorkflowDefinition("A", new[] { Step("A") });
+
+        // act — le flux live doit être auto-descriptif : dire quel run il ouvre
+        var run = await launcher.LaunchAsync(definition, "verifier", observer: observer);
+
+        // assert — la vue tailera les artefacts de ce runId dès le démarrage
+        var started = Assert.IsType<WorkflowEvent.RunStarted>(observer.Events[0]);
+        Assert.Equal(run.RunId, started.RunId);
+    }
 }
 
 /// <summary>

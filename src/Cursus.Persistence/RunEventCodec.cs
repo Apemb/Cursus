@@ -56,9 +56,12 @@ internal static class RunEventCodec
     /// <summary>
     /// Reconstruit un événement. La définition n'est pas dans le payload : elle
     /// vient de la colonne <c>definition_json</c> de la table des runs, d'où
-    /// <paramref name="definition"/>.
+    /// <paramref name="definition"/>. De même le <paramref name="runId"/> : c'est
+    /// la clé de ligne autoritaire, jamais rédupliquée dans le payload — on la
+    /// repose sur le <c>RunStarted</c> pour que la relecture soit auto-descriptive.
     /// </summary>
-    internal static WorkflowEvent Decode(string kind, string payload, Func<WorkflowDefinition> definition)
+    internal static WorkflowEvent Decode(
+        string kind, string payload, Func<WorkflowDefinition> definition, string runId)
     {
         switch (kind)
         {
@@ -69,7 +72,8 @@ internal static class RunEventCodec
                     definition(),
                     p.WorkspaceRoot,
                     new RunTrigger(Enum.Parse<RunTriggerKind>(p.TriggerKind), p.TaskKey),
-                    p.WorkflowId);
+                    p.WorkflowId,
+                    runId);
             }
 
             case nameof(WorkflowEvent.StepStarted):

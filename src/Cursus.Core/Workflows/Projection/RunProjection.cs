@@ -14,6 +14,13 @@ public sealed class RunProjection
     public bool IsRunning { get; private set; }
 
     /// <summary>
+    /// L'identité du run plié — apprise au <c>RunStarted</c>. C'est par elle que
+    /// la vue sait où suivre les artefacts d'une visite (le tail est indexé par le
+    /// runId). <c>null</c> tant que rien n'a démarré, ou pour un run forgé sans identité.
+    /// </summary>
+    public string? RunId { get; private set; }
+
+    /// <summary>
     /// L'état terminal du run — absent tant qu'il tourne, posé au <c>RunFinished</c>.
     /// C'est l'état <b>brut</b> ; le traduire en « Réussi »/« Échoué » appartient à
     /// la présentation, qui arbitre le verdict (parcours §4).
@@ -67,8 +74,9 @@ public sealed class RunProjection
     {
         switch (@event)
         {
-            case WorkflowEvent.RunStarted:
+            case WorkflowEvent.RunStarted started:
                 IsRunning = true;
+                RunId = started.RunId;
                 break;
 
             case WorkflowEvent.StepStarted started:

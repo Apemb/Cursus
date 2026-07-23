@@ -61,6 +61,25 @@ public class SqliteRunJournalTests : IDisposable
         Assert.Equal("verifier", started.WorkflowId);
     }
 
+    [Fact(DisplayName = "étant donné un démarrage relu, quand on inspecte son RunStarted, alors il porte l'identité du run — reconstituée depuis la clé de ligne, non redupliquée dans le payload")]
+    public void A_start_reads_back_carrying_its_run_identity()
+    {
+        // arrange
+        using (var journal = NewJournal())
+        {
+            journal.Append("run-1", new WorkflowEvent.RunStarted(
+                AnyDefinition, "/un/workspace", RunTrigger.Manual));
+        }
+
+        // act — la relecture doit rendre un flux aussi auto-descriptif que le live :
+        // son RunStarted porte le runId, pour que la projection sache où tailer
+        using var reopened = NewJournal();
+        var started = Assert.IsType<WorkflowEvent.RunStarted>(reopened.ReadEvents("run-1").Single().Event);
+
+        // assert
+        Assert.Equal("run-1", started.RunId);
+    }
+
     [Fact(DisplayName = "étant donné un run entier journalisé puis le journal refermé et rouvert, quand on le relit, alors les événements reviennent dans l'ordre de leur séquence")]
     public void A_whole_run_survives_a_reopen_in_sequence_order()
     {
