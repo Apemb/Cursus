@@ -368,3 +368,79 @@ ordonnées par un chemin unique) — **mais pas la forme de l'écran**. Le vrai 
 autre tourne encore. À rouvrir avec l'`AgentStep`.
 
 **Renvoi** : `architecture.md` §9.3 (ligne `Fork`/`Join`), §4.3 ; maquette 6c·3c.
+
+---
+
+## D-013 — La projection de run est un objet unique, source-agnostique (deux alimentations, un fold)
+
+**Statut** : Tranché, construit (2026-07-23).
+
+**Contexte.** L'écran de run doit servir **deux cas** : un run *en cours* (flux live poussé par
+le lanceur, `D-011`) et un run *passé* (relu du journal, `ReadEvents`). Le parcours (§1.4) les
+veut identiques — « un seul écran, deux sources ». Restait à choisir *où* cette identité se
+réalise : dans un objet partagé, ou dans deux chemins qui convergent à l'affichage.
+
+**Décision.** **Un seul objet** — `RunProjection` (`Workflows/Projection/`, Core testable) — qui
+plie une séquence de `WorkflowEvent` en trajectoire de visites + statut + sélection + contrôle,
+**sans savoir d'où vient la séquence**. Les deux alimentations entrent par la **même porte**
+(`Apply`) : le flux live et la relecture partagent le fold. C'est le pendant *consommation* de
+`D-011`, qui avait fait converger *émission* (journal et flux) par un `Emit` unique.
+
+Corollaire construit dans la même marche : **le flux porte le `runId` dès l'ouverture**
+(`RunStarted.RunId`). Le tail du log est indexé par le runId ; sans lui dans le flux, un
+observateur live ne saurait où suivre les artefacts (`LaunchAsync` forge le runId en interne et
+ne le rend qu'à la fin). La relecture, elle, le connaît déjà (clé de `ReadEvents`) — et le codec
+le **restitue depuis la clé de ligne**, jamais rédupliqué dans le payload.
+
+**Alternatives écartées.**
+- *Deux objets, un « live » et un « relecture »* — dupliquerait le fold et rouvrirait le risque
+  de divergence, le mal même que `D-011` a fermé côté émission.
+- *Plier dans le `RunViewModel` (App, non testé §7.12)* — enfouirait la seule vraie logique de
+  l'écran sous le tapis « présentation non testée ». Le fold est de la **logique**, il vit en Core
+  et se teste en TDD.
+
+**Conséquences.** La coïncidence des deux alimentations est **prouvée** par un end-to-end headless
+(plier le flux d'un vrai run == plier sa relecture), à la **précision de la durée près** — le
+journal la range en secondes-double (`RunEventCodec`), lossy par conception : c'est une métrique
+d'affichage, pas une entrée de routage. Tout le reste (étape, itération, en cours/clos, code de
+sortie, issue, état) est bit-à-bit égal. Le `RunViewModel` n'est plus qu'un adaptateur mince :
+`StartLive` sur le flux, `Replay` sur la relecture, une seule classe.
+
+**Renvoi** : `architecture.md` §4.18, §7.12 ; `D-011` ; parcours §1.4.
+
+---
+
+## D-014 — Stratégie `PATH` : enrichir de racines connues **et résoudre en absolu**, sans shell de login
+
+**Statut** : Tranché, construit (2026-07-23) — preuve sur bundle restante.
+
+**Contexte.** Une app macOS installée hérite d'un `PATH` GUI **tronqué** (mesuré à vide par
+`launchctl getenv PATH`, §6.6). `ProcessRunner` ne lance aucun shell de login pour le ré-enrichir :
+une étape appelant un binaire d'`asdf`/Homebrew — voire `git` (§4.13) — échoue en `LaunchFailed`
+hors développement. Le trou ne mord que depuis le **bouton** de l'app installée, né en 6c·3c — d'où
+son échéance ici. Trois options étaient sur la table (§6.6).
+
+**Décision.** **Enrichir le `PATH` de racines connues** (shims `asdf`, `bin` Homebrew Intel/Apple
+Silicon, emplacements système), en **ajoutant en queue** — jamais retirer ni réordonner, pour qu'un
+run qui marchait déjà (dev, `dotnet test`) se comporte à l'identique. `PathStrategy` (pur, testé)
+porte la logique ; `ProcessRunner` l'applique au lancement.
+
+⚠️ **Le point durable, payé par un test rouge** : `Process.Start` **ne consulte pas** le `PATH` de
+`StartInfo.Environment` pour résoudre l'exécutable direct. Enrichir ce `PATH` ne répare donc que les
+**petits-fils** (un `npm` y trouve son `node`) ; la commande directe, elle, doit être **résolue en
+chemin absolu** par nous (`Resolve`) et posée sur `StartInfo.FileName`. Sans ça, `LaunchFailed`
+silencieux depuis le bundle, invisible sous `dotnet test`.
+
+**Alternatives écartées.**
+- *Exiger des chemins absolus dans les définitions* — hostile à l'auteur, et casse le partage git
+  d'un `project.json` entre machines aux `asdf`/`brew` rangés ailleurs.
+- *Ré-enrichir via un shell de login* (`sh -lc`) — un process de plus **par étape**, et un `PATH`
+  moins prévisible que des racines explicites.
+
+**Conséquences.** La part pure est testée (enrichissement sans doublon, résolution d'un binaire hors
+`PATH` minimal, commande introuvable rendue verbatim pour un `LaunchFailed` net). Reste **la preuve
+sur l'app installée** — un binaire d'`asdf`/Homebrew/`git` qui tourne enfin depuis le bundle —, seule
+vérif que `dotnet test` ne peut pas donner. Voisin tracé : le **check des prérequis Cursus** (git,
+`claude`…), même logique pure, restitution qui attend sa surface (§9.2-15).
+
+**Renvoi** : `architecture.md` §9.2-15, §6.6, §7.12.

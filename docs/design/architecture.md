@@ -39,12 +39,12 @@
 
 | Moitié | Emplacement | État |
 |---|---|---|
-| Noyau déterministe | `src/Cursus.Core/Workflows/` (38 fichiers, rangés en vocabulaire racine + 6 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel, contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal, puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b). **100 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
-| Projet & catalogue | `src/Cursus.Core/Projects/` (9 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert (6c·3a, §4.16). **37 tests.** Voir §4.11, §4.14, §4.16. |
-| Persistance | `src/Cursus.Persistence/` (4 fichiers) | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque, et le préréglage SQLite de `ProjectHost` (6c·3a). **22 tests.** Un run survit au process. |
-| Sessions / PTY | `src/Cursus.Core/Sessions/` (5 fichiers) + `src/Cursus.App/` | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal ; logique de sessions testée (**13 tests**). Antérieure au pivot. |
+| Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 7 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **projection de run** (plie le flux en trajectoire + statut + contrôle 3 positions, `Projection/`, 6c·3c). **130 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
+| Projet & catalogue | `src/Cursus.Core/Projects/` (9 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert : lire le passé, **lancer** (6c·3b), **relire les événements** d'un run (`ReadEvents`, 6c·3c). **38 tests.** Voir §4.11, §4.14, §4.16, §4.17. |
+| Persistance | `src/Cursus.Persistence/` | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque avec **suiveur de tail** (6c·3c), et le préréglage SQLite de `ProjectHost`. **28 tests.** Un run survit au process ; le flux live d'un run et sa relecture donnent la **même** projection (preuve end-to-end, 6c·3c). |
+| Écran de run & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et l'**écran de run** (6c·3c) : cliquer un workflow le lance et déroule sa trajectoire, le log de la visite sélectionnée se suit en direct, un contrôle à trois positions l'arrête ; un run passé se rouvre en relecture. Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
 
-Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2). Depuis 6c·3a, **`Cursus.App` référence `Cursus.Persistence`** : l'app lit le journal d'un projet pour afficher le dernier passage de ses workflows (§4.16) — en lecture seule, aucun lancement encore.
+Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2). Depuis 6c·3a, **`Cursus.App` référence `Cursus.Persistence`** ; depuis 6c·3c la jonction UI est **close** (§9.4) : l'app lit le passé d'un projet, **lance** ses workflows, **suit** le flux d'un run en direct et **tail** le log de ses visites (§4.18).
 
 **Le dépôt est lui-même un projet Cursus** : `.cursus/` porte son `project.json` et deux workflows réels (`build`, `verifier`), gardés valides par `CursusProjectTests`.
 
@@ -82,7 +82,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 174 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 210 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -656,6 +656,64 @@ relit son dernier passage, sans Avalonia.
 
 ---
 
+### 4.18 L'écran de run : une projection à deux alimentations — CONSTRUIT (jalon 6c·3c)
+
+La **jonction UI fermée**. Lire (3a) et lancer (3b) étaient faits ; il manquait le seul écran que le parcours
+juge digne d'être maquetté (validée avec l'utilisateur, artifact `cb5d5a7f`) : celui où l'on **voit un run se
+faire**. Le point que la marche a révélé et qui la structure : **la vue d'un run n'est pas que de la
+présentation.** Sous l'écran vit un vrai cœur testable — une **projection** —, et seule la coquille visuelle
+échappe au test (§7.12).
+
+- **`RunProjection` (`Workflows/Projection/`, Core testable).** Plie une séquence de `WorkflowEvent` en
+  **trajectoire de visites** (chacune `StepId·Iteration` + issue), **statut** du run, **sélection** partagée
+  et **contrôle**. Source-agnostique : le **même fold** consomme le flux live d'un run en cours *et* la
+  relecture d'un run passé — « un seul objet, deux alimentations » (parcours §1.4). Une visite en boucle est un
+  **nœud de plus** (l'itération la distingue), jamais un repli — l'écran déroule la traversée. La projection
+  n'a **pas** besoin de la définition : la liste des visites se suffit des événements (le graphe / le
+  non-parcouru viendront avec la vue graphe, §9.4).
+
+- **Les deux alimentations partagent le même fold, et coïncident.** Le flux live est l'`IProgress<WorkflowEvent>`
+  que le lanceur pousse déjà (3b, `D-011`) ; la relecture est `ProjectHost.ReadEvents(runId)`. L'écran d'un run
+  *en cours* et celui d'un run *passé* sont donc **le même écran**, seule la source change. Un end-to-end
+  headless le **prouve** : plier le flux live d'un vrai run == plier sa relecture (à la précision près de la
+  durée, métrique rangée en secondes-double au journal — voir `D-013`).
+
+- **Le flux porte désormais le `runId` dès l'ouverture** (`RunStarted.RunId`). Le tail du log est indexé par le
+  runId ; or `LaunchAsync` le forge en interne et ne le rendait qu'à la fin. `RunStarted` l'emporte maintenant,
+  émis par le moteur, exposé par la projection, restitué à la relecture **depuis la clé de ligne** (jamais
+  rédupliqué dans le payload). Le flux live devient **auto-descriptif** : un observateur sait *quel* run il plie.
+
+- **Le contrôle est un état à trois positions**, pas un bouton (parcours §1.4) : *En cours → (demande) Arrêt en
+  cours → (RunFinished Aborted/Canceled) Arrêté* ; révoquer la demande revient « en cours ». Fonction des
+  événements + d'une demande d'arrêt révocable, donc **testable**. « Arrêté » (Aborted/Canceled) **n'est pas**
+  « Échoué ». L'arbre de process est tué depuis 6a ; 3c câble l'annulation UI → `CancellationToken`. La
+  composition avec l'**interrupteur applicatif** (§1.6, ère `AgentStep`) est différée — cet objet n'existe pas
+  encore.
+
+- **Le log suit la visite sélectionnée**, lu du **fichier d'artefact** (2e flux, distinct du pipeline). Le
+  panneau du bas est `f(nœud sélectionné)` : il lit l'artefact de `(runId, stepId, iteration)`
+  (`RunArtifactStore`, un fichier par visite — 6a). « En direct » **seulement** si la visite sélectionnée est
+  celle qui tourne — un `ArtifactTail` retient sa position et un minuteur tire ce qui s'est ajouté ; un passé est
+  figé. Deux flux, deux bindings : le pipeline ← événements, le log ← fichier.
+
+- **La présentation (App, non testée §7.12).** `RunViewModel` — adaptateur : **une** classe, deux alimentations
+  (`StartLive` sur `LaunchAsync` + `Progress` marshalé au thread UI ; `Replay` sur `ReadEvents`). `RunVisitRow`
+  — une visite bindable (glyphe + couleur sémantique). `RunView.axaml` — trajectoire déroulée en haut, log sur
+  fond terminal sombre en bas (§9.5). `OpenProjectViewModel` tient deux contenus d'une même surface **sans
+  routeur** (liste ⇄ run). `ProjectWorkspace` regroupe host + magasin d'artefacts, que la racine de composition
+  (App) lie au préréglage — l'UI ne connaît ni SQLite ni le disque.
+
+**Le verdict lisible reste en présentation.** La projection expose l'**état brut** (`RunState?`, visite en
+cours) ; l'App le mappe en « Réussi »/« Échoué »/« Arrêté »/« Planté ». L'écran **arbitre** le résultat, il ne
+le recopie pas (parcours §4).
+
+**Différé, tracé** : la **vue graphe** (2e vue sœur, montre le non-parcouru — 6c ne livre que la liste, §9.4) et
+son basculeur ; l'entrelacement fin stdout/stderr du log (pas d'horodatage à l'octet) ; le tail en direct
+*intra-étape* d'un run rouvert (un passé est figé). **Non vérifié par `dotnet test`** (manuel) : le
+comportement interactif de l'écran, et la **preuve `PATH` sur bundle** (§9.2-15).
+
+---
+
 ## 5. Ajouter un StepKind : la recette
 
 Le pari central promet que greffer un nouveau type d'étape sera une extension, pas une refonte. Voici ce que cela veut dire concrètement — **rien de ceci n'est construit** ; c'est le contrat que le prochain contributeur doit tenir.
@@ -906,14 +964,16 @@ Retenu : **`Cursus.Persistence`**, qui référence le noyau et implémente ses c
 
 **Coût assumé** : deux projets de plus (bibliothèque + tests), et une native `e_sqlite3` que le bundle macOS doit embarquer depuis que `Cursus.App` référence la persistance (6c·3a) — même piège que `libghostty-vt` (§6.3, §6.6). Le contrôle correspondant dans `build/package-macos.sh` était **volontairement absent** tant que cette référence n'existait pas (il aurait échoué sur un faux positif) ; il est **en place** depuis 6c·3a, et le bundle embarque bien `libe_sqlite3.dylib`, vérifié.
 
-### 7.12 Présentation et composition : `ProjectHost` — TRANCHÉ, CONSTRUIT (LECTURE 6c·3a, LANCEMENT 6c·3b)
+### 7.12 Présentation et composition : `ProjectHost` — TRANCHÉ, CONSTRUIT (LECTURE 6c·3a, LANCEMENT 6c·3b, ÉCRAN 6c·3c)
 
 > **Construit** : `ProjectHost` naît au 6c·3a (§4.16) dans `Cursus.Core`, `IDisposable`, reçoit sa fabrique de
 > journal sans apprendre que c'est du SQLite ; le préréglage vit dans `Cursus.Persistence`
-> (`SqliteProjectHost.Open`). Deux capacités : *lire le dernier passage* (6c·3a) et *lancer* (6c·3b, §4.17,
-> via `WorkflowLauncher`). Les **deux** tests du critère existent — (a) `Core ⊄ Avalonia` au 6c·1, (b)
-> l'end-to-end headless, étendu de *lire* à *lancer puis lire* au 6c·3b. Reste à construire : **observer/annuler
-> depuis l'UI**, c'est-à-dire l'écran de run (6c·3c). Ce qui suit est la décision de conception, inchangée.
+> (`SqliteProjectHost.Open`). Trois capacités : *lire le dernier passage* (6c·3a), *lancer* (6c·3b, §4.17) et
+> *relire les événements* d'un run (`ReadEvents`, 6c·3c) — la 2e alimentation de l'écran. Les **deux** tests du
+> critère existent — (a) `Core ⊄ Avalonia` au 6c·1, (b) l'end-to-end headless, étendu de *lire* à *lancer puis
+> lire* (6c·3b) puis à *les deux alimentations coïncident* (6c·3c). **Observer/annuler depuis l'UI est
+> construit** : l'écran de run (§4.18) plie le flux live et commande l'arrêt. Ce qui suit est la décision de
+> conception, inchangée.
 
 Décidé en conception le 2026-07-21, avant le jalon 6, après une passe de recherche à trois lentilles
 (le patron hors iOS, la testabilité réelle en Avalonia, la confrontation au code de ce dépôt). **Le
@@ -956,10 +1016,8 @@ qu'un critère si :
 
 **Ce que la décision a engagé** : `Cursus.App` référence désormais `Cursus.Persistence` (6c·3a) — le
 contrôle de la native `e_sqlite3` dans le bundle est **fait** (§7.11, §9.2-19). La stratégie `PATH`
-(§9.2-15) reste théorique : le lanceur de 6c·3b exécute de vrais process, mais **sous `dotnet test`**, où le
-`PATH` est complet — le trou du `PATH` GUI tronqué ne se manifeste que depuis l'**app installée**, dont le
-déclencheur (le bouton) naît en **6c·3c**. C'est donc là, avec la preuve qui la valide, que `PATH` sera due —
-pas plus tôt, faute d'appelant qui l'exerce.
+(§9.2-15) est **construite** en 6c·3c (`PathStrategy`, `D-014`) : sa part pure est testée ; **reste sa preuve
+sur l'app installée** (§9.2-15), seule vérif que `dotnet test` ne peut pas donner (le `PATH` y est complet).
 
 ### 7.13 Ce que le parcours utilisateur impose — TRANCHÉ, NON CONSTRUIT
 
@@ -1139,7 +1197,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **174 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **210 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 
@@ -1157,15 +1215,17 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 | **Jalon 0 — packaging** | Bundle `.app` macOS installable, et les quatre mesures d'environnement qu'il a permises (§6.6). |
 | **Jalon 4 — journal & persistance** | `WorkflowEvent` + `IRunJournal` dans le noyau, `Cursus.Persistence` (SQLite + artefacts disque), `IClock`, `RunTrigger`, `RunId`. **Un run survit au process et se relit.** |
 | **Jalon 5 — le projet minimal** | `Cursus.Core.Projects` : la disposition `.cursus/`, `ProjectStore`, `WorkflowCatalog`, et le `.cursus/` de ce dépôt. **Un workflow se lit enfin depuis le disque.** |
+| **Jalon 6a/6b — flux & concurrence** | Sortie en flux sur disque (§4.12) ; runs concurrents, journal verrouillé, worktree git isolé (§4.13). **Un run se suit et plusieurs tournent de front.** |
+| **Jalon 6c — la jonction UI** | Lire le passé d'un projet (3a), lancer un workflow (3b), et l'**écran de run** (3c) : trajectoire déroulée, log en direct, contrôle d'arrêt à 3 positions (§4.16-4.18). **Un humain lance un workflow et voit le run avancer.** |
 
-⚠️ **Toujours aucun humain dans la boucle** : le catalogue existe, mais rien ne l'appelle en dehors des tests. Ni CLI (écartée, §9.4) ni UI ne permet encore de choisir un workflow et de le lancer — c'est l'objet du jalon **6c**, que deux jalons de noyau précèdent désormais (§9.4).
+✅ **Un humain est enfin dans la boucle** (jalon 6c) : la coquille ouvre les projets, lance un workflow d'un clic et en déroule le run en direct. Reste, hors `dotnet test`, la **preuve `PATH` sur l'app installée** (§9.2-15).
 
 ### 9.2 Les trous, en un endroit unique
 
 1. **Les deux moitiés du dépôt ne sont pas reliées** (§2) : aucun adaptateur entre `StartPty` et `IProcessRunner`, `SessionKind.Agent` mort. La couture elle-même est une question ouverte (§2.2). ⚠️ *Nuance depuis 6c·3a* : une **UI de workflow en lecture** existe désormais — l'app lit le journal pour afficher le dernier passage (§4.16) —, mais elle ne **lance** rien ; la moitié sessions/PTY, elle, reste disjointe.
 2. ~~**Aucun point d'entrée qui lise un fichier**~~, ~~**aucun exemple commité**~~ — **refermés au jalon 5** (§4.11). Reste ouvert : **aucun schéma JSON publié** pour outiller un éditeur, et aucun consommateur du catalogue hors des tests.
 3. ~~**Aucune persistance**~~ — **refermé au jalon 4** (§4.10). Restent ouverts : pas de `StepRunId` ni de `contentHash`, **aucun versionnement de schéma**, aucune purge, et un `state` à `NULL` qui confond « en cours » et « tué par un crash ».
-4. ~~**Aucune sortie incrémentale pendant un run**~~ — **refermé au jalon 6a** (§4.12). La sortie ruisselle désormais vers un fichier ouvert au démarrage de l'étape ; `ScriptResult` ne la porte plus, un `StepOutput` en porte les artefacts, et un script bavard fait grossir un fichier au lieu de faire tomber l'application. Le changement de type annoncé a bien eu lieu, avec une révision : ce n'est pas `ScriptResult` qui porte le chemin (il redevient purement factuel) mais `StepOutput`, séparé — l'emplacement de la sortie n'est pas l'affaire du process. Le journal, lui, n'émet toujours ses événements qu'aux **frontières d'étape** (§4.10) ; c'est le *fichier* qui se suit à la trace, pas un flux d'événements. **Reste ouvert, et propre à 6c** : l'**affichage** en direct de ce fichier — le flux *vivant* (décorateur d'`IRunJournal` vers un `Channel`, §7.12) distinct du flux *durable* posé ici.
+4. ~~**Aucune sortie incrémentale pendant un run**~~ — **refermé au jalon 6a** (§4.12). La sortie ruisselle désormais vers un fichier ouvert au démarrage de l'étape ; `ScriptResult` ne la porte plus, un `StepOutput` en porte les artefacts, et un script bavard fait grossir un fichier au lieu de faire tomber l'application. Le changement de type annoncé a bien eu lieu, avec une révision : ce n'est pas `ScriptResult` qui porte le chemin (il redevient purement factuel) mais `StepOutput`, séparé — l'emplacement de la sortie n'est pas l'affaire du process. Le journal, lui, n'émet toujours ses événements qu'aux **frontières d'étape** (§4.10) ; c'est le *fichier* qui se suit à la trace, pas un flux d'événements. ✅ **Refermé au 6c·3c** : l'**affichage** en direct de ce fichier est construit — l'écran de run tail l'artefact de la visite sélectionnée (`ArtifactTail` + minuteur, §4.18). Le flux d'événements (durable **et** live via un `IProgress` unique, `D-011`) pilote la trajectoire ; le log, lui, se lit du fichier — deux flux distincts, comme prévu.
 5. **Aucun passage de données entre étapes** (§4.8, invariant 9) : la seule mémoire partagée d'un run est son **worktree** (§4.13). Le câblage structuré (`${step.output}`) est *reporté, non écarté*, à rouvrir avec l'`AgentStep` ; l'état durable entre workflows vit dans git et le tracker, pas dans un magasin Cursus.
 6. **Le refus d'évasion de chemin ne suit pas les symlinks** — garde-fou de déclaration, **pas** confinement OS (§4.5).
 7. **`RunContext.Resolve` ne crée pas les répertoires** : un `workingSubdirectory` déclaré doit préexister.
@@ -1176,11 +1236,11 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 12. **Aucune interface d'abstraction du terminal** alors que le principe d'architecture la prévoyait ; couplage direct au type concret de RoyalTerminal.
 13. **L'app est de fait macOS-only** (provider VT natif OSX) alors que le cross-platform est revendiqué comme différenciateur (§1.2).
 14. ~~**Pas de politique de concurrence** documentée ni testée pour `WorkflowEngine`, et **`SqliteRunJournal` ne la supporte pas**~~ — **refermé au jalon 6b** (§4.13). `Append` est sérialisé par un `lock`, et chaque run s'exécute dans un **worktree git isolé** (`GitWorkspaceProvisioner`) : la preuve d'assemblage lance deux runs de front sur un même projet sans corruption du journal ni collision de fichiers. Restent ouverts et notés là-bas : la lecture concurrente *pendant* l'écriture (connexion séparée, propre à 6c), et un verrou de provisionnement si un jour on monte des worktrees en parallèle (aujourd'hui le montage est séquentiel).
-15. **Le `PATH` d'une app installée est tronqué**, et `ProcessRunner` ne le ré-enrichit pas : une étape utilisant un binaire d'`asdf` ou de Homebrew échoue en `LaunchFailed` hors développement (§6.6) — et depuis le jalon 6b **`git` lui-même** peut manquer ainsi (§4.13). C'est le pendant runtime d'un **check de configuration des prérequis Cursus** (git, puis `claude`…), noté comme petit jalon voisin : sa logique — « donné les commandes que Cursus exige, rendre celles qui manquent » — est pure et constructible tôt ; sa restitution à l'utilisateur attend une surface (6c). Le preflight des prérequis *d'un workflow* (`node`, `python`…) reste, lui, à la charge de l'utilisateur — question ouverte basse priorité.
+15. **Le `PATH` d'une app installée est tronqué** — ⚠️ **traité au 6c·3c, preuve sur bundle restante.** `PathStrategy` (`Workflows/Execution/`, `D-014`) résout un binaire hors du `PATH` minimal et enrichit le `PATH` transmis aux descendants ; `ProcessRunner` l'applique au lancement. ⚠️ **Gotcha .NET durable** : `Process.Start` **ne résout pas** une commande nue via le `PATH` de `StartInfo` — il faut la résoudre en **chemin absolu** nous-mêmes (`Resolve`), l'enrichissement ne servant qu'aux petits-fils (npm→node). La part pure est **testée** ; reste **la preuve sur l'app installée** (un binaire d'`asdf`/Homebrew/`git` qui tourne enfin), seule vérif que `dotnet test` ne peut pas donner (le `PATH` y est complet). Le **check des prérequis Cursus** (git, `claude`…) reste un petit jalon voisin — même logique pure, restitution qui attend sa surface. Le preflight des prérequis *d'un workflow* (`node`, `python`…) reste à la charge de l'utilisateur — question ouverte basse priorité.
 16. **Le bundle n'est pas notarisé** (signature ad-hoc) : installable sur la machine qui le construit, refusé par Gatekeeper ailleurs (§6.6).
 17. Hygiène : plan de jalons de `landscape.md` caduc, aucun remote git, pas de CI ni de LICENSE, pas d'icône d'application (§1.3-1.4).
 18. **La définition figée d'un run repasse par le validateur à la relecture** : durcir une règle de validation rendrait d'anciens runs illisibles (§4.10).
-19. ~~**La native `e_sqlite3` n'est pas contrôlée dans le bundle macOS**~~ — ✅ **refermé au 6c·3a** : `Cursus.App` référence `Cursus.Persistence`, `build/package-macos.sh` contrôle `libe_sqlite3.dylib`, et le bundle l'embarque (vérifié). La stratégie `PATH` (trou 15) reste, elle, ouverte — le lanceur de 6c·3b tourne sous `dotnet test` (PATH complet) ; le trou ne mord que depuis l'app installée, due donc au 6c·3c (le bouton qui la prouve).
+19. ~~**La native `e_sqlite3` n'est pas contrôlée dans le bundle macOS**~~ — ✅ **refermé au 6c·3a** : `Cursus.App` référence `Cursus.Persistence`, `build/package-macos.sh` contrôle `libe_sqlite3.dylib`, et le bundle l'embarque (vérifié). La stratégie `PATH` (trou 15) est **construite au 6c·3c**, sa **preuve sur bundle** restant le dernier geste manuel de la marche.
 
 ### 9.3 Questions ouvertes
 
@@ -1198,7 +1258,7 @@ Le détail et les alternatives vivent dans les documents de conception ; ceci es
 
 **Projet, tracker et déclenchement** — trois questions ouvertes, argumentées au **§7.10.6** : l'auto-déclenchement par cron (cible acceptée, reportée, et ce qui devra le rendre sûr), la forme des prédicats de disponibilité, et l'unification ou non du journal des runs avec un futur historique de board.
 
-**Présentation et composition** (`presentation.md` §8) — quatre questions laissées ouvertes par la conception du 2026-07-21. **La surface du run est désormais tranchée** par le parcours (`parcours.md` §4) : les workflows et les sessions sont **deux modes**, jamais deux surfaces en compétition pour le même panneau — donc **pas de routeur**, la coquille montre l'un ou l'autre. Reste à trancher *pendant* le jalon 6 : la **stratégie `PATH`** (trou 15, sans quoi les workflows commités échoueront depuis l'app installée). Les deux dernières — le gel d'`INotifyPropertyChanged` dans le noyau, et le moment d'adopter un harnais headless — sont **reportées sans coût**.
+**Présentation et composition** (`presentation.md` §8) — quatre questions laissées ouvertes par la conception du 2026-07-21. **La surface du run est tranchée** par le parcours (`parcours.md` §4) et **construite** (§4.18) : workflows et sessions sont **deux modes**, jamais deux surfaces en compétition — **pas de routeur**, la coquille montre l'un ou l'autre. La **stratégie `PATH`** est tranchée et construite au 6c·3c (`D-014`, trou 15) — reste sa preuve sur bundle. Les deux dernières — le gel d'`INotifyPropertyChanged` dans le noyau, et le moment d'adopter un harnais headless — sont **reportées sans coût**.
 
 **Parcours utilisateur** (`parcours.md` §6) — sept questions après la passe de maquettes du 2026-07-21. Une seule se pose encore dès le premier code écrit : la **mort de l'arbre de process à l'annulation** (⚠️ non vérifié : `/bin/sh -c "dotnet test"` engendre un fils que `Kill()` sans `entireProcessTree` laisserait orphelin) — et elle prend du poids, le contrôle d'arrêt étant désormais un état à trois positions dont la troisième doit vraiment tuer. Le **volume de sortie** est à moitié refermé : la persistance l'était déjà (les sorties vont en fichiers depuis le jalon 4, une par visite), reste l'affichage d'un fichier de milliers de lignes, qui est un problème de contrôle. Les nouvelles — l'état d'un nœud visité plusieurs fois, le repli quand un modèle est épuisé, ce qu'on montre d'une commande — n'arrivent qu'avec la vue graphe ou l'`AgentStep`. Les deux anciennes, retirer un projet dont un run tourne et la granularité de la vue tâches, attendent toujours leur écran.
 
@@ -1224,8 +1284,8 @@ Le plan d'origine en cinq jalons ne tient plus : les décisions du §7.10 ajoute
 | ~~**4**~~ | ~~**Journal & persistance**~~ — **FAIT**, détails au §4.10 et §7.11 | un run survit au process ; on peut relire ce qui s'est passé |
 | ~~**5**~~ | ~~**Le projet, minimal**~~ — **FAIT**, détails au §4.11 | `project.json` et des workflows lus **depuis le disque** |
 | ~~**6a**~~ | ~~**La sortie en flux**~~ — **FAIT**, détails au §4.12 | voir une étape avancer *pendant* qu'elle tourne — la sortie ruisselle sur disque, `ScriptResult` ne la porte plus |
-| **6b** | **Runs concurrents** — persistance seule | plusieurs workflows en vol, sur un projet comme sur plusieurs (trou §9.2-14) |
-| **6c** | **La jonction UI** | un humain ouvre ses projets, lance un workflow, et voit le run avancer |
+| ~~**6b**~~ | ~~**Runs concurrents**~~ — **FAIT**, détails au §4.13 | plusieurs workflows en vol, sur un projet comme sur plusieurs (trou §9.2-14) |
+| ~~**6c**~~ | ~~**La jonction UI**~~ — **FAIT** (3a lire, 3b lancer, 3c l'écran, §4.16-4.18) ; reste la **preuve `PATH` sur bundle** (manuel) | un humain ouvre ses projets, lance un workflow, et voit le run avancer — le log en direct, la trajectoire déroulée, l'arrêt |
 | **7** | **Tracker & `TaskStep`** | l'écran des actions disponibles ; un workflow tire et annote une carte |
 | **8+** | Éditeur de graphe · auto-déclenchement · `AgentStep` | |
 
@@ -1244,7 +1304,7 @@ coquille, et les trois écrans (ouverture, workflows d'un projet, run).
 
 **Le jalon 5 remboursait la dette du §9.2, point 2** (personne ne lisait un fichier depuis le disque). Fusionner cette couture avec le projet minimal plutôt qu'en faire un patch isolé s'est vérifié à l'usage : le `Project` est devenu le point de rendez-vous du workspace, du catalogue et des emplacements de journal, là où un « ouvrir un fichier » aurait été à refaire. Le registre machine et le trousseau (§7.10.1) en ont bien été tenus à l'écart, faute de consommateur avant le tracker.
 
-**La forme de 6c est déjà tranchée** (§7.12 et `presentation.md`, conception du 2026-07-21) : `ProjectHost` comme racine de composition — sous une racine multi-projets, §7.13 — un module de run, observation par décorateur d'`IRunJournal` vers un `Channel`, et deux tests — architecture et end-to-end headless — qui rendent exécutable le critère « l'UI n'est qu'une façon d'instancier et d'afficher ». Le **parcours utilisateur** est produit (`parcours.md`, 2026-07-21), et la passe de **maquettes** a eu lieu le même jour. Elle a tranché la coquille (rail d'icônes, état de l'application en pied cliquable), la configuration (un engrenage, pas un mode), la vue d'un run (graphe et liste, deux vues sœurs à sélection partagée) et son contrôle (un état à trois positions, pas un bouton) — le tout consigné dans `parcours.md` §1.2, §1.4, §1.6, §1.7 et §4. Les maquettes elles-mêmes sont **archivées sans autorité** dans `docs/design/maquettes/jalon-6.html` — ouvrables dans un navigateur, **non tenues à jour**, et sans valeur de spécification : elles sont en HTML quand Cursus est en XAML, et elles servaient à décider. Tout écart entre elles et `parcours.md` ou `presentation.md` se tranche en faveur de ces derniers. Les **jalons 6a et 6b sont FAITS** (§4.12, §4.13) ; reste **6c** (la jonction UI). Deux jalons voisins, hors de la ligne 6a-6c, ont émergé de la conception de 6b et sont notés à leur place : le **check des prérequis Cursus** (trou §9.2-15) et la **reprise d'un run interrompu** (§9.3), cette dernière à caler près de l'`AgentStep`.
+**La forme de 6c est déjà tranchée** (§7.12 et `presentation.md`, conception du 2026-07-21) : `ProjectHost` comme racine de composition — sous une racine multi-projets, §7.13 — un module de run, observation par décorateur d'`IRunJournal` vers un `Channel`, et deux tests — architecture et end-to-end headless — qui rendent exécutable le critère « l'UI n'est qu'une façon d'instancier et d'afficher ». Le **parcours utilisateur** est produit (`parcours.md`, 2026-07-21), et la passe de **maquettes** a eu lieu le même jour. Elle a tranché la coquille (rail d'icônes, état de l'application en pied cliquable), la configuration (un engrenage, pas un mode), la vue d'un run (graphe et liste, deux vues sœurs à sélection partagée) et son contrôle (un état à trois positions, pas un bouton) — le tout consigné dans `parcours.md` §1.2, §1.4, §1.6, §1.7 et §4. Les maquettes elles-mêmes sont **archivées sans autorité** dans `docs/design/maquettes/jalon-6.html` — ouvrables dans un navigateur, **non tenues à jour**, et sans valeur de spécification : elles sont en HTML quand Cursus est en XAML, et elles servaient à décider. Tout écart entre elles et `parcours.md` ou `presentation.md` se tranche en faveur de ces derniers. Les **jalons 6a, 6b et 6c sont FAITS** (§4.12, §4.13, §4.16-4.18) — la jonction UI est close, à la **preuve `PATH` sur bundle** près (manuelle). Deux jalons voisins, hors de la ligne 6a-6c, ont émergé de la conception de 6b et sont notés à leur place : le **check des prérequis Cursus** (trou §9.2-15) et la **reprise d'un run interrompu** (§9.3), cette dernière à caler près de l'`AgentStep`.
 
 **Le layout de graphe reste hors de 6c — mais l'argument a changé, et son statut avec.** La position d'origine (« le graphe est un jalon à lui seul, partagé avec l'éditeur dont il est le vrai coût ») est **révisée par la maquette du 2026-07-21** sur deux points, et l'écart mérite d'être écrit :
 

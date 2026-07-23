@@ -317,14 +317,14 @@ flowchart TB
 
 ---
 
-## 5. Les deux coutures vivantes
+## 5. Les coutures vivantes
 
 ### 5.1 La couture de lecture — ce qui tourne bout en bout aujourd'hui (6c·3a)
 
 Sélectionner un projet dans le rail ouvre sa surface et affiche, pour chaque
-workflow, son dernier passage. C'est la seule chaîne noyau → UI **complète** à ce
-jour. La règle de sens unique tient : la surface reçoit la *projection*, jamais le
-host.
+workflow, son dernier passage. C'est la **première** chaîne noyau → UI complète
+(l'écran de run en est la seconde, §5.3). La règle de sens unique tient : la
+surface reçoit la *projection*, jamais le host.
 
 ```mermaid
 sequenceDiagram
@@ -357,9 +357,9 @@ Le verdict français (`réussi`/`échoué`/`jamais lancé`) est calculé par
 
 Construite et testée dans le noyau ; le **lanceur** (`WorkflowLauncher`, 6c·3b) en
 est désormais l'appelant de production, composé par `ProjectHost.LaunchAsync`.
-Reste à câbler l'**observateur** à l'écran de run (6c·3c). Le lanceur provisionne le
-worktree *avant* et le démonte *après* : l'isolation n'entre pas dans le moteur
-(invariant 8).
+L'**observateur** est câblé à l'écran de run (6c·3c, §5.3) : c'est le flux live.
+Le lanceur provisionne le worktree *avant* et le démonte *après* : l'isolation
+n'entre pas dans le moteur (invariant 8).
 
 ```mermaid
 flowchart TB
@@ -369,7 +369,7 @@ flowchart TB
   runner["<b>IProcessRunner</b><br/><small>ProcessRunner : Process réel, tubes redirigés, tue l'arbre à l'annulation</small>"]
   journal["<b>IRunJournal</b><br/><small>rend durables 5 événements aux frontières d'étape</small>"]
   output["<b>IRunOutputStore</b><br/><small>puits ouvert avant chaque étape, sortie qui ruisselle</small>"]
-  observer["<b>IProgress&lt;WorkflowEvent&gt;</b><br/><small>flux live pour l'écran de run (6c·3c)</small>"]
+  observer["<b>IProgress&lt;WorkflowEvent&gt;</b><br/><small>flux live consommé par l'écran de run (6c·3c, §5.3)</small>"]
 
   launcher -->|"1 · provisionne le worktree par runId"| prov
   prov -.->|"RunContext = racine du worktree isolé"| launcher
@@ -381,6 +381,37 @@ flowchart TB
   engine -->|"ruisselle stdout/stderr"| output
   launcher -->|"3 · démonte le worktree"| prov
 ```
+
+### 5.3 La couture de l'écran de run — une projection, deux alimentations (6c·3c)
+
+L'écran d'un run *en cours* et celui d'un run *passé* sont **le même écran** : une
+seule `RunProjection` (Core testable) plie une séquence de `WorkflowEvent` en
+trajectoire + statut + contrôle, sans savoir d'où elle vient. Deux alimentations
+entrent par la **même porte** `Apply` — le flux live (§5.2) ou la relecture
+`ReadEvents` — et donnent la même projection (`D-013`, prouvé end-to-end). Le
+**log**, lui, est un second flux, distinct du pipeline : il tail le fichier
+d'artefact de la **visite sélectionnée** (vif si elle tourne, figé sinon).
+
+```mermaid
+flowchart TB
+  live["<b>flux live</b><br/><small>ProjectHost.LaunchAsync + IProgress (marshalé thread UI)</small>"]
+  replay["<b>relecture</b><br/><small>ProjectHost.ReadEvents(runId)</small>"]
+  proj["<b>RunProjection</b><br/><small>Apply : plie en trajectoire de visites + statut + contrôle 3 positions. Source-agnostique. Porte le runId (RunStarted).</small>"]
+  vm["<b>RunViewModel</b><br/><small>adaptateur (§7.12) : StartLive OU Replay ; commande d'arrêt → CancellationToken</small>"]
+  tail["<b>ArtifactTail</b><br/><small>RunArtifactStore.Follow(runId, visite) — tiré par un minuteur</small>"]
+  view["<b>RunView.axaml</b><br/><small>trajectoire déroulée en haut, log sur fond terminal en bas</small>"]
+
+  live -->|"Apply(event)"| proj
+  replay -->|"Apply(event)"| proj
+  proj --> vm
+  vm -->|"log ← visite sélectionnée"| tail
+  vm --> view
+```
+
+Tout ce qui est *au-dessus* de `RunViewModel` (la vue, le câblage) est
+**présentation non testée** (§7.12) ; `RunProjection`, le contrôle 3 positions, le
+tail et la coïncidence des deux alimentations sont, eux, du noyau/persistance
+**testé**.
 
 ---
 
