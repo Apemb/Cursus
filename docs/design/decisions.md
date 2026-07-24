@@ -628,3 +628,60 @@ graphe↔liste », **différée** hors de ce jalon.
 
 **Renvoi** : `architecture.md` §4.1 (le record), §4.2 (format + convention des nuls) ; `schemas.md` §5.2 ;
 prochaine pierre de l'arc — `D-01x` à venir : persistance de catalogue + modèle d'édition (brouillons permis).
+
+---
+
+## D-019 — Le catalogue passe en lecture + écriture ; « brouillons permis » vit dans un `Save` qui ne valide pas
+
+**Contexte.** L'arc **authoring** se poursuit, Core d'abord. Après le modèle « titre court » (`D-018`),
+il restait une **asymétrie** : `WorkflowCatalog` savait *lister* et *charger* (`List`/`Load`), le
+sérialiseur savait *réécrire* (`WorkflowSerializer.Write`, testé, aller-retour prouvé) — mais **personne
+ne persistait**. Aucun code ne créait, ne sauvegardait, ne supprimait ni ne renommait un workflow sur le
+disque. L'éditeur à venir n'avait nulle part où écrire. Par ailleurs, une bifurcation de l'arc avait été
+tranchée : **brouillons permis** — on doit pouvoir persister un workflow *même invalide*, la validation
+devenant un diagnostic vivant plutôt qu'un péage à l'écriture.
+
+**Décision.** Le **chemin d'écriture vit sur `WorkflowCatalog`** (pas dans un nouveau store), par
+symétrie avec `Load` : la même classe qui apporte disque + identité pour lire les apporte pour écrire, et
+délègue la traduction au sérialiseur (`Load`→`Read`, `Save`→`Write`). Quatre méthodes :
+- `Create(id)` fait naître un **brouillon vide** (`entryStep: ""`, `steps: []`) — invalide mais éditable ;
+- `Save(id, def)` persiste **sans valider** — c'est là, et nulle part ailleurs, que « brouillons permis »
+  se réalise ;
+- `Delete(id)` · `Rename(old, new)`.
+
+Deux invariants gardés, deux exceptions nommées : refuser d'écraser une identité déjà prise
+(`WorkflowAlreadyExistsException`, sur `Create` et `Rename`) ; rejeter un id qui échapperait au dossier
+des workflows (`InvalidWorkflowIdException`, garde au **point de choke unique** `PathOf`). L'absence d'un
+fichier, elle, laisse remonter le `FileNotFoundException` du framework — convention déjà tenue par `Load`.
+
+**Pourquoi.** « Brouillons permis » **ne coûte aucun type neuf** : `WorkflowDefinition` n'est *que de la
+donnée* (une arête vers une étape absente est représentable), et l'invariant de validité ne vit que dans
+`LoadResult` (couplage `Definition != null ⟺ IsValid`). Un `Save` qui appelle `Write` sans passer par le
+validateur persiste donc un graphe cassé sans effort ; c'est le *chargement* qui en rapporte les
+problèmes. Loger l'écriture sur le catalogue plutôt que dans un store séparé évite de disperser la
+responsabilité « les workflows d'un projet » sur deux types. La garde de légalité d'id est **load-bearing**
+dès que l'éditeur (·3) fera transiter de la saisie utilisateur : un id avec séparateur ferait atterrir le
+fichier hors du dossier.
+
+**Alternatives écartées.**
+- *Un `WorkflowStore` statique façon `ProjectStore`* — casserait la symétrie avec `Load` et couperait en
+  deux la responsabilité du catalogue.
+- *Faire valider `Save`* (refuser d'écrire un graphe cassé) — contredit frontalement « brouillons permis » :
+  l'éditeur doit pouvoir sauver un travail en cours, la validité est un diagnostic, pas un péage.
+- *Naître avec un squelette « valide »* (une étape placeholder) — présomptueux, et faux dès que
+  l'utilisateur veut autre chose ; naître vide est l'honnête traduction du brouillon.
+- *Slugifier un libellé humain en identifiant dans le catalogue* — la transformation libellé→id est
+  l'affaire de la couche éditeur (·3) ; le catalogue **rejette** un id illégal, il ne le répare pas.
+
+**Ce que ce jalon ne fait PAS (·2b, à venir).** Le **`WorkflowDraft` mutable** et ses invariants
+référentiels (renommer un Id d'étape réécrit les arêtes qui le ciblent ; supprimer une étape gère les
+arêtes pendantes) ; le **chargement non validé éditable** (relâcher le couplage de `LoadResult` pour
+*rouvrir* un brouillon cassé en édition — ici `Save` écrit un graphe invalide, mais le rouvrir passe encore
+par `Load`, qui rend `Definition == null`). C'est précisément le trou que ·2b referme.
+
+**Conséquences.** `WorkflowCatalog` gagne 4 méthodes + une garde `PathOf` ; deux exceptions neuves dans
+`Cursus.Core.Projects`. `WorkflowSerializer` et `LoadResult` **inchangés**. `WorkflowCatalogTests` : 8 → 20.
+Suite 232 → **244** (216 Core + 28 Persistence).
+
+**Renvoi** : `architecture.md` §4.7 (la table du catalogue) ; prochaine pierre — ·2b : le draft mutable et
+le chargement non validé éditable.

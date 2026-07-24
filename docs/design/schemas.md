@@ -478,7 +478,7 @@ flowchart TB
   subgraph Core["Cursus.Core"]
     Host["<b>ProjectHost</b><br/><small>racine de composition d'un projet ouvert ; joint workflows × runs</small>"]
     LastRun["<b>WorkflowLastRun</b><br/><small>un workflow et son dernier run (ou aucun)</small>"]
-    Catalog["<b>WorkflowCatalog</b><br/><small>liste/charge les workflows du disque</small>"]
+    Catalog["<b>WorkflowCatalog</b><br/><small>liste/charge/écrit les workflows du disque</small>"]
     Summary["<b>RunSummary</b><br/><small>ce qu'on sait d'un run sans relire ses événements</small><br/><b>+</b> <small>EndedAt et WorkflowId</small>"]
     Started["<b>WorkflowEvent.RunStarted</b><br/><small>l'ouverture d'un run (trigger, workspace)</small><br/><b>+</b> <small>workflow_id, la provenance</small>"]
   end
