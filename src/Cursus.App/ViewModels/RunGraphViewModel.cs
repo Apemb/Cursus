@@ -1,10 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Linq;
-
-using Avalonia.Media;
 
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -17,26 +13,12 @@ namespace Cursus.App.ViewModels;
 /// Le module graphe de l'écran de run : adaptateur sur <see cref="GraphProjection"/> (le
 /// statut, plié du flux) et <see cref="GraphLayout"/> (la disposition, calculée une fois
 /// de la structure). Vue sœur de la trajectoire, brique adossée à sa propre projection,
-/// ignorant quel écran l'héberge (<c>D-016</c>). Il traduit la grille <b>abstraite</b> de
-/// Core en <b>pixels</b> — c'est ici, et pas en Core, que vivent les constantes de pas, la
-/// mesure des libellés et le tracé des connecteurs (§7.12, <c>D-017</c>). Non testé.
+/// ignorant quel écran l'héberge (<c>D-016</c>). La traduction de la grille <b>abstraite</b>
+/// de Core en <b>pixels</b> est déléguée à <see cref="GraphGeometry"/>, foyer partagé avec
+/// le header de définition (§7.12, <c>D-017</c>) ; ce VM ne garde que le statut. Non testé.
 /// </summary>
 public sealed partial class RunGraphViewModel : ObservableObject
 {
-    // Géométrie de vue : réglage à l'œil, pas un invariant — c'est ce que Core ignore.
-    private const double NodeHeight = 44;
-    private const double RowStride = NodeHeight + 24;
-    private const double ColumnGap = 40;
-    private const double Margin = 16;
-    private const double MinNodeWidth = 96;
-    private const double MaxNodeWidth = 260;
-
-    // Chrome horizontal d'une boîte (marges internes + glyphe + espacement + réserve de
-    // badge « ×n ») qui s'ajoute à la largeur mesurée du libellé. Le badge est réservé
-    // partout — un nœud peut reboucler en cours de run sans qu'on veuille le réélargir.
-    private const double LabelFontSize = 13;
-    private const double NodeChrome = 10 + 16 + 7 + 20 + 10;
-
     private readonly GraphProjection _projection = new();
     private readonly Dictionary<string, GraphNodeRow> _rows = new();
     private readonly Dictionary<(string From, string To), GraphConnectorRow> _connectors = new();
@@ -90,87 +72,27 @@ public sealed partial class RunGraphViewModel : ObservableObject
         _rows.Clear();
         _connectors.Clear();
 
-        var layout = GraphLayout.Of(definition);
-        var placements = layout.Placements.ToDictionary(placement => placement.StepId);
-        if (layout.ColumnCount == 0)
-        {
-            CanvasWidth = CanvasHeight = 0;
-            return;
-        }
-
-        // Largeur de chaque colonne = le plus large de ses libellés mesurés. Toutes les
-        // boîtes d'une colonne partagent cette largeur pour s'aligner ; les connecteurs
-        // s'accrochent alors à un bord de colonne net.
-        var columnWidth = new double[layout.ColumnCount];
-        foreach (var node in _projection.Nodes)
-        {
-            var column = placements[node.StepId].Column;
-            columnWidth[column] = Math.Max(columnWidth[column], NodeBoxWidth(node.Name));
-        }
-
-        // Abscisse de départ de chaque colonne : la somme des largeurs précédentes.
-        var columnX = new double[layout.ColumnCount];
-        var cursor = Margin;
-        for (var column = 0; column < layout.ColumnCount; column++)
-        {
-            columnX[column] = cursor;
-            cursor += columnWidth[column] + ColumnGap;
-        }
+        // Les libellés viennent de la projection (le nom porté par le run) ; la géométrie,
+        // elle, est posée par le foyer partagé — ce VM n'y ajoute que le statut.
+        var names = _projection.Nodes.ToDictionary(node => node.StepId, node => node.Name);
+        var geometry = GraphGeometry.Of(GraphLayout.Of(definition), id => names.GetValueOrDefault(id, id));
 
         foreach (var node in _projection.Nodes)
         {
-            var placement = placements[node.StepId];
-            var row = new GraphNodeRow(node, columnX[placement.Column], NodeY(placement.Row), columnWidth[placement.Column]);
+            var box = geometry.Boxes[node.StepId];
+            var row = new GraphNodeRow(node, box.X, box.Y, box.Width);
             _rows[node.StepId] = row;
             Nodes.Add(row);
         }
 
-        foreach (var edge in layout.Edges)
+        foreach (var edge in geometry.Edges)
         {
-            var path = PathFor(placements[edge.From], placements[edge.To], edge.IsBackEdge, columnX, columnWidth);
-            var connector = new GraphConnectorRow(edge.From, edge.To, Geometry.Parse(path), edge.IsBackEdge);
+            var connector = new GraphConnectorRow(edge.From, edge.To, edge.Geometry, edge.IsBackEdge);
             _connectors[(edge.From, edge.To)] = connector;
             Connectors.Add(connector);
         }
 
-        var loopDip = layout.Edges.Any(edge => edge.IsBackEdge) ? RowStride * 0.6 : 0;
-        CanvasWidth = columnX[^1] + columnWidth[^1] + Margin;
-        CanvasHeight = 2 * Margin + Math.Max(0, layout.RowCount - 1) * RowStride + NodeHeight + loopDip;
-    }
-
-    /// <summary>La largeur d'une boîte : le chrome fixe plus le libellé mesuré, borné pour ne pas s'étirer sans fin.</summary>
-    private static double NodeBoxWidth(string label) =>
-        Math.Clamp(NodeChrome + MeasureLabel(label), MinNodeWidth, MaxNodeWidth);
-
-    /// <summary>Mesure la largeur rendue d'un libellé — le ViewModel ne dessine pas, il mesure pour disposer.</summary>
-    private static double MeasureLabel(string label) =>
-        new FormattedText(label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Typeface.Default, LabelFontSize, null).Width;
-
-    private static double NodeY(int row) => Margin + row * RowStride;
-
-    /// <summary>
-    /// Le tracé d'une arête. Une arête avant relie le bord droit de la colonne source au
-    /// bord gauche de la colonne cible (segment droit). Une arête-retour part du bas de la
-    /// source et s'arque sous les nœuds jusqu'au bas de la cible — la boucle se voit.
-    /// Formaté en culture invariante : le séparateur décimal doit rester le point, sinon
-    /// une virgule casserait la grammaire du chemin.
-    /// </summary>
-    private static string PathFor(NodePlacement from, NodePlacement to, bool isBackEdge, double[] columnX, double[] columnWidth)
-    {
-        if (isBackEdge)
-        {
-            var bx1 = columnX[from.Column] + columnWidth[from.Column] / 2;
-            var by1 = NodeY(from.Row) + NodeHeight;
-            var bx2 = columnX[to.Column] + columnWidth[to.Column] / 2;
-            var by2 = NodeY(to.Row) + NodeHeight;
-            var dip = Math.Max(by1, by2) + RowStride * 0.55;
-            return FormattableString.Invariant($"M {bx1},{by1} C {bx1},{dip} {bx2},{dip} {bx2},{by2}");
-        }
-
-        var x1 = columnX[from.Column] + columnWidth[from.Column];
-        var y1 = NodeY(from.Row) + NodeHeight / 2;
-        var x2 = columnX[to.Column];
-        var y2 = NodeY(to.Row) + NodeHeight / 2;
-        return FormattableString.Invariant($"M {x1},{y1} L {x2},{y2}");
+        CanvasWidth = geometry.CanvasWidth;
+        CanvasHeight = geometry.CanvasHeight;
     }
 }
