@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `807cf69` (*le chemin d'écriture du catalogue — D-019*). Dernier jalon de code : *jalon éditeur ·2a — `WorkflowCatalog` gagne `Create`/`Save`/`Delete`/`Rename` ; « brouillons permis » réalisé par un `Save` qui **ne valide pas**, sans type d'édition neuf* (§4.7, `D-019`) — deuxième pierre de l'arc **authoring** (créer/modifier projet · workflow · étape), qui ferme l'asymétrie lecture/écriture du catalogue (le jalon ·1 `D-018` avait posé le modèle « titre court », §4.2). Suite de tests : **244 verts** (216 Core + 28 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour du commit `b37df9a` (*le brouillon mutable + le chargement non validé éditable — D-020*). Dernier jalon de code : *jalon éditeur ·2b — `WorkflowDraft` mutable (sous-couche `Editing`) qui garde le graphe **référentiellement clos** sous rename/remove, et une **porte sœur** de chargement (`ReadEditable`/`Open` → `ParsedWorkflow`) qui rouvre un brouillon cassé pour l'éditer, `LoadResult` restant intact pour le run* (§4.6, §4.11, §4.19, `D-020`) — troisième pierre de l'arc **authoring** (créer/modifier projet · workflow · étape), qui referme le trou laissé par ·2a (`D-019` : on savait sauver un brouillon cassé, pas le rouvrir). Suite de tests : **254 verts** (226 Core + 28 Persistence), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -40,8 +40,8 @@
 
 | Moitié | Emplacement | État |
 |---|---|---|
-| Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 7 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **deux projections sœurs** (`Projection/`, event-fed) : `RunProjection` plie le flux en trajectoire + statut + contrôle 3 positions (6c·3c), `GraphProjection` le plie en overlay de graphe qui montre le **non-parcouru** (vue graphe) ; à côté, `GraphLayout` en dispose la structure sur une grille par couches (calcul **pur**, statique, arêtes-retour comprises). **153 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
-| Projet & catalogue | `src/Cursus.Core/Projects/` (9 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert : lire le passé, **lancer** (6c·3b), **relire les événements** d'un run (`ReadEvents`, 6c·3c). **38 tests.** Voir §4.11, §4.14, §4.16, §4.17. |
+| Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 7 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **deux projections sœurs** (`Projection/`, event-fed) : `RunProjection` plie le flux en trajectoire + statut + contrôle 3 positions (6c·3c), `GraphProjection` le plie en overlay de graphe qui montre le **non-parcouru** (vue graphe) ; à côté, `GraphLayout` en dispose la structure sur une grille par couches (calcul **pur**, statique, arêtes-retour comprises). **161 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
+| Projet & catalogue | `src/Cursus.Core/Projects/` (9 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert : lire le passé, **lancer** (6c·3b), **relire les événements** d'un run (`ReadEvents`, 6c·3c). **51 tests.** Voir §4.11, §4.14, §4.16, §4.17. |
 | Persistance | `src/Cursus.Persistence/` | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque avec **suiveur de tail** (6c·3c), et le préréglage SQLite de `ProjectHost`. **28 tests.** Un run survit au process ; le flux live d'un run et sa relecture donnent la **même** projection (preuve end-to-end, 6c·3c). |
 | Écran de run & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et l'**écran de run** (6c·3c) : cliquer un workflow le lance et déroule sa trajectoire, le log de la visite sélectionnée se suit en direct, un contrôle à trois positions l'arrête ; un run passé se rouvre en relecture. Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
 
@@ -83,7 +83,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 244 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 254 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -177,8 +177,9 @@ Namespace racine `Cursus.Core.Workflows` pour le **vocabulaire partagé**, plus 
 | `Cursus.Core.Workflows` (racine) | Le vocabulaire : définition du graphe (`WorkflowDefinition`, `StepDefinition`, `Edge`, `Guard`, `UnknownStepException`), état d'un run (`WorkflowRun`, `StepRun`, `RunSummary`, `RunTrigger`, `WorkflowEvent`), contrat de script/sortie (`ScriptSpec`, `ScriptResult`, `ScriptOutcome`, `StepOutput`, `OutputArtifact`) |
 | `…Execution` | `WorkflowEngine`, `WorkflowLauncher`, `RunContext`, `IClock`, `IProcessRunner`, `ProcessRunner`, `PathStrategy`, `PathEscapesWorkspaceException` |
 | `…Projection` | `RunProjection` (plie le flux en trajectoire + statut + sélection + contrôle), `RunVisit`, `RunControl` (enum 3 positions) ; **`GraphProjection`** (plie le même flux en overlay de graphe : structure + statut par nœud + arêtes traversées), `GraphNode`, `GraphEdge`, `GraphNodeStatus` ; **`GraphLayout`** (dispose la structure sur une grille par couches — calcul **pur/statique**), `NodePlacement`, `LaidOutEdge`. Deux projections sœurs + un calcul de disposition, cœur testable de l'écran de run (§4.18) |
-| `…Serialization` | `WorkflowSerializer`, `WorkflowDocument`, `UnknownGuardException` |
+| `…Serialization` | `WorkflowSerializer`, `LoadResult`, `ParsedWorkflow`, `WorkflowDocument`, `UnknownGuardException` |
 | `…Validation` | `WorkflowValidator`, `ValidationReport` (+ `ValidationIssueKind`, `ValidationIssue`) |
+| `…Editing` | `WorkflowDraft` — surface d'édition mutable, garde le graphe **référentiellement clos** sous rename/remove (§4.19, `D-020`) |
 | `…Journaling` | `IRunJournal`, `IRunJournalReader`, `InMemoryRunJournal`, `JournalEntry` |
 | `…Output` | `IRunOutputStore`, `InMemoryRunOutputStore`, `IStepOutputSink` |
 | `…Workspaces` | `IWorkspaceProvisioner`, `GitWorkspaceProvisioner`, `IProvisionedWorkspace`, `WorkspaceRequest`, `GitNotAvailableException` |
@@ -207,7 +208,8 @@ Namespace racine `Cursus.Core.Workflows` pour le **vocabulaire partagé**, plus 
 | `Projection/GraphLayout.cs` | Dispose un `WorkflowDefinition` sur une grille par couches : profondeur en plus-long-chemin, ordre dans la couche, arêtes classées **avant/retour** (les boucles retirées pour ne pas diverger). Calcul **pur/statique**, sans pixel. Voir §4.18, `D-017` |
 | `WorkflowRun.cs` · `StepRun.cs` | `RunState`, `AbortReason`, historique · une visite (`Result` + `Output`) |
 | `WorkflowValidator.cs` · `ValidationReport.cs` | Validité du graphe · `ValidationIssueKind` (9 valeurs), `ValidationIssue`, `ValidationReport` |
-| `WorkflowSerializer.cs` · `WorkflowDocument.cs` | JSON ⟷ modèle, `LoadResult` · les DTO `internal` |
+| `WorkflowSerializer.cs` · `WorkflowDocument.cs` | JSON ⟷ modèle ; deux portes de lecture — `Read`→`LoadResult` (valider, pour le run) et `ReadEditable`→`ParsedWorkflow` (parser même invalide, pour éditer), `Read` étant un rabat de `ReadEditable` · `LoadResult` (validité-couplé) · `ParsedWorkflow` (parse-couplé, invariant inversé) · les DTO `internal` |
+| `Editing/WorkflowDraft.cs` | Surface d'édition mutable : `new(def)`, `RenameStep` (retarge arêtes + entrée), `RemoveStep` (purge arêtes entrantes + entrée), `ToDefinition()`. Invariant : une opération structurelle laisse le graphe clos. Voir §4.19, `D-020` |
 | `UnknownStepException.cs` · `PathEscapesWorkspaceException.cs` · `UnknownGuardException.cs` | Voir §4.6 |
 | `WorkflowEvent.cs` · `JournalEntry.cs` | Les 5 événements (variantes imbriquées) · l'enveloppe `RunId`/`Seq`/`At` |
 | `IRunJournal.cs` · `IRunJournalReader.cs` · `InMemoryRunJournal.cs` | Écrire · relire · l'implémentation volatile. Voir §4.10 |
@@ -354,6 +356,8 @@ Pourquoi ce sont des erreurs : avec `MaxVisits < 1` le moteur interromprait le r
 
 `WorkflowSerializer.Read(string) → LoadResult` / `Write(WorkflowDefinition) → string`. **Ne touche jamais au disque** : lire et écrire le fichier appartient à l'appelant. Invariant : `LoadResult.Definition != null ⟺ Report.IsValid` — « une définition ou des raisons, jamais les deux ».
 
+**Deux portes de lecture, une pour exécuter, une pour éditer** (`D-020`). Le couplage « non-null ⟺ valide » ci-dessus est ce dont le chemin de lancement a besoin (`ProjectHost` fait `Load(...).Definition!`), mais l'éditeur veut l'inverse : rouvrir un brouillon **cassé** pour le corriger. D'où `ReadEditable(string) → ParsedWorkflow`, qui rend la définition parsée **même invalide** (null seulement si le *parsing* échoue — JSON malformé, garde inconnue), la validité se lisant alors dans le `Report`. `ParsedWorkflow` est le jumeau de `LoadResult` *de forme*, d'invariant **opposé** (`Definition != null ⟺ le document a parsé`). `Read` se réduit à un **rabat** de `ReadEditable` (`Definition = Report.IsValid ? parsed.Definition : null`) : un seul chemin de parse, deux projections. Le catalogue expose les deux par symétrie — `Load`→`Read`, `Open`→`ReadEditable` (§4.11).
+
 ```mermaid
 flowchart LR
     J["JSON"] --> D["Deserialize&lt;WorkflowDocument&gt;"]
@@ -388,7 +392,7 @@ flowchart LR
 1. **`ScriptResult.IsSuccess` est la source unique de vérité du succès.**
 2. **L'ordre de déclaration des arêtes est la priorité** (`FirstOrDefault` : première déclarée gagnante).
 3. **Aucun `Process.Start` hors de `ProcessRunner`.**
-4. **`LoadResult.Definition != null ⟺ Report.IsValid`.**
+4. **`LoadResult.Definition != null ⟺ Report.IsValid`** (porte `Read`/`Load`, pour exécuter) ; son jumeau inversé **`ParsedWorkflow.Definition != null ⟺ le document a parsé`** (porte `ReadEditable`/`Open`, pour éditer — `D-020`).
 5. **Le compteur de visites précède l'exécution** : dépasser `MaxVisits` n'ajoute aucun `StepRun`.
 6. **La définition reste portable** : aucun chemin absolu ; `RunContext` n'en fait pas partie.
 7. **L'annulation n'est pas une issue d'exécution**, c'est une interruption du run — et elle **conserve l'historique**.
@@ -407,9 +411,10 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 | `Workflows/InMemoryRunOutputStoreTests.cs` (2) | Le puits volatile : une sortie écrite se relit avec sa taille ; un flux muet a un `Path` absent. |
 | `Workflows/WorkflowEngineTests.cs` (18) | La traversée sur `StubProcessRunner` : le stub **enregistre les `ScriptSpec` reçues** (donc assert de la composition du `WorkingDirectory`), **répète le dernier résultat** une fois la liste épuisée (« le runner réussit toujours »), et `CancelAfterRun` simule une annulation **pendant** le run. Boucle convergente, boucle bornée à `[1,2,3]`, `TimedOut` routé par `OnFailure`, `LaunchFailed` terminal. |
 | `Workflows/WorkflowExecutionTests.cs` (2) | Assemblage **sans aucun double**, sur `/bin/sh` : un graphe déclaré en C#, puis la chaîne JSON → `Read` → `ExecuteAsync` **depuis un document en mémoire**, artefacts réellement écrits sur disque aux bons endroits. La variante partant d'un **fichier** est dans `ProjectRunTests`. |
-| `Workflows/WorkflowSerializerTests.cs` (15) | L'aller-retour caractère pour caractère (`Read`→`Write`) et l'idempotence (`Write`→`Read`→`Write`), le document servant de référentiel de comparaison ; les formes de malformation ; « absence de timeout ≠ zéro » ; la **description** portée, absente, et survivant à l'aller-retour (`D-018`). |
+| `Workflows/WorkflowSerializerTests.cs` (17) | L'aller-retour caractère pour caractère (`Read`→`Write`) et l'idempotence (`Write`→`Read`→`Write`), le document servant de référentiel de comparaison ; les formes de malformation ; « absence de timeout ≠ zéro » ; la **description** portée, absente, et survivant à l'aller-retour (`D-018`) ; la porte **`ReadEditable`** qui rend un graphe invalide malgré tout et annule un document malformé (`D-020`). |
 | `Workflows/RunContextTests.cs` (10) | Les **justifications absentes du code** du refus d'une racine relative ou inexistante. |
 | `Workflows/WorkflowValidatorTests.cs` (11) | La motivation de chaque règle et l'**ordre exact** d'un rapport multi-issues. |
+| `Workflows/Editing/WorkflowDraftTests.cs` (7) | L'invariant du brouillon mutable (`D-020`) : l'aller-retour neutre (la copie fidèle), renommer une étape qui retarge les arêtes et fait suivre le point d'entrée, supprimer une étape qui purge les arêtes entrantes et vide l'entrée. |
 | `SessionWorkspaceTests` · `ShellResolverTests` · `TerminalSessionTests` (13) | La politique de sélection après fermeture (`min(index, count-1)`, sinon `null`), la numérotation « Session N », la cascade `$SHELL` → `/bin/zsh` → `/bin/bash` avec prédicat d'existence injecté. |
 | `Workflows/WorkflowJournalTests.cs` (18) · `Workflows/InMemoryRunJournalTests.cs` (8) | Ce que le moteur émet et dans quel ordre (dont le `runId` fourni par l'appelant) · l'enveloppe posée par le journal (dont sa sûreté sous `Append` concurrent). |
 | `Workflows/WorkflowProgressTests.cs` (4) · `Workflows/WorkflowLauncherTests.cs` (5) | Le flux d'événements poussé à l'observateur (dont `RunStarted` portant le `runId` du run rendu, 6c·3c) · le montage du lanceur : provenance estampillée, worktree démonté quoi qu'il advienne. |
@@ -417,7 +422,7 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 | `Workflows/GraphProjectionTests.cs` (9) | Le fold sœur en overlay de graphe : structure apprise du `RunStarted` (un nœud par étape, arêtes reflétées), statut par nœud (en cours → issue, non visité, dernière issue + `VisitCount` d'une boucle), et arête marquée traversée par `EdgeChosen`. |
 | `Workflows/GraphLayoutTests.cs` (12) | Le calcul de disposition : profondeur en plus-long-chemin (chaîne, diamant, chemin long qui gagne), ordre en colonne par définition, **arêtes-retour** repérées sur les boucles (le calcul termine), îlots placés quand même, dimensions de la grille. |
 | `Cursus.Persistence.Tests/` (28) | Le magasin d'artefacts (dont le **tail** d'un artefact qui grossit, 6c·3c), le journal SQLite (dont sa sûreté sous contention, l'aller-retour du `workflow_id`/`ended_at`, et la restitution du `runId` sur `RunStarted`), et des assemblages — les tests de durabilité **referment puis rouvrent** le journal avant de relire. `ProjectRunTests` est le seul où **aucun emplacement n'est composé par le test** : ils viennent tous du `Project` — **preuve d'assemblage concurrent** du 6b. `ProjectHostEndToEndTests` porte les **tests exécutables du §7.12** : ouvrir un `ProjectHost` sur une vraie base, lire (6c·3a), lancer puis lire (6c·3b), et **plier le flux live == plier la relecture** (6c·3c) — le tout **sans Avalonia**. |
-| `Projects/ProjectStoreTests.cs` (13) · `Projects/WorkflowCatalogTests.cs` (20) · `Projects/ProjectRegistryTests.cs` (10) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, qu'un document cassé ne cache pas les autres, et le **chemin d'écriture** (`D-019`) : créer fait naître un brouillon, sauvegarder ne valide pas, refus d'écraser une identité, rejet d'un id qui échapperait au dossier · le registre machine (charge/persiste/ajoute/retire, une lecture ne mute jamais, convention XDG). |
+| `Projects/ProjectStoreTests.cs` (13) · `Projects/WorkflowCatalogTests.cs` (21) · `Projects/ProjectRegistryTests.cs` (10) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, qu'un document cassé ne cache pas les autres, le **chemin d'écriture** (`D-019`) : créer fait naître un brouillon, sauvegarder ne valide pas, refus d'écraser une identité, rejet d'un id qui échapperait au dossier, et **`Open`** qui rouvre un brouillon cassé en rendant sa définition parsée + son rapport (`D-020`) · le registre machine (charge/persiste/ajoute/retire, une lecture ne mute jamais, convention XDG). |
 | `Projects/ProjectHostTests.cs` (5) | La jointure workflows × runs du host sur `InMemoryRunJournal` seedé : « jamais lancé » quand rien n'a tourné, le plus récent gagne, chaque run rattaché à son `WorkflowId`, `ReadEvents` rend les événements d'un run (6c·3c), et disposer le host ferme le journal (une connexion, un host). |
 | `Projects/CursusProjectTests.cs` (2) | Que **ce dépôt** s'ouvre comme projet Cursus et que ses workflows commités valident. Le seul test qui lise le dépôt lui-même — garde-fou contre des exemples qui pourrissent. |
 | `Projects/ProjectRegistryTests.cs` (10) | Le registre machine (6c·1) : inscrire un projet valide, refuser un dossier sans `.cursus/`, dédoublonner par racine normalisée, retirer sans toucher au dépôt · persister et **recharger** entre deux instances · démarrage à froid sans fichier · un chemin qui ne résout plus est **ignoré de la liste mais conservé dans le fichier** (une lecture ne mute rien) · et la résolution du dossier machine (`$XDG_CONFIG_HOME` sinon `~/.config`, vide = absent), **jamais** `~/Library/Application Support`. |
@@ -482,7 +487,7 @@ Ce que la lecture du code ne donne pas d'emblée :
 |---|---|
 | `Project` | L'identité (`Id`, `Name`) et **où sont les choses**, ce qu'il sait seul : `Root`, `CursusDirectory`, `ProjectFilePath`, `WorkflowsDirectory`, `DatabasePath`, `ArtifactsRoot`, `WorktreesRoot`. Ne fabrique **plus** de `RunContext` — la racine d'un run est un worktree provisionné (§4.13) |
 | `ProjectStore` | `Create` · `Open` · `Discover`. Le seul type du noyau qui écrive la disposition |
-| `WorkflowCatalog` | **Lecture** : `List()` rend des `WorkflowEntry(Id, Path)` · `Load(id)` rend un `LoadResult`. **Écriture** (`D-019`) : `Create(id)` fait naître un brouillon vide · `Save(id, def)` persiste **sans valider** (c'est là que vivent les brouillons) · `Delete(id)` · `Rename(old, new)`. Apporte le disque et l'identité, délègue la traduction au sérialiseur. Refuse d'écraser une identité (`WorkflowAlreadyExistsException`) et rejette un id qui échapperait au dossier (`InvalidWorkflowIdException`, garde au point de choke `PathOf`) |
+| `WorkflowCatalog` | **Lecture** : `List()` rend des `WorkflowEntry(Id, Path)` · `Load(id)` rend un `LoadResult` (valider, pour le run) · `Open(id)` rend un `ParsedWorkflow` (parser même invalide, pour éditer — porte sœur, `D-020`). **Écriture** (`D-019`) : `Create(id)` fait naître un brouillon vide · `Save(id, def)` persiste **sans valider** (c'est là que vivent les brouillons) · `Delete(id)` · `Rename(old, new)`. Apporte le disque et l'identité, délègue la traduction au sérialiseur. Refuse d'écraser une identité (`WorkflowAlreadyExistsException`) et rejette un id qui échapperait au dossier (`InvalidWorkflowIdException`, garde au point de choke `PathOf`) |
 
 Ce que la lecture du code ne donne pas d'emblée :
 
@@ -757,6 +762,40 @@ droits + arcs de boucle) ; le basculeur / la mise en sœurs côte à côte des d
 stdout/stderr du log (pas d'horodatage à l'octet) ; le tail en direct *intra-étape* d'un run rouvert (un passé
 est figé). **Non vérifié par `dotnet test`** (manuel) : le comportement interactif de l'écran, le rendu 2D du
 graphe, et la **preuve `PATH` sur bundle** (§9.2-15).
+
+### 4.19 Éditer un workflow : le brouillon mutable et la porte de chargement sœur — CONSTRUIT (jalon éditeur ·2b)
+
+Troisième pierre de l'arc **authoring**. `D-019` (·2a) avait donné au catalogue le chemin d'écriture et
+« brouillons permis » (un `Save` qui ne valide pas), mais laissé un **trou** : un brouillon cassé se
+*sauvegarde*, on ne peut pas le *rouvrir pour l'éditer*. `D-020` referme les deux manques qui restaient.
+
+- **`WorkflowDraft` (`Workflows/Editing/`, Core testable) — la surface d'édition mutable.**
+  `WorkflowDefinition` est un record immuable : instantané parfait à exécuter, surface de travail nulle.
+  `WorkflowDraft` porte l'**identité mutable** (une `List<StepDefinition>` + un `EntryStep`) et, surtout, un
+  **invariant** qu'une simple liste ne tient pas : *une opération structurelle laisse le graphe
+  référentiellement clos*. `RenameStep(old, new)` retarge toute arête vers l'ancien id **et** fait suivre le
+  point d'entrée (sans quoi renommer l'étape d'entrée effacerait silencieusement le point d'entrée) ;
+  `RemoveStep(id)` purge les arêtes entrantes **et** vide l'entrée si elle le désignait. Les références
+  **suivent le sort de leur cible** — renommer les retarge, supprimer les retire —, l'opération commune étant
+  `MapEdges` (un `null` purge l'arête). Pas de `StepDraft`/`EdgeDraft` : les records immuables sont
+  reconstruits par `with`. Construction `new(definition)`, export `ToDefinition()` (l'aller-retour neutre est
+  le premier test, il verrouille la copie). La *bifurcation* de ·2b — purger plutôt que laisser pendre — est
+  argumentée en `D-020` : laisser pendre viderait `RemoveStep` de sa valeur.
+
+- **La porte de chargement sœur (`Serialization`, Core testable).** Rouvrir un brouillon cassé exige le
+  contraire de ce dont le run a besoin : le run veut `Load`→`Read`→`LoadResult` où `Definition != null ⟺
+  valide` (`ProjectHost` fait `Load(...).Definition!`) ; l'éditeur veut le **graphe même invalide**, pour le
+  corriger. D'où `WorkflowSerializer.ReadEditable → ParsedWorkflow`, jumeau de `LoadResult` d'**invariant
+  inversé** (`Definition != null ⟺ le document a parsé` ; null seulement si le *parsing* échoue). `Read`
+  devient un **rabat** de `ReadEditable` — un seul chemin de parse, deux projections — et le catalogue
+  expose `Open` (→ `ParsedWorkflow`) en sœur de `Load`. **Pourquoi une porte sœur et non un `LoadResult`
+  élargi** : le couplage validité est load-bearing pour le lancement ; le relâcher casserait le run. Le draft
+  **n'est pas** le retour d'`Open` : sérialiseur et catalogue restent ignorants du modèle d'édition, c'est
+  l'appelant (·3) qui fera `new WorkflowDraft(parsed.Definition)`.
+
+**Reste à ·3** : la surface de *construction* du draft (ajouter une étape, poser l'entrée, éditer un script
+ou une arête), la slugification libellé→id, et l'UI de l'éditeur. `RenameStep` vers un id déjà porté
+(collision) est laissé au déroulé de ·3, cohérence « brouillons permis » ⇒ l'admettre.
 
 ---
 
@@ -1041,7 +1080,7 @@ qu'un critère si :
 | **`ProjectHost`, composition root réifié** | Une racine par projet ouvert, qui **construit les modules et leur passe leurs dépendances par constructeur**. Vit dans `Cursus.Core` et reçoit des fabriques, donc n'apprend rien de SQLite ; **`Cursus.Persistence` fournit le préréglage**, pour que le câblage concret n'existe qu'en un exemplaire |
 | **Règle de sens unique — l'invariant** | **Aucun module ne connaît `ProjectHost`.** Le lui passer en ferait un *Service Locator* : un module qui en dépend ne se teste plus qu'en construisant la racine entière |
 | **`IDisposable`, un projet = un host** | Imposé par le code, pas par le style : `SqliteRunJournal` détient une `SqliteConnection` unique non synchronisée. Ouvrir un autre projet = disposer et reconstruire, jamais muter |
-| **Un module par capacité** | La façade n'accueille que ce qui demande une **composition** : lancer/observer/annuler un run. Lister, charger **et écrire** (créer/sauver/supprimer/renommer, `D-019`) restent `WorkflowCatalog`, déjà testés |
+| **Un module par capacité** | La façade n'accueille que ce qui demande une **composition** : lancer/observer/annuler un run. Lister, charger, **ouvrir pour éditer** (`Open`, `D-020`) **et écrire** (créer/sauver/supprimer/renommer, `D-019`) restent `WorkflowCatalog`, déjà testés |
 | **Le flux d'événements fait foi** | Pendant un run, le `WorkflowRun` rendu par `ExecuteAsync` ne sert qu'à savoir que la tâche est finie. Sinon deux écrivains sur le même état |
 | **Un run à la fois** | Non par confort : c'est la seule configuration que le code supporte sans synchronisation (§9.2-14). ⚠️ **Révisé par le parcours** — la cible exige des runs concurrents ; voir §7.13 |
 | **Deux tests rendent le critère exécutable** | (a) `Cursus.Core` ne référence aucun assembly `Avalonia.*` — **construit au 6c·1** (`ArchitectureTests`, §4.14) ; (b) un end-to-end **headless** qui ouvre sans instancier Avalonia — **construit au 6c·3a (lire), étendu au 6c·3b (lancer puis lire)** (§4.16, §4.17). Le second *force* `ProjectHost` à être suffisant |
@@ -1254,7 +1293,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **244 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **254 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 

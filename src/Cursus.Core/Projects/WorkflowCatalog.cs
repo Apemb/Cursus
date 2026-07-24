@@ -32,6 +32,17 @@ public sealed class WorkflowCatalog(Project project)
         WorkflowSerializer.Read(File.ReadAllText(PathOf(id)));
 
     /// <summary>
+    /// La porte sœur de <see cref="Load"/>, <b>pour éditer</b> : rend la définition
+    /// parsée même invalide, la validité se lisant dans le rapport. C'est ainsi
+    /// qu'un brouillon cassé — que <see cref="Save"/> a laissé écrire — se rouvre
+    /// pour être corrigé, là où <see cref="Load"/> l'aurait annulé. Même convention
+    /// qu'elle pour l'absence : un identifiant qu'aucun fichier ne porte lève le
+    /// <see cref="FileNotFoundException"/> du framework.
+    /// </summary>
+    public ParsedWorkflow Open(string id) =>
+        WorkflowSerializer.ReadEditable(File.ReadAllText(PathOf(id)));
+
+    /// <summary>
     /// Fait naître un workflow vide — sans point d'entrée ni étape. Il est donc
     /// <b>invalide mais éditable</b> : « brouillons permis » commence dès la
     /// naissance, l'éditeur remplit ensuite.

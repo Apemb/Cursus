@@ -141,6 +141,40 @@ public class WorkflowSerializerTests
         Assert.Equal(ValidationIssueKind.MalformedDocument, Assert.Single(result.Report.Issues).Kind);
     }
 
+    [Fact(DisplayName = "étant donné un document dont le graphe est invalide, quand on le lit pour édition, alors la définition parsée est rendue malgré tout et le rapport en porte le problème")]
+    public void An_invalid_graph_is_still_returned_for_editing()
+    {
+        // arrange — une arête vise une étape absente : parsable, mais invalide
+        const string document = """
+            {
+              "entryStep": "A",
+              "steps": [
+                { "id": "A", "maxVisits": 1,
+                  "script": { "fileName": "/usr/bin/true" },
+                  "edges": [ { "guard": "success", "target": "fantome" } ] }
+              ]
+            }
+            """;
+
+        // act
+        var parsed = WorkflowSerializer.ReadEditable(document);
+
+        // assert — contrairement à Read, la définition survit à son invalidité
+        Assert.Equal("A", parsed.Definition!.EntryStep);
+        Assert.Equal(ValidationIssueKind.UnknownEdgeTarget, Assert.Single(parsed.Report.Issues).Kind);
+    }
+
+    [Fact(DisplayName = "étant donné un document malformé, quand on le lit pour édition, alors aucune définition n'est rendue et le rapport signale le document malformé")]
+    public void A_malformed_document_yields_no_definition_even_for_editing()
+    {
+        // act — sans graphe parsable, l'éditeur n'a rien à mettre à l'écran
+        var parsed = WorkflowSerializer.ReadEditable("ceci n'est pas du json");
+
+        // assert
+        Assert.Null(parsed.Definition);
+        Assert.Equal(ValidationIssueKind.MalformedDocument, Assert.Single(parsed.Report.Issues).Kind);
+    }
+
     [Fact(DisplayName = "étant donné un script déclarant environnement, délai et sous-chemin, quand on lit le document, alors l'étape les porte")]
     public void Environment_timeout_and_subdirectory_are_carried_over()
     {

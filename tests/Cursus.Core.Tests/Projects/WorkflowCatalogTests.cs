@@ -102,6 +102,21 @@ public class WorkflowCatalogTests : IDisposable
         Assert.Contains(loaded.Report.Issues, issue => issue.Kind == ValidationIssueKind.UnknownEdgeTarget);
     }
 
+    [Fact(DisplayName = "étant donné un brouillon cassé sauvegardé sur disque, quand on l'ouvre depuis le catalogue, alors on récupère sa définition parsée et le rapport de ses problèmes")]
+    public void Opening_a_broken_draft_yields_its_parsed_definition_and_report()
+    {
+        // arrange — le trou de ·2a : un brouillon cassé se sauvegarde, on veut le rouvrir pour l'éditer
+        var project = ProjectStore.Create(_root, "Démo");
+        Deposit(project, "casse", BrokenDocument);
+
+        // act
+        var opened = new WorkflowCatalog(project).Open("casse");
+
+        // assert — là où Load rendait null, Open rend le graphe à corriger
+        Assert.NotNull(opened.Definition);
+        Assert.Contains(opened.Report.Issues, issue => issue.Kind == ValidationIssueKind.UnknownEdgeTarget);
+    }
+
     [Fact(DisplayName = "étant donné un workflow invalide déposé à côté d'un valide, quand on liste, alors les deux apparaissent")]
     public void One_broken_document_does_not_hide_the_others()
     {

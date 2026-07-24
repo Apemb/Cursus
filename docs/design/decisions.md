@@ -685,3 +685,67 @@ Suite 232 → **244** (216 Core + 28 Persistence).
 
 **Renvoi** : `architecture.md` §4.7 (la table du catalogue) ; prochaine pierre — ·2b : le draft mutable et
 le chargement non validé éditable.
+
+---
+
+## D-020 — Le brouillon mutable garde le graphe clos ; le chargement éditable est une porte sœur, pas un élargissement de `LoadResult`
+
+**Contexte.** `D-019` a donné au catalogue le chemin d'écriture et « brouillons permis » (un `Save` qui
+ne valide pas), mais a laissé **un trou explicite** : un brouillon cassé se **sauvegarde**, on ne peut pas
+le **rouvrir pour l'éditer**. Deux manques. (1) Rien ne modélise un graphe *en cours d'édition* :
+`WorkflowDefinition` est un record immuable — instantané parfait, surface de travail nulle ; remanier à la
+main sur des records risque à chaque geste de laisser une arête pendante. (2) Le chargement *nie* le
+brouillon cassé : `Load`→`Read`→`LoadResult` couple `Definition != null ⟺ valide`, donc rouvrir un
+invalide rend `Definition == null` — on lit le rapport, pas le graphe à corriger.
+
+**Décision.** Deux ajouts.
+- **`WorkflowDraft`** (nouvelle sous-couche `Cursus.Core.Workflows.Editing`) : surface mutable dont
+  l'invariant est *une opération structurelle laisse le graphe référentiellement clos*. `RenameStep`
+  retarge toute arête vers l'ancien id et fait suivre le point d'entrée ; `RemoveStep` purge les arêtes
+  entrantes et vide le point d'entrée s'il visait l'étape supprimée. Construction `new(definition)`, export
+  `ToDefinition()`. Pas de `StepDraft`/`EdgeDraft` : les records immuables sont reconstruits par `with`, le
+  draft n'apporte qu'identité mutable + `MapEdges` (l'opération référentielle commune, un `null` purge).
+- **Chargement éditable en porte sœur.** `WorkflowSerializer.ReadEditable` rend la définition parsée
+  **même invalide** (null seulement si le *parsing* échoue), pairée à son rapport dans un record neuf
+  **`ParsedWorkflow`** — jumeau de `LoadResult` *de forme*, d'invariant *opposé* (`Definition != null ⟺ le
+  document a parsé`). `Read` se **réécrit comme un rabat** de `ReadEditable`. `WorkflowCatalog.Open` est la
+  sœur de `Load` : `Load`→`Read` pour exécuter, `Open`→`ReadEditable` pour éditer.
+
+**Pourquoi une porte *sœur* et non un `LoadResult` élargi.** Le couplage « non-null ⟺ valide » n'est pas
+décoratif : le **chemin de lancement en dépend** (`ProjectHost` fait `Load(...).Definition!`,
+`SqliteRunJournal` fait `loaded.Definition ?? throw`, les tests d'exécution consomment `Definition!`).
+Relâcher le couplage sur `LoadResult` casserait le run. On garde donc `LoadResult`/`Read` **intacts**
+(projection validité-couplée, pour exécuter) et on ouvre à côté une projection **parse-couplée** (pour
+éditer). Faire de `ReadEditable` le *primitif* et de `Read` son rabat évite deux chemins de parse à
+maintenir en miroir — la dette que l'aller-retour `ToGuard`/`WriteGuard` nous avait apprise ; la suite du
+sérialiseur restant verte prouve que le rabat n'a rien changé.
+
+**La bifurcation de `RemoveStep` : purger, pas laisser pendre.** Retenu : la suppression purge les arêtes
+entrantes, le graphe reste clos. Écarté : *laisser pendre et laisser le validateur signaler
+`UnknownEdgeTarget`* — séduisant car aligné sur « le rapport est un diagnostic vivant », mais cela viderait
+`RemoveStep` de sa valeur (à peine plus qu'un `List.Remove`) et ferait payer à l'utilisateur le nettoyage
+d'un dégât causé par le modèle, pas par lui. La symétrie qui tranche : les références **suivent le sort de
+leur cible** — renommer les retarge, supprimer les retire. Un brouillon reste possible (entrée vidée →
+`MissingEntryStep`), mais jamais incohérent avec lui-même. Distinct : une arête que l'utilisateur *tapera*
+vers une étape pas-encore-créée (édition d'arête, ·3) est un autre cas, que le validateur attrapera.
+
+**Alternatives écartées.**
+- *Élargir `LoadResult` d'un champ « définition parsée »* — polluerait le résultat du chemin d'exécution
+  d'une préoccupation d'éditeur, et deux audiences (run/édition) mélangées dans un type.
+- *Un tuple `(WorkflowDefinition?, ValidationReport)` au lieu de `ParsedWorkflow`* — nulle part où écrire
+  l'invariant inversé, qui est *tout* l'enjeu (le prochain lecteur supposerait « non-null ⟺ valide »).
+- *`Open` rend un `WorkflowDraft`* — coupler le catalogue/sérialiseur au modèle d'édition ; `Open` rend
+  `ParsedWorkflow`, c'est l'appelant (·3) qui fera `new WorkflowDraft(parsed.Definition)`.
+- *`StepDraft`/`EdgeDraft` mutables en miroir* — explosion de types parallèles pour zéro gain.
+
+**Ce que ce jalon ne fait PAS (·3).** La surface de *construction* du draft (ajouter une étape, poser
+l'entrée, éditer un script ou une arête) ; la **slugification** libellé→id ; toute UI. `RenameStep` vers un
+id déjà porté (collision) est laissé au déroulé de ·3, cohérence « brouillons permis » ⇒ l'admettre
+(le validateur signalera `DuplicateStepId`).
+
+**Conséquences.** Sous-couche `Editing` neuve avec `WorkflowDraft` ; `ParsedWorkflow` et `ReadEditable`
+dans `Serialization` ; `Read` devient un rabat ; `WorkflowCatalog` gagne `Open`. `LoadResult` et tout le
+chemin de lancement **inchangés**. Suite 244 → **254** (226 Core + 28 Persistence).
+
+**Renvoi** : `architecture.md` §4.2 (le sérialiseur, les deux portes), §4.7 (le catalogue), §4.x (la
+sous-couche `Editing`) ; `schemas.md` §5.2 ; prochaine pierre — ·3 : l'éditeur (UI) et le projet.

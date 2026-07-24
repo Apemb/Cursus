@@ -298,8 +298,9 @@ flowchart TB
 
   Exec["<b>…Execution</b><br/><small>lance et route un run</small><br/>WorkflowEngine · WorkflowLauncher · RunContext · IProcessRunner · ProcessRunner · PathStrategy · IClock"]
   Proj["<b>…Projection</b><br/><small>deux projections sœurs (event-fed) + un calcul de disposition (statique)</small><br/>RunProjection · RunVisit · RunControl<br/>GraphProjection · GraphNode · GraphEdge<br/>GraphLayout · NodePlacement · LaidOutEdge"]
-  Ser["<b>…Serialization</b><br/><small>JSON ⟷ modèle</small><br/>WorkflowSerializer · WorkflowDocument"]
+  Ser["<b>…Serialization</b><br/><small>JSON ⟷ modèle — deux portes : Read (valider, run) · ReadEditable (parser même invalide, éditer)</small><br/>WorkflowSerializer · LoadResult · ParsedWorkflow · WorkflowDocument"]
   Val["<b>…Validation</b><br/><small>validité du graphe</small><br/>WorkflowValidator · ValidationReport"]
+  Edit["<b>…Editing</b><br/><small>surface d'édition mutable, graphe référentiellement clos</small><br/>WorkflowDraft"]
   Jou["<b>…Journaling</b><br/><small>écrire et relire un run</small><br/>IRunJournal · IRunJournalReader · InMemoryRunJournal · JournalEntry"]
   Out["<b>…Output</b><br/><small>puits de sortie par étape</small><br/>IRunOutputStore · IStepOutputSink · InMemoryRunOutputStore"]
   Wsp["<b>…Workspaces</b><br/><small>worktree isolé d'un run (provisionnement async)</small><br/>IWorkspaceProvisioner · GitWorkspaceProvisioner"]
@@ -308,6 +309,7 @@ flowchart TB
   Proj --> root
   Ser --> root
   Val --> root
+  Edit --> root
   Jou --> root
   Out --> root
   Wsp --> root
@@ -478,7 +480,7 @@ flowchart TB
   subgraph Core["Cursus.Core"]
     Host["<b>ProjectHost</b><br/><small>racine de composition d'un projet ouvert ; joint workflows × runs</small>"]
     LastRun["<b>WorkflowLastRun</b><br/><small>un workflow et son dernier run (ou aucun)</small>"]
-    Catalog["<b>WorkflowCatalog</b><br/><small>liste/charge/écrit les workflows du disque</small>"]
+    Catalog["<b>WorkflowCatalog</b><br/><small>liste/charge/ouvre/écrit les workflows du disque</small>"]
     Summary["<b>RunSummary</b><br/><small>ce qu'on sait d'un run sans relire ses événements</small><br/><b>+</b> <small>EndedAt et WorkflowId</small>"]
     Started["<b>WorkflowEvent.RunStarted</b><br/><small>l'ouverture d'un run (trigger, workspace)</small><br/><b>+</b> <small>workflow_id, la provenance</small>"]
   end

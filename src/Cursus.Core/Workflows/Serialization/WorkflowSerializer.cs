@@ -10,6 +10,16 @@ namespace Cursus.Core.Workflows.Serialization;
 public sealed record LoadResult(WorkflowDefinition? Definition, ValidationReport Report);
 
 /// <summary>
+/// Le jumeau de <see cref="LoadResult"/> pour l'édition — même forme, invariant
+/// opposé. Ici <see cref="Definition"/> est non nulle <b>dès que le document a
+/// parsé</b>, valide ou non : sa validité se lit dans <see cref="Report"/>, pas
+/// dans sa nullité. Un brouillon cassé se rouvre donc pour être corrigé, là où
+/// <see cref="LoadResult"/> l'aurait annulé.
+/// </summary>
+/// <param name="Definition">Non nulle si et seulement si le <i>parsing</i> a abouti.</param>
+public sealed record ParsedWorkflow(WorkflowDefinition? Definition, ValidationReport Report);
+
+/// <summary>
 /// Traduit entre le document JSON et le modèle, dans les deux sens. Ne rend
 /// jamais une définition non validée, et ne touche jamais au disque : lire et
 /// écrire le fichier appartient à l'appelant.
@@ -30,7 +40,25 @@ public static class WorkflowSerializer
 
     // --- du document vers le modèle ---
 
+    /// <summary>
+    /// Lit un document <b>pour l'exécuter</b> : ne rend une définition que si elle
+    /// est valide, sinon null + le rapport de son refus. C'est la projection
+    /// validité-couplée de <see cref="ReadEditable"/>, dont dépend le chemin de
+    /// lancement — d'où le maintien strict de l'invariant « non-null ⟺ valide ».
+    /// </summary>
     public static LoadResult Read(string json)
+    {
+        var parsed = ReadEditable(json);
+        return new LoadResult(parsed.Report.IsValid ? parsed.Definition : null, parsed.Report);
+    }
+
+    /// <summary>
+    /// Lit un document <b>pour l'éditer</b> : rend la définition parsée même
+    /// invalide, la validité se lisant dans le rapport. Ne rend rien que si le
+    /// <i>parsing</i> lui-même échoue (JSON malformé, garde inconnue) — là il n'y
+    /// a pas de graphe à corriger, seulement du texte.
+    /// </summary>
+    public static ParsedWorkflow ReadEditable(string json)
     {
         WorkflowDefinition definition;
         try
@@ -44,19 +72,16 @@ public static class WorkflowSerializer
         }
         catch (JsonException failure)
         {
-            return new LoadResult(null, new ValidationReport(
+            return new ParsedWorkflow(null, new ValidationReport(
                 [new ValidationIssue(ValidationIssueKind.MalformedDocument, failure.Message)]));
         }
         catch (UnknownGuardException failure)
         {
-            // Un vocabulaire du document que le modèle ne sait pas traduire est
-            // un problème du même ordre qu'une arête cassée : il se rapporte.
-            return new LoadResult(null, new ValidationReport(
+            return new ParsedWorkflow(null, new ValidationReport(
                 [new ValidationIssue(ValidationIssueKind.UnknownGuard, failure.Message)]));
         }
 
-        var report = WorkflowValidator.Validate(definition);
-        return new LoadResult(report.IsValid ? definition : null, report);
+        return new ParsedWorkflow(definition, WorkflowValidator.Validate(definition));
     }
 
     private static StepDefinition ToStep(StepDocument step) =>
