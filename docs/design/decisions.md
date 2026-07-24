@@ -1177,3 +1177,71 @@ close** : ses trois dettes encaissées + l'authoring naturel.
 **Renvoi** : `D-024` (`ArgumentLine`, le patron du champ local), `D-021`/`D-020` (le vide toléré), `D-028`
 (jambe 1, la brique précédente) ; `architecture.md` (sous-couche `Editing`, l'éditeur) ; `trajectoire.md`
 (jambe 1 close).
+
+---
+
+## D-030 — L'`AgentStep` headless : kind polymorphe, exécuteur par type, harness nommé
+
+**Statut** : Tranché et construit (Core) — 2026-07-24. UI d'authoring (2·1b) et dogfood réel à suivre.
+
+**Contexte.** La jambe 2 (boucle agentique) s'ouvre par son premier vrai type d'étape non-script.
+La recette de `architecture.md` §5 était écrite mais non construite, et elle laissait trois questions
+ouvertes que cette marche tranche d'un coup : *comment* coudre l'agent (§2.2), *comment* modéliser un
+2e kind, et *dans quel ordre* (Task avant Agent, disait §5).
+
+**Décision.** Quatre arbitrages, dans l'ordre où ils commandent le reste.
+
+1. **Headless d'abord, PTY reportée.** Le premier `AgentStep` lance un agent en mode non-interactif
+   (`claude --model … -p …`, tubes redirigés, code de sortie) : c'est un process au contrat
+   `ScriptResult`, donc **routable par les gardes existantes** sans généraliser `Guard`, et
+   `ExecuteAsync` ne change pas de logique. La couture PTY de §2.2 (session vivante, le différenciateur
+   §1) est **reportée à « plus tard indéterminé »**. Ce qui rend la boucle `Verify → Dev` (§3.1) vivante
+   contre le dépôt Cursus tout de suite, sur un socle éprouvé.
+
+2. **Le kind est un *type*, pas un discriminant-propriété.** `StepDefinition` devient **abstraite** ;
+   `ScriptStep` et `AgentStep` en héritent, chacun ne portant que ses propres propriétés, non-nulles. Le
+   `kind` (`"agent"`/`"script"`, absent = script par retombée) vit **dans le document JSON seulement** :
+   le sérialiseur, en adaptateur, construit le bon sous-type. **Supersède** le « discriminant `StepKind` »
+   littéral de §5, au titre de la convention de modélisation inscrite dans `CLAUDE.md` (pas de nullable
+   pour distinguer des variantes de type).
+
+3. **L'exécution vit dans un exécuteur par type, pas sur la définition.** `IStepExecutor` réalisé par
+   kind (`ScriptStepExecutor`, `AgentStepExecutor`), chacun tenant **ses propres** collaborateurs ; le
+   moteur route sur le *type* de l'étape (`CanExecute`) et délègue. La définition reste **donnée pure** —
+   le vocabulaire racine ne dépend pas de la couche Execution. C'est le pari central du pivot (§3, §5)
+   payé au réel : greffer le kind n'a **pas touché la boucle de traversée**, seulement allongé la liste
+   d'exécuteurs du moteur (câblés dès son ctor, l'agent est un kind de première classe). 2·2 (`TaskStep`)
+   ajoutera son `TaskStepExecutor` + son client tracker **sans toucher le moteur ni le vocabulaire**.
+
+4. **Le harness agentique est un concept nommé, pas un enum Claude.** `AgenticHarness` porte son `Name`
+   (« Claude Code ») et sa liste de `Models` (`AgentModel` = `Id` + `Label`) ; l'`AgentStep` ne le
+   référence que par identifiants, le catalogue racine (`AgenticHarness.ClaudeCode`) en est la source, et
+   l'**invocation** réelle vit dans l'exécuteur. Donnée déclarée d'un côté, comportement d'exécution de
+   l'autre.
+
+**Ce que ça supersède.** Le « discriminant `StepKind` » et l'ordre `Script → Task → Agent` de §5. L'ordre
+retenu est **`Agent → Task`** : `TaskStep` dépend d'un client tracker (Linear) que la trajectoire a écarté
+d'ouvrir en premier ; l'agent, lui, ne dépend que du noyau déterministe déjà là.
+
+**Alternatives écartées.**
+- *Une méthode `StepDefinition.CreateNewRun(ctx)` sur la définition (polymorphie « le type se lance
+  lui-même »)* — élégante en apparence, mais elle ferait **dépendre le vocabulaire racine de la couche
+  Execution** (le `ctx` porte runner, harness, puits), et forcerait un contexte fourre-tout grossissant à
+  chaque kind. La séparation définition/exécution du pivot vaut mieux.
+- *Un `PtyProcessRunner` derrière `IProcessRunner` (couture §2.2 n°1)* — force un PTY interactif dans un
+  contrat non-interactif (pas de code de sortie fiable sans convention). Reportée avec la session PTY.
+- *Un enum `ClaudeModel` en dur* — ancre Claude dans le vocabulaire ; le concept `AgenticHarness` nommé
+  laisse la place à un 2e harness sans refonte du modèle.
+- *Un binaire `cursor-agent` externe piloté comme un script* — pas de type du tout, mais alors l'agent
+  n'est qu'un `ScriptStep` déguisé : perd la donnée « prompt + modèle » que §4.9 veut voir dépendre de la
+  sortie d'avant (2·3), et la validation propre au kind.
+
+**Conséquences.** Core **278 → 287** (+9 : sérialiseur, validation ×2, exécuteur ×2, moteur ×2, retombée).
+Suite **307 → 316**, 0 warning. Deux natures de validation neuves (`EmptyAgentPrompt`, `UnknownAgentModel`).
+Le format JSON gagne `kind` + charge `agent` (retombée qui garde valides les fichiers d'avant). Restent hors
+marche : l'UI d'authoring (2·1b), le vrai binaire `claude` (dogfood manuel), les références inter-étapes
+(2·3), la session PTY.
+
+**Renvoi** : `architecture.md` §5 (la recette, désormais construite pour l'agent), §2.2 (couture headless
+tranchée, PTY ouverte), §4.1 (carte des fichiers) ; `CLAUDE.md` (convention Modélisation) ; `trajectoire.md`
+(jambe 2) ; `D-012` (le fan-out/join à rouvrir avec l'agent), `D-029` (jambe 1, la brique précédente).
