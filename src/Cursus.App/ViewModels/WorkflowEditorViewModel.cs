@@ -84,6 +84,13 @@ public partial class WorkflowEditorViewModel : ObservableObject
     [ObservableProperty]
     private string _newStepTitle = "";
 
+    /// <summary>Les kinds proposés à la création d'une étape — libellés d'UI, pas des types.</summary>
+    public IReadOnlyList<string> StepKinds { get; } = ["Script", "Agent"];
+
+    /// <summary>Le kind choisi pour la prochaine étape à ajouter ; route <see cref="AddStep"/> vers le bon constructeur du brouillon.</summary>
+    [ObservableProperty]
+    private string _newStepKind = "Script";
+
     /// <summary>Le rapport de validation en une liste lisible — recalculé à chaque mutation.</summary>
     [ObservableProperty]
     private string _problems = "";
@@ -106,7 +113,11 @@ public partial class WorkflowEditorViewModel : ObservableObject
         Project();
     }
 
-    /// <summary>Ajoute une étape depuis son titre : le brouillon en slugifie et désambiguïse l'id (<c>D-021</c>).</summary>
+    /// <summary>
+    /// Ajoute une étape depuis son titre : le brouillon en slugifie et désambiguïse
+    /// l'id (<c>D-021</c>). Le kind choisi route vers le constructeur du brouillon —
+    /// une étape-script ou une étape-agent (portes sœurs <c>AddStep</c>/<c>AddAgentStep</c>).
+    /// </summary>
     [RelayCommand]
     private void AddStep()
     {
@@ -114,22 +125,30 @@ public partial class WorkflowEditorViewModel : ObservableObject
         if (title.Length == 0)
             return;
 
-        _draft.AddStep(title);
+        if (NewStepKind == "Agent")
+            _draft.AddAgentStep(title);
+        else
+            _draft.AddStep(title);
+
         NewStepTitle = "";
         Project();
     }
 
     /// <summary>
     /// Enregistre le brouillon tel quel (brouillons permis, <c>D-019</c>) puis
-    /// rafraîchit la liste de la surface. Rapatrie d'abord les champs de script de
-    /// chaque ligne : filet contre le cas où le tout dernier champ édité n'aurait
-    /// pas encore validé son binding avant le clic (les champs descendent d'ordinaire
-    /// dans le brouillon dès la perte de focus, <see cref="UpdateScript"/>).
+    /// rafraîchit la liste de la surface. Rapatrie d'abord les champs locaux de chaque
+    /// ligne — filet contre le cas où le tout dernier champ édité n'aurait pas encore
+    /// validé son binding avant le clic (les champs descendent d'ordinaire dans le
+    /// brouillon dès la perte de focus). Chaque ligne pousse les siens selon son kind
+    /// (<see cref="StepEditorRow.Flush"/>) : le dispatch appartient au type, pas à un
+    /// <c>switch</c> ici.
     /// </summary>
     [RelayCommand]
     private void Save()
     {
-        FlushScripts();
+        foreach (var row in Steps)
+            row.Flush();
+
         _catalog.Save(Id, _draft.ToDefinition());
         _onSaved();
         SavedNotice = "Workflow enregistré.";
@@ -161,14 +180,29 @@ public partial class WorkflowEditorViewModel : ObservableObject
         SavedNotice = null;
     }
 
-    /// <summary>Rapatrie les commandes de toutes les lignes dans le brouillon (filet d'enregistrement).</summary>
-    private void FlushScripts()
+    /// <summary>
+    /// Descend le prompt d'une étape-agent dans le brouillon — jumeau d'
+    /// <see cref="UpdateScript"/> pour l'autre kind. Même garde (une ligne qui
+    /// survivrait à la suppression de son étape ne pose plus rien) et même absence de
+    /// re-projection (ne pas voler le focus à la ligne en cours d'édition).
+    /// </summary>
+    public void UpdatePrompt(string id, string prompt)
     {
-        foreach (var step in Steps)
-        {
-            var (fileName, arguments) = CommandLine.Parse(step.Command);
-            _draft.SetScript(step.Id, new ScriptSpec(fileName, arguments));
-        }
+        if (!StepIds.Contains(id))
+            return;
+
+        _draft.SetPrompt(id, prompt);
+        SavedNotice = null;
+    }
+
+    /// <summary>Descend le modèle d'une étape-agent dans le brouillon — jumeau d'<see cref="UpdatePrompt"/>.</summary>
+    public void UpdateModel(string id, string modelId)
+    {
+        if (!StepIds.Contains(id))
+            return;
+
+        _draft.SetModel(id, modelId);
+        SavedNotice = null;
     }
 
     /// <summary>Trace une arête gardée depuis une étape ; cible permise même absente (le validateur signale).</summary>
@@ -219,7 +253,7 @@ public partial class WorkflowEditorViewModel : ObservableObject
 
             Steps.Clear();
             foreach (var step in definition.Steps)
-                Steps.Add(new StepEditorRow(this, step, ids));
+                Steps.Add(StepEditorRow.For(this, step, ids));
 
             // La silhouette suit la même définition que les lignes — orphelines comprises,
             // GraphLayout les place (une étape neuve est orpheline avant qu'on ne la câble).

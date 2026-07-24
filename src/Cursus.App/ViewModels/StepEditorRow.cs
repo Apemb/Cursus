@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -6,38 +7,49 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 using Cursus.Core.Workflows;
-using Cursus.Core.Workflows.Editing;
 
 namespace Cursus.App.ViewModels;
 
 /// <summary>
-/// Une étape telle que l'éditeur la montre : son titre, son id, sa <b>commande</b>,
-/// et ses arêtes sortantes. La commande est un champ <b>local</b> — édité librement,
-/// poussé au brouillon à la perte de focus — pour qu'une frappe ne déclenche pas une
-/// re-projection qui recréerait la ligne en pleine saisie. Une seule ligne porte le
-/// binaire et ses arguments (1er token = binaire, via <see cref="CommandLine"/>) au
-/// lieu de deux champs séparés. Les gestes délèguent au
-/// <see cref="WorkflowEditorViewModel"/> parent, seul à tenir le brouillon. Non testé,
-/// comme toute la vue (§7.12).
+/// Une étape telle que l'éditeur la montre : ce qui est <b>commun à tout kind</b> —
+/// son titre, son id, ses arêtes sortantes, et les gestes de tracé/suppression. Ce
+/// qui <b>diffère par kind</b> vit dans les sous-types : le champ commande pour une
+/// étape-script (<see cref="ScriptStepRow"/>), le modèle et le prompt pour une
+/// étape-agent (<see cref="AgentStepRow"/>). Une ligne « script <b>ou</b> agent » est
+/// une variante de <b>type</b> — pas un objet unique à champs nullables : c'est la
+/// convention de modélisation du dépôt appliquée jusque dans la vue. Les gestes
+/// délèguent au <see cref="WorkflowEditorViewModel"/> parent, seul à tenir le
+/// brouillon. Non testé, comme toute la vue (§7.12).
 /// </summary>
-public partial class StepEditorRow : ObservableObject
+public abstract partial class StepEditorRow : ObservableObject
 {
-    private readonly WorkflowEditorViewModel _editor;
+    /// <summary>Le parent qui tient le brouillon ; les sous-types y poussent leurs champs propres.</summary>
+    protected readonly WorkflowEditorViewModel Editor;
 
-    public StepEditorRow(WorkflowEditorViewModel editor, StepDefinition step, IReadOnlyList<string> stepIds)
+    protected StepEditorRow(WorkflowEditorViewModel editor, StepDefinition step, IReadOnlyList<string> stepIds)
     {
-        _editor = editor;
+        Editor = editor;
         Id = step.Id;
         Name = step.Name;
-        // La commande n'a de sens que pour une étape-script ; l'éditeur n'en montre pas
-        // d'autre aujourd'hui. Un AgentStep (2·1b) portera son propre rendu (modèle + prompt).
-        _command = step is ScriptStep s ? CommandLine.Format(s.Script.FileName, s.Script.Arguments) : "";
         TargetChoices = stepIds;
         _newEdgeTarget = stepIds.Count > 0 ? stepIds[0] : "";
         Edges = new ObservableCollection<EdgeEditorRow>(
             step.OutEdges.Select((edge, index) => new EdgeEditorRow(
                 editor, step.Id, index, WorkflowEditorViewModel.GuardLabel(edge.Guard), edge.Target)));
     }
+
+    /// <summary>
+    /// Fabrique la ligne du bon kind — le dispatch par type appartient à la famille de
+    /// lignes, pas à un <c>switch</c> dans le VM. Ajouter un kind, c'est allonger ce
+    /// switch, comme au moteur on allonge la liste d'exécuteurs.
+    /// </summary>
+    public static StepEditorRow For(
+        WorkflowEditorViewModel editor, StepDefinition step, IReadOnlyList<string> stepIds) => step switch
+    {
+        ScriptStep script => new ScriptStepRow(editor, script, stepIds),
+        AgentStep agent => new AgentStepRow(editor, agent, stepIds),
+        _ => throw new ArgumentOutOfRangeException(nameof(step), step.GetType(), "Kind d'étape inconnu."),
+    };
 
     /// <summary>L'identifiant (slug), stable une fois posé — affiché sous le titre.</summary>
     public string Id { get; }
@@ -54,10 +66,6 @@ public partial class StepEditorRow : ObservableObject
     /// <summary>Les cibles proposées : les identifiants d'étapes du graphe au moment de la projection.</summary>
     public IReadOnlyList<string> TargetChoices { get; }
 
-    /// <summary>La commande : binaire suivi de ses arguments, en une ligne. Descend dans le brouillon dès la perte de focus.</summary>
-    [ObservableProperty]
-    private string _command;
-
     /// <summary>La garde choisie pour la prochaine arête à tracer.</summary>
     [ObservableProperty]
     private string _newEdgeGuard = "Succès";
@@ -66,16 +74,19 @@ public partial class StepEditorRow : ObservableObject
     [ObservableProperty]
     private string _newEdgeTarget;
 
-    // Dès que la commande change (perte de focus du TextBox), elle descend dans le
-    // brouillon — plus de bouton « Appliquer » à ne pas oublier. Pas de re-projection
-    // côté éditeur, donc la ligne garde son focus.
-    partial void OnCommandChanged(string value) => _editor.UpdateScript(Id, Command);
+    /// <summary>
+    /// Rapatrie les champs <b>locaux</b> de la ligne dans le brouillon — filet
+    /// d'enregistrement contre le champ dont le binding n'aurait pas encore validé
+    /// (les champs descendent d'ordinaire à la perte de focus). Chaque kind pousse les
+    /// siens : la commande d'un côté, le modèle et le prompt de l'autre.
+    /// </summary>
+    public abstract void Flush();
 
     /// <summary>Supprime cette étape du graphe.</summary>
     [RelayCommand]
-    private void Remove() => _editor.RemoveStep(Id);
+    private void Remove() => Editor.RemoveStep(Id);
 
     /// <summary>Trace une arête de cette étape vers la cible choisie sous la garde choisie.</summary>
     [RelayCommand]
-    private void AddEdge() => _editor.AddEdge(Id, NewEdgeGuard, NewEdgeTarget);
+    private void AddEdge() => Editor.AddEdge(Id, NewEdgeGuard, NewEdgeTarget);
 }
