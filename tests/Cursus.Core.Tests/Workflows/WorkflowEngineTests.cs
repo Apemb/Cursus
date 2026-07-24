@@ -1,4 +1,5 @@
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Execution;
 
 using static Cursus.Core.Tests.Workflows.WorkflowFixtures;
 
@@ -6,6 +7,24 @@ namespace Cursus.Core.Tests.Workflows;
 
 public class WorkflowEngineTests
 {
+    [Fact(DisplayName = "étant donné un run déclenché pour « ENG-1 » avec une étape-tâche « déplacer », quand le moteur traverse, alors le tracker a reçu la clé « ENG-1 » — le contexte porte la clé du trigger jusqu'à l'exécuteur")]
+    public async Task Task_trigger_threads_the_key_to_the_task_executor()
+    {
+        // arrange
+        var tracker = new StubTaskTracker();
+        var definition = new WorkflowDefinition("entrer", new StepDefinition[]
+        {
+            new TaskStep("entrer", "Entrer en review", new TaskOperation.MoveCard("En review"), MaxVisits: 1, []),
+        });
+        var engine = Engine(new StubProcessRunner(Exit(0)), tracker);
+
+        // act
+        await engine.ExecuteAsync(definition, Workspace, NewRunId(), RunTrigger.ForTask("ENG-1"));
+
+        // assert
+        Assert.Equal(("ENG-1", "En review"), Assert.Single(tracker.Moves));
+    }
+
     [Fact(DisplayName = "étant donné un graphe A→B→C relié en succès et un runner qui réussit, quand on exécute le workflow, alors l'historique est A, B, C et le run est terminé avec succès")]
     public async Task Sequential_success_path_visits_all_steps_in_order()
     {

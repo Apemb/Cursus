@@ -43,6 +43,10 @@ internal static class WorkflowFixtures
     /// <summary>Même moteur, mais sur un journal qu'on fournit pour l'inspecter.</summary>
     internal static WorkflowEngine Engine(IProcessRunner runner, IRunJournal journal) =>
         new(runner, journal, new InMemoryRunOutputStore());
+
+    /// <summary>Un moteur câblé sur un tracker qu'on inspecte — pour les runs déclenchés par une tâche.</summary>
+    internal static WorkflowEngine Engine(IProcessRunner runner, ITaskTracker tracker) =>
+        new(runner, new InMemoryRunJournal(), new InMemoryRunOutputStore(), tracker);
 }
 
 /// <summary>
