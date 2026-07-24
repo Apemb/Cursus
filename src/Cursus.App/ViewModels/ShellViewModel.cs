@@ -92,7 +92,8 @@ public partial class ShellViewModel : ObservableObject, IDisposable
             workspace.Catalog,
             workspace.Host.LastRunPerWorkflow,
             workflowId => RunViewModel.StartLive(workflowId, workspace.Host, workspace.Artifacts),
-            row => RunViewModel.Replay(row.LastRun!, workspace.Host, workspace.Artifacts));
+            summary => RunViewModel.Replay(summary, workspace.Host, workspace.Artifacts),
+            workspace.Host.RunsOf);
     }
 
     /// <summary>Ferme le workspace encore ouvert : sa connexion SQLite ne doit pas fuir à la fermeture.</summary>

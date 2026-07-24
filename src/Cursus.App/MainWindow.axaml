@@ -152,29 +152,25 @@
                                         <DataTemplate x:DataType="vm:WorkflowRowViewModel">
                                             <Grid ColumnDefinitions="*,Auto" MinHeight="40">
 
-                                                <!-- Mode normal : le passage se rouvre en relecture ; le workflow se lance, se renomme, se supprime -->
-                                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center"
-                                                            IsVisible="{Binding !IsEditing}">
-                                                    <TextBlock Text="{Binding Name}"
-                                                               Foreground="{DynamicResource TextPrimaryBrush}" />
-                                                    <Button Content="{Binding LastPassage}"
-                                                            IsEnabled="{Binding HasLastRun}"
-                                                            Background="Transparent" BorderThickness="0"
-                                                            Padding="0" FontSize="11"
-                                                            HorizontalContentAlignment="Left"
-                                                            Foreground="{DynamicResource TextSecondaryBrush}"
-                                                            Command="{Binding $parent[ListBox].((vm:OpenProjectViewModel)DataContext).OpenPastRunCommand}"
-                                                            CommandParameter="{Binding}" />
-                                                </StackPanel>
+                                                <!-- Mode normal : cliquer le corps ouvre la page du workflow ; à droite, renommer / supprimer / lancer -->
+                                                <Button Grid.Column="0"
+                                                        IsVisible="{Binding !IsEditing}"
+                                                        Background="Transparent" BorderThickness="0"
+                                                        Padding="0" HorizontalAlignment="Stretch"
+                                                        HorizontalContentAlignment="Left"
+                                                        Command="{Binding $parent[ListBox].((vm:OpenProjectViewModel)DataContext).OpenWorkflowPageCommand}"
+                                                        CommandParameter="{Binding}">
+                                                    <StackPanel Spacing="2">
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                        <TextBlock Text="{Binding LastPassage}"
+                                                                   FontSize="11"
+                                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                    </StackPanel>
+                                                </Button>
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
                                                             VerticalAlignment="Center"
                                                             IsVisible="{Binding !IsEditing}">
-                                                    <Button Content="Éditer"
-                                                            Padding="10,6"
-                                                            Background="Transparent"
-                                                            Foreground="{DynamicResource TextSecondaryBrush}"
-                                                            Command="{Binding $parent[ListBox].((vm:OpenProjectViewModel)DataContext).OpenEditorCommand}"
-                                                            CommandParameter="{Binding}" />
                                                     <Button Content="Renommer"
                                                             Padding="10,6"
                                                             Background="Transparent"
@@ -221,7 +217,7 @@
                             <DockPanel IsVisible="{Binding IsShowingRun}">
                                 <Border DockPanel.Dock="Top" Padding="12,8"
                                         BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,0,0,1">
-                                    <Button Content="‹ Retour à la liste"
+                                    <Button Content="‹ Retour"
                                             Background="Transparent" BorderThickness="0"
                                             Foreground="{DynamicResource TextSecondaryBrush}"
                                             Command="{Binding CloseRunCommand}" />
@@ -229,19 +225,88 @@
                                 <views:RunView DataContext="{Binding CurrentRun}" />
                             </DockPanel>
 
-                            <!-- L'éditeur : troisième module de la même surface (D-016) -->
-                            <DockPanel IsVisible="{Binding IsShowingEditor}">
-                                <Border DockPanel.Dock="Top" Padding="12,8"
-                                        BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,0,0,1">
-                                    <Button Content="‹ Retour à la liste"
-                                            Background="Transparent" BorderThickness="0"
-                                            Foreground="{DynamicResource TextSecondaryBrush}"
-                                            Command="{Binding CloseEditorCommand}" />
-                                </Border>
-                                <ContentControl Content="{Binding CurrentEditor}">
+                            <!-- La page du workflow : historique + éditeur en onglets, sans routeur (D-016) -->
+                            <DockPanel IsVisible="{Binding IsShowingPage}">
+                                <ContentControl Content="{Binding CurrentWorkflowPage}">
                                     <ContentControl.ContentTemplate>
-                                        <DataTemplate x:DataType="vm:WorkflowEditorViewModel">
-                                            <ScrollViewer>
+                                        <DataTemplate x:DataType="vm:WorkflowPageViewModel">
+                                            <DockPanel>
+
+                                                <!-- En-tête : retour, titre + Lancer, barre d'onglets -->
+                                                <StackPanel DockPanel.Dock="Top">
+                                                    <Border Padding="12,8"
+                                                            BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,0,0,1">
+                                                        <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                                            <Button Content="‹ Retour à la liste"
+                                                                    Background="Transparent" BorderThickness="0"
+                                                                    Foreground="{DynamicResource TextSecondaryBrush}"
+                                                                    Command="{Binding CloseCommand}" />
+                                                            <Button Grid.Column="1" Content="▸ Lancer"
+                                                                    Padding="14,6"
+                                                                    Command="{Binding LaunchCommand}" />
+                                                        </Grid>
+                                                    </Border>
+                                                    <TextBlock Text="{Binding WorkflowId}"
+                                                               Margin="20,14,20,0"
+                                                               FontSize="18" FontWeight="Bold"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                    <!-- Onglets : le tab actif est désactivé (repère bon marché) ; Graphe/Déclencheurs à venir -->
+                                                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="20,10,20,0">
+                                                        <Button Content="Historique"
+                                                                Padding="10,5"
+                                                                Command="{Binding SelectHistoryCommand}"
+                                                                IsEnabled="{Binding !IsHistory}" />
+                                                        <Button Content="Étapes"
+                                                                Padding="10,5"
+                                                                Command="{Binding SelectStepsCommand}"
+                                                                IsEnabled="{Binding !IsSteps}" />
+                                                        <TextBlock Text="Graphe · à venir"
+                                                                   VerticalAlignment="Center" FontSize="11"
+                                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                        <TextBlock Text="Déclencheurs · à venir"
+                                                                   VerticalAlignment="Center" FontSize="11"
+                                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                    </StackPanel>
+                                                    <Border Margin="0,10,0,0"
+                                                            BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,0,0,1" />
+                                                </StackPanel>
+
+                                                <!-- Le contenu de l'onglet : historique OU éditeur -->
+                                                <Panel>
+
+                                                    <!-- Onglet Historique : un passage par ligne, clic = relecture -->
+                                                    <ScrollViewer IsVisible="{Binding IsHistory}">
+                                                        <StackPanel Margin="20" Spacing="4">
+                                                            <TextBlock Text="Aucun passage pour l'instant — lancez le workflow."
+                                                                       IsVisible="{Binding IsHistoryEmpty}"
+                                                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                            <ItemsControl ItemsSource="{Binding History}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate x:DataType="vm:RunRowViewModel">
+                                                                        <Button HorizontalAlignment="Stretch"
+                                                                                HorizontalContentAlignment="Left"
+                                                                                Background="Transparent"
+                                                                                Padding="10,8" Margin="0,0,0,4"
+                                                                                Command="{Binding ReopenCommand}">
+                                                                            <Grid ColumnDefinitions="90,*">
+                                                                                <TextBlock Text="{Binding Verdict}"
+                                                                                           FontWeight="SemiBold"
+                                                                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                                                <TextBlock Grid.Column="1" Text="{Binding When}"
+                                                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                            </Grid>
+                                                                        </Button>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </StackPanel>
+                                                    </ScrollViewer>
+
+                                                    <!-- Onglet Étapes : l'éditeur existant, hébergé tel quel -->
+                                                    <ContentControl Content="{Binding Editor}" IsVisible="{Binding IsSteps}">
+                                                        <ContentControl.ContentTemplate>
+                                                            <DataTemplate x:DataType="vm:WorkflowEditorViewModel">
+                                                                <ScrollViewer>
                                                 <StackPanel Margin="20" Spacing="14">
 
                                                     <!-- En-tête : l'identifiant du workflow + enregistrer -->
@@ -361,7 +426,13 @@
                                                     </StackPanel>
 
                                                 </StackPanel>
-                                            </ScrollViewer>
+                                                                </ScrollViewer>
+                                                            </DataTemplate>
+                                                        </ContentControl.ContentTemplate>
+                                                    </ContentControl>
+
+                                                </Panel>
+                                            </DockPanel>
                                         </DataTemplate>
                                     </ContentControl.ContentTemplate>
                                 </ContentControl>

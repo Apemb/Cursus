@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `b737fc7` (*le volet projet — créer & renommer, D-025 ; l'arc authoring clos*). Dernier jalon de code : *jalon volet projet* (§4.22) — **dernière pierre de l'arc *authoring***. La surface d'un projet supposait qu'un projet existe déjà : le rail savait *ajouter* et *retirer*, ni **créer** ni **renommer**. Renommer arrive en **Core testé** (`ProjectStore.Rename`/`ProjectRegistry.Rename`, préserve l'`Id`, tient l'instantané — `D-025`), à l'inverse du rename de *workflow* resté en glu VM (`D-022`) : ici c'est de l'écriture de disposition. Créer reste une composition de surface (`Create` + `Add`). Côté UI : un **seul bouton** « Ajouter un projet » qui **inscrit ou bascule sur la création** (`OpenOrCreateProject`, nom pré-rempli du dossier), et un rail en **`ProjectRowViewModel`** (renommage inline, symétrique de `WorkflowRowViewModel`, `D-016`). UI non testée (§7.12), validée à la main ; ses deux coutures Core le sont. Suite de tests : **293 verts** (265 Core + 28 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour du commit `d4b75d2` (*la page du workflow — historique des runs, D-026*). Dernier jalon de code : *jalon page du workflow* (§4.23). Le **workflow devient un lieu** : cliquer le corps d'une ligne ouvre **sa page** — un hub à onglets (`WorkflowPageViewModel`) qui **compose** l'**Historique** de ses runs (neuf, adossé à `ProjectHost.RunsOf` — couture Core **testée**, jumelle de `LastRunPerWorkflow`) et les **Étapes** (l'éditeur existant, **replié** en onglet, reparentage sans réécriture) ; *Graphe* et *Déclencheurs* sont annoncés « à venir ». La surface échange désormais `liste / run / page` sans routeur (`D-026`, honneur de `D-016`) ; `RunRowViewModel` partage le libellé du verdict entre liste et historique. Tranche la question laissée ouverte par `D-016` (*où vit l'historique*) en faveur d'une **page dédiée**, amorce du hub. UI non testée (§7.12), validée à la main ; sa couture Core l'est. Suite de tests : **294 verts** (266 Core + 28 Persistence), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -41,9 +41,9 @@
 | Moitié | Emplacement | État |
 |---|---|---|
 | Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 8 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **deux projections sœurs** (`Projection/`, event-fed) : `RunProjection` plie le flux en trajectoire + statut + contrôle 3 positions (6c·3c), `GraphProjection` le plie en overlay de graphe qui montre le **non-parcouru** (vue graphe) ; à côté, `GraphLayout` en dispose la structure sur une grille par couches (calcul **pur**, statique, arêtes-retour comprises) ; et une **surface d'édition mutable** (`Editing/`) qui **construit** un graphe depuis rien autant qu'elle le **remanie**, en tenant l'unicité d'id (§4.19–4.20), plus `Slug` (libellé → id) et `ArgumentLine` (ligne d'arguments ⟷ argv, à guillemets, `D-024`) — deux transformations pures que l'éditeur consomme. **195 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
-| Projet & catalogue | `src/Cursus.Core/Projects/` (11 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert : lire le passé, **lancer** (6c·3b), **relire les événements** d'un run (`ReadEvents`, 6c·3c) ; le catalogue sait aussi **créer depuis un titre** (`CreateFromTitle`, ·3b). **54 tests.** Voir §4.11, §4.14, §4.16, §4.17, §4.21. |
+| Projet & catalogue | `src/Cursus.Core/Projects/` (11 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert : lire le passé, **lancer** (6c·3b), **relire les événements** d'un run (`ReadEvents`, 6c·3c), **énumérer les runs d'un workflow** (`RunsOf`, jalon page du workflow) ; le catalogue sait aussi **créer depuis un titre** (`CreateFromTitle`, ·3b). **55 tests.** Voir §4.11, §4.14, §4.16, §4.17, §4.21, §4.23. |
 | Persistance | `src/Cursus.Persistence/` | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque avec **suiveur de tail** (6c·3c), et le préréglage SQLite de `ProjectHost`. **28 tests.** Un run survit au process ; le flux live d'un run et sa relecture donnent la **même** projection (preuve end-to-end, 6c·3c). |
-| Surface projet (run · éditeur) & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et la **surface d'un projet** à trois modules sans routeur (liste ⇄ run ⇄ éditeur, `D-016`) : l'**écran de run** (6c·3c) — cliquer un workflow le lance, sa trajectoire se déroule, le log de la visite se suit en direct, un contrôle à trois positions l'arrête, un run passé se rouvre en relecture ; l'**éditeur** (·3b) — créer un workflow depuis un titre, le renommer/supprimer, y ajouter étapes et arêtes gardées, poser l'entrée, régler un script, valider en direct, enregistrer. Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
+| Surface projet (run · éditeur) & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et la **surface d'un projet** à modules sans routeur (liste ⇄ run ⇄ **page du workflow**, `D-016`) : l'**écran de run** (6c·3c) — un workflow lancé, sa trajectoire se déroule, le log de la visite se suit en direct, un contrôle à trois positions l'arrête, un run passé se rouvre en relecture ; la **page du workflow** (`D-026`) — atteinte en cliquant une ligne, elle compose en onglets l'**historique** de ses runs (chacun rouvrable en relecture) et l'**éditeur** (·3b, onglet *Étapes*) — ajouter étapes et arêtes gardées, poser l'entrée, régler un script, valider en direct, enregistrer ; la liste, elle, sait **créer/renommer/supprimer** un workflow (·3b). Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
 
 Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2). Depuis 6c·3a, **`Cursus.App` référence `Cursus.Persistence`** ; depuis 6c·3c la jonction UI est **close** (§9.4) : l'app lit le passé d'un projet, **lance** ses workflows, **suit** le flux d'un run en direct, **tail** le log de ses visites, et en montre le **graphe** — vue sœur brute du non-parcouru (§4.18).
 
@@ -83,7 +83,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 293 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 294 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -427,7 +427,7 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 | `Workflows/GraphLayoutTests.cs` (12) | Le calcul de disposition : profondeur en plus-long-chemin (chaîne, diamant, chemin long qui gagne), ordre en colonne par définition, **arêtes-retour** repérées sur les boucles (le calcul termine), îlots placés quand même, dimensions de la grille. |
 | `Cursus.Persistence.Tests/` (28) | Le magasin d'artefacts (dont le **tail** d'un artefact qui grossit, 6c·3c), le journal SQLite (dont sa sûreté sous contention, l'aller-retour du `workflow_id`/`ended_at`, et la restitution du `runId` sur `RunStarted`), et des assemblages — les tests de durabilité **referment puis rouvrent** le journal avant de relire. `ProjectRunTests` est le seul où **aucun emplacement n'est composé par le test** : ils viennent tous du `Project` — **preuve d'assemblage concurrent** du 6b. `ProjectHostEndToEndTests` porte les **tests exécutables du §7.12** : ouvrir un `ProjectHost` sur une vraie base, lire (6c·3a), lancer puis lire (6c·3b), et **plier le flux live == plier la relecture** (6c·3c) — le tout **sans Avalonia**. |
 | `Projects/ProjectStoreTests.cs` (14) · `Projects/WorkflowCatalogTests.cs` (24) · `Projects/ProjectRegistryTests.cs` (11) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, qu'un document cassé ne cache pas les autres, le **chemin d'écriture** (`D-019`) : créer fait naître un brouillon, sauvegarder ne valide pas, refus d'écraser une identité, rejet d'un id qui échapperait au dossier, et **`Open`** qui rouvre un brouillon cassé en rendant sa définition parsée + son rapport (`D-020`), et **`CreateFromTitle`** qui slugifie un titre humain en id de fichier et refuse la collision (`D-022`), et **`Rename`** qui réécrit le nom en préservant l'`Id` (`D-025`) · le registre machine (charge/persiste/ajoute/retire, une lecture ne mute jamais, convention XDG). |
-| `Projects/ProjectHostTests.cs` (5) | La jointure workflows × runs du host sur `InMemoryRunJournal` seedé : « jamais lancé » quand rien n'a tourné, le plus récent gagne, chaque run rattaché à son `WorkflowId`, `ReadEvents` rend les événements d'un run (6c·3c), et disposer le host ferme le journal (une connexion, un host). |
+| `Projects/ProjectHostTests.cs` (6) | La jointure workflows × runs du host sur `InMemoryRunJournal` seedé : « jamais lancé » quand rien n'a tourné, le plus récent gagne, chaque run rattaché à son `WorkflowId`, `ReadEvents` rend les événements d'un run (6c·3c), `RunsOf` rend **tous** les passages d'un workflow (plus récent d'abord, isolés de ceux d'un autre, jalon page du workflow), et disposer le host ferme le journal (une connexion, un host). |
 | `Projects/CursusProjectTests.cs` (2) | Que **ce dépôt** s'ouvre comme projet Cursus et que ses workflows commités valident. Le seul test qui lise le dépôt lui-même — garde-fou contre des exemples qui pourrissent. |
 | `Projects/ProjectRegistryTests.cs` (11) | Le registre machine (6c·1) : inscrire un projet valide, refuser un dossier sans `.cursus/`, dédoublonner par racine normalisée, retirer sans toucher au dépôt, **renommer un projet inscrit** (la liste reflète le nouveau nom, l'`Id` ne bouge pas — `D-025`) · persister et **recharger** entre deux instances · démarrage à froid sans fichier · un chemin qui ne résout plus est **ignoré de la liste mais conservé dans le fichier** (une lecture ne mute rien) · et la résolution du dossier machine (`$XDG_CONFIG_HOME` sinon `~/.config`, vide = absent), **jamais** `~/Library/Application Support`. |
 | `ArchitectureTests.cs` (1) | Le garde-fou de la couche de présentation (§7.12, 6c·1) : `Cursus.Core` ne référence **aucun** assembly `Avalonia.*`. Non-vacuité vérifiée en le retournant un instant sur un assembly réellement présent. |
@@ -916,6 +916,40 @@ les deux trous et clôt l'arc.
 Trou connu conservé : renommer le projet **ouvert** ne rafraîchit pas le titre de sa surface (figé à
 l'ouverture) — mineur. Comme toute l'UI, ce volet est **non testé** (§7.12), validé à la main ; ses deux
 coutures Core (`ProjectStore.Rename`, `ProjectRegistry.Rename`) le sont.
+
+---
+
+### 4.23 La page du workflow : l'historique des runs, l'éditeur replié en onglet — CONSTRUIT (jalon page du workflow)
+
+Le **workflow devient un lieu** (`D-026`). Jusque-là la surface projet échangeait trois modules plats —
+liste ⇄ run ⇄ éditeur ; désormais **cliquer le corps d'une ligne ouvre la page du workflow**, un hub à
+onglets qui **compose** des modules qui s'ignorent (honneur concret de `D-016`). La donnée était déjà
+là — `ListRuns()` rend tous les runs, `RunViewModel.Replay` en rouvre n'importe lequel — d'où un jalon
+**presque entièrement de présentation**, pour une seule couture Core.
+
+- **`ProjectHost.RunsOf(workflowId) → IReadOnlyList<RunSummary>` (Core, testé).** Jumeau de
+  `LastRunPerWorkflow` : filtre `ListRuns()` sur le `WorkflowId`, ordre conservé (plus récent d'abord).
+  Mince, mais c'est au **host** d'exposer les requêtes de runs — la surface ne parle jamais au journal
+  (règle de sens unique). Un test seedé (trois runs intercalés, deux workflows) contraint d'un coup l'ordre
+  et l'isolement.
+- **`WorkflowPageViewModel` (App, §7.12) — le hub.** Ne possède rien, **compose** sous une barre d'onglets
+  l'**Historique** (`ObservableCollection<RunRowViewModel>` alimentée par `RunsOf`) et les **Étapes** —
+  l'éditeur existant (`WorkflowEditorViewModel`), **replié tel quel** (reparentage, pas réécriture). Un
+  bouton *Lancer* et un retour vivent en tête ; *Graphe* et *Déclencheurs* ne sont que des libellés « à
+  venir ».
+- **`RunRowViewModel` (App, §7.12) — une ligne de run.** `RunSummary → verdict + date`, **partagée** : la
+  liste s'en sert pour le *dernier passage* (libellé seul), l'historique pour *chaque* passage (avec
+  relecture). Le formatage du verdict, jadis dans `WorkflowRowViewModel`, y est extrait — une seule règle.
+- **La surface échange `liste / run / page`, sans routeur.** `OpenProjectViewModel` remplace
+  `CurrentEditor` par `CurrentWorkflowPage`. Lancer depuis la page (ou depuis une ligne d'historique)
+  repasse par la surface, qui seule affiche le run ; **fermer le run revient à la page** si le run en
+  venait (le workflow reste le contexte), et l'historique s'y **rafraîchit** — le passage qui vient de
+  finir y figure. Lancer depuis la *liste* revient, lui, à la liste.
+
+**Hors jalon, tracé** : l'onglet **Graphe** (statique, via `GraphLayout` déjà pur sur une définition — le
+graphe n'existe pour l'instant qu'en overlay de run, §4.18) et l'onglet **Déclencheurs** (cron, état de
+tâche — cible acceptée mais reportée, §7.10.6). Le hub est **conçu pour les accueillir** : un module de
+plus, sans toucher les autres. Validé à la main ; sa couture Core (`RunsOf`) est testée.
 
 ---
 
@@ -1413,7 +1447,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **293 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **294 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 

@@ -984,3 +984,53 @@ noyau **inchangé** (tests sous `Projects/`, hors `Workflows/`). Suite 291 → *
 
 **Renvoi** : `architecture.md` §4 (`ProjectStore`/`ProjectRegistry`), §7.13 (la coquille), le trou « volet
 projet » refermé ; `schemas.md` (rail).
+
+---
+
+## D-026 — Le workflow devient un lieu : une page par workflow, l'historique en est la première section
+
+**Contexte.** L'arc *authoring* clos (`D-025`), direction ouverte. L'utilisateur demande un écran
+d'historique des runs. La recherche montre le terrain à moitié bâti : `IRunJournalReader.ListRuns()` rend
+déjà **tous** les runs (plus récent d'abord, testé SQLite) et `RunViewModel.Replay(RunSummary, …)` rouvre
+déjà **n'importe quel** run dans l'écran de run existant. `ProjectHost` n'exposait que
+`LastRunPerWorkflow()` — il jetait tout sauf la tête. La discussion (maquette validée, artifact `47687d22`)
+élargit le cadrage et **tranche une question que `D-016` avait laissée ouverte à dessein** : *où vit
+l'historique complet d'un workflow* — (a) déplié dans la liste, (b) un sous-écran propre.
+
+**Décision.**
+1. **Portée par workflow.** L'index projet reste la liste des workflows ; l'historique vit *dans* le
+   contexte d'un workflow, pas dans un journal global.
+2. **Le workflow devient un lieu.** Cliquer le corps d'une ligne ouvre **sa page** — un hub à onglets
+   (`WorkflowPageViewModel`) qui **compose** des modules qui s'ignorent (honneur concret de `D-016`, non un
+   monolithe) : *Historique* (neuf) et *Étapes* (l'éditeur existant, **replié** ici tel quel). *Graphe* et
+   *Déclencheurs* sont annoncés « à venir », hors jalon. C'est la **variante (b)**, choisie parce qu'elle
+   **amorce le hub** — (a) et le panneau latéral collaient l'historique à la liste, à défaire plus tard.
+3. **Une seule couture Core, testée : `ProjectHost.RunsOf(workflowId)`** — jumeau de `LastRunPerWorkflow`,
+   filtre `ListRuns()` sur le `WorkflowId`, ordre conservé. Mince, mais c'est au **host** d'exposer les
+   requêtes de runs : la surface ne parle jamais au journal (règle de sens unique). Filtrer côté VM aurait
+   percé cette frontière et cassé la symétrie avec l'accesseur voisin.
+4. **La surface échange `liste / run / page`, sans routeur.** Le module éditeur **plat** de
+   `OpenProjectViewModel` (`CurrentEditor`) est remplacé par `CurrentWorkflowPage` ; l'éditeur y devient
+   l'onglet *Étapes*. Lancer depuis la page ouvre le run ; **le fermer revient à la page** (le workflow
+   reste le contexte courant), et l'historique s'y rafraîchit — le passage qui vient de finir y figure.
+5. **`RunRowViewModel`**, une ligne de run bindable (verdict + date), **partagée** entre la liste (dernier
+   passage) et l'historique (chaque passage) : le formatage du verdict, jadis dans `WorkflowRowViewModel`,
+   y est extrait — une seule règle de libellé.
+
+**Alternatives écartées.**
+- *Historique global (tous workflows mêlés)* — la portée par workflow colle au cadrage `D-016` et à la
+  ligne « dernier passage » déjà par workflow.
+- *Dépli en place (a) / panneau latéral* — collent l'historique à la liste sans amorcer le hub.
+- *Filtrer `ListRuns()` côté VM* — viole la règle de sens unique, casse la symétrie avec l'accesseur voisin.
+- *Construire le hub complet (graphe statique, déclencheurs) tout de suite* — *big design up front* ;
+  cibles reportées (§7.10.6). On sème la page, on ne meuble pas d'onglets vides.
+
+**Conséquences.** Contrainte sur le neuf, aucune dette rétroactive. La couture Core est testée
+(`ProjectHostTests` +1, Core 265 → **266**, noyau **inchangé**, suite 293 → **294**, build 0 warning) ; la
+page, la ligne de run et le reparentage de l'éditeur sont de la présentation, non testés (§7.12), validés à
+la main. Le hub est la **base d'accueil** des facettes à venir : un onglet *Graphe* (via `GraphLayout`,
+déjà pur sur une définition) et un onglet *Déclencheurs* (cron, état de tâche) s'y ajouteront comme
+modules, sans toucher les autres — ce que `D-016` a été conçu pour rendre gratuit.
+
+**Renvoi** : `architecture.md` §4.23 (la page du workflow), §4 (`ProjectHost` + `RunsOf`), le §4.16/§7.12
+du hub de composition ; `schemas.md` (surface `liste / run / page`, si carte d'état et non delta figé).

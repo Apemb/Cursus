@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 using Cursus.Core.Projects;
+using Cursus.Core.Workflows;
 using Cursus.Core.Workflows.Editing;
 
 namespace Cursus.App.ViewModels;
@@ -28,21 +29,24 @@ public partial class OpenProjectViewModel : ObservableObject
 {
     private readonly WorkflowCatalog _catalog;
     private readonly Func<IReadOnlyList<WorkflowLastRun>> _loadWorkflows;
-    private readonly Func<string, RunViewModel> _startRun;
-    private readonly Func<WorkflowRowViewModel, RunViewModel> _openPastRun;
+    private readonly Func<string, RunViewModel> _startLive;
+    private readonly Func<RunSummary, RunViewModel> _replay;
+    private readonly Func<string, IReadOnlyList<RunSummary>> _runsOf;
 
     public OpenProjectViewModel(
         string name,
         WorkflowCatalog catalog,
         Func<IReadOnlyList<WorkflowLastRun>> loadWorkflows,
-        Func<string, RunViewModel> startRun,
-        Func<WorkflowRowViewModel, RunViewModel> openPastRun)
+        Func<string, RunViewModel> startLive,
+        Func<RunSummary, RunViewModel> replay,
+        Func<string, IReadOnlyList<RunSummary>> runsOf)
     {
         Name = name;
         _catalog = catalog;
         _loadWorkflows = loadWorkflows;
-        _startRun = startRun;
-        _openPastRun = openPastRun;
+        _startLive = startLive;
+        _replay = replay;
+        _runsOf = runsOf;
         Workflows = new ObservableCollection<WorkflowRowViewModel>();
         RefreshWorkflows();
     }
@@ -150,8 +154,8 @@ public partial class OpenProjectViewModel : ObservableObject
 
     /// <summary>
     /// L'écran du run occupant la surface, ou <c>null</c> quand la surface montre
-    /// autre chose. Un seul module à la fois — liste, run <b>ou</b> éditeur (D-016,
-    /// pas de routeur).
+    /// autre chose. Un seul module à la fois — liste, run <b>ou</b> page de workflow
+    /// (D-016, pas de routeur).
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsShowingRun))]
@@ -159,74 +163,88 @@ public partial class OpenProjectViewModel : ObservableObject
     private RunViewModel? _currentRun;
 
     /// <summary>
-    /// Le module éditeur occupant la surface, ou <c>null</c>. Sœur de
-    /// <see cref="CurrentRun"/> : troisième contenu d'un même espace, mutuellement
-    /// exclusif avec le run.
+    /// La page du workflow ouvert (historique + éditeur en onglets), ou <c>null</c>.
+    /// Sœur de <see cref="CurrentRun"/> : troisième contenu d'un même espace,
+    /// mutuellement exclusif avec le run.
     /// </summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsShowingEditor))]
+    [NotifyPropertyChangedFor(nameof(IsShowingPage))]
     [NotifyPropertyChangedFor(nameof(IsShowingList))]
-    private WorkflowEditorViewModel? _currentEditor;
+    private WorkflowPageViewModel? _currentWorkflowPage;
+
+    // La page à ré-afficher quand on ferme un run lancé depuis elle : le workflow
+    // reste le contexte courant, on ne retombe pas sur la liste.
+    private WorkflowPageViewModel? _pageBehindRun;
 
     /// <summary>Vrai quand le run occupe la surface.</summary>
     public bool IsShowingRun => CurrentRun is not null;
 
-    /// <summary>Vrai quand l'éditeur occupe la surface.</summary>
-    public bool IsShowingEditor => CurrentEditor is not null;
+    /// <summary>Vrai quand la page d'un workflow occupe la surface.</summary>
+    public bool IsShowingPage => CurrentWorkflowPage is not null;
 
-    /// <summary>Vrai quand ni run ni éditeur n'occupe la surface : c'est la liste qui s'affiche.</summary>
-    public bool IsShowingList => !IsShowingRun && !IsShowingEditor;
-
-    /// <summary>Lance le workflow d'une ligne et ouvre son run vif sur la surface.</summary>
-    [RelayCommand]
-    private void StartRun(WorkflowRowViewModel? row)
-    {
-        if (row is null)
-            return;
-
-        SwapRun(_startRun(row.Name));
-    }
-
-    /// <summary>Rouvre le dernier passage d'une ligne en relecture — même écran, figé.</summary>
-    [RelayCommand]
-    private void OpenPastRun(WorkflowRowViewModel? row)
-    {
-        if (row is null || !row.HasLastRun)
-            return;
-
-        SwapRun(_openPastRun(row));
-    }
-
-    /// <summary>Referme le run et revient à la liste.</summary>
-    [RelayCommand]
-    private void CloseRun() => SwapRun(null);
+    /// <summary>Vrai quand ni run ni page n'occupe la surface : c'est la liste qui s'affiche.</summary>
+    public bool IsShowingList => !IsShowingRun && !IsShowingPage;
 
     /// <summary>
-    /// Ouvre le module éditeur sur le workflow d'une ligne. Ferme un run éventuel :
-    /// les deux modules sont mutuellement exclusifs. L'éditeur enregistre par le
-    /// catalogue et rafraîchit la liste de la surface (<see cref="RefreshWorkflows"/>)
-    /// à chaque sauvegarde — le dernier passage inclus.
+    /// Ouvre la page du workflow d'une ligne — le clic sur son corps. La page compose
+    /// son historique (via <see cref="_runsOf"/>) et son éditeur ; lancer ou rouvrir un
+    /// run depuis elle repasse par <see cref="ShowRun"/>. Ferme un run éventuel.
     /// </summary>
     [RelayCommand]
-    private void OpenEditor(WorkflowRowViewModel? row)
+    private void OpenWorkflowPage(WorkflowRowViewModel? row)
     {
         if (row is null)
             return;
 
         CurrentRun?.Dispose();
         CurrentRun = null;
-        CurrentEditor = WorkflowEditorViewModel.Open(row.Name, _catalog, RefreshWorkflows);
+        _pageBehindRun = null;
+        CurrentWorkflowPage = new WorkflowPageViewModel(
+            row.Name, _catalog, _runsOf, _startLive, _replay, ShowRun, RefreshWorkflows, CloseWorkflowPage);
     }
 
-    /// <summary>Referme l'éditeur et revient à la liste.</summary>
-    [RelayCommand]
-    private void CloseEditor() => CurrentEditor = null;
-
-    private void SwapRun(RunViewModel? next)
+    /// <summary>Referme la page et revient à la liste.</summary>
+    private void CloseWorkflowPage()
     {
-        // Ouvrir un run ferme l'éditeur : un seul module occupe la surface.
-        CurrentEditor = null;
+        CurrentWorkflowPage = null;
+        _pageBehindRun = null;
+    }
+
+    /// <summary>Lance le workflow d'une ligne et ouvre son run vif — le raccourci « Lancer » de la liste.</summary>
+    [RelayCommand]
+    private void StartRun(WorkflowRowViewModel? row)
+    {
+        if (row is null)
+            return;
+
+        ShowRun(_startLive(row.Name));
+    }
+
+    /// <summary>Referme le run ; revient à la page si le run en venait, sinon à la liste.</summary>
+    [RelayCommand]
+    private void CloseRun()
+    {
         CurrentRun?.Dispose();
-        CurrentRun = next;
+        CurrentRun = null;
+
+        if (_pageBehindRun is not null)
+        {
+            _pageBehindRun.RefreshHistory(); // le passage qui vient de finir doit y apparaître
+            CurrentWorkflowPage = _pageBehindRun;
+            _pageBehindRun = null;
+        }
+    }
+
+    /// <summary>
+    /// Confie le run (vif ou en relecture) à la surface. Appelé par le raccourci de la
+    /// liste comme par la page ; dans ce dernier cas la page est mémorisée pour qu'on y
+    /// revienne à la fermeture — le workflow reste le contexte courant.
+    /// </summary>
+    private void ShowRun(RunViewModel run)
+    {
+        _pageBehindRun = CurrentWorkflowPage;
+        CurrentWorkflowPage = null;
+        CurrentRun?.Dispose();
+        CurrentRun = run;
     }
 }

@@ -10,10 +10,10 @@ namespace Cursus.App.ViewModels;
 
 /// <summary>
 /// Une ligne de la liste des workflows : son nom, et la trace de son dernier
-/// passage. C'est le seul endroit qui traduit l'issue d'un run en mots — l'écran
-/// arbitre le résultat, il ne recopie pas <see cref="RunState"/> (parcours §4).
-/// Non testé, comme toute la vue (§7.12) : le noyau distingue déjà les issues,
-/// il ne reste ici qu'un choix de libellés.
+/// passage. Le libellé de ce passage vient de <see cref="RunRowViewModel"/> — seul
+/// endroit qui traduit une issue en mots, partagé avec l'historique de la page ;
+/// l'écran arbitre le résultat, il ne recopie pas <see cref="RunState"/> (parcours §4).
+/// Non testé, comme toute la vue (§7.12).
 ///
 /// <para>
 /// Elle porte aussi l'état <b>transitoire</b> de son renommage inline
@@ -54,33 +54,15 @@ public partial class WorkflowRowViewModel : ObservableObject
     [RelayCommand]
     private void CancelRename() => IsEditing = false;
 
-    /// <summary>Le dernier passage du workflow — <c>null</c> s'il n'a jamais tourné ; ce que la relecture rouvre.</summary>
+    /// <summary>Le dernier passage du workflow — <c>null</c> s'il n'a jamais tourné.</summary>
     public RunSummary? LastRun { get; }
 
-    /// <summary>Vrai quand un passage existe à rouvrir — masque le geste « rouvrir » sur un workflow jamais lancé.</summary>
-    public bool HasLastRun => LastRun is not null;
-
     /// <summary>
-    /// Le dernier passage en une phrase — « Échoué le 22/07 à 18:04 », ou
-    /// « Jamais lancé » quand rien n'a encore tourné.
+    /// Le dernier passage en une phrase — « Échoué le 22/07 à 18:04 », ou « Jamais
+    /// lancé » quand rien n'a encore tourné. Le libellé vient de
+    /// <see cref="RunRowViewModel"/>, seul endroit qui traduit une issue en mots.
     /// </summary>
-    public string LastPassage => LastRun is null ? "Jamais lancé" : $"{Verdict(LastRun)} {When(LastRun)}";
-
-    /// <summary>
-    /// Le verdict lisible d'un run. <c>Failed</c> est déjà posé par le moteur
-    /// quand l'étape terminale échoue sans arête de secours ; « Arrêté » n'est pas
-    /// « Échoué », le noyau les sépare en <c>Aborted/Canceled</c>.
-    /// </summary>
-    private static string Verdict(RunSummary run) => run.State switch
-    {
-        RunState.Completed => "Réussi",
-        RunState.Failed => "Échoué",
-        RunState.Aborted when run.AbortReason == AbortReason.Canceled => "Arrêté",
-        RunState.Aborted when run.AbortReason == AbortReason.Faulted => "Planté",
-        RunState.Aborted => "Échoué", // boucle non convergente : un échec, pas un arrêt voulu
-        _ => "En cours",
-    };
-
-    private static string When(RunSummary run) =>
-        (run.EndedAt ?? run.StartedAt).ToLocalTime().ToString("'le' dd/MM 'à' HH:mm");
+    public string LastPassage => LastRun is null
+        ? "Jamais lancé"
+        : $"{RunRowViewModel.FormatVerdict(LastRun)} {RunRowViewModel.FormatWhen(LastRun)}";
 }
