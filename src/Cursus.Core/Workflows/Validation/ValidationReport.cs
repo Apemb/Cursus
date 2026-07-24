@@ -35,6 +35,12 @@ public enum ValidationIssueKind
 
     /// <summary>Le document n'est pas un JSON décrivant un workflow.</summary>
     MalformedDocument,
+
+    /// <summary>Une étape-tâche « déplacer » ne nomme aucune colonne cible : le geste serait sans objet.</summary>
+    EmptyTaskMoveColumn,
+
+    /// <summary>Une étape-tâche « étiqueter » ne nomme aucune étiquette : le geste serait sans objet.</summary>
+    EmptyTaskLabel,
 }
 
 /// <summary>Un problème relevé, désigné par sa nature et, quand c'est pertinent, l'étape concernée.</summary>

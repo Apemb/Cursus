@@ -84,6 +84,25 @@ public static class WorkflowValidator
                     $"L'étape-agent « {step.Id} » réclame le modèle « {agent.ModelId} » du harness « {agent.HarnessName} », introuvable.",
                     step.Id);
         }
+
+        // Les règles propres au kind tâche : un geste de mutation sans sa cible est sans objet.
+        // (Une clé de tâche absente n'est pas contrôlée ici — c'est un fait de run, pas de graphe.)
+        if (step is TaskStep task)
+        {
+            if (task.Operation is TaskOperation.MoveCard { Column: var column }
+                && string.IsNullOrWhiteSpace(column))
+                yield return new ValidationIssue(
+                    ValidationIssueKind.EmptyTaskMoveColumn,
+                    $"L'étape-tâche « {step.Id} » déplace la carte sans nommer de colonne : le geste serait sans objet.",
+                    step.Id);
+
+            if (task.Operation is TaskOperation.ApplyLabel { Label: var label }
+                && string.IsNullOrWhiteSpace(label))
+                yield return new ValidationIssue(
+                    ValidationIssueKind.EmptyTaskLabel,
+                    $"L'étape-tâche « {step.Id} » pose une étiquette sans la nommer : le geste serait sans objet.",
+                    step.Id);
+        }
     }
 
     private static IEnumerable<ValidationIssue> UnreachableStepIssues(WorkflowDefinition definition)

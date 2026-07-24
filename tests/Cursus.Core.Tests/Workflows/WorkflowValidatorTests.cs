@@ -242,6 +242,38 @@ public class WorkflowValidatorTests
         Assert.Contains(report.Issues, i => i.Kind == ValidationIssueKind.UnknownAgentModel);
     }
 
+    [Fact(DisplayName = "étant donné une étape-tâche « déplacer » sans colonne cible, quand on valide, alors le rapport signale une colonne de déplacement vide")]
+    public void A_move_card_task_step_without_a_column_is_reported()
+    {
+        // arrange — l'entrée pointe la tâche, seul nœud : rien à lui reprocher hormis la colonne vide
+        var definition = new WorkflowDefinition("entrer", new StepDefinition[]
+        {
+            new TaskStep("entrer", "Entrer en review", new TaskOperation.MoveCard(""), MaxVisits: 1, []),
+        });
+
+        // act
+        var report = WorkflowValidator.Validate(definition);
+
+        // assert
+        Assert.Contains(report.Issues, i => i.Kind == ValidationIssueKind.EmptyTaskMoveColumn);
+    }
+
+    [Fact(DisplayName = "étant donné une étape-tâche « étiqueter » sans étiquette, quand on valide, alors le rapport signale une étiquette vide")]
+    public void An_apply_label_task_step_without_a_label_is_reported()
+    {
+        // arrange
+        var definition = new WorkflowDefinition("sortir", new StepDefinition[]
+        {
+            new TaskStep("sortir", "Marquer terminé", new TaskOperation.ApplyLabel(""), MaxVisits: 1, []),
+        });
+
+        // act
+        var report = WorkflowValidator.Validate(definition);
+
+        // assert
+        Assert.Contains(report.Issues, i => i.Kind == ValidationIssueKind.EmptyTaskLabel);
+    }
+
     private static readonly ScriptSpec AnyScript = new("/usr/bin/true", []);
 
     private static StepDefinition Step(string id, params Edge[] edges) =>
