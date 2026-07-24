@@ -96,9 +96,20 @@ ses **schémas-delta** sont par nature éphémères et **ne doivent jamais se fi
 | Titres de test | `étant donné <état>, quand <action>, alors <conséquence observable>` |
 | Corps de test | Sections commentées `// arrange`, `// act`, `// assert` |
 | Tests d'I/O | Adossés aux binaires POSIX du système. Non portable Windows, **assumé** (cible macOS/Linux) |
+| Modélisation | Pas de nullable pour distinguer des **types d'objets** différents. Héritage / interface, discriminant dans le JSON seulement |
 
 Les commentaires expliquent **pourquoi**, jamais **quoi**. Un commentaire qui paraphrase la ligne
 suivante est du bruit ; un commentaire qui explique un piège évité vaut de l'or.
+
+**Modéliser les variantes par le type, jamais par des nullables.** Un objet qui peut être « un A
+**ou** un B » se modélise par un **héritage** (`abstract record` + sous-types) ou une **interface** —
+chaque sous-type ne portant que ses propres propriétés, toutes non-nulles. Encoder la variante par
+deux champs nullables mutuellement exclusifs (`A? xor B?`) plus un discriminant est proscrit : cela
+laisse représentables des états illégaux (les deux nuls, ou les deux pleins) que le type devrait
+rendre impossibles. Le discriminant (`kind`) vit **dans le document JSON seulement** ; un adaptateur
+(le sérialiseur) le lit pour construire le bon sous-type, et il ne remonte jamais en propriété du
+modèle de domaine. **Nuance** : la règle vise les *variantes de type*, pas les *valeurs optionnelles* —
+un `Description?` absent (une donnée qui peut manquer, façon `Option`) reste parfaitement légitime.
 
 ## Standard de qualité — non négociable
 
