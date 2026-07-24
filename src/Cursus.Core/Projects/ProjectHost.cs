@@ -92,6 +92,15 @@ public sealed class ProjectHost : IDisposable
                        .ToList();
     }
 
+    /// <summary>
+    /// Tous les passages d'un workflow, du plus récent au plus ancien — l'historique
+    /// que sa page déroule. Jumeau de <see cref="LastRunPerWorkflow"/> : c'est au
+    /// host d'exposer les requêtes de runs, la surface ne parle jamais au journal.
+    /// L'ordre est celui de <see cref="IRunJournalReader.ListRuns"/>, conservé tel quel.
+    /// </summary>
+    public IReadOnlyList<RunSummary> RunsOf(string workflowId) =>
+        _journal.ListRuns().Where(run => run.WorkflowId == workflowId).ToList();
+
     public void Dispose()
     {
         if (_journal is IDisposable disposable)

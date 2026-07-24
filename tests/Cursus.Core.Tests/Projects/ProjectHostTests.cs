@@ -77,6 +77,33 @@ public class ProjectHostTests : IDisposable
         Assert.Equal("recent", passage.LastRun!.RunId);
     }
 
+    [Fact(DisplayName = "étant donné plusieurs runs d'un même workflow et un run d'un autre, quand on demande les runs de ce workflow, alors on les obtient tous, du plus récent au plus ancien, et aucun d'un autre workflow")]
+    public void All_runs_of_a_workflow_come_back_most_recent_first_without_the_others()
+    {
+        // arrange — trois runs intercalés dans le temps : deux de « verifier »
+        // encadrant un de « build », pour éprouver à la fois l'ordre et l'isolement.
+        var project = ProjectStore.Create(_root, "Démo");
+        Deposit(project, "build");
+        Deposit(project, "verifier");
+        var clock = new TestClock(new DateTimeOffset(2026, 7, 20, 9, 0, 0, TimeSpan.Zero));
+        var journal = new InMemoryRunJournal(clock);
+        journal.Append("v-ancien", Started("verifier"));
+        journal.Append("v-ancien", new WorkflowEvent.RunFinished(RunState.Failed));
+        clock.UtcNow = clock.UtcNow.AddHours(1);
+        journal.Append("b1", Started("build"));
+        journal.Append("b1", new WorkflowEvent.RunFinished(RunState.Completed));
+        clock.UtcNow = clock.UtcNow.AddHours(1);
+        journal.Append("v-recent", Started("verifier"));
+        journal.Append("v-recent", new WorkflowEvent.RunFinished(RunState.Completed));
+        using var host = new ProjectHost(project, () => journal, AnyLauncher());
+
+        // act
+        var runs = host.RunsOf("verifier");
+
+        // assert
+        Assert.Equal(["v-recent", "v-ancien"], runs.Select(run => run.RunId));
+    }
+
     [Fact(DisplayName = "étant donné un host et l'id d'un workflow du projet, quand on le lance puis relit le dernier passage, alors ce workflow n'est plus « jamais lancé »")]
     public async Task Launching_a_workflow_fills_its_last_run()
     {
