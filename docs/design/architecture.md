@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour de l'**`AgentStep` headless** (`D-030`, jambe 2·1 — Core construit) : le noyau sait confier une étape à un agent. `StepDefinition` est devenue **abstraite**, `ScriptStep`/`AgentStep` en héritent (le kind est un *type*, pas un discriminant-propriété), l'exécution vit dans un `IStepExecutor` **par type** que le moteur choisit sans connaître les kinds, et le harness agentique est un concept **nommé** (`AgenticHarness` « Claude Code » + ses `AgentModel`) plutôt qu'un enum. L'agent tourne en **headless** (`claude --model … -p …`, `ScriptResult`, routable par les gardes existantes) ; la session PTY (§2.2) reste reportée. Jalon de code précédent : *le champ « Commande » unique* (`D-029`, jambe 1 close). Jalon de code précédent : *streaming intra-étape* (`D-028`, §4.12). Le graphe de la **définition** n'est pas un onglet frère, c'est la **seconde vue des étapes** : `DefinitionGraphViewModel` rend la silhouette statique d'une `WorkflowDefinition` (orphelines comprises — `GraphLayout` place toute étape) et **coiffe l'onglet Étapes** de l'éditeur, recalculée à chaque mutation (`D-027`, supersède la note « onglet Graphe statique » de `D-026`). La traduction grille→pixels est extraite dans `GraphGeometry`, **foyer partagé** avec l'overlay de run : les deux graphes rendent identiquement. Incrément **entièrement présentation** (§7.12), **aucun test neuf** — la garantie de l'orpheline est déjà verrouillée au Core (`GraphLayoutTests`) ; validé à la main. Jalon précédent : *page du workflow* (§4.23, `D-026`) — le **workflow est un lieu** (hub à onglets `WorkflowPageViewModel` : Historique adossé à `ProjectHost.RunsOf` + Étapes ; surface `liste / run / page` sans routeur). Jalon clos : **jambe 1 — la porte de gate déterministe** (`trajectoire.md`), ses trois dettes encaissées — streaming intra-étape (`D-028`), **preuve PATH sur bundle** faite au réel (PATH vidé, `dotnet` nu résolu via `~/.asdf/shims`, sort 0 : la béquille `/bin/sh -c` est superflue), routage exit-code **vécu** (44 runs de la gate) — plus l'authoring naturel : un **champ « Commande » unique** (1er token = binaire, `CommandLine`/`D-029`). Suite de tests : **316 verts** (287 Core + 29 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour de l'**`AgentStep` headless** (`D-030`, jambe 2·1 — Core construit) : le noyau sait confier une étape à un agent. `StepDefinition` est devenue **abstraite**, `ScriptStep`/`AgentStep` en héritent (le kind est un *type*, pas un discriminant-propriété), l'exécution vit dans un `IStepExecutor` **par type** que le moteur choisit sans connaître les kinds, et le harness agentique est un concept **nommé** (`AgenticHarness` « Claude Code » + ses `AgentModel`) plutôt qu'un enum. L'agent tourne en **headless** (`claude --model … -p …`, `ScriptResult`, routable par les gardes existantes) ; la session PTY (§2.2) reste reportée. L'**authoring** de ce kind est désormais ouvert à l'écran (`D-031`, jambe 2·1b) : le brouillon construit les deux kinds par portes sœurs (`AddAgentStep`/`SetPrompt`/`SetModel` jumeaux d'`AddStep`/`SetScript`), et la ligne d'éditeur est **polymorphe** — `StepEditorRow` abstraite, `ScriptStepRow` (commande) / `AgentStepRow` (modèle + prompt), la convention no-nullable appliquée jusque dans la vue (§7.12). Jalon de code précédent : *le champ « Commande » unique* (`D-029`, jambe 1 close). Jalon de code précédent : *streaming intra-étape* (`D-028`, §4.12). Le graphe de la **définition** n'est pas un onglet frère, c'est la **seconde vue des étapes** : `DefinitionGraphViewModel` rend la silhouette statique d'une `WorkflowDefinition` (orphelines comprises — `GraphLayout` place toute étape) et **coiffe l'onglet Étapes** de l'éditeur, recalculée à chaque mutation (`D-027`, supersède la note « onglet Graphe statique » de `D-026`). La traduction grille→pixels est extraite dans `GraphGeometry`, **foyer partagé** avec l'overlay de run : les deux graphes rendent identiquement. Incrément **entièrement présentation** (§7.12), **aucun test neuf** — la garantie de l'orpheline est déjà verrouillée au Core (`GraphLayoutTests`) ; validé à la main. Jalon précédent : *page du workflow* (§4.23, `D-026`) — le **workflow est un lieu** (hub à onglets `WorkflowPageViewModel` : Historique adossé à `ProjectHost.RunsOf` + Étapes ; surface `liste / run / page` sans routeur). Jalon clos : **jambe 1 — la porte de gate déterministe** (`trajectoire.md`), ses trois dettes encaissées — streaming intra-étape (`D-028`), **preuve PATH sur bundle** faite au réel (PATH vidé, `dotnet` nu résolu via `~/.asdf/shims`, sort 0 : la béquille `/bin/sh -c` est superflue), routage exit-code **vécu** (44 runs de la gate) — plus l'authoring naturel : un **champ « Commande » unique** (1er token = binaire, `CommandLine`/`D-029`). Suite de tests : **321 verts** (292 Core + 29 Persistence), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -83,7 +83,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 307 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 321 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -884,6 +884,17 @@ reste est de la présentation, non testée (§7.12), validée à la main comme l
   en cours d'édition), avec un filet à l'enregistrement. Depuis `D-029`, c'est **un seul** champ « Commande »
   (binaire + arguments en une ligne, 1er token = binaire) via `CommandLine`, au lieu de deux champs séparés.
 
+- **La ligne d'éditeur est polymorphe (`D-031`, jambe 2·1b).** Depuis que le graphe peut porter deux kinds,
+  `StepEditorRow` est **abstraite** (le commun : titre, id, arêtes, tracé/suppression) et une fabrique
+  `StepEditorRow.For(step)` produit la sous-classe par type : `ScriptStepRow` ne porte que sa commande,
+  `AgentStepRow` que son **modèle** (dropdown lisant `AgenticHarness.ClaudeCode.Models`, en dur — une seule
+  instance connue) et son **prompt**, chacun non-nul. C'est la convention no-nullable de `CLAUDE.md` appliquée
+  **jusque dans la vue** — pas de `Command?`/`Prompt?` + booléen. Le flush au save est polymorphe (`row.Flush()`),
+  ce qui a **retiré** l'ancienne `FlushScripts` (elle aurait cassé sur une ligne-agent). Le brouillon construit
+  les deux kinds par portes sœurs (`AddAgentStep`/`SetPrompt`/`SetModel`, testées Core) ; un `ComboBox`
+  « Script / Agent » à côté du titre choisit le kind, figé à la création. Le dropdown de modèle affiche le
+  libellé et retient l'id (`SelectedValueBinding`, Avalonia 12).
+
 - **Consolidation post-livraison (remontées de la validation manuelle).** Deux stabilisations : une **garde
   de ré-entrance** sur la re-projection (reconstruire `StepIds` faisait transiter le `ComboBox` d'entrée
   par une sélection nulle qui rappelait la projection en pleine mutation de collection → crash) ; et
@@ -1465,7 +1476,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **307 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **321 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 

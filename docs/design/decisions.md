@@ -1245,3 +1245,66 @@ marche : l'UI d'authoring (2·1b), le vrai binaire `claude` (dogfood manuel), le
 **Renvoi** : `architecture.md` §5 (la recette, désormais construite pour l'agent), §2.2 (couture headless
 tranchée, PTY ouverte), §4.1 (carte des fichiers) ; `CLAUDE.md` (convention Modélisation) ; `trajectoire.md`
 (jambe 2) ; `D-012` (le fan-out/join à rouvrir avec l'agent), `D-029` (jambe 1, la brique précédente).
+
+## D-031 — L'authoring d'une étape-agent : portes sœurs au brouillon, ligne d'éditeur polymorphe
+
+**Statut** : Tranché et construit — 2026-07-24. Valide 2·1b, ouvre l'authoring de l'agentique à l'écran.
+
+**Contexte.** D-030 avait donné au Core l'`AgentStep` (donnée, exécuteur, sérialisation, validation) et le
+moteur la route déjà. Mais rien ne savait en *composer* une : `WorkflowDraft` ne construisait que des
+`ScriptStep`, et l'UI ne montrait que le champ commande. Une étape-agent posée à la main dans le JSON
+s'éditait et se lançait, mais l'éditeur restait muet sur ce kind. 2·1b comble ce trou — le dernier verrou
+avant le dogfood du vrai binaire `claude`.
+
+**Décision.** Quatre choix, chacun un prolongement d'un idiome déjà tenu plutôt qu'une forme neuve.
+
+1. **Le brouillon construit l'agent par des portes sœurs.** `AddAgentStep(name)` jumelle `AddStep` (même
+   `Uniquify(Slug.From(name))`, mais l'étape naît confiée au seul harness connu, `AgenticHarness.ClaudeCode`,
+   sur son premier modèle, prompt vide — brouillon permis). `SetPrompt`/`SetModel` jumellent `SetScript` :
+   même choke `IndexOf` (le sujet doit exister), et le **cast sur `AgentStep`** garde l'invariant de kind
+   comme le cast sur `ScriptStep` le gardait déjà. Aucun type neuf au Core — juste trois opérations sur la
+   surface d'édition existante.
+
+2. **La ligne d'éditeur devient un type par kind — la convention no-nullable jusque dans la vue.**
+   `StepEditorRow` passe **abstraite** (le commun : titre, id, arêtes, tracé/suppression) ; `ScriptStepRow`
+   ne porte que sa commande, `AgentStepRow` que son modèle + son prompt, chacun non-nul. Une fabrique
+   statique `StepEditorRow.For(step)` dispatche par type — le VM ne connaît plus les kinds. La règle de
+   `CLAUDE.md` (pas de nullable pour distinguer des variantes de type) s'applique **au-delà du domaine**,
+   dans une VM §7.12 : une ligne « script *ou* agent » est une variante de type, pas un objet à
+   `Command?`/`Prompt?`/`Model?` + booléen.
+
+3. **Le flush au save devient polymorphe.** `StepEditorRow.Flush()` abstraite ; chaque sous-type repousse
+   ses champs locaux (`Save` boucle `row.Flush()`). Cela **retire** l'ancienne `FlushScripts` qui appelait
+   `SetScript` sur *toutes* les lignes — laquelle aurait levé `InvalidCastException` sur une ligne-agent
+   dès qu'un agent coexiste avec un script. Le dispatch par type appartient au type, pas à un `switch` dans
+   le VM.
+
+4. **Le kind se choisit à la création, figé ensuite.** Un `ComboBox` « Script / Agent » à côté du champ
+   Titre route `AddStep` vers `AddStep`/`AddAgentStep` du brouillon. Changer le kind d'une étape = la
+   supprimer + recréer.
+
+**Ce que ça supersède.** Rien de tranché ; cela **construit** l'anticipation de D-030 (« l'UI d'authoring
+2·1b à suivre ») et de la note de `SetScript` (« le jour d'un `AgentStep`, une opération sœur prendra le
+relais » — c'est fait).
+
+**Alternatives écartées.**
+- *Un `AddStep(name, kind)` paramétré par enum* — le kind est un **type**, pas un drapeau ; passer un enum
+  trahirait la convention no-nullable/no-discriminant. Les portes sœurs sont l'idiome du dépôt
+  (`Read`/`ReadEditable`, `Load`/`Open`, `Create`/`CreateFromTitle`).
+- *Un `SetAgent(id, modelId, prompt)` unique* — deux contrôles UI indépendants (dropdown + zone de texte)
+  qui poussent ensemble = le piège « Appliquer » de D-024. Deux setters, un par contrôle.
+- *Garder un `StepEditorRow` unique à champs nullables + booléen `IsAgent`* — laisse représentables des
+  états illégaux et force l'AXAML à toggler des visibilités sur des nullables. Proscrit par `CLAUDE.md`.
+- *Convertir le kind en place (bascule par ligne)* — exigerait une op « changer de kind » sur le brouillon
+  et compliquerait la re-projection, pour un geste rare. **Décision utilisateur** : kind figé à la création.
+
+**Conséquences.** Core **287 → 292** (+5 : construction agent + les deux gardes `IndexOf`). Suite
+**316 → 321**, 0 warning. Côté App (§7.12, non testé, validé à la main — agent ajouté à un workflow réel,
+round-trip modèle + prompt vérifié) : deux ViewModels de ligne neufs, `StepEditorRow` abstraite, dropdown de
+modèle à `SelectedValueBinding` (Avalonia 12, affiche le libellé, retient l'id). Reste hors marche : le vrai
+binaire `claude` (dogfood), les références inter-étapes (2·3), la session PTY.
+
+**Renvoi** : `architecture.md` §7.12 (la ligne d'éditeur polymorphe), §4.1 (les VM de ligne) ;
+`CLAUDE.md` (convention Modélisation, désormais illustrée jusque dans la vue) ; `D-030` (le Core de
+l'agent), `D-024` (le piège « Appliquer » évité), `D-021` (`AddStep`/`Slug`, dont `AddAgentStep` est le
+jumeau).
