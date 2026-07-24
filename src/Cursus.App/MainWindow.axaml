@@ -25,7 +25,24 @@
                             HorizontalContentAlignment="Center"
                             Padding="0,8"
                             Click="OnAddProjectClick" />
-                    <!-- Vide tant que le dernier ajout a réussi ; sinon le refus lisible -->
+
+                    <!-- Création en attente : le dossier choisi n'est pas encore un projet, on le nomme avant de poser le .cursus/ -->
+                    <StackPanel Spacing="6" IsVisible="{Binding IsCreatingProject}">
+                        <TextBox Text="{Binding CreateNameDraft, Mode=TwoWay}"
+                                 PlaceholderText="Nom du projet" />
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Content="Créer"
+                                    Padding="12,6"
+                                    Command="{Binding ConfirmCreateProjectCommand}" />
+                            <Button Content="Annuler"
+                                    Padding="12,6"
+                                    Background="Transparent"
+                                    Foreground="{DynamicResource TextSecondaryBrush}"
+                                    Command="{Binding CancelCreateProjectCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Vide tant que le dernier geste a réussi ; sinon le refus lisible -->
                     <TextBlock Text="{Binding AddError}"
                                TextWrapping="Wrap"
                                FontSize="11"
@@ -39,9 +56,12 @@
                      BorderThickness="0"
                      Padding="6">
                 <ListBox.ItemTemplate>
-                    <DataTemplate x:DataType="projects:Project">
+                    <DataTemplate x:DataType="vm:ProjectRowViewModel">
                         <Grid ColumnDefinitions="*,Auto" MinHeight="34">
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+
+                            <!-- Mode normal : le nom, la racine, et les gestes renommer/retirer -->
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center"
+                                        IsVisible="{Binding !IsEditing}">
                                 <TextBlock Text="{Binding Name}"
                                            Foreground="{DynamicResource TextPrimaryBrush}" />
                                 <TextBlock Text="{Binding Root}"
@@ -49,15 +69,44 @@
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextTrimming="CharacterEllipsis" />
                             </StackPanel>
-                            <Button Grid.Column="1"
-                                    Content="✕"
-                                    VerticalAlignment="Center"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Padding="8,2"
-                                    Foreground="{DynamicResource TextSecondaryBrush}"
-                                    Command="{Binding $parent[ListBox].((vm:ShellViewModel)DataContext).RemoveProjectCommand}"
-                                    CommandParameter="{Binding}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"
+                                        VerticalAlignment="Center"
+                                        IsVisible="{Binding !IsEditing}">
+                                <Button Content="Renommer"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="8,2"
+                                        FontSize="11"
+                                        Foreground="{DynamicResource TextSecondaryBrush}"
+                                        Command="{Binding BeginRenameCommand}" />
+                                <Button Content="✕"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="8,2"
+                                        Foreground="{DynamicResource TextSecondaryBrush}"
+                                        Command="{Binding $parent[ListBox].((vm:ShellViewModel)DataContext).RemoveProjectCommand}"
+                                        CommandParameter="{Binding}" />
+                            </StackPanel>
+
+                            <!-- Mode renommage : réécrit le nom, jamais l'identité du projet -->
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding DraftName, Mode=TwoWay}"
+                                     VerticalAlignment="Center"
+                                     Margin="0,0,8,0"
+                                     IsVisible="{Binding IsEditing}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"
+                                        VerticalAlignment="Center"
+                                        IsVisible="{Binding IsEditing}">
+                                <Button Content="OK"
+                                        Padding="10,4"
+                                        Command="{Binding $parent[ListBox].((vm:ShellViewModel)DataContext).RenameProjectCommand}"
+                                        CommandParameter="{Binding}" />
+                                <Button Content="Annuler"
+                                        Padding="10,4"
+                                        Background="Transparent"
+                                        Foreground="{DynamicResource TextSecondaryBrush}"
+                                        Command="{Binding CancelRenameCommand}" />
+                            </StackPanel>
                         </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>

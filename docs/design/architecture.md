@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `996d0c1` (*l'éditeur ·3b consolidé — ArgumentLine, D-024*). Dernier jalon de code : *jalon éditeur ·3b — l'UI de l'éditeur* (§4.21) — cinquième pierre de l'arc **authoring**, la première à toucher l'UI. La surface projet gagne un **troisième module** (liste ⇄ run ⇄ **éditeur**, sans routeur, `D-016`) : créer un workflow depuis un titre (`CreateFromTitle`, seule couture Core testée, `D-022`), le renommer/supprimer, et un module d'édition du graphe (ajouter étapes et arêtes, poser l'entrée, régler un script, valider en direct, enregistrer) adossé au brouillon `WorkflowDraft` (`D-023`). UI non testée (§7.12), validée à la main ; sa couture Core l'est. **Consolidé** ensuite par la validation manuelle : deux stabilisations (garde de ré-entrance sur la re-projection ; champs de script auto-poussés) et **`ArgumentLine`** (`Editing`, `D-024`) — la ligne d'arguments honore les guillemets, sans quoi `zsh -c "commande"` restait inexprimable. Suite de tests : **291 verts** (263 Core + 28 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour du commit `b737fc7` (*le volet projet — créer & renommer, D-025 ; l'arc authoring clos*). Dernier jalon de code : *jalon volet projet* (§4.22) — **dernière pierre de l'arc *authoring***. La surface d'un projet supposait qu'un projet existe déjà : le rail savait *ajouter* et *retirer*, ni **créer** ni **renommer**. Renommer arrive en **Core testé** (`ProjectStore.Rename`/`ProjectRegistry.Rename`, préserve l'`Id`, tient l'instantané — `D-025`), à l'inverse du rename de *workflow* resté en glu VM (`D-022`) : ici c'est de l'écriture de disposition. Créer reste une composition de surface (`Create` + `Add`). Côté UI : un **seul bouton** « Ajouter un projet » qui **inscrit ou bascule sur la création** (`OpenOrCreateProject`, nom pré-rempli du dossier), et un rail en **`ProjectRowViewModel`** (renommage inline, symétrique de `WorkflowRowViewModel`, `D-016`). UI non testée (§7.12), validée à la main ; ses deux coutures Core le sont. Suite de tests : **293 verts** (265 Core + 28 Persistence), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -83,7 +83,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 291 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 293 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -426,10 +426,10 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 | `Workflows/GraphProjectionTests.cs` (9) | Le fold sœur en overlay de graphe : structure apprise du `RunStarted` (un nœud par étape, arêtes reflétées), statut par nœud (en cours → issue, non visité, dernière issue + `VisitCount` d'une boucle), et arête marquée traversée par `EdgeChosen`. |
 | `Workflows/GraphLayoutTests.cs` (12) | Le calcul de disposition : profondeur en plus-long-chemin (chaîne, diamant, chemin long qui gagne), ordre en colonne par définition, **arêtes-retour** repérées sur les boucles (le calcul termine), îlots placés quand même, dimensions de la grille. |
 | `Cursus.Persistence.Tests/` (28) | Le magasin d'artefacts (dont le **tail** d'un artefact qui grossit, 6c·3c), le journal SQLite (dont sa sûreté sous contention, l'aller-retour du `workflow_id`/`ended_at`, et la restitution du `runId` sur `RunStarted`), et des assemblages — les tests de durabilité **referment puis rouvrent** le journal avant de relire. `ProjectRunTests` est le seul où **aucun emplacement n'est composé par le test** : ils viennent tous du `Project` — **preuve d'assemblage concurrent** du 6b. `ProjectHostEndToEndTests` porte les **tests exécutables du §7.12** : ouvrir un `ProjectHost` sur une vraie base, lire (6c·3a), lancer puis lire (6c·3b), et **plier le flux live == plier la relecture** (6c·3c) — le tout **sans Avalonia**. |
-| `Projects/ProjectStoreTests.cs` (13) · `Projects/WorkflowCatalogTests.cs` (24) · `Projects/ProjectRegistryTests.cs` (10) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, qu'un document cassé ne cache pas les autres, le **chemin d'écriture** (`D-019`) : créer fait naître un brouillon, sauvegarder ne valide pas, refus d'écraser une identité, rejet d'un id qui échapperait au dossier, et **`Open`** qui rouvre un brouillon cassé en rendant sa définition parsée + son rapport (`D-020`), et **`CreateFromTitle`** qui slugifie un titre humain en id de fichier et refuse la collision (`D-022`) · le registre machine (charge/persiste/ajoute/retire, une lecture ne mute jamais, convention XDG). |
+| `Projects/ProjectStoreTests.cs` (14) · `Projects/WorkflowCatalogTests.cs` (24) · `Projects/ProjectRegistryTests.cs` (11) | La disposition `.cursus/` **assertée en chemins littéraux**, puisqu'elle est versionnée donc contractuelle · l'identité par nom de fichier, qu'un document cassé ne cache pas les autres, le **chemin d'écriture** (`D-019`) : créer fait naître un brouillon, sauvegarder ne valide pas, refus d'écraser une identité, rejet d'un id qui échapperait au dossier, et **`Open`** qui rouvre un brouillon cassé en rendant sa définition parsée + son rapport (`D-020`), et **`CreateFromTitle`** qui slugifie un titre humain en id de fichier et refuse la collision (`D-022`), et **`Rename`** qui réécrit le nom en préservant l'`Id` (`D-025`) · le registre machine (charge/persiste/ajoute/retire, une lecture ne mute jamais, convention XDG). |
 | `Projects/ProjectHostTests.cs` (5) | La jointure workflows × runs du host sur `InMemoryRunJournal` seedé : « jamais lancé » quand rien n'a tourné, le plus récent gagne, chaque run rattaché à son `WorkflowId`, `ReadEvents` rend les événements d'un run (6c·3c), et disposer le host ferme le journal (une connexion, un host). |
 | `Projects/CursusProjectTests.cs` (2) | Que **ce dépôt** s'ouvre comme projet Cursus et que ses workflows commités valident. Le seul test qui lise le dépôt lui-même — garde-fou contre des exemples qui pourrissent. |
-| `Projects/ProjectRegistryTests.cs` (10) | Le registre machine (6c·1) : inscrire un projet valide, refuser un dossier sans `.cursus/`, dédoublonner par racine normalisée, retirer sans toucher au dépôt · persister et **recharger** entre deux instances · démarrage à froid sans fichier · un chemin qui ne résout plus est **ignoré de la liste mais conservé dans le fichier** (une lecture ne mute rien) · et la résolution du dossier machine (`$XDG_CONFIG_HOME` sinon `~/.config`, vide = absent), **jamais** `~/Library/Application Support`. |
+| `Projects/ProjectRegistryTests.cs` (11) | Le registre machine (6c·1) : inscrire un projet valide, refuser un dossier sans `.cursus/`, dédoublonner par racine normalisée, retirer sans toucher au dépôt, **renommer un projet inscrit** (la liste reflète le nouveau nom, l'`Id` ne bouge pas — `D-025`) · persister et **recharger** entre deux instances · démarrage à froid sans fichier · un chemin qui ne résout plus est **ignoré de la liste mais conservé dans le fichier** (une lecture ne mute rien) · et la résolution du dossier machine (`$XDG_CONFIG_HOME` sinon `~/.config`, vide = absent), **jamais** `~/Library/Application Support`. |
 | `ArchitectureTests.cs` (1) | Le garde-fou de la couche de présentation (§7.12, 6c·1) : `Cursus.Core` ne référence **aucun** assembly `Avalonia.*`. Non-vacuité vérifiée en le retournant un instant sur un assembly réellement présent. |
 
 ### 4.10 Le journal — CONSTRUIT (jalon 4)
@@ -490,7 +490,7 @@ Ce que la lecture du code ne donne pas d'emblée :
 | Type | Rôle |
 |---|---|
 | `Project` | L'identité (`Id`, `Name`) et **où sont les choses**, ce qu'il sait seul : `Root`, `CursusDirectory`, `ProjectFilePath`, `WorkflowsDirectory`, `DatabasePath`, `ArtifactsRoot`, `WorktreesRoot`. Ne fabrique **plus** de `RunContext` — la racine d'un run est un worktree provisionné (§4.13) |
-| `ProjectStore` | `Create` · `Open` · `Discover`. Le seul type du noyau qui écrive la disposition |
+| `ProjectStore` | `Create` · `Open` · `Discover` · `Rename(project, newName)` (réécrit `project.json`, **même `Id`**, rend un `Project` frais — `D-025`). Le seul type du noyau qui écrive la disposition |
 | `WorkflowCatalog` | **Lecture** : `List()` rend des `WorkflowEntry(Id, Path)` · `Load(id)` rend un `LoadResult` (valider, pour le run) · `Open(id)` rend un `ParsedWorkflow` (parser même invalide, pour éditer — porte sœur, `D-020`). **Écriture** (`D-019`) : `Create(id)` fait naître un brouillon vide · `CreateFromTitle(title)` fait naître depuis un **titre humain** (slug → id, retourné ; refuse la collision — jumelle d'`AddStep`, `D-022`) · `Save(id, def)` persiste **sans valider** (c'est là que vivent les brouillons) · `Delete(id)` · `Rename(old, new)`. Apporte le disque et l'identité, délègue la traduction au sérialiseur. Refuse d'écraser une identité (`WorkflowAlreadyExistsException`) et rejette un id qui échapperait au dossier (`InvalidWorkflowIdException`, garde au point de choke `PathOf`) |
 
 Ce que la lecture du code ne donne pas d'emblée :
@@ -553,23 +553,34 @@ Ce que le code ne dit pas d'emblée :
 La première remontée d'UI, et la première pierre de la **racine machine** (§7.13). L'UI se construit par
 petites marches suivant le flux utilisateur (loader → ouvrir → lancer → sortie → run passé → config) ;
 celle-ci n'en livre que la première : *lister les projets, en ajouter, en retirer, se les rappeler entre
-deux lancements*. Ouvrir un projet en mode run est la marche suivante (§4.15) ; `ProjectHost` et le
-lancement d'un workflow restent au-delà.
+deux lancements* (**créer & renommer** se sont greffés plus tard, au **volet projet** — `D-025`, dernière
+pierre de l'arc *authoring* ; voir le bullet `ProjectRegistry` ci-dessous et la coquille §7.13). Ouvrir un
+projet en mode run est la marche suivante (§4.15) ; `ProjectHost` et le lancement d'un workflow restent au-delà.
 
 - **`ProjectRegistry`** (`Cursus.Core/Projects/`) porte **toute** la logique. Inscrire valide par
   `ProjectStore.Open` et laisse remonter `ProjectNotFoundException` — l'invariant « c'est un projet
   Cursus » a déjà son gardien, on ne le duplique pas. Dédoublonnage par racine normalisée. Retirer ne
-  touche jamais au dépôt : oublier et supprimer sont deux gestes. La liste se persiste dans
+  touche jamais au dépôt : oublier et supprimer sont deux gestes. **Renommer** (`Rename(root, newName)`,
+  `D-025`) s'adosse à `ProjectStore.Rename` **et remplace son instantané en mémoire** — le nom vit sur
+  disque, pas dans `projects.json` (qui ne liste que des racines) : sans ce remplacement, une relecture
+  ressusciterait l'ancien nom ; le fichier du registre, lui, ne change pas. La liste se persiste dans
   `~/.config/cursus/projects.json` (§7.10.1) et se recharge au démarrage ; **une lecture ne mute jamais
   le fichier** — un chemin qui ne résout plus (volume démonté) est ignoré de l'affichage mais conservé sur
   disque, parce que distinguer « déplacé » de « supprimé » est le problème du registre machine complet.
 - **La coquille App** passe de surface unique à **rail des projets | surface**. `ShellViewModel` est un
-  adaptateur mince sur le registre (il délègue, et traduit un refus en message). La vue sessions n'est pas
-  supprimée mais **extraite** telle quelle dans `Views/SessionsView` (son `DataContext` reste un
-  `MainViewModel`) : bindings et plomberie PTY inchangés, dette gelée ré-hébergée (§6.1), pas refactorée.
-  Le sélecteur de dossier vit dans le code-behind (il exige un `TopLevel`) et ne passe qu'un chemin au
-  ViewModel. La composition se fait dans `App.axaml.cs` via `ProjectRegistry.ForCurrentUser()` — la
-  fabrique Core qui connaît l'emplacement machine ; une future CLI la réutilise sans dupliquer la convention.
+  adaptateur mince sur le registre (il délègue, et traduit un refus en bifurcation). Le rail présente des
+  **`ProjectRowViewModel`** (enveloppe mince d'un `Project` immuable, pour loger l'état d'un renommage
+  inline — symétrique de `WorkflowRowViewModel`, `D-025`), non des `Project` nus. **Créer & renommer sont
+  câblés** (volet projet, `D-025`) : un seul bouton « Ajouter un projet » ouvre le sélecteur, puis
+  `OpenOrCreateProject` **inscrit** si le dossier porte déjà un `.cursus/`, **sinon bascule sur la
+  création** (champ nom pré-rempli du nom du dossier, `ProjectStore.Create` + `Add`) ; renommer une ligne
+  réécrit le disque via `_registry.Rename` et met la ligne à jour **en place** (sélection préservée). La
+  vue sessions n'est pas supprimée mais **extraite** telle quelle dans `Views/SessionsView` (son
+  `DataContext` reste un `MainViewModel`) : bindings et plomberie PTY inchangés, dette gelée ré-hébergée
+  (§6.1), pas refactorée. Le sélecteur de dossier vit dans le code-behind (il exige un `TopLevel`) et ne
+  passe qu'un chemin au ViewModel. La composition se fait dans `App.axaml.cs` via
+  `ProjectRegistry.ForCurrentUser()` — la fabrique Core qui connaît l'emplacement machine ; une future CLI
+  la réutilise sans dupliquer la convention.
 - **Le premier des deux tests exécutables du §7.12 existe** : `ArchitectureTests` vérifie que `Cursus.Core`
   ne référence aucun assembly `Avalonia.*`. Sa non-vacuité a été prouvée (il tombe quand on vise un
   assembly réellement présent). Le second — l'end-to-end headless — reste à écrire.
@@ -799,8 +810,8 @@ Troisième pierre de l'arc **authoring**. `D-019` (·2a) avait donné au catalog
 
 La surface de *construction* est arrivée en ·3a (§4.20) ; l'UI qui la câble — le module éditeur — est
 arrivée en ·3b (§4.21, `D-023` : catalogue + brouillon reliés à des ViewModels, slug-de-titre promu en
-Core `CreateFromTitle`). **Reste** le volet **projet** (créer/renommer), dernière pierre de l'arc, plan
-distinct.
+Core `CreateFromTitle`). Le **volet projet** (créer/renommer, `D-025`, §4.22) a posé la **dernière
+pierre** : **l'arc *authoring* est clos.**
 
 ### 4.20 Construire un workflow : la surface de construction du brouillon — CONSTRUIT (jalon éditeur ·3a)
 
@@ -872,8 +883,39 @@ reste est de la présentation, non testée (§7.12), validée à la main comme l
 
 **Hors ·3b** : renommer une étape après création (re-slug d'id), garde `Code = n` à l'arête, réordonner,
 éditer `Description`/`MaxVisits`, la vue graphe *en édition* (l'éditeur est un formulaire, pas un canevas),
-le volet **projet** (create/rename — prochaine et dernière pierre de l'arc). Le module éditeur est non
-testé (§7.12) ; sa couture Core (`CreateFromTitle`) et le brouillon qu'il pilote le sont.
+le volet **projet** (create/rename — traité en §4.22). Le module éditeur est non testé (§7.12) ; sa
+couture Core (`CreateFromTitle`) et le brouillon qu'il pilote le sont.
+
+---
+
+### 4.22 Le volet projet : créer & renommer — CONSTRUIT (jalon volet projet), l'arc *authoring* clos
+
+**Dernière pierre de l'arc *authoring*.** La surface d'un projet supposait qu'un projet **existe déjà** :
+le rail savait *ajouter* un `.cursus/` présent et *retirer* une entrée, mais ni **créer** ni **renommer**.
+`ProjectStore.Create` existait, testé, **jamais câblé** ; renommer n'existait nulle part. Ce jalon ferme
+les deux trous et clôt l'arc.
+
+- **Renommer vit en Core, testé (`D-025`).** `ProjectStore.Rename(project, newName)` réécrit `project.json`
+  en préservant l'`Id` (la seule donnée sans laquelle le registre ne reconnaîtrait plus le projet) ;
+  `ProjectRegistry.Rename(root, newName)` s'y adosse et **remplace son instantané** en mémoire, sinon le
+  prochain `SyncProjects` ressusciterait l'ancien nom. **Contraste avec le rename de *workflow*** (glu VM,
+  `D-022`) : celui-là ne composait que des primitives existantes, celui-ci écrit la disposition — la
+  responsabilité de `ProjectStore`, donc du Core testé.
+- **Créer reste une composition de surface** (`Create` + `Add` — pas de `ProjectRegistry.Create`, `Add`
+  rafraîchit déjà l'instantané). **Asymétrie assumée** avec `Rename`, qui porte une logique que seul le
+  registre peut tenir.
+- **Un seul bouton, qui ajoute *ou* crée** (`D-025`, tranché en validation manuelle contre le plan qui
+  prévoyait deux gestes). `OpenOrCreateProject` : si le dossier porte un `.cursus/`, on l'inscrit et on
+  l'ouvre ; sinon le refus `ProjectNotFoundException` **bascule sur la création** — champ nom pré-rempli du
+  nom feuille du dossier (⚠️ `Path.TrimEndingDirectorySeparator` d'abord, le sélecteur rend un séparateur
+  final qui viderait `GetFileName`), éditable, puis `Create` + `Add` + ouverture.
+- **`ProjectRowViewModel`**, enveloppe mince d'un `Project` immuable, loge l'état du renommage inline —
+  symétrique de `WorkflowRowViewModel`, honore « UI en modules recomposables » (`D-016`). Renommer met la
+  ligne à jour **en place** (via `Applied`), la sélection survit.
+
+Trou connu conservé : renommer le projet **ouvert** ne rafraîchit pas le titre de sa surface (figé à
+l'ouverture) — mineur. Comme toute l'UI, ce volet est **non testé** (§7.12), validé à la main ; ses deux
+coutures Core (`ProjectStore.Rename`, `ProjectRegistry.Rename`) le sont.
 
 ---
 
@@ -1371,7 +1413,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **291 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **293 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 

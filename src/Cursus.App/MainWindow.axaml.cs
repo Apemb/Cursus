@@ -14,13 +14,14 @@ public partial class MainWindow : Window
     }
 
     // Le sélecteur de dossier est une affaire de vue (il exige un TopLevel) ; le
-    // ViewModel ne reçoit qu'un chemin et décide seul de l'inscrire ou de le
-    // refuser. C'est la frontière posée par la décision de conception du loader.
+    // ViewModel ne reçoit qu'un chemin et décide seul quoi en faire — l'inscrire
+    // si c'est déjà un projet, sinon ouvrir la création. C'est la frontière posée
+    // par la décision de conception du loader.
     private async void OnAddProjectClick(object? sender, RoutedEventArgs e)
     {
         var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
-            Title = "Ouvrir un projet Cursus",
+            Title = "Ajouter ou créer un projet Cursus",
             AllowMultiple = false,
         });
 
@@ -29,6 +30,6 @@ public partial class MainWindow : Window
 
         var path = folders[0].TryGetLocalPath();
         if (path is not null && DataContext is ShellViewModel shell)
-            shell.AddProject(path);
+            shell.OpenOrCreateProject(path);
     }
 }

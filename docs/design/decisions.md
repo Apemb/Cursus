@@ -926,3 +926,61 @@ reste de `D-023` tient.
 
 **Renvoi** : `architecture.md` §4.21 (l'éditeur), §4 (namespace `Editing`) ; `schemas.md` §5 (nœud
 `Editing`).
+
+## D-025 — Renommer un projet est du Core testé ; le rail « ajoute ou crée » d'un seul geste — l'arc authoring est clos
+
+**Contexte.** La surface d'un projet supposait qu'un projet **existe déjà** : le rail savait *ajouter* un
+`.cursus/` présent et *retirer* une entrée, mais ni **créer** ni **renommer**. `ProjectStore.Create`
+existait et était testé depuis le jalon 5, jamais câblé à l'UI ; renommer n'existait nulle part. Ce
+jalon — le **volet projet** — ferme les deux trous et clôt l'arc **authoring** (workflows d'abord, projet
+en dernier).
+
+**Décision 1 — renommer vit en Core (`ProjectStore.Rename`), pas en glu VM.** À l'inverse du renommage de
+*workflow* (`D-022`), resté en glu VM parce qu'il ne composait que des primitives **déjà existantes**
+(`Slug.From` + `catalog.Rename`), renommer un projet n'a **aucune** primitive disponible : c'est réécrire
+`project.json` avec un nouveau `Name` en **préservant l'`Id`**. C'est de l'écriture de la disposition d'un
+projet — la responsabilité *unique* de `ProjectStore`. Sans préservation de l'`Id`, le registre machine ne
+reconnaîtrait plus le même projet. La règle « réécrire le nom sans toucher à l'identité » mérite un nom et
+un test — même raisonnement que `D-022` pour `CreateFromTitle`.
+
+**Décision 2 — `ProjectRegistry.Rename` tient l'instantané.** Le nom vit sur disque, pas dans
+`projects.json` (qui ne liste que des racines) : n'écrire que le disque laisserait `_registry.Projects`
+sur l'ancien nom, et le prochain `SyncProjects` le **ressusciterait**. Le registre gagne donc
+`Rename(root, newName)` = `ProjectStore.Rename` + **remplace son instantané** pour cette racine, **sans**
+réécrire son fichier (les racines ne bougent pas). Il rend le `Project` frais.
+
+**Décision 3 — créer reste une composition de surface, pas de `ProjectRegistry.Create`.**
+`ProjectStore.Create` (pose le `.cursus/`) puis `_registry.Add` (inscrit + relit un instantané frais)
+suffisent : `Add` rafraîchit déjà l'instantané. **Asymétrie assumée** — créer passe par `Add`, renommer
+par `Rename` (qui, lui, porte une logique que seul le registre peut tenir : le rafraîchissement).
+
+**Décision 4 — un seul bouton « Ajouter un projet », qui ajoute *ou* crée.** *D'abord tranché* en deux
+gestes distincts (Créer / Ajouter, refus traduit en message). La **validation manuelle l'a renversé** :
+plus ergonomique d'un seul bouton. Le sélecteur rend un dossier ; si le dossier porte déjà un `.cursus/`,
+`OpenOrCreateProject` l'inscrit et l'ouvre ; sinon, le refus `ProjectNotFoundException` du registre devient
+une **bifurcation vers la création** (champ nom **pré-rempli du nom feuille du dossier**, éditable) plutôt
+qu'un message d'erreur. Ceci **supersède** l'anticipation « créer ≠ ajouter, deux boutons » du plan.
+*Gotcha payé* : le sélecteur rend souvent un chemin à **séparateur final** (`…/Projet/`), qui vide
+`Path.GetFileName` — d'où `Path.TrimEndingDirectorySeparator` avant d'extraire le nom.
+
+**Décision 5 — `ProjectRowViewModel`, symétrique de `WorkflowRowViewModel`.** Le rail bindait des `Project`
+**nus** (Core, immuables) : nulle part où loger l'état d'un renommage inline. On introduit une ligne
+bindable mince (enveloppe un `Project` mutable, `Name` dérivé qui se re-notifie au swap, état
+`IsEditing`/`DraftName`) — même patron que la ligne de workflow, dans l'esprit « UI en modules
+recomposables » (`D-016`). Le geste réel reste au parent (`ShellViewModel.RenameProject`), qui seul touche
+le registre ; renommer **met à jour la ligne en place** (projet frais poussé via `Applied`), sans
+reconstruire le rail — la sélection courante survit.
+
+**Ce qui est écarté / hors jalon.** Supprimer le *dépôt* d'un projet (retirer reste *oublier*, jamais
+détruire) ; valider/contraindre le nom (le modèle pose « le nom n'est qu'un libellé » — `Rename` reste
+permissif en Core, l'UI n'ignore qu'un renommage à blanc) ; distinguer un projet déplacé d'un supprimé
+(registre machine complet). Trou connu conservé : renommer le projet **ouvert** ne rafraîchit pas le titre
+de sa surface (figé à l'ouverture) — mineur, la ligne du rail, elle, suit.
+
+**Conséquences.** `ProjectStore.Rename` + `ProjectRegistry.Rename` neufs (Core, TDD) ; `ProjectRowViewModel`
+neuf (App, non testé §7.12) ; `ShellViewModel` rail en lignes + flux créer + `RenameProject` +
+`OpenOrCreateProject`. Core 263 → **265** (`ProjectStoreTests` 13 → 14, `ProjectRegistryTests` 10 → 11) ;
+noyau **inchangé** (tests sous `Projects/`, hors `Workflows/`). Suite 291 → **293**. Build 0 warning.
+
+**Renvoi** : `architecture.md` §4 (`ProjectStore`/`ProjectRegistry`), §7.13 (la coquille), le trou « volet
+projet » refermé ; `schemas.md` (rail).
