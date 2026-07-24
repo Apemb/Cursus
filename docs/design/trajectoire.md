@@ -125,6 +125,86 @@ approchera.
   le headless, c'est ce qui laisse les **déclencheurs** (jambe 2) tourner en tâche de fond.
   À ordonner quand la jambe 2 se dessinera — les deux se renforcent.
 
+  > Ce qui suit est **pressenti, pas construit** — une cible de forme, pas une décision
+  > actée. Le seul point déjà tranché en discussion est le **nom** `Host` (voir plus bas) ;
+  > le reste attend l'implémentation, qui ouvrira son `D-NNN` dans `decisions.md`.
+
+  **Le point de bascule — le transport MCP.** « Tourner en arrière-plan » *et* « être
+  accessible par MCP » se réconcilient par un seul choix : le transport. Le mode **stdio**
+  (le client MCP *spawn* le serveur comme sous-processus) est incompatible avec la
+  résidence — le serveur n'y vit que le temps du client. Le mode **HTTP local**
+  (*Streamable HTTP*, le serveur écoute, le client s'y branche) est celui d'un daemon. On
+  vise donc HTTP ; un **shim stdio** minuscule (un pont sans logique qui relaie vers le
+  daemon) reste possible pour un client qui ne parlerait que stdio. Le SDK C# officiel
+  `ModelContextProtocol` gère les deux transports et se pose sur le *generic host* .NET.
+
+  **La forme pressentie — daemon + UI, deux process (Architecture B).** Aujourd'hui Cursus
+  est un **monolithe** : `Cursus.App` (Avalonia) est à la fois la fenêtre, le composition
+  root, l'hôte du moteur et le consommateur direct de la persistance. La cible sépare un
+  **daemon headless** (source de vérité, sans dépendance GUI, maintenu vivant par un
+  *LaunchAgent* launchd) d'une **UI** qui s'y branche et va et vient librement. C'est
+  exactement le modèle Docker Desktop — un `dockerd` résident, une GUI qui n'est qu'un
+  visage — et il **épouse la frontière `Core` / `App` déjà tenue** depuis le premier jalon.
+
+  **Deux surfaces distinctes sur le daemon**, parce que leurs deux consommateurs n'ont ni
+  les mêmes contraintes ni les mêmes droits :
+
+  | | Surface **MCP** | Surface **contrôle UI** |
+  |---|---|---|
+  | Qui s'y branche | clients MCP tiers (Claude Code/Desktop) | la propre UI de Cursus |
+  | Protocole | MCP — **imposé de l'extérieur** | le nôtre, libre |
+  | Transport | **TCP loopback** (`127.0.0.1`) — les clients MCP attendent une URL `http://` | **socket Unix** — pas de port, accès par permissions de fichier |
+  | Exposition | un port ouvert → à protéger (bind strict, jeton) | un fichier → l'OS filtre déjà |
+
+  On ne *choisit* pas le transport de la surface MCP (il est dicté par ce que les clients
+  savent consommer) ; on choisit entièrement celui de la surface UI, d'où le socket Unix,
+  plus sûr et sans port à réserver. Variante à garder en tête : **zéro port par défaut** —
+  tout sur le socket Unix, le port TCP n'étant ouvert que sur demande (ou jamais, si l'on
+  ne passe que par le shim stdio). Arbitrage commodité ⇄ exposition, à trancher plus tard.
+
+  **MCP activable en paramètre.** Le serveur MCP est un **adaptateur monté
+  conditionnellement par le daemon** : réglage *off* → aucun port bindé, aucune surface MCP
+  n'existe. Ni le noyau ni l'UI n'ont à savoir que MCP existe — le levier vit dans le seul
+  daemon.
+
+  **Le repackage visé.** Les trois packages actuels (`Core` / `Persistence` / `App`)
+  deviennent quatre, le long des couches d'une architecture hexagonale :
+
+  ```
+                   Core     (domaine + moteur + PORTS ; zéro dépendance sortante)
+                  ▲  ▲  ▲
+      ┌───────────┘  │  └───────────┐
+    Infra          Host           UI
+  (adaptateurs   (daemon :        (Avalonia, PROCESS séparé,
+   SORTANTS :     composition       client du socket)
+   SQLite,        root, launchd,        │  socket Unix
+   client claude, monte MCP+socket) ◄───┘
+   PTY)
+  ```
+
+  | Package | Rôle | Origine |
+  |---|---|---|
+  | **`Cursus.Core`** | domaine, moteur, **ports** | inchangé |
+  | **`Cursus.Infra`** | adaptateurs **sortants** : persistance SQLite, client `claude`, PTY | ex-`Persistence`, élargi |
+  | **`Cursus.Host`** | le **daemon** : composition root, cible launchd, monte les adaptateurs **entrants** (serveur MCP, listener socket) et décide lesquels selon la config | **neuf** (extrait de l'actuel `App`) |
+  | **`Cursus.UI`** | la façade Avalonia, dans son propre process | ex-`App`, allégé |
+
+  **Pourquoi `Host` et pas `App`.** Le daemon est la substance, la fenêtre n'en est qu'un
+  visage — mais le mot « App » trahit ce modèle : pour tout lecteur, « l'app » est ce qu'on
+  ouvre, donc la fenêtre. Avoir une `UI` visible et une `App` invisible inverse l'intuition,
+  et collide avec le bundle `.app` macOS. `Host` est idiomatique .NET (le *generic host*) et
+  dit ce que c'est : ce qui héberge et câble. Docker ne nomme jamais son daemon « the app ».
+
+  **La vraie couture à défaire.** Le renommage n'est pas qu'un `mv` de `.csproj` :
+  aujourd'hui `App → Persistence` (la fenêtre lit la base **en direct**). Dans la cible,
+  **seul le daemon touche la persistance** ; l'UI passe par le socket. L'arête `UI → Infra`
+  **se coupe** — c'est le vrai travail derrière la bascule A→B, et ce qui la rend plus qu'un
+  changement cosmétique.
+
+  **Le status item.** Le `TrayIcon` d'Avalonia (cross-plateforme, icône + menu) suffit pour
+  démarrer ; un rendu riche (popover, indicateur de run *live*) demanderait le natif
+  `NSStatusItem` via interop — à n'envisager que si l'ambition le réclame.
+
 ## Écarté (et pourquoi le noter)
 
 - **Amorcer Linear comme point de départ** — écarté : Cursus ne sait pas encore consommer
