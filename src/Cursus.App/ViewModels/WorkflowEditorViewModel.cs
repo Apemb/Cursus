@@ -152,7 +152,7 @@ public partial class WorkflowEditorViewModel : ObservableObject
         if (!StepIds.Contains(id))
             return;
 
-        _draft.SetScript(id, new ScriptSpec(fileName, SplitArguments(arguments)));
+        _draft.SetScript(id, new ScriptSpec(fileName, ArgumentLine.Parse(arguments)));
         SavedNotice = null;
     }
 
@@ -160,16 +160,8 @@ public partial class WorkflowEditorViewModel : ObservableObject
     private void FlushScripts()
     {
         foreach (var step in Steps)
-            _draft.SetScript(step.Id, new ScriptSpec(step.FileName, SplitArguments(step.Arguments)));
+            _draft.SetScript(step.Id, new ScriptSpec(step.FileName, ArgumentLine.Parse(step.Arguments)));
     }
-
-    /// <summary>
-    /// Découpe la chaîne d'arguments aux espaces. <b>Simplification assumée</b> de
-    /// l'éditeur minimal : un argument contenant une espace est hors de portée (le
-    /// format JSON, lui, les distingue déjà token par token).
-    /// </summary>
-    private static IReadOnlyList<string> SplitArguments(string arguments) =>
-        arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     /// <summary>Trace une arête gardée depuis une étape ; cible permise même absente (le validateur signale).</summary>
     public void AddEdge(string fromId, string guardLabel, string target)

@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `db31d02` (*le module éditeur — D-023*). Dernier jalon de code : *jalon éditeur ·3b — l'UI de l'éditeur* (§4.21) — cinquième pierre de l'arc **authoring**, la première à toucher l'UI. La surface projet gagne un **troisième module** (liste ⇄ run ⇄ **éditeur**, sans routeur, `D-016`) : créer un workflow depuis un titre (`CreateFromTitle`, seule couture Core testée, `D-022`), le renommer/supprimer, et un module d'édition du graphe (ajouter étapes et arêtes, poser l'entrée, régler un script, valider en direct, enregistrer) adossé au brouillon `WorkflowDraft` (`D-023`). UI non testée (§7.12), validée à la main ; sa couture Core l'est. Suite de tests : **274 verts** (246 Core + 28 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour du commit `996d0c1` (*l'éditeur ·3b consolidé — ArgumentLine, D-024*). Dernier jalon de code : *jalon éditeur ·3b — l'UI de l'éditeur* (§4.21) — cinquième pierre de l'arc **authoring**, la première à toucher l'UI. La surface projet gagne un **troisième module** (liste ⇄ run ⇄ **éditeur**, sans routeur, `D-016`) : créer un workflow depuis un titre (`CreateFromTitle`, seule couture Core testée, `D-022`), le renommer/supprimer, et un module d'édition du graphe (ajouter étapes et arêtes, poser l'entrée, régler un script, valider en direct, enregistrer) adossé au brouillon `WorkflowDraft` (`D-023`). UI non testée (§7.12), validée à la main ; sa couture Core l'est. **Consolidé** ensuite par la validation manuelle : deux stabilisations (garde de ré-entrance sur la re-projection ; champs de script auto-poussés) et **`ArgumentLine`** (`Editing`, `D-024`) — la ligne d'arguments honore les guillemets, sans quoi `zsh -c "commande"` restait inexprimable. Suite de tests : **291 verts** (263 Core + 28 Persistence), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -40,7 +40,7 @@
 
 | Moitié | Emplacement | État |
 |---|---|---|
-| Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 8 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **deux projections sœurs** (`Projection/`, event-fed) : `RunProjection` plie le flux en trajectoire + statut + contrôle 3 positions (6c·3c), `GraphProjection` le plie en overlay de graphe qui montre le **non-parcouru** (vue graphe) ; à côté, `GraphLayout` en dispose la structure sur une grille par couches (calcul **pur**, statique, arêtes-retour comprises) ; et une **surface d'édition mutable** (`Editing/`) qui **construit** un graphe depuis rien autant qu'elle le **remanie**, en tenant l'unicité d'id (§4.19–4.20). **178 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
+| Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 8 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **deux projections sœurs** (`Projection/`, event-fed) : `RunProjection` plie le flux en trajectoire + statut + contrôle 3 positions (6c·3c), `GraphProjection` le plie en overlay de graphe qui montre le **non-parcouru** (vue graphe) ; à côté, `GraphLayout` en dispose la structure sur une grille par couches (calcul **pur**, statique, arêtes-retour comprises) ; et une **surface d'édition mutable** (`Editing/`) qui **construit** un graphe depuis rien autant qu'elle le **remanie**, en tenant l'unicité d'id (§4.19–4.20), plus `Slug` (libellé → id) et `ArgumentLine` (ligne d'arguments ⟷ argv, à guillemets, `D-024`) — deux transformations pures que l'éditeur consomme. **195 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
 | Projet & catalogue | `src/Cursus.Core/Projects/` (11 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert : lire le passé, **lancer** (6c·3b), **relire les événements** d'un run (`ReadEvents`, 6c·3c) ; le catalogue sait aussi **créer depuis un titre** (`CreateFromTitle`, ·3b). **54 tests.** Voir §4.11, §4.14, §4.16, §4.17, §4.21. |
 | Persistance | `src/Cursus.Persistence/` | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque avec **suiveur de tail** (6c·3c), et le préréglage SQLite de `ProjectHost`. **28 tests.** Un run survit au process ; le flux live d'un run et sa relecture donnent la **même** projection (preuve end-to-end, 6c·3c). |
 | Surface projet (run · éditeur) & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et la **surface d'un projet** à trois modules sans routeur (liste ⇄ run ⇄ éditeur, `D-016`) : l'**écran de run** (6c·3c) — cliquer un workflow le lance, sa trajectoire se déroule, le log de la visite se suit en direct, un contrôle à trois positions l'arrête, un run passé se rouvre en relecture ; l'**éditeur** (·3b) — créer un workflow depuis un titre, le renommer/supprimer, y ajouter étapes et arêtes gardées, poser l'entrée, régler un script, valider en direct, enregistrer. Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
@@ -83,7 +83,7 @@ Quatre faits non triviaux, le reste se lit dans les `.csproj` :
 
 ```bash
 dotnet build                          # attendu : 0 warning
-dotnet test                           # attendu : 274 verts (chiffre de référence de ce document)
+dotnet test                           # attendu : 291 verts (chiffre de référence de ce document)
 dotnet run --project src/Cursus.App   # développement
 build/package-macos.sh [--install]    # Cursus.app installable (§6.6)
 ```
@@ -179,7 +179,7 @@ Namespace racine `Cursus.Core.Workflows` pour le **vocabulaire partagé**, plus 
 | `…Projection` | `RunProjection` (plie le flux en trajectoire + statut + sélection + contrôle), `RunVisit`, `RunControl` (enum 3 positions) ; **`GraphProjection`** (plie le même flux en overlay de graphe : structure + statut par nœud + arêtes traversées), `GraphNode`, `GraphEdge`, `GraphNodeStatus` ; **`GraphLayout`** (dispose la structure sur une grille par couches — calcul **pur/statique**), `NodePlacement`, `LaidOutEdge`. Deux projections sœurs + un calcul de disposition, cœur testable de l'écran de run (§4.18) |
 | `…Serialization` | `WorkflowSerializer`, `LoadResult`, `ParsedWorkflow`, `WorkflowDocument`, `UnknownGuardException` |
 | `…Validation` | `WorkflowValidator`, `ValidationReport` (+ `ValidationIssueKind`, `ValidationIssue`) |
-| `…Editing` | `WorkflowDraft` — surface d'édition mutable qui **construit** (`AddStep`, `SetEntryStep`, `SetScript`, `AddEdge`/`RemoveEdge`) et **remanie** (rename/remove) un graphe, tenant l'**unicité d'id** et la clôture référentielle (§4.19–4.20, `D-020`/`D-021`) ; `Slug` (libellé → id), `DuplicateStepIdException` |
+| `…Editing` | `WorkflowDraft` — surface d'édition mutable qui **construit** (`AddStep`, `SetEntryStep`, `SetScript`, `AddEdge`/`RemoveEdge`) et **remanie** (rename/remove) un graphe, tenant l'**unicité d'id** et la clôture référentielle (§4.19–4.20, `D-020`/`D-021`) ; `Slug` (libellé → id), `ArgumentLine` (ligne d'arguments ⟷ argv, à guillemets, `D-024`), `DuplicateStepIdException` |
 | `…Journaling` | `IRunJournal`, `IRunJournalReader`, `InMemoryRunJournal`, `JournalEntry` |
 | `…Output` | `IRunOutputStore`, `InMemoryRunOutputStore`, `IStepOutputSink` |
 | `…Workspaces` | `IWorkspaceProvisioner`, `GitWorkspaceProvisioner`, `IProvisionedWorkspace`, `WorkspaceRequest`, `GitNotAvailableException` |
@@ -211,6 +211,7 @@ Namespace racine `Cursus.Core.Workflows` pour le **vocabulaire partagé**, plus 
 | `WorkflowSerializer.cs` · `WorkflowDocument.cs` | JSON ⟷ modèle ; deux portes de lecture — `Read`→`LoadResult` (valider, pour le run) et `ReadEditable`→`ParsedWorkflow` (parser même invalide, pour éditer), `Read` étant un rabat de `ReadEditable` · `LoadResult` (validité-couplé) · `ParsedWorkflow` (parse-couplé, invariant inversé) · les DTO `internal` |
 | `Editing/WorkflowDraft.cs` | Surface d'édition mutable. **Construire** : `AddStep` (slug + désambiguïse → id unique), `SetEntryStep`, `SetScript`, `AddEdge`/`RemoveEdge`. **Remanier** : `RenameStep` (retarge + refuse une collision), `RemoveStep` (purge). `new(def)`/`ToDefinition()`. Invariants : unicité d'id tenue, validité tolérée (sujet doit exister, référence peut pendre). Voir §4.19–4.20, `D-020`/`D-021` |
 | `Editing/Slug.cs` · `Editing/DuplicateStepIdException.cs` | Libellé humain → identifiant sûr (minuscules, diacritiques dépliés, `[a-z0-9-]`) · le refus d'un renommage vers un id pris. Voir §4.20, `D-021` |
+| `Editing/ArgumentLine.cs` | Ligne d'arguments humaine ⟷ `argv`, **à guillemets** : `Parse` découpe aux blancs sauf dans `"…"`/`'…'`, `Format` re-guillemette (round-trip). Rend exprimable `zsh -c "commande"`. Jumeau pur de `Slug`. Voir §4.21, `D-024` |
 | `UnknownStepException.cs` · `PathEscapesWorkspaceException.cs` · `UnknownGuardException.cs` | Voir §4.6 |
 | `WorkflowEvent.cs` · `JournalEntry.cs` | Les 5 événements (variantes imbriquées) · l'enveloppe `RunId`/`Seq`/`At` |
 | `IRunJournal.cs` · `IRunJournalReader.cs` · `InMemoryRunJournal.cs` | Écrire · relire · l'implémentation volatile. Voir §4.10 |
@@ -417,6 +418,7 @@ Certains comportements ne vivent que dans les tests : **c'est là qu'il faut all
 | `Workflows/WorkflowValidatorTests.cs` (11) | La motivation de chaque règle et l'**ordre exact** d'un rapport multi-issues. |
 | `Workflows/Editing/WorkflowDraftTests.cs` (18) | Les invariants du brouillon. *Remanier* (`D-020`) : aller-retour neutre, renommer qui retarge + fait suivre l'entrée, supprimer qui purge + vide l'entrée. *Construire* (`D-021`) : ajouter qui slugifie et **désambiguïse** un id pris, poser l'entrée (permissif sur un fantôme), affecter un script (lève sur un id absent), tracer/retirer une arête (sujet doit exister, cible permise absente), renommer vers un id pris **refusé**. |
 | `Workflows/Editing/SlugTests.cs` (6) | La transformation libellé → id, règle par règle : minuscules, **diacritiques dépliés** (« Générer » → « generer »), blancs → tiret, caractères illégaux retirés, tirets fusionnés/rognés, libellé sans rien de retenu → chaîne vide (`D-021`). |
+| `Workflows/Editing/ArgumentLineTests.cs` (17) | Le tokenizer à guillemets : découpe aux blancs, régions `"…"`/`'…'` qui préservent l'espace, guillemet d'une sorte littéral dans l'autre, guillemet non fermé clos en fin ; et `Format` qui re-guillemette, avec la **propriété de round-trip** `Parse∘Format = id` (`D-024`). |
 | `SessionWorkspaceTests` · `ShellResolverTests` · `TerminalSessionTests` (13) | La politique de sélection après fermeture (`min(index, count-1)`, sinon `null`), la numérotation « Session N », la cascade `$SHELL` → `/bin/zsh` → `/bin/bash` avec prédicat d'existence injecté. |
 | `Workflows/WorkflowJournalTests.cs` (18) · `Workflows/InMemoryRunJournalTests.cs` (8) | Ce que le moteur émet et dans quel ordre (dont le `runId` fourni par l'appelant) · l'enveloppe posée par le journal (dont sa sûreté sous `Append` concurrent). |
 | `Workflows/WorkflowProgressTests.cs` (4) · `Workflows/WorkflowLauncherTests.cs` (5) | Le flux d'événements poussé à l'observateur (dont `RunStarted` portant le `runId` du run rendu, 6c·3c) · le montage du lanceur : provenance estampillée, worktree démonté quoi qu'il advienne. |
@@ -855,8 +857,18 @@ reste est de la présentation, non testée (§7.12), validée à la main comme l
   **valide en direct** (`WorkflowValidator.Validate(draft.ToDefinition())`). C'est le **troisième module**
   de la surface projet — liste ⇄ run ⇄ éditeur, sans routeur (honore `D-016`) : `OpenProjectViewModel`
   tient `CurrentEditor` sœur de `CurrentRun`, mutuellement exclusifs. Toute la logique métier reste dans le
-  brouillon ; le VM ne fait que binder et déléguer. Les champs de script sont **locaux** (poussés par
-  « Appliquer ») pour qu'une frappe ne recrée pas la ligne en cours d'édition.
+  brouillon ; le VM ne fait que binder et déléguer. Les champs de script d'une étape sont **locaux** et
+  descendent seuls dans le brouillon à la perte de focus (sans re-projeter, pour ne pas recréer la ligne
+  en cours d'édition), avec un filet à l'enregistrement.
+
+- **Consolidation post-livraison (remontées de la validation manuelle).** Deux stabilisations : une **garde
+  de ré-entrance** sur la re-projection (reconstruire `StepIds` faisait transiter le `ComboBox` d'entrée
+  par une sélection nulle qui rappelait la projection en pleine mutation de collection → crash) ; et
+  l'**auto-descente** des champs de script à la perte de focus (un bouton « Appliquer » séparé faisait
+  perdre les saisies non appliquées). Surtout, **`ArgumentLine`** (`Editing`, `D-024`) : la ligne
+  d'arguments **honore désormais les guillemets** — sans quoi `zsh -c "commande avec espaces"`, donc toute
+  commande shell, restait inexprimable (le découpage aux espaces cassait le groupe du `-c`). Jumeau pur et
+  testé de `Slug` : `Parse`/`Format` avec `Parse∘Format` identité sur les cas courants.
 
 **Hors ·3b** : renommer une étape après création (re-slug d'id), garde `Code = n` à l'arête, réordonner,
 éditer `Description`/`MaxVisits`, la vue graphe *en édition* (l'éditeur est un formulaire, pas un canevas),
@@ -1359,7 +1371,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **274 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **291 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 

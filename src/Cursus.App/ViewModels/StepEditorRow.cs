@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Editing;
 
 namespace Cursus.App.ViewModels;
 
@@ -27,7 +28,7 @@ public partial class StepEditorRow : ObservableObject
         Id = step.Id;
         Name = step.Name;
         _fileName = step.Script.FileName;
-        _arguments = string.Join(' ', step.Script.Arguments);
+        _arguments = ArgumentLine.Format(step.Script.Arguments);
         TargetChoices = stepIds;
         _newEdgeTarget = stepIds.Count > 0 ? stepIds[0] : "";
         Edges = new ObservableCollection<EdgeEditorRow>(

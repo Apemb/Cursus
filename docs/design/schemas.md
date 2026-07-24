@@ -300,7 +300,7 @@ flowchart TB
   Proj["<b>…Projection</b><br/><small>deux projections sœurs (event-fed) + un calcul de disposition (statique)</small><br/>RunProjection · RunVisit · RunControl<br/>GraphProjection · GraphNode · GraphEdge<br/>GraphLayout · NodePlacement · LaidOutEdge"]
   Ser["<b>…Serialization</b><br/><small>JSON ⟷ modèle — deux portes : Read (valider, run) · ReadEditable (parser même invalide, éditer)</small><br/>WorkflowSerializer · LoadResult · ParsedWorkflow · WorkflowDocument"]
   Val["<b>…Validation</b><br/><small>validité du graphe</small><br/>WorkflowValidator · ValidationReport"]
-  Edit["<b>…Editing</b><br/><small>surface d'édition mutable : construit et remanie,<br/>unicité d'id tenue · validité tolérée</small><br/>WorkflowDraft · Slug · DuplicateStepIdException"]
+  Edit["<b>…Editing</b><br/><small>surface d'édition mutable : construit et remanie,<br/>unicité d'id tenue · validité tolérée</small><br/>WorkflowDraft · Slug · ArgumentLine · DuplicateStepIdException"]
   Jou["<b>…Journaling</b><br/><small>écrire et relire un run</small><br/>IRunJournal · IRunJournalReader · InMemoryRunJournal · JournalEntry"]
   Out["<b>…Output</b><br/><small>puits de sortie par étape</small><br/>IRunOutputStore · IStepOutputSink · InMemoryRunOutputStore"]
   Wsp["<b>…Workspaces</b><br/><small>worktree isolé d'un run (provisionnement async)</small><br/>IWorkspaceProvisioner · GitWorkspaceProvisioner"]

@@ -889,3 +889,40 @@ template éditeur. Aucun test neuf (présentation, §7.12) ; suite inchangée à
 
 **Renvoi** : `architecture.md` §4.21 (le module éditeur), §1.1 (la surface projet) ; `schemas.md` §5.2 ;
 prochaine pierre — le **volet projet**, fin de l'arc authoring.
+
+## D-024 — La ligne d'arguments de l'éditeur honore les guillemets : `ArgumentLine`, jumeau de `Slug`
+
+**Contexte.** `D-023` avait posé, comme *simplification assumée* de l'éditeur minimal, que le champ
+d'arguments d'une étape se découpe aux espaces — « un argument contenant une espace est hors de portée ».
+La validation manuelle a montré que cette simplification **casse le cas le plus courant** : lancer une
+commande shell via `zsh -c "commande"`. Le flag `-c` de zsh prend le *seul argument suivant* comme
+commande ; découpé aux espaces, `zsh -c "dotnet build"` devient `zsh` `-c` `dotnet` `build` → zsh exécute
+la commande `dotnet` (sans argument) et passe `build` en paramètre positionnel ignoré. Symptôme observé :
+« echo n'affiche rien », `dotnet build` lance `dotnet` tout court — le workflow entier silencieusement
+faux.
+
+**Décision — un tokenizer qui honore les guillemets, `ArgumentLine` (Core/Editing), TDD.** `Parse(line) →
+argv` découpe aux blancs *sauf à l'intérieur* d'une région entre `"…"` ou `'…'` (guillemets retirés) ;
+`Format(argv) → line` re-guillemette les tokens qui portent une espace, un guillemet, ou sont vides, pour
+que **`Parse∘Format` soit l'identité** sur les cas courants. Pur, statique, **jumeau symétrique de
+`Slug`** : les deux vivent dans `Editing`, transforment un texte humain en modèle exact, et sont **testés**
+parce que leur correction se casse en silence (le quoting est exactement ce genre de chose). `Slug`
+traduit un libellé en identifiant ; `ArgumentLine`, une ligne de saisie en `argv`.
+
+**Ce qui est écarté.** Pas d'échappement backslash (`\"`) : un guillemet d'une sorte est littéral à
+l'intérieur de l'autre (`"it's"`, `'say "hi"'`), ce qui couvre les cas réels ; un token contenant les
+**deux** sortes de guillemets ne round-trip pas — cas pathologique **assumé**, documenté. *Alternative
+écartée* : garder le champ « arguments » découpé aux espaces et documenter la limite — rejetée, elle rend
+`zsh -c` (donc toute commande shell) inexprimable, ce n'est pas une limite acceptable pour un éditeur.
+*Autre écartée* : un tokenizer en glu de VM (App non testée) — rejetée pour la même raison que `Slug`
+n'y est pas : le quoting mérite des tests, et `Editing` est sa maison.
+
+**Ceci supersède la « simplification assumée » de `D-023`** (arguments hors de portée d'une espace). Le
+reste de `D-023` tient.
+
+**Conséquences.** `ArgumentLine` neuf dans `Editing` ; `WorkflowEditorViewModel` (`UpdateScript`/
+`FlushScripts`) et `StepEditorRow` (affichage) l'emploient à la place du découpage/jointure naïfs.
+`ArgumentLineTests` **17**. Suite 274 → **291** (Noyau 178 → 195, Core 263, Persistence 28). Build 0 warning.
+
+**Renvoi** : `architecture.md` §4.21 (l'éditeur), §4 (namespace `Editing`) ; `schemas.md` §5 (nœud
+`Editing`).
