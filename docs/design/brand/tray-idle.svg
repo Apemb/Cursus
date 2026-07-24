@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Cursus — au repos">
+  <title>Cursus — barre de menus, au repos</title>
+  <!-- Gabarit (template image) : noir + alpha, le système le teinte selon la barre
+       (sombre sur barre claire, clair sur barre sombre). À exporter en PNG @1x/@2x/@3x
+       nommé « …Template.png » pour que macOS applique la teinte automatiquement. -->
+  <path d="M22 50 L50 28 L78 50 L50 72 Z"
+        fill="none" stroke="#000" stroke-width="7"
+        stroke-linejoin="round" stroke-linecap="round"/>
+  <g fill="#000">
+    <circle cx="22" cy="50" r="8"/>
+    <circle cx="50" cy="28" r="8"/>
+    <circle cx="78" cy="50" r="8"/>
+    <circle cx="50" cy="72" r="8"/>
+  </g>
+</svg>

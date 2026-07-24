@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Cursus">
+  <title>Cursus — icône d'application</title>
+  <!-- Master d'artwork 1024². Le carré arrondi occupe 824² centré (marge 100),
+       façon gabarit macOS. Pour le rendu final macOS : reporter ce dessin dans
+       le gabarit superellipse d'Apple (coins continus + ombre portée). Pour un
+       usage plein-cadre (iOS, favicon, web), passer le rect à x=0 y=0 w=1024 rx=230. -->
+  <defs>
+    <linearGradient id="cursusGrad" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0"   stop-color="#5A52F0"/>
+      <stop offset="0.45" stop-color="#4F46E5"/>
+      <stop offset="1"   stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="100" y="100" width="824" height="824" rx="185" ry="185" fill="url(#cursusGrad)"/>
+
+  <!-- Marque blanche, centrée dans le carré (repère 0–100 mis à l'échelle 8.24). -->
+  <g transform="translate(100 100) scale(8.24)">
+    <path d="M22 50 L50 28 L78 50 L50 72 Z"
+          fill="none" stroke="#fff" stroke-width="6.5"
+          stroke-linejoin="round" stroke-linecap="round"/>
+    <g fill="#fff">
+      <circle cx="22" cy="50" r="8"/>
+      <circle cx="50" cy="28" r="8"/>
+      <circle cx="78" cy="50" r="8"/>
+      <circle cx="50" cy="72" r="8"/>
+    </g>
+  </g>
+</svg>

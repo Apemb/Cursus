@@ -1,0 +1,392 @@
+<title>Cursus — proposition d'identité visuelle</title>
+<style>
+  :root {
+    --ink:#191826; --muted:#6B6A80; --faint:#9A9AAE;
+    --canvas:#F4F4F8; --surface:#FFFFFF; --line:#E4E3EE; --soft:#EEEEFB;
+    --indigo:#4F46E5; --violet:#7C3AED;
+    --green:#16A34A; --green-bright:#22C55E; --red:#EF4444; --amber:#F59E0B; --grey:#9A9AAE;
+    --shadow: 0 1px 2px rgba(25,24,38,.06), 0 12px 32px -12px rgba(25,24,38,.14);
+    --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:#ECECF2; --muted:#A0A0B4; --faint:#6E6D84;
+      --canvas:#121120; --surface:#1B1A2A; --line:#2C2B40; --soft:#23223A;
+      --indigo:#8E88F6; --violet:#A78BFA;
+      --green:#34D07B; --green-bright:#34D07B; --red:#F26D6D; --amber:#FBB43C; --grey:#7A7A90;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 16px 40px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="light"] {
+    --ink:#191826; --muted:#6B6A80; --faint:#9A9AAE;
+    --canvas:#F4F4F8; --surface:#FFFFFF; --line:#E4E3EE; --soft:#EEEEFB;
+    --indigo:#4F46E5; --violet:#7C3AED;
+    --green:#16A34A; --green-bright:#22C55E; --red:#EF4444; --amber:#F59E0B; --grey:#9A9AAE;
+    --shadow: 0 1px 2px rgba(25,24,38,.06), 0 12px 32px -12px rgba(25,24,38,.14);
+  }
+  :root[data-theme="dark"] {
+    --ink:#ECECF2; --muted:#A0A0B4; --faint:#6E6D84;
+    --canvas:#121120; --surface:#1B1A2A; --line:#2C2B40; --soft:#23223A;
+    --indigo:#8E88F6; --violet:#A78BFA;
+    --green:#34D07B; --green-bright:#34D07B; --red:#F26D6D; --amber:#FBB43C; --grey:#7A7A90;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 16px 40px -16px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--canvas); color:var(--ink);
+    font-family:var(--ui); line-height:1.62;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  .wrap { max-width: 940px; margin:0 auto; padding: 4rem 1.5rem 6rem; }
+  .col { max-width: 66ch; }
+
+  h1 { font-size: clamp(2.1rem, 5vw, 3rem); font-weight:700; letter-spacing:-.03em; line-height:1.05; margin:0; text-wrap:balance; }
+  h2 { font-size:1.5rem; font-weight:680; letter-spacing:-.02em; margin:0 0 .2rem; }
+  h3 { font-size:1.02rem; font-weight:640; letter-spacing:-.01em; margin:0; }
+  p { margin:.55rem 0; color:var(--muted); }
+  strong { color:var(--ink); font-weight:600; }
+  .lede { font-size:1.15rem; color:var(--muted); margin-top:.9rem; }
+
+  .eyebrow {
+    font-size:.74rem; font-weight:640; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--indigo); display:inline-flex; align-items:center; gap:.5rem;
+  }
+  .eyebrow::before { content:""; width:1.6rem; height:2px; background:var(--indigo); border-radius:2px; }
+
+  section { margin-top: 4.5rem; }
+  .sec-head { margin-bottom: 1.8rem; }
+
+  /* ---- palette ---- */
+  .pal-group { margin-top:1.4rem; }
+  .pal-label { font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); font-weight:640; margin-bottom:.7rem; }
+  .swatches { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:.7rem; }
+  .swatch { background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; box-shadow:var(--shadow); }
+  .chip { height:74px; display:flex; align-items:flex-end; padding:.5rem .6rem; }
+  .chip .dotstate { width:10px; height:10px; border-radius:50%; box-shadow:0 0 0 3px rgba(255,255,255,.35); }
+  .swatch .meta { padding:.6rem .7rem .7rem; }
+  .swatch .nm { font-size:.86rem; font-weight:600; }
+  .swatch .hex { font-family:var(--mono); font-size:.76rem; color:var(--muted); font-variant-numeric:tabular-nums; letter-spacing:.02em; }
+  .swatch .use { font-size:.74rem; color:var(--faint); margin-top:.15rem; }
+
+  /* ---- icon concepts ---- */
+  .concepts { display:grid; grid-template-columns:repeat(3, 1fr); gap:1.1rem; margin-top:1.2rem; }
+  @media (max-width:720px){ .concepts{ grid-template-columns:1fr; max-width:340px; } }
+  .concept { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:1.4rem 1.2rem 1.2rem; box-shadow:var(--shadow); position:relative; }
+  .squircle {
+    width:112px; height:112px; margin:0 auto .95rem;
+    border-radius:26px; display:grid; place-items:center;
+    box-shadow: 0 8px 22px -8px rgba(79,70,229,.55), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .bg-flow   { background:linear-gradient(150deg,#5A52F0 0%, #4F46E5 45%, #7C3AED 100%); }
+  .bg-arc    { background:linear-gradient(150deg,#4F46E5 0%, #3F37C4 100%); }
+  .bg-course { background:linear-gradient(150deg,#6D64F2 0%, #7C3AED 100%); }
+  .concept h3 { text-align:center; }
+  .concept .rat { font-size:.82rem; color:var(--muted); text-align:center; margin-top:.3rem; }
+  .badge { position:absolute; top:.9rem; right:.9rem; font-size:.66rem; font-weight:680; letter-spacing:.06em; text-transform:uppercase; color:#fff; background:var(--green); padding:.16rem .5rem; border-radius:999px; }
+
+  /* ---- hero mark ---- */
+  .mark-hero { display:flex; gap:2rem; align-items:center; flex-wrap:wrap; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:1.8rem; box-shadow:var(--shadow); margin-top:1.2rem; }
+  .mark-hero .big { width:150px; height:150px; border-radius:34px; flex:none; display:grid; place-items:center; background:linear-gradient(150deg,#5A52F0 0%, #4F46E5 45%, #7C3AED 100%); box-shadow: 0 12px 30px -10px rgba(79,70,229,.6), inset 0 1px 0 rgba(255,255,255,.28); }
+  .mark-hero .txt { flex:1; min-width:250px; }
+
+  /* ---- menu bar mocks ---- */
+  .bars { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.3rem; }
+  @media (max-width:720px){ .bars{ grid-template-columns:1fr; } }
+  .barwrap { border-radius:16px; overflow:hidden; border:1px solid var(--line); box-shadow:var(--shadow); }
+  .barwrap .cap { font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); font-weight:640; padding:.6rem .85rem; background:var(--surface); border-bottom:1px solid var(--line); }
+  .menubar { display:flex; align-items:center; justify-content:flex-end; gap:1.15rem; height:30px; padding:0 .9rem; }
+  .menubar .sys { font-size:.78rem; font-weight:500; opacity:.8; font-family:var(--ui); }
+  .menubar svg { display:block; }
+  .bar-light { background:linear-gradient(#fbfbfd,#eef0f4); color:#33333f; }
+  .bar-dark  { background:linear-gradient(#2a2a35,#20202a); color:#e9e9f0; }
+  .tray-cell { display:flex; align-items:center; gap:.45rem; position:relative; }
+  .statelbl { font-size:.72rem; color:var(--faint); margin-top:.5rem; text-align:center; }
+
+  .states-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1.3rem; }
+  @media (max-width:720px){ .states-grid{ grid-template-columns:1fr; } }
+  .state-card { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:1.1rem; box-shadow:var(--shadow); text-align:center; }
+  .state-stage { height:64px; display:grid; place-items:center; }
+  .state-card .nm { font-weight:620; font-size:.94rem; margin-top:.5rem; }
+  .state-card .ds { font-size:.8rem; color:var(--muted); margin-top:.2rem; }
+  .state-dark-stage { background:#20202a; border-radius:10px; color:#e9e9f0; }
+
+  /* flux : le vert remplit le périmètre et tourne, le mono le reprend derrière */
+  .flowmask-path { animation: flowspin 2.8s linear infinite; }
+  @keyframes flowspin { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -142.44; } }
+  @media (prefers-reduced-motion: reduce) {
+    .flowmask-path { animation: none; } /* figé à mi-course : moitié verte statique */
+  }
+
+  table.impl { width:100%; border-collapse:collapse; margin-top:1.2rem; font-size:.9rem; }
+  table.impl th, table.impl td { text-align:left; padding:.7rem .8rem; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.impl th { font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); font-weight:640; }
+  table.impl td:first-child { white-space:nowrap; font-weight:600; }
+  table.impl .pill { display:inline-block; width:11px; height:11px; border-radius:50%; vertical-align:-1px; margin-right:.4rem; }
+
+  .note { display:flex; gap:.7rem; background:var(--soft); border:1px solid color-mix(in srgb, var(--indigo) 22%, transparent); border-radius:14px; padding:1rem 1.1rem; margin-top:1.4rem; font-size:.9rem; color:var(--muted); }
+  .note strong{ color:var(--ink); }
+  .note .m { font-family:var(--mono); font-size:.85em; color:var(--indigo); }
+
+  hr.rule { border:none; border-top:1px solid var(--line); margin:0; }
+  footer { margin-top:5rem; padding-top:1.5rem; border-top:1px solid var(--line); font-size:.82rem; color:var(--faint); }
+</style>
+
+<div class="wrap">
+
+  <header class="col">
+    <div class="eyebrow">Proposition · identité visuelle</div>
+    <h1>Cursus</h1>
+    <p class="lede">Un manageur de workflows agentiques qui vit en tâche de fond. Son identité doit dire deux choses à la fois : un moteur qui <strong>route un graphe d'étapes</strong>, et un point qui <strong>court sur un tracé</strong> — <em>cursus</em>, la course.</p>
+  </header>
+
+  <!-- ============ PALETTE ============ -->
+  <section>
+    <div class="sec-head col">
+      <div class="eyebrow">01 · Palette</div>
+      <h2>Deux registres : la marque, et l'état</h2>
+      <p>L'indigo porte la marque. Le reste n'est pas décoratif : le cœur de Cursus <strong>route sur le code de sortie</strong>, alors les couleurs d'état <em>sont</em> une sémantique — vert qui tourne, rouge qui échoue, ambre qui attend. On ne les dépense jamais comme accent gratuit.</p>
+    </div>
+
+    <div class="pal-group">
+      <div class="pal-label">Marque</div>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:linear-gradient(135deg,#4F46E5,#5A52F0)"></div><div class="meta"><div class="nm">Indigo</div><div class="hex">#4F46E5</div><div class="use">Primaire · liens · sélection</div></div></div>
+        <div class="swatch"><div class="chip" style="background:linear-gradient(135deg,#7C3AED,#8B5CF6)"></div><div class="meta"><div class="nm">Violet</div><div class="hex">#7C3AED</div><div class="use">Partenaire de dégradé (icône)</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#EEEEFB"></div><div class="meta"><div class="nm">Indigo voilé</div><div class="hex">#EEEEFB</div><div class="use">Fonds, surbrillance douce</div></div></div>
+      </div>
+    </div>
+
+    <div class="pal-group">
+      <div class="pal-label">État · sémantique de routage</div>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:#F0FAF3"><span class="dotstate" style="background:#22C55E"></span></div><div class="meta"><div class="nm">En cours / réussi</div><div class="hex">#22C55E</div><div class="use">Un run tourne · sortie 0</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#FEF1F1"><span class="dotstate" style="background:#EF4444"></span></div><div class="meta"><div class="nm">Échec</div><div class="hex">#EF4444</div><div class="use">Sortie ≠ 0 · attention</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#FEF6EA"><span class="dotstate" style="background:#F59E0B"></span></div><div class="meta"><div class="nm">En attente</div><div class="hex">#F59E0B</div><div class="use">En file · bloqué</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#F3F3F6"><span class="dotstate" style="background:#9A9AAE"></span></div><div class="meta"><div class="nm">Au repos</div><div class="hex">#9A9AAE</div><div class="use">Rien ne tourne · neutre</div></div></div>
+      </div>
+    </div>
+
+    <div class="pal-group">
+      <div class="pal-label">Neutres · biais indigo</div>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:#191826"></div><div class="meta"><div class="nm">Encre</div><div class="hex">#191826</div><div class="use">Texte · presque-noir violacé</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#6B6A80"></div><div class="meta"><div class="nm">Ardoise</div><div class="hex">#6B6A80</div><div class="use">Texte secondaire</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#E4E3EE;box-shadow:inset 0 0 0 1px #dad9e6"></div><div class="meta"><div class="nm">Filet</div><div class="hex">#E4E3EE</div><div class="use">Bordures · séparateurs</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#F4F4F8;box-shadow:inset 0 0 0 1px #ececf2"></div><div class="meta"><div class="nm">Toile</div><div class="hex">#F4F4F8</div><div class="use">Fond d'application</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ APP ICON CONCEPTS ============ -->
+  <section>
+    <div class="sec-head col">
+      <div class="eyebrow">02 · Icône d'application</div>
+      <h2>Trois pistes pour le squircle</h2>
+      <p>Même grammaire — nœuds, arêtes, mouvement — trois lectures. La marque blanche se pose sur un dégradé indigo→violet, fixe dans les deux thèmes : c'est un asset produit, pas un élément d'interface.</p>
+    </div>
+
+    <div class="concepts">
+      <!-- A : Flow / fan-out-join -->
+      <div class="concept">
+        <span class="badge">Recommandée</span>
+        <div class="squircle bg-flow">
+          <svg width="72" height="72" viewBox="0 0 100 100" aria-label="Concept flux">
+            <g stroke="#fff" stroke-width="6" stroke-linecap="round" fill="none" opacity=".95">
+              <path d="M22,50 L50,28"/><path d="M22,50 L50,72"/>
+              <path d="M50,28 L78,50"/><path d="M50,72 L78,50"/>
+            </g>
+            <g fill="#fff">
+              <circle cx="22" cy="50" r="8"/><circle cx="50" cy="28" r="8"/>
+              <circle cx="50" cy="72" r="8"/><circle cx="78" cy="50" r="8"/>
+            </g>
+          </svg>
+        </div>
+        <h3>Le flux</h3>
+        <p class="rat">Fan-out puis join — le moteur lui-même. La plus vraie, et la meilleure à animer.</p>
+      </div>
+
+      <!-- B : C-arc monogram -->
+      <div class="concept">
+        <div class="squircle bg-arc">
+          <svg width="72" height="72" viewBox="0 0 100 100" aria-label="Concept monogramme C">
+            <path d="M72,26 A32,32 0 1 0 72,74" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round"/>
+            <circle cx="72" cy="26" r="4.5" fill="#fff"/>
+            <circle cx="72" cy="74" r="4.5" fill="#fff"/>
+          </svg>
+        </div>
+        <h3>Le monogramme</h3>
+        <p class="rat">Le « C » comme un tracé ouvert. Plus logo, plus lisible à très petite taille.</p>
+      </div>
+
+      <!-- C : Course / chevrons -->
+      <div class="concept">
+        <div class="squircle bg-course">
+          <svg width="72" height="72" viewBox="0 0 100 100" aria-label="Concept course">
+            <g fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M28,30 L48,50 L28,70" opacity=".55"/>
+              <path d="M48,30 L68,50 L48,70" opacity=".95"/>
+            </g>
+            <circle cx="78" cy="50" r="6.5" fill="#fff"/>
+          </svg>
+        </div>
+        <h3>La course</h3>
+        <p class="rat">Chevrons qui avancent vers un point-cible. Mouvement pur, l'idée de <em>cursus</em>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HERO MARK ============ -->
+  <section>
+    <div class="sec-head col">
+      <div class="eyebrow">03 · La marque retenue</div>
+      <h2>Le flux — un diamant fan-out / join</h2>
+    </div>
+    <div class="mark-hero">
+      <div class="big">
+        <svg width="94" height="94" viewBox="0 0 100 100" aria-label="Marque Cursus">
+          <g stroke="#fff" stroke-width="6" stroke-linecap="round" fill="none" opacity=".95">
+            <path d="M22,50 L50,28"/><path d="M22,50 L50,72"/>
+            <path d="M50,28 L78,50"/><path d="M50,72 L78,50"/>
+          </g>
+          <g fill="#fff">
+            <circle cx="22" cy="50" r="8"/><circle cx="50" cy="28" r="8"/>
+            <circle cx="50" cy="72" r="8"/><circle cx="78" cy="50" r="8"/>
+          </g>
+        </svg>
+      </div>
+      <div class="txt">
+        <p style="margin-top:0"><strong>Une entrée, deux branches, une jonction.</strong> C'est exactement ce que fait le noyau : une étape se divise selon le code de sortie, puis les chemins se rejoignent. L'icône <em>est</em> le modèle d'exécution, pas une métaphore posée dessus.</p>
+        <p>Elle se réduit proprement : à 16&nbsp;px les quatre nœuds tiennent encore, et le périmètre du diamant forme une <strong>boucle fermée</strong> où le vert peut <em>tourner</em> quand un run est en cours.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRAY ============ -->
+  <section>
+    <div class="sec-head col">
+      <div class="eyebrow">04 · Barre de menus</div>
+      <h2>Monochrome par défaut, vivante quand ça tourne</h2>
+      <p>macOS veut une <strong>image-gabarit</strong> dans la barre de menus : une silhouette monochrome que le système teinte lui-même — sombre sur barre claire, claire sur barre sombre. La couleur n'y a droit qu'à <strong>un seul endroit</strong> : le point d'état. C'est notre levier « actif ».</p>
+    </div>
+
+    <div class="bars">
+      <div class="barwrap">
+        <div class="cap">Barre claire · au repos</div>
+        <div class="menubar bar-light">
+          <div class="tray-cell">
+            <svg width="19" height="19" viewBox="0 0 100 100"><g stroke="currentColor" stroke-width="7" stroke-linecap="round" fill="none"><path d="M22,50 L50,28"/><path d="M22,50 L50,72"/><path d="M50,28 L78,50"/><path d="M50,72 L78,50"/></g><g fill="currentColor"><circle cx="22" cy="50" r="8"/><circle cx="50" cy="28" r="8"/><circle cx="50" cy="72" r="8"/><circle cx="78" cy="50" r="8"/></g></svg>
+          </div>
+          <span class="sys">􀙇</span><span class="sys">100%</span><span class="sys">14:32</span>
+        </div>
+      </div>
+      <div class="barwrap">
+        <div class="cap">Barre sombre · un run tourne</div>
+        <div class="menubar bar-dark">
+          <div class="tray-cell">
+            <svg width="19" height="19" viewBox="0 0 100 100">
+              <defs><mask id="flowmask1" maskUnits="userSpaceOnUse">
+                <rect width="100" height="100" fill="#000"/>
+                <path d="M22,50 L50,28 L78,50 L50,72 Z" class="flowmask-path" fill="none" stroke="#fff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="71.22 71.22"/>
+              </mask></defs>
+              <g fill="currentColor" stroke="currentColor">
+                <path d="M22,50 L50,28 L78,50 L50,72 Z" fill="none" stroke-width="7" stroke-linejoin="round"/>
+                <circle cx="22" cy="50" r="8"/><circle cx="50" cy="28" r="8"/><circle cx="78" cy="50" r="8"/><circle cx="50" cy="72" r="8"/>
+              </g>
+              <g mask="url(#flowmask1)">
+                <path d="M22,50 L50,28 L78,50 L50,72 Z" fill="none" stroke="var(--green-bright)" stroke-width="7" stroke-linejoin="round"/>
+                <g fill="var(--green-bright)"><circle cx="22" cy="50" r="8"/><circle cx="50" cy="28" r="8"/><circle cx="78" cy="50" r="8"/><circle cx="50" cy="72" r="8"/></g>
+              </g>
+            </svg>
+          </div>
+          <span class="sys">􀙇</span><span class="sys">100%</span><span class="sys">14:32</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="states-grid">
+      <div class="state-card">
+        <div class="state-stage">
+          <svg width="26" height="26" viewBox="0 0 100 100" style="color:var(--ink)"><g stroke="currentColor" stroke-width="7" stroke-linecap="round" fill="none"><path d="M22,50 L50,28"/><path d="M22,50 L50,72"/><path d="M50,28 L78,50"/><path d="M50,72 L78,50"/></g><g fill="currentColor"><circle cx="22" cy="50" r="8"/><circle cx="50" cy="28" r="8"/><circle cx="50" cy="72" r="8"/><circle cx="78" cy="50" r="8"/></g></svg>
+        </div>
+        <div class="nm">Au repos</div>
+        <div class="ds">Silhouette pleine, teintée par le système. Aucune couleur.</div>
+      </div>
+      <div class="state-card">
+        <div class="state-stage state-dark-stage">
+          <svg width="30" height="30" viewBox="0 0 100 100">
+            <defs><mask id="flowmask2" maskUnits="userSpaceOnUse">
+              <rect width="100" height="100" fill="#000"/>
+              <path d="M22,50 L50,28 L78,50 L50,72 Z" class="flowmask-path" fill="none" stroke="#fff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="71.22 71.22"/>
+            </mask></defs>
+            <g fill="currentColor" stroke="currentColor">
+              <path d="M22,50 L50,28 L78,50 L50,72 Z" fill="none" stroke-width="7" stroke-linejoin="round"/>
+              <circle cx="22" cy="50" r="8"/><circle cx="50" cy="28" r="8"/><circle cx="78" cy="50" r="8"/><circle cx="50" cy="72" r="8"/>
+            </g>
+            <g mask="url(#flowmask2)">
+              <path d="M22,50 L50,28 L78,50 L50,72 Z" fill="none" stroke="var(--green-bright)" stroke-width="7" stroke-linejoin="round"/>
+              <g fill="var(--green-bright)"><circle cx="22" cy="50" r="8"/><circle cx="50" cy="28" r="8"/><circle cx="78" cy="50" r="8"/><circle cx="50" cy="72" r="8"/></g>
+            </g>
+          </svg>
+        </div>
+        <div class="nm">En cours — animé</div>
+        <div class="ds">Un point vert <em>court</em> le long du tracé. La lecture « cursus ».</div>
+      </div>
+      <div class="state-card">
+        <div class="state-stage">
+          <svg width="26" height="26" viewBox="0 0 100 100" style="color:var(--ink)">
+            <g stroke="currentColor" stroke-width="7" stroke-linecap="round" fill="none"><path d="M22,50 L50,28"/><path d="M22,50 L50,72"/><path d="M50,28 L78,50"/><path d="M50,72 L78,50"/></g>
+            <g fill="currentColor"><circle cx="22" cy="50" r="8"/><circle cx="50" cy="28" r="8"/><circle cx="50" cy="72" r="8"/><circle cx="78" cy="50" r="8"/></g>
+            <circle cx="82" cy="24" r="17" fill="#EF4444" stroke="var(--surface)" stroke-width="6"/>
+          </svg>
+        </div>
+        <div class="nm">Attention</div>
+        <div class="ds">Pastille rouge en pastille : un run a échoué, sortie ≠ 0.</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <span>›</span>
+      <div><strong>Le flux qui tourne.</strong> Le vert <strong>remplit le tracé progressivement</strong> — nœud, arête, nœud — et le monochrome le reprend derrière : toujours une moitié verte qui avance, une moitié qui s'éteint, en rotation autour du diamant. L'animation ne tourne que <em>pendant</em> un run ; au repos, la silhouette redevient monochrome, sans mouvement. <span style="opacity:.75">(Mouvement réduit respecté : l'OS la fige à mi-course — une moitié verte statique.)</span></div>
+    </div>
+  </section>
+
+  <!-- ============ IMPLEMENTATION ============ -->
+  <section>
+    <div class="sec-head col">
+      <div class="eyebrow">05 · Mise en œuvre</div>
+      <h2>Comment ça se pose, côté code</h2>
+    </div>
+
+    <table class="impl">
+      <thead><tr><th>Asset</th><th>Format</th><th>Note technique</th></tr></thead>
+      <tbody>
+        <tr><td>Icône d'app</td><td><span class="mono">.icns</span> / <span class="mono">.png</span> 1024²</td><td>Squircle + dégradé indigo→violet, marque blanche. Le squircle est la superellipse macOS, pas un <span class="mono">border-radius</span> — à sortir en asset.</td></tr>
+        <tr><td>Tray — repos</td><td>Gabarit monochrome</td><td><span class="mono">TrayIcon.Icon</span> Avalonia. Image-gabarit : le système gère la teinte clair/sombre.</td></tr>
+        <tr><td>Tray — animé</td><td>Séquence d'images</td><td>Avalonia n'anime pas le tray nativement : on <strong>permute l'image sur un timer</strong> (≈ 16–24 frames du remplissage vert qui tourne autour du tracé). Timer coupé au repos.</td></tr>
+        <tr><td>Tray — pastille</td><td>Gabarit + point coloré</td><td>Le point d'état est le seul élément coloré, composé par-dessus le gabarit selon l'état du daemon.</td></tr>
+      </tbody>
+    </table>
+
+    <table class="impl">
+      <thead><tr><th>État du daemon</th><th>Traitement du tray</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill" style="background:var(--grey)"></span>Au repos</td><td>Silhouette monochrome, aucune couleur.</td></tr>
+        <tr><td><span class="pill" style="background:var(--green-bright)"></span>Run en cours</td><td>Point vert qui court (animé) — ou point vert fixe en mode sobre.</td></tr>
+        <tr><td><span class="pill" style="background:var(--amber)"></span>En file / bloqué</td><td>Point ambre fixe.</td></tr>
+        <tr><td><span class="pill" style="background:var(--red)"></span>Dernier run échoué</td><td>Pastille rouge jusqu'à consultation.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <span>›</span>
+      <div><strong>Typo.</strong> Cette page est composée dans <em>San Francisco</em> (la police système macOS) à dessein : c'est celle dans laquelle l'app tournera. L'identité n'a pas besoin d'une police exotique — elle a besoin d'être native. Les valeurs hexadécimales sont en <span class="m">SF Mono</span>.</div>
+    </div>
+  </section>
+
+  <footer class="col">
+    Proposition d'identité — Cursus · palette, icône d'application, icône de barre de menus (états au repos / actif / attention). Rien n'est acté : à choisir puis sortir en assets.
+  </footer>
+
+</div>
