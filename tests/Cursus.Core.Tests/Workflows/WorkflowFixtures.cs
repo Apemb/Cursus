@@ -18,10 +18,10 @@ internal static class WorkflowFixtures
     internal static readonly ScriptSpec AnyScript = new("/usr/bin/true", []);
 
     internal static StepDefinition Step(string id, params Edge[] edges) =>
-        new(id, id, AnyScript, MaxVisits: 1, edges);
+        new ScriptStep(id, id, AnyScript, MaxVisits: 1, edges);
 
     internal static StepDefinition Step(string id, int maxVisits, params Edge[] edges) =>
-        new(id, id, AnyScript, maxVisits, edges);
+        new ScriptStep(id, id, AnyScript, maxVisits, edges);
 
     internal static ScriptResult Exit(int code) => new(code, ScriptOutcome.Completed);
 

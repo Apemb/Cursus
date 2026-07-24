@@ -174,7 +174,7 @@ public class WorkflowDraftTests
         draft.SetScript(id, new ScriptSpec("/usr/bin/make", ["build"]));
 
         // assert
-        Assert.Equal("/usr/bin/make", draft.ToDefinition().GetStep(id).Script.FileName);
+        Assert.Equal("/usr/bin/make", ((ScriptStep)draft.ToDefinition().GetStep(id)).Script.FileName);
     }
 
     [Fact(DisplayName = "étant donné un brouillon, quand on affecte un script à un id absent, alors une UnknownStepException est levée")]
@@ -263,8 +263,8 @@ public class WorkflowDraftTests
     private static WorkflowDefinition TwoStepsAtoB =>
         new("A",
         [
-            new StepDefinition("A", "A", new ScriptSpec("/bin/true", []), 1,
+            new ScriptStep("A", "A", new ScriptSpec("/bin/true", []), 1,
                 [new Edge(Guard.OnSuccess, "B")]),
-            new StepDefinition("B", "B", new ScriptSpec("/bin/true", []), 1, []),
+            new ScriptStep("B", "B", new ScriptSpec("/bin/true", []), 1, []),
         ]);
 }

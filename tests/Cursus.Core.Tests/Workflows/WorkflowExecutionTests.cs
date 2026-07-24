@@ -46,7 +46,7 @@ public class WorkflowExecutionTests
 
         // --- helpers locaux ---
         static StepDefinition Step(string id, string script, params Edge[] edges) =>
-            new(id, id, new ScriptSpec("/bin/sh", ["-c", script]), MaxVisits: 1, edges);
+            new ScriptStep(id, id, new ScriptSpec("/bin/sh", ["-c", script]), MaxVisits: 1, edges);
     }
 
     [Fact(DisplayName = "étant donné un workflow décrit en JSON et un workspace, quand on le charge puis qu'on l'exécute, alors la trajectoire est parcourue et les fichiers atterrissent dans les bons sous-répertoires")]

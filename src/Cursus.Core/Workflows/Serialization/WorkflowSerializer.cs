@@ -85,7 +85,7 @@ public static class WorkflowSerializer
     }
 
     private static StepDefinition ToStep(StepDocument step) =>
-        new(
+        new ScriptStep(
             step.Id ?? "",
             step.Name ?? step.Id ?? "",
             new ScriptSpec(
@@ -130,19 +130,25 @@ public static class WorkflowSerializer
             new WorkflowDocument(definition.EntryStep, definition.Steps.Select(ToDocument).ToList()),
             Options);
 
-    private static StepDocument ToDocument(StepDefinition step) =>
-        new(
-            step.Id,
-            step.Name,
-            step.Description,
-            step.MaxVisits,
+    // L'adaptateur dans l'autre sens : chaque sous-type d'étape connaît sa forme de
+    // document. Un seul kind aujourd'hui ; un kind de plus ajoute un bras à ce switch.
+    private static StepDocument ToDocument(StepDefinition step) => step switch
+    {
+        ScriptStep s => new StepDocument(
+            s.Id,
+            s.Name,
+            s.Description,
+            s.MaxVisits,
             new ScriptDocument(
-                step.Script.FileName,
-                step.Script.Arguments,
-                step.Script.Environment,
-                step.Script.Timeout?.TotalSeconds),
-            step.OutEdges.Select(ToDocument).ToList(),
-            step.WorkingSubdirectory);
+                s.Script.FileName,
+                s.Script.Arguments,
+                s.Script.Environment,
+                s.Script.Timeout?.TotalSeconds),
+            s.OutEdges.Select(ToDocument).ToList(),
+            s.WorkingSubdirectory),
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(step), step.GetType().Name, "Type d'étape non sérialisable."),
+    };
 
     private static EdgeDocument ToDocument(Edge edge) => new(WriteGuard(edge.Guard), edge.Target);
 

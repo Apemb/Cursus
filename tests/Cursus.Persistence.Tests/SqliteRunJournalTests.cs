@@ -269,7 +269,7 @@ public class SqliteRunJournalTests : IDisposable
     /// </summary>
     private static WorkflowDefinition AnyDefinition => new("A", new[]
     {
-        new StepDefinition("A", "A", new ScriptSpec("/usr/bin/true", []), MaxVisits: 1, []),
+        new ScriptStep("A", "A", new ScriptSpec("/usr/bin/true", []), MaxVisits: 1, []),
     });
 
     private static WorkflowEvent AnyStart =>

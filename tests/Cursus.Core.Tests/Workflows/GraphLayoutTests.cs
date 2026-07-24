@@ -237,7 +237,7 @@ public sealed class GraphLayoutTests
 
     /// <summary>Une étape déterministe, son id valant aussi son nom — le décor commun des tests.</summary>
     private static StepDefinition Step(string id, params Edge[] outEdges) =>
-        new(id, id, new ScriptSpec("/usr/bin/true", []), MaxVisits: 1, outEdges);
+        new ScriptStep(id, id, new ScriptSpec("/usr/bin/true", []), MaxVisits: 1, outEdges);
 
     private static NodePlacement PlacementOf(GraphLayout layout, string stepId) =>
         layout.Placements.First(placement => placement.StepId == stepId);

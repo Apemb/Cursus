@@ -29,7 +29,9 @@ public partial class StepEditorRow : ObservableObject
         _editor = editor;
         Id = step.Id;
         Name = step.Name;
-        _command = CommandLine.Format(step.Script.FileName, step.Script.Arguments);
+        // La commande n'a de sens que pour une étape-script ; l'éditeur n'en montre pas
+        // d'autre aujourd'hui. Un AgentStep (2·1b) portera son propre rendu (modèle + prompt).
+        _command = step is ScriptStep s ? CommandLine.Format(s.Script.FileName, s.Script.Arguments) : "";
         TargetChoices = stepIds;
         _newEdgeTarget = stepIds.Count > 0 ? stepIds[0] : "";
         Edges = new ObservableCollection<EdgeEditorRow>(

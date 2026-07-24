@@ -111,7 +111,7 @@ public class WorkflowValidatorTests
         // même la première exécution de l'étape.
         var definition = new WorkflowDefinition("A", new[]
         {
-            new StepDefinition("A", "A", AnyScript, MaxVisits: 0, []),
+            new ScriptStep("A", "A", AnyScript, MaxVisits: 0, []),
         });
 
         // act
@@ -186,7 +186,7 @@ public class WorkflowValidatorTests
         var definition = new WorkflowDefinition("A", new[]
         {
             Step("A", new Edge(Guard.OnSuccess, "Z")),
-            new StepDefinition("B", "B", AnyScript, MaxVisits: 0, []),
+            new ScriptStep("B", "B", AnyScript, MaxVisits: 0, []),
             Step("orpheline"),
         });
 
@@ -213,5 +213,5 @@ public class WorkflowValidatorTests
     private static readonly ScriptSpec AnyScript = new("/usr/bin/true", []);
 
     private static StepDefinition Step(string id, params Edge[] edges) =>
-        new(id, id, AnyScript, MaxVisits: 1, edges);
+        new ScriptStep(id, id, AnyScript, MaxVisits: 1, edges);
 }

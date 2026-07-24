@@ -254,7 +254,7 @@ public class WorkflowCatalogTests : IDisposable
         var catalog = new WorkflowCatalog(project);
         var broken = new WorkflowDefinition(
             "seule",
-            [new StepDefinition("seule", "Seule", new ScriptSpec("/bin/true", []), 1,
+            [new ScriptStep("seule", "Seule", new ScriptSpec("/bin/true", []), 1,
                 [new Edge(Guard.OnSuccess, "fantome")])]);
 
         // act — brouillons permis : Save ne valide pas
@@ -392,7 +392,7 @@ public class WorkflowCatalogTests : IDisposable
 
     /// <summary>La contrepartie « modèle » de <see cref="AnyDocument"/> : un graphe valide à une étape.</summary>
     private static WorkflowDefinition SingleStepWorkflow =>
-        new("seule", [new StepDefinition("seule", "Seule", new ScriptSpec("/bin/true", []), 1, [])]);
+        new("seule", [new ScriptStep("seule", "Seule", new ScriptSpec("/bin/true", []), 1, [])]);
 
     private static void Deposit(Project project, string id, string document) =>
         File.WriteAllText(Path.Combine(project.WorkflowsDirectory, $"{id}.json"), document);

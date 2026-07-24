@@ -166,7 +166,7 @@ public sealed class ProjectHostEndToEndTests : IDisposable
     /// <summary>Un graphe valide : la définition figée repasse par le validateur à la relecture SQLite.</summary>
     private static WorkflowDefinition AnyDefinition => new("A", new[]
     {
-        new StepDefinition("A", "A", new ScriptSpec("/usr/bin/true", []), MaxVisits: 1, []),
+        new ScriptStep("A", "A", new ScriptSpec("/usr/bin/true", []), MaxVisits: 1, []),
     });
 
     private const string AnyDocument = """

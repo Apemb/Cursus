@@ -5,19 +5,23 @@ namespace Cursus.Core.Workflows.Execution;
 
 /// <summary>
 /// Parcourt un graphe de <see cref="StepDefinition"/> depuis son point d'entrée,
-/// exécute chaque visite via un <see cref="IProcessRunner"/>, route sur le code
-/// de sortie via les arêtes gardées, borne les boucles, et synthétise un
-/// <see cref="WorkflowRun"/>. Ne connaît rien d'un agent.
+/// exécute chaque visite via l'<see cref="IStepExecutor"/> qui sait traiter son type,
+/// route sur le code de sortie via les arêtes gardées, borne les boucles, et synthétise
+/// un <see cref="WorkflowRun"/>. Ne connaît rien d'un agent ni d'aucun kind : router par
+/// le type de l'étape est ce qui laisse greffer un kind sans toucher la traversée (§5).
 /// </summary>
 public sealed class WorkflowEngine
 {
-    private readonly IProcessRunner _runner;
+    private readonly IReadOnlyList<IStepExecutor> _executors;
     private readonly IRunJournal _journal;
     private readonly IRunOutputStore _output;
 
     public WorkflowEngine(IProcessRunner runner, IRunJournal journal, IRunOutputStore output)
     {
-        _runner = runner;
+        // Le seul kind du noyau à ce jour : l'étape-script. Ajouter un kind, c'est
+        // enrichir cette liste (via un chemin de construction dédié), pas modifier la
+        // boucle ci-dessous.
+        _executors = [new ScriptStepExecutor(runner)];
         _journal = journal;
         _output = output;
     }
@@ -98,11 +102,14 @@ public sealed class WorkflowEngine
             {
                 try
                 {
-                    // La définition déclare un sous-chemin relatif, le runner attend
+                    // La définition déclare un sous-chemin relatif, l'exécuteur attend
                     // un répertoire absolu : le moteur est le seul à connaître le
-                    // contexte, donc le seul à pouvoir traduire.
-                    var script = step.Script with { WorkingDirectory = context.Resolve(step.WorkingSubdirectory) };
-                    result = await _runner.RunAsync(script, sink.Stdout, sink.Stderr, cancellationToken)
+                    // contexte, donc le seul à pouvoir traduire. Le choix de l'exécuteur
+                    // se fait sur le type de l'étape — le moteur, lui, reste kind-aveugle.
+                    var workingDirectory = context.Resolve(step.WorkingSubdirectory);
+                    var executor = _executors.First(e => e.CanExecute(step));
+                    result = await executor
+                        .ExecuteAsync(step, workingDirectory, sink.Stdout, sink.Stderr, cancellationToken)
                         .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)

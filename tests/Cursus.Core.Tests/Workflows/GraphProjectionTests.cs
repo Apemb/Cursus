@@ -167,7 +167,7 @@ public sealed class GraphProjectionTests
 
     /// <summary>Une étape déterministe, son id valant aussi son nom — le décor commun des tests.</summary>
     private static StepDefinition Step(string id, params Edge[] outEdges) =>
-        new(id, id, new ScriptSpec("/usr/bin/true", []), MaxVisits: 1, outEdges);
+        new ScriptStep(id, id, new ScriptSpec("/usr/bin/true", []), MaxVisits: 1, outEdges);
 
     /// <summary>Un graphe A→B dont le run vient de démarrer — le décor commun des tests de statut.</summary>
     private static GraphProjection Started()

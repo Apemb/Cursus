@@ -38,7 +38,7 @@ public sealed class WorkflowDraft
     public string AddStep(string name)
     {
         var id = Uniquify(Slug.From(name));
-        _steps.Add(new StepDefinition(id, name, new ScriptSpec("", []), 1, []));
+        _steps.Add(new ScriptStep(id, name, new ScriptSpec("", []), 1, []));
         return id;
     }
 
@@ -110,7 +110,10 @@ public sealed class WorkflowDraft
     public void SetScript(string id, ScriptSpec script)
     {
         var index = IndexOf(id);
-        _steps[index] = _steps[index] with { Script = script };
+        // Le script est propre au ScriptStep : régler un script suppose une étape-script.
+        // Aujourd'hui l'éditeur n'en construit pas d'autre ; le jour d'un AgentStep,
+        // c'est une opération sœur (SetPrompt/SetModel) qui prendra le relais.
+        _steps[index] = ((ScriptStep)_steps[index]) with { Script = script };
     }
 
     /// <summary>

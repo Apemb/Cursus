@@ -38,8 +38,8 @@ public class WorkflowSerializerTests
         var step = Assert.Single(result.Definition!.Steps);
         Assert.Equal("preparer", result.Definition.EntryStep);
         Assert.Equal("Préparer", step.Name);
-        Assert.Equal("/bin/sh", step.Script.FileName);
-        Assert.Equal(new[] { "-c", "make build" }, step.Script.Arguments);
+        Assert.Equal("/bin/sh", ((ScriptStep)step).Script.FileName);
+        Assert.Equal(new[] { "-c", "make build" }, ((ScriptStep)step).Script.Arguments);
     }
 
     [Fact(DisplayName = "étant donné un document décrivant deux étapes reliées, quand on le lit, alors l'arête relie la bonne cible")]
@@ -195,8 +195,8 @@ public class WorkflowSerializerTests
 
         // assert
         Assert.Equal("backend", step.WorkingSubdirectory);
-        Assert.Equal("1", step.Script.Environment!["CI"]);
-        Assert.Equal(TimeSpan.FromMinutes(5), step.Script.Timeout);
+        Assert.Equal("1", ((ScriptStep)step).Script.Environment!["CI"]);
+        Assert.Equal(TimeSpan.FromMinutes(5), ((ScriptStep)step).Script.Timeout);
     }
 
     [Fact(DisplayName = "étant donné un script sans délai, sous-chemin ni description, quand on lit le document, alors l'étape n'en déclare aucun")]
@@ -215,7 +215,7 @@ public class WorkflowSerializerTests
 
         // assert — l'absence de délai signifie « aucune limite », pas « zéro » ;
         // une description omise est simplement absente.
-        Assert.Null(step.Script.Timeout);
+        Assert.Null(((ScriptStep)step).Script.Timeout);
         Assert.Null(step.WorkingSubdirectory);
         Assert.Null(step.Description);
     }
@@ -320,14 +320,14 @@ public class WorkflowSerializerTests
         // par référence : c'est donc le document qui fait foi.
         var definition = new WorkflowDefinition("A", new[]
         {
-            new StepDefinition(
+            new ScriptStep(
                 "A", "Analyser",
                 new ScriptSpec("/bin/sh", ["-c", "make lint"], Timeout: TimeSpan.FromSeconds(30)),
                 MaxVisits: 2,
                 [new Edge(Guard.OnExitCode(7), "B"), new Edge(Guard.Default, "A")],
                 WorkingSubdirectory: "src",
                 Description: "Analyser le code sous toutes ses coutures"),
-            new StepDefinition("B", "Broyer", new ScriptSpec("/usr/bin/true", []), MaxVisits: 1, []),
+            new ScriptStep("B", "Broyer", new ScriptSpec("/usr/bin/true", []), MaxVisits: 1, []),
         });
 
         // act
