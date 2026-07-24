@@ -1,0 +1,364 @@
+<title>La page du workflow — de l'historique au hub</title>
+<style>
+  :root {
+    --bg: #e8e8ec; --chrome: #ececee; --surface: #ffffff; --rail: #f4f4f6;
+    --ink: #1d1d1f; --ink-2: #6e6e73; --ink-3: #8e8e93;
+    --sep: #d9d9de; --sep-soft: #ebebef; --accent: #007aff; --accent-soft: #e6f0ff; --sel: #e9eef6;
+    --ok: #2ca24a; --ok-bg: #e7f6ec; --fail: #e0322a; --fail-bg: #fdeceb;
+    --abort: #c67b0a; --abort-bg: #fbf1df; --run: #007aff; --run-bg: #e6f0ff;
+    --node: #fbfbfd; --node-line: #c7c7cf;
+    --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, monospace;
+    --sys: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+    --shadow: 0 12px 34px rgba(0,0,0,.16), 0 1px 3px rgba(0,0,0,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1b1b1e; --chrome: #2a2a2e; --surface: #232326; --rail: #1f1f22;
+      --ink: #f2f2f4; --ink-2: #a7a7ad; --ink-3: #7c7c82;
+      --sep: #3a3a3f; --sep-soft: #2e2e33; --accent: #4c9bff; --accent-soft: #17304d; --sel: #2c3644;
+      --ok: #4cc96a; --ok-bg: #16301d; --fail: #ff6b61; --fail-bg: #3a1a18;
+      --abort: #ecac4c; --abort-bg: #362a12; --run: #4c9bff; --run-bg: #17304d;
+      --node: #2b2b30; --node-line: #4a4a52;
+      --shadow: 0 14px 40px rgba(0,0,0,.5), 0 1px 3px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1b1b1e; --chrome: #2a2a2e; --surface: #232326; --rail: #1f1f22;
+    --ink: #f2f2f4; --ink-2: #a7a7ad; --ink-3: #7c7c82;
+    --sep: #3a3a3f; --sep-soft: #2e2e33; --accent: #4c9bff; --accent-soft: #17304d; --sel: #2c3644;
+    --ok: #4cc96a; --ok-bg: #16301d; --fail: #ff6b61; --fail-bg: #3a1a18;
+    --abort: #ecac4c; --abort-bg: #362a12; --run: #4c9bff; --run-bg: #17304d;
+    --node: #2b2b30; --node-line: #4a4a52;
+    --shadow: 0 14px 40px rgba(0,0,0,.5), 0 1px 3px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --bg: #e8e8ec; --chrome: #ececee; --surface: #ffffff; --rail: #f4f4f6;
+    --ink: #1d1d1f; --ink-2: #6e6e73; --ink-3: #8e8e93; --sep: #d9d9de; --sep-soft: #ebebef;
+    --accent: #007aff; --accent-soft: #e6f0ff; --sel: #e9eef6;
+    --ok: #2ca24a; --ok-bg: #e7f6ec; --fail: #e0322a; --fail-bg: #fdeceb;
+    --abort: #c67b0a; --abort-bg: #fbf1df; --run: #007aff; --run-bg: #e6f0ff;
+    --node: #fbfbfd; --node-line: #c7c7cf;
+    --shadow: 0 12px 34px rgba(0,0,0,.16), 0 1px 3px rgba(0,0,0,.10);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .page { font-family: var(--sys); color: var(--ink); background: var(--bg); padding: 40px 24px 72px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+
+  header.lead { margin: 0 auto 8px; max-width: 780px; text-align: center; }
+  header.lead .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  header.lead h1 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; margin: 0 0 12px; text-wrap: balance; }
+  header.lead p { font-size: 15.5px; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+  .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+  .badge { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--sep); border-radius: 999px; padding: 6px 13px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  .badge b { color: var(--ink); font-weight: 600; }
+  .badge.pick { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .badge.pick b { color: var(--accent); }
+
+  .stage { margin-top: 52px; }
+  .stage > .caption { max-width: 800px; margin: 0 auto 18px; }
+  .shead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .snum { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--surface); background: var(--ink); border-radius: 6px; padding: 3px 9px; letter-spacing: .02em; }
+  .stage.now .snum { background: var(--accent); }
+  .stage.later .snum { background: #7a5cd0; }
+  .shead h2 { font-size: 20px; font-weight: 660; margin: 0; letter-spacing: -.01em; }
+  .shead .tick { font-size: 12.5px; color: var(--ink-3); }
+  .stage > .caption p { margin: 9px 0 0; font-size: 14px; color: var(--ink-2); }
+  .stage > .caption p b { color: var(--ink); font-weight: 600; }
+
+  /* window chrome */
+  .win { background: var(--surface); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,.06); }
+  .titlebar { height: 38px; background: var(--chrome); display: flex; align-items: center; padding: 0 14px; gap: 8px; border-bottom: 1px solid var(--sep); }
+  .lights { display: flex; gap: 8px; }
+  .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  .lights .r { background: #ff5f57; } .lights .y { background: #febc2e; } .lights .g { background: #28c840; }
+  .titlebar .t { font-size: 12.5px; color: var(--ink-3); font-weight: 500; margin: 0 auto; padding-right: 46px; }
+
+  .body { display: grid; grid-template-columns: 172px 1fr; min-height: 376px; }
+  /* Les cadres d'onglets n'ont pas de rail et moins de contenu : on les laisse
+     épouser leur hauteur, sinon une bande vide (couleur surface) reste dessous. */
+  .body.compact { grid-template-columns: 1fr; min-height: 0; }
+  .body.compact .rail { display: none; }
+
+  .rail { background: var(--rail); border-right: 1px solid var(--sep); padding: 12px 10px; }
+  .rail .rlabel { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); padding: 4px 8px 8px; }
+  .rail .proj { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 7px; font-size: 13px; color: var(--ink); }
+  .rail .proj.sel { background: var(--sel); font-weight: 600; }
+  .rail .proj .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+  .rail .proj.sel .dot { background: var(--accent); }
+  .rail .addp { margin-top: 8px; font-size: 12.5px; color: var(--accent); padding: 7px 9px; }
+
+  .surface { padding: 16px 20px 20px; overflow: hidden; display: flex; flex-direction: column; }
+
+  /* breadcrumb + workflow title */
+  .crumb { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-3); margin-bottom: 10px; }
+  .crumb a { color: var(--accent); }
+  .crumb .sepc { color: var(--ink-3); opacity: .6; }
+  .wtitle { display: flex; align-items: center; gap: 11px; }
+  .wtitle h3 { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -.015em; }
+  .wtitle .sub { font-size: 12.5px; color: var(--ink-3); }
+  .btn-run { margin-left: auto; font-size: 12.5px; font-weight: 600; color: #fff; background: var(--accent); border-radius: 7px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.12); white-space: nowrap; }
+
+  /* tab bar */
+  .tabs { display: flex; gap: 2px; margin: 14px 0 0; border-bottom: 1px solid var(--sep); }
+  .tab { font-size: 13px; padding: 8px 14px 10px; color: var(--ink-3); border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; align-items: center; gap: 6px; }
+  .tab.on { color: var(--ink); font-weight: 600; border-bottom-color: var(--accent); }
+  .tab .soon { font-size: 9.5px; font-weight: 700; letter-spacing: .04em; color: var(--ink-3); background: var(--sep-soft); border-radius: 4px; padding: 1px 5px; text-transform: uppercase; }
+
+  /* history list */
+  .histhead { display: flex; align-items: baseline; gap: 10px; margin: 16px 0 4px; }
+  .histhead h4 { font-size: 15px; font-weight: 650; margin: 0; }
+  .histhead .count { font-size: 12.5px; color: var(--ink-3); }
+  .histbox { margin-top: 10px; border: 1px solid var(--sep); border-radius: 10px; overflow: hidden; }
+  .runrow { display: flex; align-items: center; gap: 12px; padding: 11px 13px; font-size: 13px; }
+  .runrow + .runrow { border-top: 1px solid var(--sep-soft); }
+  .runrow:hover { background: var(--sel); }
+  .runrow .when { color: var(--ink-2); font-size: 12.5px; }
+  .runrow .dur { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-left: auto; }
+  .runrow .rid { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .runrow .chev { color: var(--ink-3); font-size: 14px; }
+
+  .pill { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
+  .pill.ok { color: var(--ok); background: var(--ok-bg); } .pill.ok::before { background: var(--ok); }
+  .pill.fail { color: var(--fail); background: var(--fail-bg); } .pill.fail::before { background: var(--fail); }
+  .pill.abort { color: var(--abort); background: var(--abort-bg); } .pill.abort::before { background: var(--abort); }
+  .pill.run { color: var(--run); background: var(--run-bg); } .pill.run::before { background: var(--run); animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  @media (prefers-reduced-motion: reduce) { .pill.run::before { animation: none; } }
+
+  /* two hub frames side by side */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .duo .win { min-height: 0; }
+  .duo .surface { padding: 14px 16px 16px; }
+  .frame-label { font-size: 12px; color: var(--ink-3); text-align: center; margin-bottom: 9px; font-weight: 500; }
+
+  /* graph tab content */
+  .graphwrap { margin-top: 14px; border: 1px solid var(--sep); border-radius: 10px; background: var(--rail); padding: 6px; }
+  .graphwrap svg { display: block; width: 100%; height: auto; }
+  .gnode rect { fill: var(--node); stroke: var(--node-line); }
+  .gnode text { fill: var(--ink); font-family: var(--sys); font-size: 11px; font-weight: 500; }
+  .gedge { stroke: var(--node-line); stroke-width: 1.4; fill: none; }
+  .gedge.back { stroke-dasharray: 4 3; stroke: var(--abort); }
+  /* var() ne s'évalue pas dans un attribut SVG fill= : on style les têtes de flèche en CSS. */
+  .gmark { fill: var(--node-line); }
+  .gmark-b { fill: var(--abort); }
+  .gcap { font-size: 11.5px; color: var(--ink-3); margin-top: 10px; text-align: center; }
+
+  /* triggers tab content */
+  .trigs { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .trig { border: 1px solid var(--sep); border-radius: 9px; padding: 11px 13px; display: flex; align-items: center; gap: 11px; background: var(--surface); }
+  .trig .ic { width: 26px; height: 26px; border-radius: 7px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 14px; flex: none; }
+  .trig .tx { display: flex; flex-direction: column; gap: 1px; }
+  .trig .tt { font-size: 13px; font-weight: 600; }
+  .trig .td { font-size: 11.5px; color: var(--ink-2); }
+  .trig .td code { font-family: var(--mono); font-size: 11px; background: var(--sep-soft); padding: 1px 5px; border-radius: 4px; }
+  .sw { margin-left: auto; width: 34px; height: 20px; border-radius: 999px; background: var(--sep); position: relative; flex: none; }
+  .sw.on { background: var(--ok); }
+  .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .sw.on::after { left: 16px; }
+  .addtrig { font-size: 12.5px; color: var(--accent); padding: 6px 2px; }
+
+  /* steps tab peek */
+  .steprow { display: flex; align-items: center; gap: 10px; border: 1px solid var(--sep); border-radius: 8px; padding: 9px 12px; font-size: 13px; background: var(--surface); margin-bottom: 7px; }
+  .steprow .snum2 { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .steprow .cmd { font-family: var(--mono); font-size: 11px; color: var(--ink-2); margin-left: auto; }
+
+  .foot { max-width: 800px; margin: 48px auto 0; padding-top: 24px; border-top: 1px solid var(--sep); }
+  .foot h3 { font-size: 14px; margin: 0 0 12px; font-weight: 650; }
+  .foot .row { display: flex; gap: 12px; align-items: flex-start; font-size: 13.5px; color: var(--ink-2); margin-bottom: 12px; }
+  .foot .row .k { flex: none; width: 168px; font-weight: 600; color: var(--ink); }
+  .foot code { font-family: var(--mono); font-size: 12px; background: var(--sep-soft); padding: 1px 5px; border-radius: 4px; color: var(--ink); }
+
+  @media (max-width: 720px) {
+    .duo { grid-template-columns: 1fr; }
+    .body { grid-template-columns: 1fr; }
+    .rail { display: none; }
+    .foot .row { flex-direction: column; gap: 3px; }
+    .foot .row .k { width: auto; }
+  }
+</style>
+
+<div class="page">
+<div class="wrap">
+
+  <header class="lead">
+    <div class="eyebrow">Cursus · trajectoire visuelle</div>
+    <h1>La page du workflow — de l'historique au hub</h1>
+    <p>On a tranché : <b>cliquer une ligne de workflow ouvre sa page</b>. Dès aujourd'hui elle porte <b>deux onglets vivants</b> — <b>Historique</b> (neuf) et <b>Étapes</b> (l'éditeur existant, replié dans le hub) — plus un bouton <b>Lancer</b>. Le graphe et les déclencheurs viendront après, sans refonte. Voici la trajectoire, pour la valider avant de coder.</p>
+    <div class="badges">
+      <span class="badge pick">✓ Placement : <b>sous-écran par workflow</b></span>
+      <span class="badge">Portée : <b>par workflow</b></span>
+      <span class="badge">Couture Core : <b>ProjectHost.RunsOf(workflowId)</b></span>
+    </div>
+  </header>
+
+  <!-- ================= ÉTAPE 1 — AUJOURD'HUI ================= -->
+  <section class="stage now">
+    <div class="caption">
+      <div class="shead"><span class="snum">Étape 1</span><h2>Aujourd'hui — la page du workflow, deux onglets vivants</h2><span class="tick">ce qu'on construit</span></div>
+      <p>Cliquer <b>verifier</b> dans la liste ouvre sa page. Une barre d'onglets, un bouton <b>Lancer</b> dans l'en-tête, et deux onglets déjà vivants : <b>Historique</b> (module neuf, une ligne = un passage, clic = relecture) et <b>Étapes</b> (l'éditeur existant, replié ici). <b>Graphe</b> et <b>Déclencheurs</b> sont annoncés « à venir ». Un seul module neuf, une seule couture Core.</p>
+    </div>
+    <div class="duo">
+
+      <!-- page, onglet Historique -->
+      <div>
+        <div class="frame-label">Onglet <b>Historique</b> — les passages du workflow</div>
+        <div class="win">
+          <div class="titlebar"><div class="lights"><i class="r"></i><i class="y"></i><i class="g"></i></div><div class="t">verifier — Atelier</div></div>
+          <div class="body compact">
+            <div class="rail"></div>
+            <div class="surface">
+              <div class="crumb"><a>‹ Atelier</a><span class="sepc">/</span><span>verifier</span></div>
+              <div class="wtitle"><h3>verifier</h3><span class="btn-run">▶ Lancer</span></div>
+              <div class="tabs">
+                <span class="tab on">Historique</span>
+                <span class="tab">Étapes</span>
+                <span class="tab">Graphe <span class="soon">à venir</span></span>
+                <span class="tab">Déclencheurs <span class="soon">à venir</span></span>
+              </div>
+              <div class="histhead"><h4>12 passages</h4></div>
+              <div class="histbox">
+                <div class="runrow"><span class="pill run">En cours</span><span class="when">14:07</span><span class="dur">0:41</span><span class="chev">›</span></div>
+                <div class="runrow"><span class="pill ok">Réussi</span><span class="when">24/07 à 14:02</span><span class="dur">1:12</span><span class="chev">›</span></div>
+                <div class="runrow"><span class="pill fail">Échoué</span><span class="when">23/07 à 18:41</span><span class="dur">0:58</span><span class="chev">›</span></div>
+                <div class="runrow"><span class="pill abort">Arrêté</span><span class="when">23/07 à 18:04</span><span class="dur">0:12</span><span class="chev">›</span></div>
+                <div class="runrow"><span class="pill ok">Réussi</span><span class="when">22/07 à 11:30</span><span class="dur">1:05</span><span class="chev">›</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- page, onglet Étapes (éditeur replié) -->
+      <div>
+        <div class="frame-label">Onglet <b>Étapes</b> — l'éditeur existant, replié</div>
+        <div class="win">
+          <div class="titlebar"><div class="lights"><i class="r"></i><i class="y"></i><i class="g"></i></div><div class="t">verifier — Atelier</div></div>
+          <div class="body compact">
+            <div class="rail"></div>
+            <div class="surface">
+              <div class="crumb"><a>‹ Atelier</a><span class="sepc">/</span><span>verifier</span></div>
+              <div class="wtitle"><h3>verifier</h3><span class="btn-run">▶ Lancer</span></div>
+              <div class="tabs">
+                <span class="tab">Historique</span>
+                <span class="tab on">Étapes</span>
+                <span class="tab">Graphe <span class="soon">à venir</span></span>
+                <span class="tab">Déclencheurs <span class="soon">à venir</span></span>
+              </div>
+              <div style="margin-top:14px">
+                <div class="steprow"><span class="snum2">↦</span><b style="font-size:13px">prep.</b><span class="cmd">make deps</span></div>
+                <div class="steprow"><span class="snum2">2</span><b style="font-size:13px">tester</b><span class="cmd">./run-tests.sh</span></div>
+                <div class="steprow"><span class="snum2">3</span><b style="font-size:13px">corriger</b><span class="cmd">claude --fix</span></div>
+                <div class="steprow"><span class="snum2">4</span><b style="font-size:13px">rapport</b><span class="cmd">cat &gt; rapport.txt</span></div>
+                <div class="addtrig">＋ Ajouter une étape</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= ÉTAPE 2 — DEMAIN ================= -->
+  <section class="stage later">
+    <div class="caption">
+      <div class="shead"><span class="snum">Étape 2</span><h2>Demain — le graphe et les déclencheurs rejoignent le hub</h2><span class="tick">la trajectoire, pas ce jalon</span></div>
+      <p>La page gagne deux onglets de plus, sans refonte : le <b>graphe de la définition</b> (statique, via <code>GraphLayout</code> déjà pur) et les <b>déclencheurs</b> — cron, états de tâche — qui trouvent enfin leur maison. Chaque onglet reste un module adossé à sa projection (D-016) : les ajouter ne touche pas l'existant.</p>
+    </div>
+    <div class="duo">
+
+      <!-- hub, onglet Graphe -->
+      <div>
+        <div class="frame-label">Onglet <b>Graphe</b> — la structure, sans run</div>
+        <div class="win">
+          <div class="titlebar"><div class="lights"><i class="r"></i><i class="y"></i><i class="g"></i></div><div class="t">verifier — Atelier</div></div>
+          <div class="body compact">
+            <div class="rail"></div>
+            <div class="surface">
+              <div class="crumb"><a>‹ Atelier</a><span class="sepc">/</span><span>verifier</span></div>
+              <div class="wtitle"><h3>verifier</h3><span class="btn-run">▶ Lancer</span></div>
+              <div class="tabs">
+                <span class="tab">Historique</span>
+                <span class="tab">Étapes</span>
+                <span class="tab on">Graphe</span>
+                <span class="tab">Déclencheurs</span>
+              </div>
+              <div class="graphwrap">
+                <svg viewBox="0 0 300 150" role="img" aria-label="Graphe du workflow verifier">
+                  <path class="gedge" d="M52,30 H108" marker-end="url(#a)"/>
+                  <path class="gedge" d="M152,30 H208" marker-end="url(#a)"/>
+                  <path class="gedge" d="M130,44 V96 H130" marker-end="url(#a)"/>
+                  <path class="gedge back" d="M108,110 C70,110 70,44 108,40" marker-end="url(#ab)"/>
+                  <path class="gedge" d="M152,110 H230 V44" marker-end="url(#a)"/>
+                  <defs>
+                    <marker id="a" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" class="gmark"/></marker>
+                    <marker id="ab" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" class="gmark-b"/></marker>
+                  </defs>
+                  <g class="gnode"><rect x="8" y="16" width="44" height="28" rx="6"/><text x="30" y="34" text-anchor="middle">prep.</text></g>
+                  <g class="gnode"><rect x="108" y="16" width="44" height="28" rx="6"/><text x="130" y="34" text-anchor="middle">tester</text></g>
+                  <g class="gnode"><rect x="208" y="16" width="52" height="28" rx="6"/><text x="234" y="34" text-anchor="middle">rapport</text></g>
+                  <g class="gnode"><rect x="100" y="96" width="60" height="28" rx="6"/><text x="130" y="114" text-anchor="middle">corriger</text></g>
+                </svg>
+              </div>
+              <div class="gcap">arête pleine = normale · <span style="color:var(--abort)">tiretée = retour (boucle)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- hub, onglet Déclencheurs -->
+      <div>
+        <div class="frame-label">Onglet <b>Déclencheurs</b> — quand ça part tout seul</div>
+        <div class="win">
+          <div class="titlebar"><div class="lights"><i class="r"></i><i class="y"></i><i class="g"></i></div><div class="t">verifier — Atelier</div></div>
+          <div class="body compact">
+            <div class="rail"></div>
+            <div class="surface">
+              <div class="crumb"><a>‹ Atelier</a><span class="sepc">/</span><span>verifier</span></div>
+              <div class="wtitle"><h3>verifier</h3><span class="btn-run">▶ Lancer</span></div>
+              <div class="tabs">
+                <span class="tab">Historique</span>
+                <span class="tab">Étapes</span>
+                <span class="tab">Graphe</span>
+                <span class="tab on">Déclencheurs</span>
+              </div>
+              <div class="trigs">
+                <div class="trig">
+                  <div class="ic">⏱</div>
+                  <div class="tx"><span class="tt">Planifié (cron)</span><span class="td"><code>0 9 * * 1-5</code> — chaque jour ouvré à 9 h</span></div>
+                  <div class="sw on"></div>
+                </div>
+                <div class="trig">
+                  <div class="ic">◎</div>
+                  <div class="tx"><span class="tt">Sur état de tâche</span><span class="td">quand une tâche passe à <code>En revue</code></span></div>
+                  <div class="sw on"></div>
+                </div>
+                <div class="trig">
+                  <div class="ic">☞</div>
+                  <div class="tx"><span class="tt">Manuel</span><span class="td">lancé à la main depuis la page</span></div>
+                  <div class="sw on"></div>
+                </div>
+                <div class="addtrig">＋ Ajouter un déclencheur</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= CE QUI EST STABLE ================= -->
+  <div class="foot">
+    <h3>Ce qui ne bouge pas d'une étape à l'autre</h3>
+    <div class="row"><span class="k">Une ligne d'historique</span><span>= un <code>RunSummary</code>. Cliquer rouvre l'écran de run existant en relecture (<code>RunViewModel.Replay</code>) — déjà construit, rien à refaire.</span></div>
+    <div class="row"><span class="k">La seule couture Core</span><span><code>ProjectHost.RunsOf(workflowId)</code>, jumeau testé de <code>LastRunPerWorkflow</code> (filtre <code>ListRuns()</code> sur le workflow). Le reste est présentation (§7.12), non testé.</span></div>
+    <div class="row"><span class="k">Les deux listes distinctes</span><span>la <b>liste des workflows</b> reste l'index au niveau projet (on <i>entre</i> dans un workflow depuis elle) ; la <b>liste des runs</b> vit <i>dans</i> la page du workflow. On ne duplique pas la première dans la seconde.</span></div>
+    <div class="row"><span class="k">Aujourd'hui vs demain</span><span>l'étape 1 construit le <b>module Historique</b> et <b>replie l'éditeur</b> dans l'onglet Étapes (reparentage de présentation, zéro Core neuf au-delà de <code>RunsOf</code>) ; le <b>graphe statique</b> et les <b>déclencheurs</b> (cible acceptée mais reportée, §7.10.6) sont la trajectoire, pas ce jalon.</span></div>
+  </div>
+
+</div>
+</div>
