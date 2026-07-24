@@ -1128,3 +1128,52 @@ gate** lui-même.
 
 **Renvoi** : `architecture.md` §4.12 (le magasin de sortie en flux) ; `trajectoire.md` (jambe 1, la dette
 encaissée) ; jalon 6a (`IStepOutputSink`, le puits ouvert avant l'étape).
+
+## D-029 — Le champ « Commande » unique : une ligne, 1er token = binaire ; `CommandLine` posé sur `ArgumentLine`
+
+**Statut** : accepté, construit. Confort d'authoring de la **jambe 1** (`trajectoire.md`) — la ferme.
+
+**Contexte.** La jambe 1 est substantiellement encaissée : streaming (`D-028`), **preuve PATH sur bundle**
+faite au réel (PATH vidé, `dotnet` nu se résout via `~/.asdf/shims`, sort 0 — la béquille `/bin/sh -c` est
+superflue), routage exit-code **vécu** (`verifier.json`, 44 runs). Restait le confort d'authoring, avec un
+motif concret : les étapes de la gate passent par `/bin/sh -c "dotnet build -warnaserror"` alors que
+l'éditeur oblige à répartir une commande sur **deux champs** (`FileName` + `Arguments`). Écrire
+`dotnet build -warnaserror` d'une seule ligne rend l'invocation directe naturelle.
+
+**Décisions.**
+1. **Un seul champ « Commande » remplace les deux.** Le 1er token est le binaire, le reste ses arguments.
+   Invocation **directe**, sans shell.
+2. **Un type Core neuf, pur et testé : `CommandLine` (`Cursus.Core.Workflows.Editing`).** Jumeau
+   d'`ArgumentLine`/`Slug`. `Parse(line) → (FileName, Arguments)` et `Format(fileName, args) → line`, tous
+   deux **posés sur `ArgumentLine`** (tokeniseur + requoteur réutilisés) : `CommandLine` n'ajoute que le
+   *rôle spécial du premier token*. Deux invariants verrouillés au Core : le **vide toléré**
+   (`Parse("  ") → ("", [])`, `Format("", []) → ""` — pas les guillemets vides qu'`ArgumentLine`
+   produirait ; brouillon permis `D-020`/`D-021`) et l'**aller-retour** `Format∘Parse = id`.
+3. **Le parse vit dans le VM éditeur, `CommandLine` est sa couture.** `UpdateScript(id, command)`
+   (au lieu de `(id, fileName, arguments)`) appelle `CommandLine.Parse` ; `FlushScripts` suit.
+   `StepEditorRow` troque `_fileName`+`_arguments` contre `_command` (patron « champ local poussé à la
+   perte de focus » de `D-024`, repris tel quel). Le noyau et le format JSON **ne changent pas** :
+   `ScriptSpec(fileName, args)` reste le stockage, `CommandLine` n'est qu'une **vue d'édition**.
+
+**Ce que ça supersède.** L'anticipation de backlog « champ Commande = zéro changement noyau » : le moteur
+reste bien intact, mais un invariant **testé** dans la sous-couche d'édition vaut mieux qu'un découpage muet
+en glu VM. (Le « noyau » au sens du moteur déterministe n'est pas touché ; seule `Editing` gagne un helper.)
+
+**Alternatives écartées.**
+- *Trois champs (garder les deux + ajouter « Commande »)* — ambiguïté sur lequel fait foi ; le champ unique
+  **remplace**.
+- *Le champ unique = mode shell (`zsh -c "toute la ligne"`)* — **décision de modèle distincte**, hors
+  périmètre. Pour une gate déterministe, l'invocation directe est l'aligné ; le shell reste exprimable via
+  `/bin/sh` en 1er token (`CommandLine` le parse : l'arg cité survit), et aura son propre toggle le jour venu.
+- *Split tête/reste en pure glu VM (zéro Core)* — les cas limites (vide, binaire cité, round-trip) sont un
+  invariant méritant le Core ; le seul bout testable de l'incrément.
+- *Réécrire le tokeniseur dans `CommandLine`* — `ArgumentLine` fait déjà le travail fin ; dupliquer le ferait
+  diverger.
+
+**Conséquences.** `CommandLine` + 12 tests (Core 266 → 278) ; câblage App **non testé** (§7.12, validé main).
+Suite **295 → 307**, 0 warning. La béquille `/bin/sh` n'est pas interdite — elle devient inutile. **Jambe 1
+close** : ses trois dettes encaissées + l'authoring naturel.
+
+**Renvoi** : `D-024` (`ArgumentLine`, le patron du champ local), `D-021`/`D-020` (le vide toléré), `D-028`
+(jambe 1, la brique précédente) ; `architecture.md` (sous-couche `Editing`, l'éditeur) ; `trajectoire.md`
+(jambe 1 close).

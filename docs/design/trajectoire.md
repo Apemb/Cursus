@@ -47,18 +47,18 @@ vivre plutôt qu'en les cochant :
 
 | Ce qu'elle encaisse | Nature |
 |---|---|
-| **Preuve PATH sur bundle** | `dotnet` résout-il quand Cursus tourne en bundle ? La gate ne démarre pas sinon — donc la preuve se fait d'elle-même. |
-| **Log en streaming intra-étape** ✅ | ~~Une suite de tests, c'est de la sortie longue : on veut la voir défiler, pas au flush de clôture.~~ **Encaissée** (`D-028`) : le puits flush par écriture, le suiveur voit la sortie en direct. |
-| **Routage exit-code vécu** | Le cœur du noyau, enfin éprouvé par l'usage réel et non par le seul test. |
+| **Preuve PATH sur bundle** ✅ | **Encaissée** (jambe 1) : `ProcessRunner` lançant `dotnet` **nu** sous un `PATH` **vidé** le résout (via `~/.asdf/shims`) et sort 0 — preuve plus dure que le bundle. Béquille `/bin/sh -c` superflue. Ne reste que le double-clic de confirmation sur le `.app`. |
+| **Log en streaming intra-étape** ✅ | **Encaissée** (`D-028`) : le puits flush par écriture, le suiveur voit la sortie en direct. |
+| **Routage exit-code vécu** ✅ | **Vécu** : la gate `verifier.json` (compiler --succès--> tester) a 44 runs au compteur — le cœur du noyau éprouvé par l'usage, pas par le seul test. |
 
-**Confort d'authoring (optionnel, même jambe) :** le champ **« Commande » unique**
-(1er token = binaire, via `ArgumentLine`, zéro changement noyau) rend l'écriture de
-`dotnet build -warnaserror` naturelle. À faire si l'authoring de la gate le réclame.
+**Confort d'authoring ✅ :** le champ **« Commande » unique** (1er token = binaire, via `CommandLine`
+posé sur `ArgumentLine`, `D-029`) rend l'écriture de `dotnet build -warnaserror` naturelle — et rend la
+béquille `/bin/sh -c` inutile à la source. **Fait.**
 
-**Pré-requis noyau :** aucun. Tout existe (parcours, routage, écran de run, PathStrategy).
+**Pré-requis noyau :** aucun. Tout existait (parcours, routage, écran de run, PathStrategy).
 
-**Statut :** en cours — 1re brique posée (**log streaming**, `D-028`). Restent : preuve PATH sur bundle
-(manuelle), routage exit-code vécu, et l'authoring du workflow de gate.
+**Statut :** ✅ **close.** Les trois dettes encaissées + l'authoring naturel. La gate build→test tourne
+contre le dépôt, log en direct, routée sur le code de sortie.
 
 ---
 
@@ -87,7 +87,7 @@ pas leur découpe ici) :
 
 | Jambe | Contenu | Pré-requis | Statut |
 |---|---|---|---|
-| **1 — Porte de gate** | Workflow build→test contre le dépôt ; PATH-bundle, ~~log streaming~~ ✅ (`D-028`), routage vécu ; (champ Commande) | aucun | **en cours** |
+| **1 — Porte de gate** | Workflow build→test contre le dépôt ; ~~PATH-bundle~~ ✅, ~~log streaming~~ ✅ (`D-028`), ~~routage vécu~~ ✅, ~~champ Commande~~ ✅ (`D-029`) | aucun | ✅ **close** |
 | **2 — Boucle agentique** | `AgentStep` (D-012) · déclencheurs état-tâche · intégration Linear | jambe 1 | à venir |
 
 ## Plus loin — directions voulues, pas encore ordonnées

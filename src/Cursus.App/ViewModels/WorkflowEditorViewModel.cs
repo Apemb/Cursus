@@ -143,27 +143,32 @@ public partial class WorkflowEditorViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Descend les champs de script d'une ligne dans le brouillon — appelé dès qu'un
-    /// champ change (perte de focus). <b>Pas de re-projection</b> : re-projeter
-    /// recréerait la ligne en cours d'édition et lui volerait le focus ; poser le
-    /// script sur le brouillon suffit, il n'entre dans aucune règle de validation.
-    /// Garde contre une ligne qui survivrait brièvement à la suppression de son
-    /// étape (le binding ne doit alors plus rien poser).
+    /// Descend la commande d'une ligne dans le brouillon — appelé dès que le champ
+    /// change (perte de focus). Le champ unique porte binaire + arguments ; c'est
+    /// <see cref="CommandLine"/> qui les sépare (1er token = binaire). <b>Pas de
+    /// re-projection</b> : re-projeter recréerait la ligne en cours d'édition et lui
+    /// volerait le focus ; poser le script sur le brouillon suffit, il n'entre dans
+    /// aucune règle de validation. Garde contre une ligne qui survivrait brièvement à
+    /// la suppression de son étape (le binding ne doit alors plus rien poser).
     /// </summary>
-    public void UpdateScript(string id, string fileName, string arguments)
+    public void UpdateScript(string id, string command)
     {
         if (!StepIds.Contains(id))
             return;
 
-        _draft.SetScript(id, new ScriptSpec(fileName, ArgumentLine.Parse(arguments)));
+        var (fileName, arguments) = CommandLine.Parse(command);
+        _draft.SetScript(id, new ScriptSpec(fileName, arguments));
         SavedNotice = null;
     }
 
-    /// <summary>Rapatrie les scripts de toutes les lignes dans le brouillon (filet d'enregistrement).</summary>
+    /// <summary>Rapatrie les commandes de toutes les lignes dans le brouillon (filet d'enregistrement).</summary>
     private void FlushScripts()
     {
         foreach (var step in Steps)
-            _draft.SetScript(step.Id, new ScriptSpec(step.FileName, ArgumentLine.Parse(step.Arguments)));
+        {
+            var (fileName, arguments) = CommandLine.Parse(step.Command);
+            _draft.SetScript(step.Id, new ScriptSpec(fileName, arguments));
+        }
     }
 
     /// <summary>Trace une arête gardée depuis une étape ; cible permise même absente (le validateur signale).</summary>

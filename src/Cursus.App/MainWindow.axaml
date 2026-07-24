@@ -440,15 +440,11 @@
                                                                                     Command="{Binding RemoveCommand}" />
                                                                         </Grid>
 
-                                                                        <!-- Le script : les champs descendent seuls dans le brouillon (perte de focus) -->
-                                                                        <Grid ColumnDefinitions="*,180">
-                                                                            <TextBox Text="{Binding FileName, Mode=TwoWay}"
-                                                                                     PlaceholderText="chemin de l'exécutable"
-                                                                                     Margin="0,0,6,0" />
-                                                                            <TextBox Grid.Column="1"
-                                                                                     Text="{Binding Arguments, Mode=TwoWay}"
-                                                                                     PlaceholderText="arguments (séparés par des espaces)" />
-                                                                        </Grid>
+                                                                        <!-- La commande : une ligne, 1er token = binaire (CommandLine).
+                                                                             Descend seule dans le brouillon à la perte de focus. -->
+                                                                        <TextBox Text="{Binding Command, Mode=TwoWay}"
+                                                                                 PlaceholderText="commande (ex. dotnet build -warnaserror)"
+                                                                                 FontFamily="Menlo, Cascadia Code, Consolas, monospace" />
 
                                                                         <!-- Les arêtes sortantes -->
                                                                         <ItemsControl ItemsSource="{Binding Edges}">

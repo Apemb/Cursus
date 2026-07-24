@@ -11,12 +11,14 @@ using Cursus.Core.Workflows.Editing;
 namespace Cursus.App.ViewModels;
 
 /// <summary>
-/// Une étape telle que l'éditeur la montre : son titre, son id, les champs de son
-/// script, et ses arêtes sortantes. Les champs de script sont <b>locaux</b> —
-/// édités librement, poussés au brouillon par « Appliquer » — pour qu'une frappe
-/// ne déclenche pas une re-projection qui recréerait la ligne en pleine saisie.
-/// Les gestes délèguent au <see cref="WorkflowEditorViewModel"/> parent, seul à
-/// tenir le brouillon. Non testé, comme toute la vue (§7.12).
+/// Une étape telle que l'éditeur la montre : son titre, son id, sa <b>commande</b>,
+/// et ses arêtes sortantes. La commande est un champ <b>local</b> — édité librement,
+/// poussé au brouillon à la perte de focus — pour qu'une frappe ne déclenche pas une
+/// re-projection qui recréerait la ligne en pleine saisie. Une seule ligne porte le
+/// binaire et ses arguments (1er token = binaire, via <see cref="CommandLine"/>) au
+/// lieu de deux champs séparés. Les gestes délèguent au
+/// <see cref="WorkflowEditorViewModel"/> parent, seul à tenir le brouillon. Non testé,
+/// comme toute la vue (§7.12).
 /// </summary>
 public partial class StepEditorRow : ObservableObject
 {
@@ -27,8 +29,7 @@ public partial class StepEditorRow : ObservableObject
         _editor = editor;
         Id = step.Id;
         Name = step.Name;
-        _fileName = step.Script.FileName;
-        _arguments = ArgumentLine.Format(step.Script.Arguments);
+        _command = CommandLine.Format(step.Script.FileName, step.Script.Arguments);
         TargetChoices = stepIds;
         _newEdgeTarget = stepIds.Count > 0 ? stepIds[0] : "";
         Edges = new ObservableCollection<EdgeEditorRow>(
@@ -51,13 +52,9 @@ public partial class StepEditorRow : ObservableObject
     /// <summary>Les cibles proposées : les identifiants d'étapes du graphe au moment de la projection.</summary>
     public IReadOnlyList<string> TargetChoices { get; }
 
-    /// <summary>Le chemin de l'exécutable ; descend dans le brouillon dès la perte de focus.</summary>
+    /// <summary>La commande : binaire suivi de ses arguments, en une ligne. Descend dans le brouillon dès la perte de focus.</summary>
     [ObservableProperty]
-    private string _fileName;
-
-    /// <summary>Les arguments (chaîne découpée aux espaces) ; descendent dans le brouillon dès la perte de focus.</summary>
-    [ObservableProperty]
-    private string _arguments;
+    private string _command;
 
     /// <summary>La garde choisie pour la prochaine arête à tracer.</summary>
     [ObservableProperty]
@@ -67,12 +64,10 @@ public partial class StepEditorRow : ObservableObject
     [ObservableProperty]
     private string _newEdgeTarget;
 
-    // Dès qu'un champ de script change (perte de focus du TextBox), il descend dans
-    // le brouillon — plus de bouton « Appliquer » à ne pas oublier. Pas de
-    // re-projection côté éditeur, donc la ligne garde son focus.
-    partial void OnFileNameChanged(string value) => _editor.UpdateScript(Id, FileName, Arguments);
-
-    partial void OnArgumentsChanged(string value) => _editor.UpdateScript(Id, FileName, Arguments);
+    // Dès que la commande change (perte de focus du TextBox), elle descend dans le
+    // brouillon — plus de bouton « Appliquer » à ne pas oublier. Pas de re-projection
+    // côté éditeur, donc la ligne garde son focus.
+    partial void OnCommandChanged(string value) => _editor.UpdateScript(Id, Command);
 
     /// <summary>Supprime cette étape du graphe.</summary>
     [RelayCommand]
