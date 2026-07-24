@@ -21,7 +21,8 @@ public class AgentStepExecutorTests
         using var stderr = new MemoryStream();
 
         // act
-        var result = await executor.ExecuteAsync(step, "/tmp/run", stdout, stderr, CancellationToken.None);
+        var result = await executor.ExecuteAsync(
+            step, new StepExecutionContext("/tmp/run"), stdout, stderr, CancellationToken.None);
 
         // assert
         var spec = Assert.Single(runner.Executed);

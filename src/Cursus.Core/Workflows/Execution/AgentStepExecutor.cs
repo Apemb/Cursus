@@ -26,7 +26,7 @@ public sealed class AgentStepExecutor : IStepExecutor
 
     public Task<ScriptResult> ExecuteAsync(
         StepDefinition step,
-        string workingDirectory,
+        StepExecutionContext context,
         Stream stdout,
         Stream stderr,
         CancellationToken cancellationToken)
@@ -35,7 +35,7 @@ public sealed class AgentStepExecutor : IStepExecutor
         var spec = new ScriptSpec(
             ClaudeBinary,
             ["--model", agent.ModelId, "-p", agent.Prompt],
-            WorkingDirectory: workingDirectory);
+            WorkingDirectory: context.WorkingDirectory);
         return _runner.RunAsync(spec, stdout, stderr, cancellationToken);
     }
 }

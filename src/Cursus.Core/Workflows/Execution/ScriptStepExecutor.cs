@@ -15,14 +15,14 @@ public sealed class ScriptStepExecutor : IStepExecutor
 
     public Task<ScriptResult> ExecuteAsync(
         StepDefinition step,
-        string workingDirectory,
+        StepExecutionContext context,
         Stream stdout,
         Stream stderr,
         CancellationToken cancellationToken)
     {
         // Le moteur a déjà absolutisé le cwd (§4.3) ; on le pose sur le ScriptSpec
         // juste avant le lancement — le with non destructif garde la définition intacte.
-        var script = ((ScriptStep)step).Script with { WorkingDirectory = workingDirectory };
+        var script = ((ScriptStep)step).Script with { WorkingDirectory = context.WorkingDirectory };
         return _runner.RunAsync(script, stdout, stderr, cancellationToken);
     }
 }

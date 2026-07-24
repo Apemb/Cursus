@@ -96,3 +96,53 @@ internal sealed class StubProcessRunner : IProcessRunner
         return Task.FromResult(result);
     }
 }
+
+/// <summary>
+/// Double du port tracker : enregistre les gestes reçus (déplacements, étiquettes)
+/// pour les asserter, sert une <see cref="TaskCard"/> programmée en lecture, et sait
+/// échouer sur commande — de quoi éprouver l'exécuteur sans réseau ni secret.
+/// </summary>
+internal sealed class StubTaskTracker : ITaskTracker
+{
+    /// <summary>La carte rendue par <see cref="ReadAsync"/> ; à programmer par le test qui lit.</summary>
+    public TaskCard? Card { get; init; }
+
+    /// <summary>Si posé, chaque appel lève — pour éprouver la traduction d'un échec du tracker.</summary>
+    public Exception? Fault { get; init; }
+
+    /// <summary>Les déplacements reçus, dans l'ordre : (clé, colonne cible).</summary>
+    public List<(string Key, string Column)> Moves { get; } = [];
+
+    /// <summary>Les étiquettes posées, dans l'ordre : (clé, étiquette).</summary>
+    public List<(string Key, string Label)> Labels { get; } = [];
+
+    /// <summary>Les clés effectivement lues, dans l'ordre.</summary>
+    public List<string> Reads { get; } = [];
+
+    public Task<TaskCard> ReadAsync(string key, CancellationToken cancellationToken = default)
+    {
+        if (Fault is not null)
+            throw Fault;
+
+        Reads.Add(key);
+        return Task.FromResult(Card ?? new TaskCard(key, key, "", "", []));
+    }
+
+    public Task MoveAsync(string key, string column, CancellationToken cancellationToken = default)
+    {
+        if (Fault is not null)
+            throw Fault;
+
+        Moves.Add((key, column));
+        return Task.CompletedTask;
+    }
+
+    public Task ApplyLabelAsync(string key, string label, CancellationToken cancellationToken = default)
+    {
+        if (Fault is not null)
+            throw Fault;
+
+        Labels.Add((key, label));
+        return Task.CompletedTask;
+    }
+}

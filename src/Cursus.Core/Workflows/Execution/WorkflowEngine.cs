@@ -108,10 +108,10 @@ public sealed class WorkflowEngine
                     // un répertoire absolu : le moteur est le seul à connaître le
                     // contexte, donc le seul à pouvoir traduire. Le choix de l'exécuteur
                     // se fait sur le type de l'étape — le moteur, lui, reste kind-aveugle.
-                    var workingDirectory = context.Resolve(step.WorkingSubdirectory);
+                    var stepContext = new StepExecutionContext(context.Resolve(step.WorkingSubdirectory));
                     var executor = _executors.First(e => e.CanExecute(step));
                     result = await executor
-                        .ExecuteAsync(step, workingDirectory, sink.Stdout, sink.Stderr, cancellationToken)
+                        .ExecuteAsync(step, stepContext, sink.Stdout, sink.Stderr, cancellationToken)
                         .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)

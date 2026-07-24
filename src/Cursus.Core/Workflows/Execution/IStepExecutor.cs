@@ -13,13 +13,14 @@ public interface IStepExecutor
     bool CanExecute(StepDefinition step);
 
     /// <summary>
-    /// Exécute l'étape dans le répertoire déjà résolu par le moteur (§4.3), en
+    /// Exécute l'étape dans le contexte préparé par le moteur (§4.3) — répertoire
+    /// déjà résolu, et clé de tâche du run si déclenché par une tâche — en
     /// ruisselant les sorties vers les deux flux fournis (le puits ouvert avant la
     /// visite). Rend l'issue du travail, que le moteur routera.
     /// </summary>
     Task<ScriptResult> ExecuteAsync(
         StepDefinition step,
-        string workingDirectory,
+        StepExecutionContext context,
         Stream stdout,
         Stream stderr,
         CancellationToken cancellationToken);
