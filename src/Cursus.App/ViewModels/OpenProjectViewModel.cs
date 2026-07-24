@@ -150,14 +150,32 @@ public partial class OpenProjectViewModel : ObservableObject
 
     /// <summary>
     /// L'écran du run occupant la surface, ou <c>null</c> quand la surface montre
-    /// la liste. Un seul à la fois — la liste ou le run, pas les deux.
+    /// autre chose. Un seul module à la fois — liste, run <b>ou</b> éditeur (D-016,
+    /// pas de routeur).
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsShowingRun))]
+    [NotifyPropertyChangedFor(nameof(IsShowingList))]
     private RunViewModel? _currentRun;
 
-    /// <summary>Vrai quand le run occupe la surface ; pilote le basculement liste ⇄ run.</summary>
+    /// <summary>
+    /// Le module éditeur occupant la surface, ou <c>null</c>. Sœur de
+    /// <see cref="CurrentRun"/> : troisième contenu d'un même espace, mutuellement
+    /// exclusif avec le run.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsShowingEditor))]
+    [NotifyPropertyChangedFor(nameof(IsShowingList))]
+    private WorkflowEditorViewModel? _currentEditor;
+
+    /// <summary>Vrai quand le run occupe la surface.</summary>
     public bool IsShowingRun => CurrentRun is not null;
+
+    /// <summary>Vrai quand l'éditeur occupe la surface.</summary>
+    public bool IsShowingEditor => CurrentEditor is not null;
+
+    /// <summary>Vrai quand ni run ni éditeur n'occupe la surface : c'est la liste qui s'affiche.</summary>
+    public bool IsShowingList => !IsShowingRun && !IsShowingEditor;
 
     /// <summary>Lance le workflow d'une ligne et ouvre son run vif sur la surface.</summary>
     [RelayCommand]
@@ -183,8 +201,31 @@ public partial class OpenProjectViewModel : ObservableObject
     [RelayCommand]
     private void CloseRun() => SwapRun(null);
 
+    /// <summary>
+    /// Ouvre le module éditeur sur le workflow d'une ligne. Ferme un run éventuel :
+    /// les deux modules sont mutuellement exclusifs. L'éditeur enregistre par le
+    /// catalogue et rafraîchit la liste de la surface (<see cref="RefreshWorkflows"/>)
+    /// à chaque sauvegarde — le dernier passage inclus.
+    /// </summary>
+    [RelayCommand]
+    private void OpenEditor(WorkflowRowViewModel? row)
+    {
+        if (row is null)
+            return;
+
+        CurrentRun?.Dispose();
+        CurrentRun = null;
+        CurrentEditor = WorkflowEditorViewModel.Open(row.Name, _catalog, RefreshWorkflows);
+    }
+
+    /// <summary>Referme l'éditeur et revient à la liste.</summary>
+    [RelayCommand]
+    private void CloseEditor() => CurrentEditor = null;
+
     private void SwapRun(RunViewModel? next)
     {
+        // Ouvrir un run ferme l'éditeur : un seul module occupe la surface.
+        CurrentEditor = null;
         CurrentRun?.Dispose();
         CurrentRun = next;
     }

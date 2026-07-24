@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `a5fa896` (*la règle id-fichier=slug-du-titre — D-022*). Jalon en cours : *jalon éditeur ·3b — l'UI de l'éditeur*, dont ce commit livre la **seule couture Core** : `WorkflowCatalog.CreateFromTitle(title) → id` (slug du titre, refuse la collision — jumelle de `AddStep`, `D-022`). L'UI éditeur elle-même (module sœur de run dans la surface projet, non testée §7.12) suit aux commits suivants. Dernier jalon de code Core **antérieur** : *·3a — la surface de **construction** de `WorkflowDraft`* (§4.20, `D-021`). Suite de tests : **274 verts** (246 Core + 28 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour du commit `db31d02` (*le module éditeur — D-023*). Dernier jalon de code : *jalon éditeur ·3b — l'UI de l'éditeur* (§4.21) — cinquième pierre de l'arc **authoring**, la première à toucher l'UI. La surface projet gagne un **troisième module** (liste ⇄ run ⇄ **éditeur**, sans routeur, `D-016`) : créer un workflow depuis un titre (`CreateFromTitle`, seule couture Core testée, `D-022`), le renommer/supprimer, et un module d'édition du graphe (ajouter étapes et arêtes, poser l'entrée, régler un script, valider en direct, enregistrer) adossé au brouillon `WorkflowDraft` (`D-023`). UI non testée (§7.12), validée à la main ; sa couture Core l'est. Suite de tests : **274 verts** (246 Core + 28 Persistence), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -41,9 +41,9 @@
 | Moitié | Emplacement | État |
 |---|---|---|
 | Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 8 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **deux projections sœurs** (`Projection/`, event-fed) : `RunProjection` plie le flux en trajectoire + statut + contrôle 3 positions (6c·3c), `GraphProjection` le plie en overlay de graphe qui montre le **non-parcouru** (vue graphe) ; à côté, `GraphLayout` en dispose la structure sur une grille par couches (calcul **pur**, statique, arêtes-retour comprises) ; et une **surface d'édition mutable** (`Editing/`) qui **construit** un graphe depuis rien autant qu'elle le **remanie**, en tenant l'unicité d'id (§4.19–4.20). **178 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
-| Projet & catalogue | `src/Cursus.Core/Projects/` (11 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert : lire le passé, **lancer** (6c·3b), **relire les événements** d'un run (`ReadEvents`, 6c·3c). **51 tests.** Voir §4.11, §4.14, §4.16, §4.17. |
+| Projet & catalogue | `src/Cursus.Core/Projects/` (11 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert : lire le passé, **lancer** (6c·3b), **relire les événements** d'un run (`ReadEvents`, 6c·3c) ; le catalogue sait aussi **créer depuis un titre** (`CreateFromTitle`, ·3b). **54 tests.** Voir §4.11, §4.14, §4.16, §4.17, §4.21. |
 | Persistance | `src/Cursus.Persistence/` | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque avec **suiveur de tail** (6c·3c), et le préréglage SQLite de `ProjectHost`. **28 tests.** Un run survit au process ; le flux live d'un run et sa relecture donnent la **même** projection (preuve end-to-end, 6c·3c). |
-| Écran de run & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et l'**écran de run** (6c·3c) : cliquer un workflow le lance et déroule sa trajectoire, le log de la visite sélectionnée se suit en direct, un contrôle à trois positions l'arrête ; un run passé se rouvre en relecture. Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
+| Surface projet (run · éditeur) & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et la **surface d'un projet** à trois modules sans routeur (liste ⇄ run ⇄ éditeur, `D-016`) : l'**écran de run** (6c·3c) — cliquer un workflow le lance, sa trajectoire se déroule, le log de la visite se suit en direct, un contrôle à trois positions l'arrête, un run passé se rouvre en relecture ; l'**éditeur** (·3b) — créer un workflow depuis un titre, le renommer/supprimer, y ajouter étapes et arêtes gardées, poser l'entrée, régler un script, valider en direct, enregistrer. Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
 
 Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2). Depuis 6c·3a, **`Cursus.App` référence `Cursus.Persistence`** ; depuis 6c·3c la jonction UI est **close** (§9.4) : l'app lit le passé d'un projet, **lance** ses workflows, **suit** le flux d'un run en direct, **tail** le log de ses visites, et en montre le **graphe** — vue sœur brute du non-parcouru (§4.18).
 
@@ -795,9 +795,10 @@ Troisième pierre de l'arc **authoring**. `D-019` (·2a) avait donné au catalog
   **n'est pas** le retour d'`Open` : sérialiseur et catalogue restent ignorants du modèle d'édition, c'est
   l'appelant (·3) qui fera `new WorkflowDraft(parsed.Definition)`.
 
-La surface de *construction* est arrivée en ·3a (§4.20). **Reste à ·3b** : l'UI de l'éditeur (VM + XAML,
-non testé §7.12) — câbler catalogue + brouillon à des ViewModels, composer slug-de-titre → `catalog.Create`,
-décider si éditer un libellé re-slugifie l'id. Puis le volet **projet** (créer/renommer), plan distinct.
+La surface de *construction* est arrivée en ·3a (§4.20) ; l'UI qui la câble — le module éditeur — est
+arrivée en ·3b (§4.21, `D-023` : catalogue + brouillon reliés à des ViewModels, slug-de-titre promu en
+Core `CreateFromTitle`). **Reste** le volet **projet** (créer/renommer), dernière pierre de l'arc, plan
+distinct.
 
 ### 4.20 Construire un workflow : la surface de construction du brouillon — CONSTRUIT (jalon éditeur ·3a)
 
@@ -826,8 +827,41 @@ testable, sans une ligne d'UI.
   est assumée : `AddStep` dérive l'id (l'ajuster est sans surprise), `RenameStep` le choisit délibérément.
   Ids **humains** (slug, pas opaques) parce que la définition est *reviewable en Git*.
 
-**Reste à ·3b** : l'UI (voir la fin de §4.19). Le repli d'un slug vide, l'édition de
+**Suite en ·3b** (§4.21) : l'UI qui câble tout ceci. Le repli d'un slug vide, l'édition de
 `Description`/`MaxVisits` et le signalement d'un `FileName` vide restent hors sujet (`D-021`).
+
+### 4.21 L'éditeur : un troisième module de la surface projet — CONSTRUIT (jalon éditeur ·3b)
+
+Cinquième pierre de l'arc **authoring**, et la première à toucher l'UI. Tout le Core d'édition existait
+(catalogue en écriture `D-019`, porte sœur `Open` `D-020`, brouillon constructeur `D-021`, `Slug`,
+validateur agrégé) ; ·3b le câble à une surface. Une **seule couture est du Core neuf, donc TDD** ; le
+reste est de la présentation, non testée (§7.12), validée à la main comme l'écran de run.
+
+- **`WorkflowCatalog.CreateFromTitle(title) → id` — la règle en Core (`D-022`).** `Slug.From` + `Create`,
+  l'id retourné. Jumelle symétrique d'`AddStep` : « l'identifiant est le slug du libellé humain »
+  s'applique au fichier d'un workflow comme au nœud d'un graphe. **Refuse** une collision (côté « refuse »
+  de l'asymétrie `D-021` : un nom de fichier est un choix délibéré), rejette le slug vide au choke `PathOf`.
+  Supersède l'anticipation « glu VM » de `D-021`.
+
+- **Le volet catalogue (App).** Le catalogue rejoint `ProjectWorkspace` — le bundle « ce dont l'écran d'un
+  projet a besoin », monté par la racine App, délibérément **hors du host**. `OpenProjectViewModel` gagne
+  créer (depuis un titre → `CreateFromTitle`), renommer (inline, le titre re-slugifié en id), supprimer ;
+  sa liste `Workflows` devient une `ObservableCollection` que `RefreshWorkflows` reconstruit du disque
+  après chaque mutation.
+
+- **Le module éditeur (App, `D-023`).** `WorkflowEditorViewModel` est un adaptateur mince sur un
+  `WorkflowDraft` : monté par la fabrique `Open(id, catalog, onSaved)` (sœur de `RunViewModel.StartLive`),
+  il **re-projette** le brouillon en `StepEditorRow`/`EdgeEditorRow` après chaque mutation structurelle et
+  **valide en direct** (`WorkflowValidator.Validate(draft.ToDefinition())`). C'est le **troisième module**
+  de la surface projet — liste ⇄ run ⇄ éditeur, sans routeur (honore `D-016`) : `OpenProjectViewModel`
+  tient `CurrentEditor` sœur de `CurrentRun`, mutuellement exclusifs. Toute la logique métier reste dans le
+  brouillon ; le VM ne fait que binder et déléguer. Les champs de script sont **locaux** (poussés par
+  « Appliquer ») pour qu'une frappe ne recrée pas la ligne en cours d'édition.
+
+**Hors ·3b** : renommer une étape après création (re-slug d'id), garde `Code = n` à l'arête, réordonner,
+éditer `Description`/`MaxVisits`, la vue graphe *en édition* (l'éditeur est un formulaire, pas un canevas),
+le volet **projet** (create/rename — prochaine et dernière pierre de l'arc). Le module éditeur est non
+testé (§7.12) ; sa couture Core (`CreateFromTitle`) et le brouillon qu'il pilote le sont.
 
 ---
 

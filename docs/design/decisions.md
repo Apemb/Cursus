@@ -837,3 +837,55 @@ il se compose avec run, où le catalogue est monté — relève de `D-023`, pris
 
 **Renvoi** : `architecture.md` §4.7 (le catalogue) ; `schemas.md` §5.2 ; suite du jalon ·3b — le module
 éditeur (`D-023`).
+
+## D-023 — L'éditeur est un troisième module de la surface projet, sœur du run ; le catalogue vit dans le workspace
+
+**Contexte.** `D-022` a posé la règle Core de création. Restait à câbler *l'UI* de l'édition (jalon ·3b) :
+où vit le module, comment il se compose avec l'existant, où le catalogue est monté. Ces choix sont de la
+présentation — non testée (§7.12) — mais structurants, d'où cette entrée.
+
+**Le module éditeur est le troisième contenu d'une même surface, sans routeur.** `D-016` avait posé que
+la surface d'un projet ouvert est faite de **modules recomposables**, pas d'écrans monolithiques, et que
+run passé = run en cours = même écran. ·3b prolonge exactement ce mécanisme : `OpenProjectViewModel`
+tenait déjà `CurrentRun`/`IsShowingRun` (liste ⇄ run) ; il gagne `CurrentEditor`/`IsShowingEditor` **par
+le même patron**, plus un `IsShowingList` calculé. Les deux modules sont **mutuellement exclusifs** —
+ouvrir l'un ferme l'autre — et la liste s'affiche quand aucun n'occupe la surface. Aucun routeur, aucune
+réification de navigation : on étend le mécanisme éprouvé plutôt que d'en inventer un. *Alternative
+écartée* : un `WorkflowEditorView` séparé (fichier `.axaml`/`.axaml.cs` comme `RunView`) — inutile ici,
+le module tient dans un `DataTemplate` inline ; on le réifiera si sa complexité l'exige.
+
+**`WorkflowEditorViewModel` est un adaptateur mince sur `WorkflowDraft`.** Monté par une fabrique
+`Open(id, catalog, onSaved)` (sœur de `RunViewModel.StartLive`/`Replay` — la coquille ne construit jamais
+le brouillon, elle reçoit l'éditeur câblé). Toute la logique métier — unicité d'id tenue, validité
+tolérée, retarge/purge d'arêtes — **reste dans le brouillon** (Core, déjà TDD `D-021`) ; le VM ne fait que
+binder les gestes, **re-projeter** le brouillon en lignes après chaque mutation structurelle, et **valider
+en direct** (`WorkflowValidator.Validate`, dont le rapport agrégé a toujours été conçu « pour qu'un éditeur
+affiche tout d'un coup », §7.6). C'est la même symétrie que run : un VM d'app adossé à une capacité Core.
+
+**Le catalogue vit dans `ProjectWorkspace`, délibérément hors du host.** `ProjectHost` documente « lister et
+charger restent `WorkflowCatalog` » — le router par le host en ferait un Service Locator. Le catalogue
+rejoint donc `ProjectWorkspace`, le bundle « ce dont l'écran d'un projet a besoin, monté d'un bloc », aux
+côtés du host et du magasin d'artefacts ; c'est la racine de composition (`App.axaml.cs`, le `Project` en
+main) qui construit `new WorkflowCatalog(project)`. Un wrapper sans état, sans connexion à disposer.
+
+**Deux détails d'UI qui portent une décision.** (1) Le **renommage d'un workflow reste en glu de VM**
+(`Slug.From(titre)` + `catalog.Rename`), là où la *création* est promue en Core (`CreateFromTitle`) : la
+naissance d'un workflow est la règle qui méritait un nom et un test, un déplacement de fichier est
+mécanique — si la duplication de `Slug.From` gêne, un `RenameFromTitle` testé l'absorbera. (2) Les **champs
+de script d'une étape sont locaux**, poussés au brouillon par « Appliquer » et non à la frappe : re-projeter
+à chaque touche recréerait la ligne en cours d'édition. La validation reste « live » sur les mutations
+*structurelles* (ajout/retrait d'étape ou d'arête, choix d'entrée), qui seules changent le rapport.
+
+**Ce que ·3b ne fait PAS.** Renommer une étape après création (re-slug d'id), la garde `Code = n` à
+l'arête (elle exige une saisie numérique — les trois gardes sans paramètre suffisent au minimal),
+réordonner, éditer `Description`/`MaxVisits`, la vue graphe *en édition* (l'éditeur est un formulaire
+structuré, pas un canevas — `GraphProjection`/`GraphLayout` restent des vues de **lecture** d'un run). Le
+volet **projet** (create/rename) est la prochaine et dernière pierre de l'arc authoring, plan distinct.
+
+**Conséquences.** App seule : `WorkflowEditorViewModel`, `StepEditorRow`, `EdgeEditorRow` neufs ;
+`ProjectWorkspace` gagne `Catalog` ; `OpenProjectViewModel` gagne le volet catalogue et le 3ᵉ module ;
+`WorkflowRowViewModel` devient observable (renommage inline) ; `MainWindow.axaml` gagne le volet et le
+template éditeur. Aucun test neuf (présentation, §7.12) ; suite inchangée à **274 verts**, build 0 warning.
+
+**Renvoi** : `architecture.md` §4.21 (le module éditeur), §1.1 (la surface projet) ; `schemas.md` §5.2 ;
+prochaine pierre — le **volet projet**, fin de l'arc authoring.

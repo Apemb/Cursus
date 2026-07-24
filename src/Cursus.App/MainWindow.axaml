@@ -71,8 +71,8 @@
                     <DataTemplate x:DataType="vm:OpenProjectViewModel">
                         <Panel>
 
-                            <!-- Liste des workflows : le contenu par défaut de la surface -->
-                            <DockPanel Margin="20" IsVisible="{Binding !IsShowingRun}">
+                            <!-- Liste des workflows : le contenu par défaut de la surface (ni run, ni éditeur) -->
+                            <DockPanel Margin="20" IsVisible="{Binding IsShowingList}">
                                 <TextBlock DockPanel.Dock="Top"
                                            Text="{Binding Name}"
                                            FontSize="18" FontWeight="Bold"
@@ -120,6 +120,12 @@
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
                                                             VerticalAlignment="Center"
                                                             IsVisible="{Binding !IsEditing}">
+                                                    <Button Content="Éditer"
+                                                            Padding="10,6"
+                                                            Background="Transparent"
+                                                            Foreground="{DynamicResource TextSecondaryBrush}"
+                                                            Command="{Binding $parent[ListBox].((vm:OpenProjectViewModel)DataContext).OpenEditorCommand}"
+                                                            CommandParameter="{Binding}" />
                                                     <Button Content="Renommer"
                                                             Padding="10,6"
                                                             Background="Transparent"
@@ -172,6 +178,149 @@
                                             Command="{Binding CloseRunCommand}" />
                                 </Border>
                                 <views:RunView DataContext="{Binding CurrentRun}" />
+                            </DockPanel>
+
+                            <!-- L'éditeur : troisième module de la même surface (D-016) -->
+                            <DockPanel IsVisible="{Binding IsShowingEditor}">
+                                <Border DockPanel.Dock="Top" Padding="12,8"
+                                        BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,0,0,1">
+                                    <Button Content="‹ Retour à la liste"
+                                            Background="Transparent" BorderThickness="0"
+                                            Foreground="{DynamicResource TextSecondaryBrush}"
+                                            Command="{Binding CloseEditorCommand}" />
+                                </Border>
+                                <ContentControl Content="{Binding CurrentEditor}">
+                                    <ContentControl.ContentTemplate>
+                                        <DataTemplate x:DataType="vm:WorkflowEditorViewModel">
+                                            <ScrollViewer>
+                                                <StackPanel Margin="20" Spacing="14">
+
+                                                    <!-- En-tête : l'identifiant du workflow + enregistrer -->
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBlock Text="{Binding Id}"
+                                                                   FontSize="16" FontWeight="Bold"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                                                            <TextBlock Text="{Binding SavedNotice}"
+                                                                       VerticalAlignment="Center"
+                                                                       FontSize="11"
+                                                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                            <Button Content="Enregistrer"
+                                                                    Padding="14,6"
+                                                                    Command="{Binding SaveCommand}" />
+                                                        </StackPanel>
+                                                    </Grid>
+
+                                                    <!-- Le point d'entrée -->
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock Text="Entrée :" VerticalAlignment="Center"
+                                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                        <ComboBox ItemsSource="{Binding StepIds}"
+                                                                  SelectedItem="{Binding EntryStep, Mode=TwoWay}"
+                                                                  MinWidth="180" />
+                                                    </StackPanel>
+
+                                                    <!-- La validation en direct -->
+                                                    <TextBlock Text="{Binding Problems}"
+                                                               TextWrapping="Wrap" FontSize="12"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+
+                                                    <!-- Les étapes -->
+                                                    <ItemsControl ItemsSource="{Binding Steps}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:StepEditorRow">
+                                                                <Border BorderBrush="{DynamicResource SeparatorBrush}"
+                                                                        BorderThickness="1" CornerRadius="6"
+                                                                        Padding="12" Margin="0,0,0,10">
+                                                                    <StackPanel Spacing="8">
+
+                                                                        <Grid ColumnDefinitions="*,Auto">
+                                                                            <StackPanel>
+                                                                                <TextBlock Text="{Binding Name}"
+                                                                                           FontWeight="Bold"
+                                                                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                                                <TextBlock Text="{Binding Id}"
+                                                                                           FontSize="11"
+                                                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                            </StackPanel>
+                                                                            <Button Grid.Column="1"
+                                                                                    Content="Supprimer l'étape"
+                                                                                    Padding="10,4"
+                                                                                    Background="Transparent"
+                                                                                    Foreground="{DynamicResource TextSecondaryBrush}"
+                                                                                    Command="{Binding RemoveCommand}" />
+                                                                        </Grid>
+
+                                                                        <!-- Le script : local jusqu'à « Appliquer » -->
+                                                                        <Grid ColumnDefinitions="*,180,Auto" >
+                                                                            <TextBox Text="{Binding FileName, Mode=TwoWay}"
+                                                                                     PlaceholderText="chemin de l'exécutable"
+                                                                                     Margin="0,0,6,0" />
+                                                                            <TextBox Grid.Column="1"
+                                                                                     Text="{Binding Arguments, Mode=TwoWay}"
+                                                                                     PlaceholderText="arguments"
+                                                                                     Margin="0,0,6,0" />
+                                                                            <Button Grid.Column="2"
+                                                                                    Content="Appliquer"
+                                                                                    Padding="10,6"
+                                                                                    Command="{Binding ApplyScriptCommand}" />
+                                                                        </Grid>
+
+                                                                        <!-- Les arêtes sortantes -->
+                                                                        <ItemsControl ItemsSource="{Binding Edges}">
+                                                                            <ItemsControl.ItemTemplate>
+                                                                                <DataTemplate x:DataType="vm:EdgeEditorRow">
+                                                                                    <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                                                                        <TextBlock Text="{Binding Describe}"
+                                                                                                   VerticalAlignment="Center"
+                                                                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                                                        <Button Grid.Column="1"
+                                                                                                Content="✕"
+                                                                                                Padding="8,2"
+                                                                                                Background="Transparent"
+                                                                                                Foreground="{DynamicResource TextSecondaryBrush}"
+                                                                                                Command="{Binding RemoveCommand}" />
+                                                                                    </Grid>
+                                                                                </DataTemplate>
+                                                                            </ItemsControl.ItemTemplate>
+                                                                        </ItemsControl>
+
+                                                                        <!-- Tracer une arête : garde → cible -->
+                                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                            <ComboBox ItemsSource="{Binding GuardChoices}"
+                                                                                      SelectedItem="{Binding NewEdgeGuard, Mode=TwoWay}"
+                                                                                      MinWidth="110" />
+                                                                            <TextBlock Text="→" VerticalAlignment="Center"
+                                                                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                            <ComboBox ItemsSource="{Binding TargetChoices}"
+                                                                                      SelectedItem="{Binding NewEdgeTarget, Mode=TwoWay}"
+                                                                                      MinWidth="150" />
+                                                                            <Button Content="Ajouter l'arête"
+                                                                                    Padding="10,6"
+                                                                                    Command="{Binding AddEdgeCommand}" />
+                                                                        </StackPanel>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
+                                                    <!-- Ajouter une étape depuis son titre -->
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBox Text="{Binding NewStepTitle, Mode=TwoWay}"
+                                                                 PlaceholderText="Titre d'une nouvelle étape"
+                                                                 Width="260" />
+                                                        <Button Content="＋  Ajouter l'étape"
+                                                                Padding="12,6"
+                                                                Command="{Binding AddStepCommand}" />
+                                                    </StackPanel>
+
+                                                </StackPanel>
+                                            </ScrollViewer>
+                                        </DataTemplate>
+                                    </ContentControl.ContentTemplate>
+                                </ContentControl>
                             </DockPanel>
 
                         </Panel>
