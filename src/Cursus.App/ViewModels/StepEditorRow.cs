@@ -50,11 +50,11 @@ public partial class StepEditorRow : ObservableObject
     /// <summary>Les cibles proposées : les identifiants d'étapes du graphe au moment de la projection.</summary>
     public IReadOnlyList<string> TargetChoices { get; }
 
-    /// <summary>Le chemin de l'exécutable — local jusqu'à « Appliquer ».</summary>
+    /// <summary>Le chemin de l'exécutable ; descend dans le brouillon dès la perte de focus.</summary>
     [ObservableProperty]
     private string _fileName;
 
-    /// <summary>Les arguments, une chaîne découpée aux espaces à l'application.</summary>
+    /// <summary>Les arguments (chaîne découpée aux espaces) ; descendent dans le brouillon dès la perte de focus.</summary>
     [ObservableProperty]
     private string _arguments;
 
@@ -66,9 +66,12 @@ public partial class StepEditorRow : ObservableObject
     [ObservableProperty]
     private string _newEdgeTarget;
 
-    /// <summary>Pousse les champs de script locaux dans le brouillon.</summary>
-    [RelayCommand]
-    private void ApplyScript() => _editor.ApplyScript(Id, FileName, Arguments);
+    // Dès qu'un champ de script change (perte de focus du TextBox), il descend dans
+    // le brouillon — plus de bouton « Appliquer » à ne pas oublier. Pas de
+    // re-projection côté éditeur, donc la ligne garde son focus.
+    partial void OnFileNameChanged(string value) => _editor.UpdateScript(Id, FileName, Arguments);
+
+    partial void OnArgumentsChanged(string value) => _editor.UpdateScript(Id, FileName, Arguments);
 
     /// <summary>Supprime cette étape du graphe.</summary>
     [RelayCommand]

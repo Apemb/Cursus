@@ -252,19 +252,14 @@
                                                                                     Command="{Binding RemoveCommand}" />
                                                                         </Grid>
 
-                                                                        <!-- Le script : local jusqu'à « Appliquer » -->
-                                                                        <Grid ColumnDefinitions="*,180,Auto" >
+                                                                        <!-- Le script : les champs descendent seuls dans le brouillon (perte de focus) -->
+                                                                        <Grid ColumnDefinitions="*,180">
                                                                             <TextBox Text="{Binding FileName, Mode=TwoWay}"
                                                                                      PlaceholderText="chemin de l'exécutable"
                                                                                      Margin="0,0,6,0" />
                                                                             <TextBox Grid.Column="1"
                                                                                      Text="{Binding Arguments, Mode=TwoWay}"
-                                                                                     PlaceholderText="arguments"
-                                                                                     Margin="0,0,6,0" />
-                                                                            <Button Grid.Column="2"
-                                                                                    Content="Appliquer"
-                                                                                    Padding="10,6"
-                                                                                    Command="{Binding ApplyScriptCommand}" />
+                                                                                     PlaceholderText="arguments (séparés par des espaces)" />
                                                                         </Grid>
 
                                                                         <!-- Les arêtes sortantes -->

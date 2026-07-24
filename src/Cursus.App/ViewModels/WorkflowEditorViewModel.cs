@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -115,10 +116,17 @@ public partial class WorkflowEditorViewModel : ObservableObject
         Project();
     }
 
-    /// <summary>Enregistre le brouillon tel quel (brouillons permis, <c>D-019</c>) puis rafraîchit la liste de la surface.</summary>
+    /// <summary>
+    /// Enregistre le brouillon tel quel (brouillons permis, <c>D-019</c>) puis
+    /// rafraîchit la liste de la surface. Rapatrie d'abord les champs de script de
+    /// chaque ligne : filet contre le cas où le tout dernier champ édité n'aurait
+    /// pas encore validé son binding avant le clic (les champs descendent d'ordinaire
+    /// dans le brouillon dès la perte de focus, <see cref="UpdateScript"/>).
+    /// </summary>
     [RelayCommand]
     private void Save()
     {
+        FlushScripts();
         _catalog.Save(Id, _draft.ToDefinition());
         _onSaved();
         SavedNotice = "Workflow enregistré.";
@@ -132,18 +140,36 @@ public partial class WorkflowEditorViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Pose le script d'une étape en bloc. Pas de re-projection : les valeurs
-    /// affichées correspondent déjà à ce qu'on vient d'écrire, et re-projeter
-    /// recréerait la ligne en cours d'édition. Les arguments se découpent aux
-    /// espaces — un argument contenant une espace est hors de portée de l'éditeur
-    /// minimal (le format JSON, lui, les distingue).
+    /// Descend les champs de script d'une ligne dans le brouillon — appelé dès qu'un
+    /// champ change (perte de focus). <b>Pas de re-projection</b> : re-projeter
+    /// recréerait la ligne en cours d'édition et lui volerait le focus ; poser le
+    /// script sur le brouillon suffit, il n'entre dans aucune règle de validation.
+    /// Garde contre une ligne qui survivrait brièvement à la suppression de son
+    /// étape (le binding ne doit alors plus rien poser).
     /// </summary>
-    public void ApplyScript(string id, string fileName, string arguments)
+    public void UpdateScript(string id, string fileName, string arguments)
     {
-        var tokens = arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        _draft.SetScript(id, new ScriptSpec(fileName, tokens));
+        if (!StepIds.Contains(id))
+            return;
+
+        _draft.SetScript(id, new ScriptSpec(fileName, SplitArguments(arguments)));
         SavedNotice = null;
     }
+
+    /// <summary>Rapatrie les scripts de toutes les lignes dans le brouillon (filet d'enregistrement).</summary>
+    private void FlushScripts()
+    {
+        foreach (var step in Steps)
+            _draft.SetScript(step.Id, new ScriptSpec(step.FileName, SplitArguments(step.Arguments)));
+    }
+
+    /// <summary>
+    /// Découpe la chaîne d'arguments aux espaces. <b>Simplification assumée</b> de
+    /// l'éditeur minimal : un argument contenant une espace est hors de portée (le
+    /// format JSON, lui, les distingue déjà token par token).
+    /// </summary>
+    private static IReadOnlyList<string> SplitArguments(string arguments) =>
+        arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     /// <summary>Trace une arête gardée depuis une étape ; cible permise même absente (le validateur signale).</summary>
     public void AddEdge(string fromId, string guardLabel, string target)
@@ -169,27 +195,43 @@ public partial class WorkflowEditorViewModel : ObservableObject
     /// </summary>
     private void Project()
     {
-        var definition = _draft.ToDefinition();
+        // Garde de ré-entrance sur TOUTE la méthode. Vider puis regarnir StepIds fait
+        // transiter le ComboBox d'entrée par une sélection nulle : lié en TwoWay, il
+        // réécrit alors EntryStep="" et rappellerait OnEntryStepChanged → Project() en
+        // pleine reconstruction des collections (crash « Collection was modified »).
+        // Le drapeau neutralise cet aller-retour ; on le repose en finally.
+        if (_projecting)
+            return;
 
         _projecting = true;
-        EntryStep = definition.EntryStep;
-        _projecting = false;
+        try
+        {
+            var definition = _draft.ToDefinition();
+            var ids = definition.Steps.Select(step => step.Id).ToList();
 
-        var ids = definition.Steps.Select(step => step.Id).ToList();
-        StepIds.Clear();
-        foreach (var id in ids)
-            StepIds.Add(id);
+            StepIds.Clear();
+            foreach (var id in ids)
+                StepIds.Add(id);
 
-        Steps.Clear();
-        foreach (var step in definition.Steps)
-            Steps.Add(new StepEditorRow(this, step, ids));
+            // Après avoir regarni les choix : l'entrée retrouve son item dans la liste
+            // (sinon le ComboBox, item disparu le temps du Clear, resterait sur nul).
+            EntryStep = definition.EntryStep;
 
-        var report = WorkflowValidator.Validate(definition);
-        IsValid = report.IsValid;
-        Problems = report.IsValid
-            ? "Graphe valide, prêt à lancer."
-            : string.Join("\n", report.Issues.Select(issue => "• " + issue.Message));
-        SavedNotice = null;
+            Steps.Clear();
+            foreach (var step in definition.Steps)
+                Steps.Add(new StepEditorRow(this, step, ids));
+
+            var report = WorkflowValidator.Validate(definition);
+            IsValid = report.IsValid;
+            Problems = report.IsValid
+                ? "Graphe valide, prêt à lancer."
+                : string.Join("\n", report.Issues.Select(issue => "• " + issue.Message));
+            SavedNotice = null;
+        }
+        finally
+        {
+            _projecting = false;
+        }
     }
 
     /// <summary>Traduit un libellé de garde de l'UI en fabrique <see cref="Guard"/> ; défaut prudent : succès.</summary>
