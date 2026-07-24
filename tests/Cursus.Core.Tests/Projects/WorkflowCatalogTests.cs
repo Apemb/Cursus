@@ -188,6 +188,48 @@ public class WorkflowCatalogTests : IDisposable
         Assert.True(catalog.Load("deployer").Report.IsValid);
     }
 
+    [Fact(DisplayName = "étant donné un catalogue vide, quand on crée un workflow depuis un titre humain, alors un fichier au slug du titre naît et l'identifiant est retourné")]
+    public void Creating_from_a_title_slugifies_it_into_the_file_identifier()
+    {
+        // arrange
+        var project = ProjectStore.Create(_root, "Démo");
+        var catalog = new WorkflowCatalog(project);
+
+        // act — le titre porte espaces, casse et esperluette : le slug les résout
+        var id = catalog.CreateFromTitle("Build & Deploy");
+
+        // assert — l'id retourné désigne le fichier créé, que la VM référence aussitôt
+        Assert.Equal("build-deploy", id);
+        Assert.Equal("build-deploy", Assert.Single(catalog.List()).Id);
+    }
+
+    [Fact(DisplayName = "étant donné un workflow dont l'identifiant est déjà pris, quand on crée depuis un titre qui slugifie pareil, alors le catalogue refuse")]
+    public void Creating_from_a_title_that_collides_is_refused()
+    {
+        // arrange — « build » existe déjà ; le titre « Build » slugifie sur le même id
+        var project = ProjectStore.Create(_root, "Démo");
+        Deposit(project, "build", AnyDocument);
+        var catalog = new WorkflowCatalog(project);
+
+        // act — pas de désambiguïsation : un nom de fichier est un choix délibéré (cf. D-021)
+        var refusal = Assert.Throws<WorkflowAlreadyExistsException>(() => catalog.CreateFromTitle("Build"));
+
+        // assert — le fichier existant n'a pas été touché
+        Assert.Equal("build", refusal.Id);
+        Assert.True(catalog.Load("build").Report.IsValid);
+    }
+
+    [Fact(DisplayName = "étant donné un titre sans aucun caractère retenu, quand on crée, alors le catalogue refuse le slug vide")]
+    public void Creating_from_a_title_that_slugifies_to_nothing_is_refused()
+    {
+        // arrange
+        var project = ProjectStore.Create(_root, "Démo");
+        var catalog = new WorkflowCatalog(project);
+
+        // act / assert — « #!/ » ne retient aucun caractère : le slug vide ne désigne aucun fichier
+        Assert.Throws<InvalidWorkflowIdException>(() => catalog.CreateFromTitle("#!/"));
+    }
+
     [Fact(DisplayName = "étant donné une définition valide, quand on la sauvegarde puis qu'on la recharge, alors on retrouve la définition")]
     public void A_saved_definition_survives_a_round_trip_through_disk()
     {

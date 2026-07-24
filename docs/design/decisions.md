@@ -801,3 +801,39 @@ Aucun autre type touché (records du domaine réutilisés tels quels). `SlugTest
 
 **Renvoi** : `architecture.md` §4.2 (le sérialiseur, les deux portes), §4.7 (le catalogue), §4.x (la
 sous-couche `Editing`) ; `schemas.md` §5.2 ; prochaine pierre — ·3 : l'éditeur (UI) et le projet.
+
+## D-022 — L'id de fichier d'un workflow est le slug de son titre : une règle nommée en Core, qui refuse la collision
+
+**Contexte.** L'arc authoring a désormais tout le Core pour créer/remanier un graphe ; il faut le câbler à
+une UI (jalon ·3b). La toute première action de l'éditeur — *créer un workflow* — pose une question :
+d'où vient l'id de son fichier ? `catalog.Create(id)` prend un id déjà formé ; l'utilisateur, lui, tape un
+**titre**. `D-021` avait *anticipé* que la composition « slug-de-titre → `Create` » vivrait en glu VM (non
+testée, §7.12).
+
+**Décision — la composition devient une méthode Core testable, `WorkflowCatalog.CreateFromTitle(title) → id`.**
+`Slug.From(title)` puis `Create(id)`, l'id **retourné** pour que l'appelant ouvre aussitôt l'éditeur
+dessus. C'est la **jumelle symétrique** de `WorkflowDraft.AddStep`, qui slugifie de même le titre d'une
+*étape* et retourne son id : la même règle — « l'identifiant est le slug du libellé humain » — s'applique
+au fichier d'un workflow comme au nœud d'un graphe. La sortir de la présentation lui donne un nom et trois
+tests, plutôt que de la diluer dans un ViewModel.
+
+**Refuse la collision, ne désambiguïse pas.** `CreateFromTitle` s'appuie sur le refus que `Create` porte
+déjà (`WorkflowAlreadyExistsException` via `RefuseToOverwrite`) : deux titres qui slugifient pareil ne
+produisent pas `build` puis `build-2`, le second est refusé. C'est le **côté « refuse » de l'asymétrie de
+`D-021`** (`AddStep` désambiguïse / `RenameStep` refuse) appliqué au fichier : le nom d'un fichier de
+workflow est un **choix délibéré** de l'utilisateur (comme un rename d'étape), pas un id dérivé en masse
+(comme un ajout d'étape). Un titre qui ne retient aucun caractère (`"#!/"`) slugifie en chaîne vide et
+tombe sur l'`InvalidWorkflowIdException` du choke `PathOf` (`D-019`) — aucune garde neuve.
+
+**Ceci supersède l'anticipation « glu VM » de `D-021`.** La règle méritait un lieu et un test ; le reste de
+·3b (le ViewModel qui appelle `CreateFromTitle` et traduit son refus en message) demeure, lui, de la
+présentation non testée.
+
+**Ce que cette décision ne tranche PAS.** La structure de l'UI éditeur elle-même — où vit le module, comment
+il se compose avec run, où le catalogue est monté — relève de `D-023`, prise quand ce module est bâti.
+
+**Conséquences.** `WorkflowCatalog` gagne `CreateFromTitle` (dépend de `Slug`, déjà Core) ;
+`WorkflowCatalogTests` 21 → 24. Suite 271 → **274** (Core 243 → 246, Noyau inchangé à 178, Persistence 28).
+
+**Renvoi** : `architecture.md` §4.7 (le catalogue) ; `schemas.md` §5.2 ; suite du jalon ·3b — le module
+éditeur (`D-023`).

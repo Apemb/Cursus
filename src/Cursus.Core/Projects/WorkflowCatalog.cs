@@ -1,4 +1,5 @@
 using Cursus.Core.Workflows;
+using Cursus.Core.Workflows.Editing;
 using Cursus.Core.Workflows.Serialization;
 
 namespace Cursus.Core.Projects;
@@ -51,6 +52,23 @@ public sealed class WorkflowCatalog(Project project)
     {
         RefuseToOverwrite(id);
         File.WriteAllText(PathOf(id), WorkflowSerializer.Write(new WorkflowDefinition("", [])));
+    }
+
+    /// <summary>
+    /// Fait naître un workflow à partir de son <b>titre humain</b> : l'id du fichier
+    /// en est le slug, et il est <b>retourné</b> pour que l'appelant ouvre aussitôt
+    /// l'éditeur dessus. Jumelle symétrique de <see cref="WorkflowDraft.AddStep"/>,
+    /// qui slugifie de même le titre d'une <em>étape</em> — sauf qu'ici on
+    /// <b>refuse</b> une collision (via <see cref="Create"/>) au lieu de
+    /// désambiguïser : le nom d'un fichier de workflow est un choix délibéré, pas un
+    /// id dérivé en masse. Un titre qui slugifie en chaîne vide lève
+    /// l'<see cref="InvalidWorkflowIdException"/> du choke <see cref="PathOf"/>.
+    /// </summary>
+    public string CreateFromTitle(string title)
+    {
+        var id = Slug.From(title);
+        Create(id);
+        return id;
     }
 
     /// <summary>
