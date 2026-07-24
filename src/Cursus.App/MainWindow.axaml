@@ -306,6 +306,80 @@
                                                     <ContentControl Content="{Binding Editor}" IsVisible="{Binding IsSteps}">
                                                         <ContentControl.ContentTemplate>
                                                             <DataTemplate x:DataType="vm:WorkflowEditorViewModel">
+                                                                <DockPanel>
+
+                                                    <!-- Le graphe de définition, coiffant l'éditeur : seconde vue des
+                                                         étapes (la silhouette), au-dessus de la liste qu'on édite. Borné
+                                                         et défilant seul (il ne pousse pas la liste) ; replié quand le
+                                                         workflow est vide. Patron Canvas emprunté à l'overlay de run :
+                                                         connecteurs derrière (géométrie absolue), nœuds devant (placés en
+                                                         Canvas.Left/Top). Nœuds nus — ni glyphe ni statut : c'est la forme,
+                                                         pas un run. -->
+                                                    <Border DockPanel.Dock="Top" Padding="14,10"
+                                                            IsVisible="{Binding Graph.HasNodes}"
+                                                            BorderBrush="{DynamicResource SeparatorBrush}"
+                                                            BorderThickness="0,0,0,1">
+                                                        <ScrollViewer MaxHeight="220"
+                                                                      HorizontalScrollBarVisibility="Auto"
+                                                                      VerticalScrollBarVisibility="Auto">
+                                                            <Panel Width="{Binding Graph.CanvasWidth}"
+                                                                   Height="{Binding Graph.CanvasHeight}"
+                                                                   HorizontalAlignment="Left" VerticalAlignment="Top">
+
+                                                                <ItemsControl ItemsSource="{Binding Graph.Connectors}">
+                                                                    <ItemsControl.ItemsPanel>
+                                                                        <ItemsPanelTemplate>
+                                                                            <Canvas />
+                                                                        </ItemsPanelTemplate>
+                                                                    </ItemsControl.ItemsPanel>
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate x:DataType="vm:GraphConnectorRow">
+                                                                            <Canvas>
+                                                                                <Path Data="{Binding Geometry}"
+                                                                                      Stroke="{Binding Stroke}"
+                                                                                      StrokeThickness="{Binding Thickness}"
+                                                                                      StrokeDashArray="{Binding Dashes}" />
+                                                                                <Path Data="{Binding Arrow}"
+                                                                                      Fill="{Binding Stroke}" />
+                                                                            </Canvas>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
+
+                                                                <ItemsControl ItemsSource="{Binding Graph.Nodes}">
+                                                                    <ItemsControl.ItemsPanel>
+                                                                        <ItemsPanelTemplate>
+                                                                            <Canvas />
+                                                                        </ItemsPanelTemplate>
+                                                                    </ItemsControl.ItemsPanel>
+                                                                    <ItemsControl.Styles>
+                                                                        <Style Selector="ContentPresenter" x:DataType="vm:DefinitionNodeRow">
+                                                                            <Setter Property="Canvas.Left" Value="{Binding X}" />
+                                                                            <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                                                                        </Style>
+                                                                    </ItemsControl.Styles>
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate x:DataType="vm:DefinitionNodeRow">
+                                                                            <Border Width="{Binding Width}" Height="44"
+                                                                                    Background="#FFFFFF"
+                                                                                    BorderBrush="{DynamicResource SeparatorBrush}"
+                                                                                    BorderThickness="1" CornerRadius="8"
+                                                                                    Padding="10,0"
+                                                                                    ToolTip.Tip="{Binding Label}">
+                                                                                <TextBlock Text="{Binding Label}"
+                                                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                                           FontSize="13"
+                                                                                           TextTrimming="CharacterEllipsis"
+                                                                                           VerticalAlignment="Center" />
+                                                                            </Border>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
+
+                                                            </Panel>
+                                                        </ScrollViewer>
+                                                    </Border>
+
                                                                 <ScrollViewer>
                                                 <StackPanel Margin="20" Spacing="14">
 
@@ -427,6 +501,7 @@
 
                                                 </StackPanel>
                                                                 </ScrollViewer>
+                                                                </DockPanel>
                                                             </DataTemplate>
                                                         </ContentControl.ContentTemplate>
                                                     </ContentControl>

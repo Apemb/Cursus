@@ -15,11 +15,12 @@ namespace Cursus.App.ViewModels;
 /// </summary>
 public partial class GraphConnectorRow : ObservableObject
 {
-    public GraphConnectorRow(string from, string to, Geometry geometry, bool isBackEdge)
+    public GraphConnectorRow(string from, string to, Geometry geometry, Geometry arrow, bool isBackEdge)
     {
         From = from;
         To = to;
         Geometry = geometry;
+        Arrow = arrow;
         IsBackEdge = isBackEdge;
     }
 
@@ -29,6 +30,9 @@ public partial class GraphConnectorRow : ObservableObject
 
     /// <summary>Le tracé du connecteur : segment droit pour une arête avant, arc sous les nœuds pour un retour.</summary>
     public Geometry Geometry { get; }
+
+    /// <summary>La tête de flèche à la pointe — tracé à part, rempli de <see cref="Stroke"/>, jamais tireté.</summary>
+    public Geometry Arrow { get; }
 
     /// <summary>Vrai pour une arête-retour — dessinée tiretée, distincte des arêtes qui avancent.</summary>
     public bool IsBackEdge { get; }

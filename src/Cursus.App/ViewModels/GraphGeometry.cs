@@ -12,8 +12,12 @@ namespace Cursus.App.ViewModels;
 /// <summary>La boîte d'un nœud posée en pixels : son coin haut-gauche et sa largeur (la hauteur est fixe).</summary>
 public sealed record NodeBox(double X, double Y, double Width);
 
-/// <summary>Une arête posée en pixels : son tracé absolu et le fait qu'elle referme une boucle.</summary>
-public sealed record EdgePath(string From, string To, Geometry Geometry, bool IsBackEdge);
+/// <summary>
+/// Une arête posée en pixels : son <see cref="Geometry"/> (le trait) et sa <see cref="Arrow"/> (la tête
+/// de flèche pleine à la pointe, dans un tracé à part pour rester nette même quand le trait est tireté),
+/// plus le fait qu'elle referme une boucle.
+/// </summary>
+public sealed record EdgePath(string From, string To, Geometry Geometry, Geometry Arrow, bool IsBackEdge);
 
 /// <summary>
 /// La traduction de la grille abstraite de <see cref="GraphLayout"/> (colonnes, lignes) en
@@ -38,6 +42,10 @@ public sealed class GraphGeometry
     // partout — un nœud peut reboucler en cours de run sans qu'on veuille le réélargir.
     private const double LabelFontSize = 13;
     private const double NodeChrome = 10 + 16 + 7 + 20 + 10;
+
+    // Tête de flèche à la pointe d'une arête : longueur le long du trait, demi-base en travers.
+    private const double ArrowLength = 9;
+    private const double ArrowHalfWidth = 4.5;
 
     private GraphGeometry(IReadOnlyDictionary<string, NodeBox> boxes, IReadOnlyList<EdgePath> edges, double width, double height)
     {
@@ -98,6 +106,7 @@ public sealed class GraphGeometry
                 edge.From,
                 edge.To,
                 Geometry.Parse(PathFor(placements[edge.From], placements[edge.To], edge.IsBackEdge, columnX, columnWidth)),
+                Geometry.Parse(ArrowFor(placements[edge.From], placements[edge.To], edge.IsBackEdge, columnX, columnWidth)),
                 edge.IsBackEdge))
             .ToList();
 
@@ -141,5 +150,52 @@ public sealed class GraphGeometry
         var x2 = columnX[to.Column];
         var y2 = NodeY(to.Row) + NodeHeight / 2;
         return FormattableString.Invariant($"M {x1},{y1} L {x2},{y2}");
+    }
+
+    /// <summary>
+    /// La tête de flèche à la pointe d'une arête : un triangle plein posé au point d'arrivée,
+    /// orienté selon la tangente d'arrivée du trait — horizontale pour une arête avant, montante
+    /// (par le bas du nœud) pour une arête-retour, exactement là où <see cref="PathFor"/> aboutit.
+    /// </summary>
+    private static string ArrowFor(NodePlacement from, NodePlacement to, bool isBackEdge, double[] columnX, double[] columnWidth)
+    {
+        if (isBackEdge)
+        {
+            var ex = columnX[to.Column] + columnWidth[to.Column] / 2;
+            var ey = NodeY(to.Row) + NodeHeight;
+            var by1 = NodeY(from.Row) + NodeHeight;
+            var dip = Math.Max(by1, ey) + RowStride * 0.55;
+            // La tangente d'arrivée du Bézier vaut fin − dernier contrôle : (0, ey − dip), montante.
+            return ArrowHead(ex, ey, 0, ey - dip);
+        }
+
+        var x1 = columnX[from.Column] + columnWidth[from.Column];
+        var y1 = NodeY(from.Row) + NodeHeight / 2;
+        var x2 = columnX[to.Column];
+        var y2 = NodeY(to.Row) + NodeHeight / 2;
+        return ArrowHead(x2, y2, x2 - x1, y2 - y1);
+    }
+
+    /// <summary>
+    /// Un triangle plein pointant en <c>(ex, ey)</c> le long du vecteur d'arrivée <c>(vx, vy)</c> :
+    /// base reculée d'<see cref="ArrowLength"/> le long du trait, deux ailes à ±<see cref="ArrowHalfWidth"/>
+    /// en travers (perpendiculaire <c>(−dy, dx)</c>). Culture invariante — le point décimal, sinon la
+    /// virgule casse le chemin.
+    /// </summary>
+    private static string ArrowHead(double ex, double ey, double vx, double vy)
+    {
+        var length = Math.Sqrt(vx * vx + vy * vy);
+        if (length == 0)
+            return FormattableString.Invariant($"M {ex},{ey}");
+
+        var dx = vx / length;
+        var dy = vy / length;
+        var baseX = ex - dx * ArrowLength;
+        var baseY = ey - dy * ArrowLength;
+        var p1x = baseX - dy * ArrowHalfWidth;
+        var p1y = baseY + dx * ArrowHalfWidth;
+        var p2x = baseX + dy * ArrowHalfWidth;
+        var p2y = baseY - dx * ArrowHalfWidth;
+        return FormattableString.Invariant($"M {p1x},{p1y} L {ex},{ey} L {p2x},{p2y} Z");
     }
 }

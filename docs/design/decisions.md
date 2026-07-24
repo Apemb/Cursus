@@ -1034,3 +1034,59 @@ modules, sans toucher les autres — ce que `D-016` a été conçu pour rendre g
 
 **Renvoi** : `architecture.md` §4.23 (la page du workflow), §4 (`ProjectHost` + `RunsOf`), le §4.16/§7.12
 du hub de composition ; `schemas.md` (surface `liste / run / page`, si carte d'état et non delta figé).
+
+## D-027 — Le graphe de définition est le header de l'onglet Étapes, pas un onglet
+
+**Statut** : accepté, construit.
+
+**Contexte.** `D-026` a ouvert le hub du workflow et notait, parmi les facettes à venir, « un onglet
+*Graphe* (via `GraphLayout`, déjà pur sur une définition) ». En avançant sur cette facette, la discussion
+a renversé cette note : le graphe de la **définition** n'est pas un frère de l'onglet *Étapes*, c'est **une
+seconde vue des mêmes étapes**. On édite le graphe en texte dans l'éditeur ; le montrer en image à côté,
+dans un onglet séparé, le détacherait de ce qu'il représente. Deux graphes coexistent déjà et ne doivent
+pas être confondus : celui d'un **run** (event-fed, `GraphProjection`, coloré par l'état, vit dans l'écran
+de run) et celui de la **définition** (statique, `GraphLayout`, la forme seule). C'est le second dont il
+est question ici.
+
+**Décisions.**
+1. **Le graphe de définition coiffe l'éditeur (header), il n'est pas un onglet.** Formes complémentaires :
+   le DAG est large-et-court (bon bandeau), l'éditeur étroit-et-long (liste qui défile). Le header est
+   borné et défile seul (il ne pousse pas la liste) ; il se replie quand le workflow est vide. **Supersède**
+   la note de backlog « onglet Graphe statique » de `D-026`.
+2. **Un module App neuf, statique : `DefinitionGraphViewModel`.** Sœur sans-projection de
+   `RunGraphViewModel` : prend une `WorkflowDefinition`, la pose en pixels, expose `Nodes`/`Connectors`/
+   `Canvas*`/`HasNodes`. Une méthode `Show(definition)` que l'éditeur rappelle dans son `Project()` (déjà
+   exécuté après chaque mutation, calculant déjà la définition) — la silhouette suit l'édition.
+3. **La géométrie « grille → pixels » reçoit un foyer unique : `GraphGeometry`** (helper statique App).
+   Elle vivait entremêlée au statut dans `RunGraphViewModel.Rebuild` ; extraite, elle sert **les deux**
+   graphes, qui rendent alors identiquement (une boîte d'étape fait la même taille qu'on édite ou qu'on
+   exécute). C'est le foyer de la « géométrie » que `D-017` situe en App. `GraphConnectorRow` est réutilisé
+   (non-emprunté → tracé gris statique) ; il gagne une **tête de flèche** à la pointe — un triangle plein
+   dans un tracé à part (jamais tireté, rempli de la couleur du trait) qui rend la direction de l'arête
+   explicite, sur les **deux** graphes puisqu'ils partagent le connecteur. Le nœud de définition est nu
+   (`DefinitionNodeRow`, ni glyphe ni statut), `GraphNodeRow` restant réservé au run.
+4. **Les orphelines s'affichent.** En édition, une étape neuve est orpheline avant qu'on ne tire son arête ;
+   la cacher empêcherait de la câbler. Garantie **déjà tenue au Core** (`GraphLayout` place toute étape,
+   îlot compris — `GraphLayoutTests`) : l'App n'a qu'à dessiner toutes les `Placements`. `GraphGeometry`
+   **saute** en revanche une arête pendante (cible inexistante, tolérée par l'éditeur `D-021`) — pas de
+   point d'arrivée à tracer ; le validateur signale déjà la référence en texte.
+
+**Alternatives écartées.**
+- *Onglet Graphe séparé* — détacherait le graphe des étapes qu'il montre (voir contexte).
+- *Split côte-à-côte (éditeur | graphe)* — l'éditeur est large (nom + script + args + arêtes) ; le graphe
+  à sa gauche l'étrangle. Le header vertical respecte les deux ratios naturels.
+- *Dupliquer la géométrie dans le nouveau VM* — deux copies de math-pixels qui divergent ; l'extraction
+  donne un foyer unique et des rendus identiques.
+- *Réutiliser `GraphNodeRow` pour la définition* — son glyphe ○ « non visité » n'a pas de sens hors run.
+- *Clic sur un nœud → sa ligne* — reporté (demande une couture de sélection graphe↔liste ; l'overlay de
+  run ne l'a pas non plus).
+
+**Conséquences.** Incrément **entièrement présentation** (§7.12), **aucun test neuf** (la seule garantie —
+l'orpheline placée — est déjà verrouillée au Core), validé à la main comme chaque incrément UI. Compteurs
+**inchangés** (noyau 195 / Core 266 / suite 294). Le run graph est re-câblé sur `GraphGeometry` sans
+changement de comportement (re-validé à la main). L'authoring gagne sa seconde vue ; le hub garde une
+facette de moins à meubler (le graphe est absorbé, restent les déclencheurs en trajectoire).
+
+**Renvoi** : `architecture.md` (le graphe de définition, près de l'overlay de run ; `GraphGeometry` foyer
+des pixels) ; `GraphLayout`/`GraphLayoutTests` (orphelines) ; `D-017` (grille testée / pixels non testés),
+`D-026` (le hub dont ceci meuble un onglet).

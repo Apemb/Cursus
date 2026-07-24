@@ -87,7 +87,7 @@ public sealed partial class RunGraphViewModel : ObservableObject
 
         foreach (var edge in geometry.Edges)
         {
-            var connector = new GraphConnectorRow(edge.From, edge.To, edge.Geometry, edge.IsBackEdge);
+            var connector = new GraphConnectorRow(edge.From, edge.To, edge.Geometry, edge.Arrow, edge.IsBackEdge);
             _connectors[(edge.From, edge.To)] = connector;
             Connectors.Add(connector);
         }

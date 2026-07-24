@@ -89,10 +89,14 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:GraphConnectorRow">
-                                <Path Data="{Binding Geometry}"
-                                      Stroke="{Binding Stroke}"
-                                      StrokeThickness="{Binding Thickness}"
-                                      StrokeDashArray="{Binding Dashes}" />
+                                <Canvas>
+                                    <Path Data="{Binding Geometry}"
+                                          Stroke="{Binding Stroke}"
+                                          StrokeThickness="{Binding Thickness}"
+                                          StrokeDashArray="{Binding Dashes}" />
+                                    <Path Data="{Binding Arrow}"
+                                          Fill="{Binding Stroke}" />
+                                </Canvas>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

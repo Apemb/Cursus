@@ -70,6 +70,9 @@ public partial class WorkflowEditorViewModel : ObservableObject
     /// <summary>Les étapes du graphe, re-projetées du brouillon à chaque mutation structurelle.</summary>
     public ObservableCollection<StepEditorRow> Steps { get; }
 
+    /// <summary>La silhouette du graphe, coiffant l'éditeur : seconde vue des étapes, recalculée à chaque mutation.</summary>
+    public DefinitionGraphViewModel Graph { get; } = new();
+
     /// <summary>Les identifiants d'étapes, pour les listes de choix (point d'entrée, cible d'arête).</summary>
     public ObservableCollection<string> StepIds { get; }
 
@@ -212,6 +215,10 @@ public partial class WorkflowEditorViewModel : ObservableObject
             Steps.Clear();
             foreach (var step in definition.Steps)
                 Steps.Add(new StepEditorRow(this, step, ids));
+
+            // La silhouette suit la même définition que les lignes — orphelines comprises,
+            // GraphLayout les place (une étape neuve est orpheline avant qu'on ne la câble).
+            Graph.Show(definition);
 
             var report = WorkflowValidator.Validate(definition);
             IsValid = report.IsValid;

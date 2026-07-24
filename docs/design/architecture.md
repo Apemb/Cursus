@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour du commit `d4b75d2` (*la page du workflow — historique des runs, D-026*). Dernier jalon de code : *jalon page du workflow* (§4.23). Le **workflow devient un lieu** : cliquer le corps d'une ligne ouvre **sa page** — un hub à onglets (`WorkflowPageViewModel`) qui **compose** l'**Historique** de ses runs (neuf, adossé à `ProjectHost.RunsOf` — couture Core **testée**, jumelle de `LastRunPerWorkflow`) et les **Étapes** (l'éditeur existant, **replié** en onglet, reparentage sans réécriture) ; *Graphe* et *Déclencheurs* sont annoncés « à venir ». La surface échange désormais `liste / run / page` sans routeur (`D-026`, honneur de `D-016`) ; `RunRowViewModel` partage le libellé du verdict entre liste et historique. Tranche la question laissée ouverte par `D-016` (*où vit l'historique*) en faveur d'une **page dédiée**, amorce du hub. UI non testée (§7.12), validée à la main ; sa couture Core l'est. Suite de tests : **294 verts** (266 Core + 28 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour du commit `af0c98c` (*le graphe de définition en header de l'onglet Étapes, D-027*). Dernier jalon de code : *graphe de définition* (§7.12). Le graphe de la **définition** n'est pas un onglet frère, c'est la **seconde vue des étapes** : `DefinitionGraphViewModel` rend la silhouette statique d'une `WorkflowDefinition` (orphelines comprises — `GraphLayout` place toute étape) et **coiffe l'onglet Étapes** de l'éditeur, recalculée à chaque mutation (`D-027`, supersède la note « onglet Graphe statique » de `D-026`). La traduction grille→pixels est extraite dans `GraphGeometry`, **foyer partagé** avec l'overlay de run : les deux graphes rendent identiquement. Incrément **entièrement présentation** (§7.12), **aucun test neuf** — la garantie de l'orpheline est déjà verrouillée au Core (`GraphLayoutTests`) ; validé à la main. Jalon précédent : *page du workflow* (§4.23, `D-026`) — le **workflow est un lieu** (hub à onglets `WorkflowPageViewModel` : Historique adossé à `ProjectHost.RunsOf` + Étapes ; surface `liste / run / page` sans routeur). Suite de tests : **294 verts** (266 Core + 28 Persistence), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -758,10 +758,15 @@ présentation.** Sous l'écran vit un vrai cœur testable — une **projection**
   (`StartLive` sur `LaunchAsync` + `Progress` marshalé au thread UI ; `Replay` sur `ReadEvents`). Il **fanne**
   chaque événement à deux modules sœurs : `RunVisitRow` — une visite bindable (glyphe + couleur sémantique) —, et
   `RunGraphViewModel`/`GraphNodeRow`/`GraphConnectorRow` — le **module graphe**, brique adossée à sa propre
-  `GraphProjection` (statut) **et** à `GraphLayout` (disposition, `D-017`). Il traduit la grille abstraite de Core
-  en **pixels** — c'est ici que vivent les constantes de pas et le tracé des connecteurs (`GraphLayout` n'en sait
-  rien) —, positionne chaque nœud (statut colorié, `×n` d'une boucle) et bâtit les connecteurs (vert si pris, gris
-  sinon, tiretés-arqués pour une boucle). `RunView.axaml` — trajectoire déroulée, **graphe disposé en 2D sur un
+  `GraphProjection` (statut) **et** à `GraphLayout` (disposition, `D-017`). Il **délègue** la traduction de la
+  grille abstraite de Core en **pixels** à `GraphGeometry` (le foyer où vivent les constantes de pas, la mesure
+  des libellés et le tracé des connecteurs, `GraphLayout` n'en sachant rien) et n'y ajoute que le statut
+  (colorié, `×n` d'une boucle) ; il bâtit les connecteurs (vert si pris, gris sinon, tiretés-arqués pour une
+  boucle). Ce foyer est **partagé** : le **graphe de définition** (`DefinitionGraphViewModel`/`DefinitionNodeRow`,
+  `D-027`) le réutilise pour rendre la **même** grille sans statut — la silhouette statique d'une
+  `WorkflowDefinition` qui **coiffe l'onglet Étapes** de l'éditeur (seconde vue des étapes, orphelines comprises,
+  recalculée à chaque mutation) ; les deux graphes rendent donc identiquement, et `GraphConnectorRow` sert les
+  deux (non-emprunté → tracé gris statique). `RunView.axaml` — trajectoire déroulée, **graphe disposé en 2D sur un
   `Canvas`** (colonnes de profondeur, connecteurs tracés), log sur fond terminal sombre en bas (§9.5). `OpenProjectViewModel` tient deux contenus d'une même surface **sans routeur**
   (liste ⇄ run). `ProjectWorkspace` regroupe host + magasin d'artefacts, que la racine de composition (App) lie
   au préréglage — l'UI ne connaît ni SQLite ni le disque.
@@ -946,9 +951,11 @@ là — `ListRuns()` rend tous les runs, `RunViewModel.Replay` en rouvre n'impor
   venait (le workflow reste le contexte), et l'historique s'y **rafraîchit** — le passage qui vient de
   finir y figure. Lancer depuis la *liste* revient, lui, à la liste.
 
-**Hors jalon, tracé** : l'onglet **Graphe** (statique, via `GraphLayout` déjà pur sur une définition — le
-graphe n'existe pour l'instant qu'en overlay de run, §4.18) et l'onglet **Déclencheurs** (cron, état de
-tâche — cible acceptée mais reportée, §7.10.6). Le hub est **conçu pour les accueillir** : un module de
+Depuis, le **graphe de définition** est **construit** — non comme onglet frère, mais comme **header de
+l'onglet Étapes** (`D-027`) : le graphe de la définition **est** une seconde vue des étapes, il coiffe
+l'éditeur plutôt que de s'en détacher (`DefinitionGraphViewModel`, foyer `GraphGeometry` partagé avec
+l'overlay de run — voir §7.12). Reste **hors jalon, tracé** : l'onglet **Déclencheurs** (cron, état de
+tâche — cible acceptée mais reportée, §7.10.6). Le hub est **conçu pour l'accueillir** : un module de
 plus, sans toucher les autres. Validé à la main ; sa couture Core (`RunsOf`) est testée.
 
 ---
