@@ -747,5 +747,57 @@ id déjà porté (collision) est laissé au déroulé de ·3, cohérence « brou
 dans `Serialization` ; `Read` devient un rabat ; `WorkflowCatalog` gagne `Open`. `LoadResult` et tout le
 chemin de lancement **inchangés**. Suite 244 → **254** (226 Core + 28 Persistence).
 
+---
+
+## D-021 — L'unicité d'id est un invariant que le brouillon *tient* ; la validité du graphe, une propriété qu'il *tolère*
+
+**Contexte.** `D-020` a doté `WorkflowDraft` de quoi *remanier* un graphe (rename, remove) mais laissé sa
+surface de *construction* « au déroulé de ·3 » : rien pour ajouter une étape, poser l'entrée, décrire un
+script, tracer une arête. En câblant `AddStep`, une question surgit — que faire de deux étapes au même
+libellé (« Compiler » deux fois) ? `D-020` avait esquissé un penchant provisoire (« cohérence brouillons
+permis ⇒ admettre la collision, le validateur signalera `DuplicateStepId` »). En construisant, ce penchant
+se révèle **faux**.
+
+**Décision.** Deux régimes d'invariant, distingués.
+- **L'unicité d'id est *tenue* par le brouillon.** Ses propres opérations — `RemoveStep`, `RenameStep`, le
+  ciblage d'arête — travaillent **par id** ; deux étapes sous un même id les rendraient *indéfinies*
+  (supprimer l'id en enlèverait deux ; une arête vers l'id viserait laquelle ?). Ce n'est donc pas de la
+  *validité de graphe* que le brouillon peut déléguer au validateur : c'est une condition de cohérence de
+  ses propres gestes, du même ordre que la clôture référentielle de `D-020`. Concrètement : `AddStep`
+  **désambiguïse** (id slugué rendu libre par suffixe : `compiler`, `compiler-2`), `RenameStep` vers un id
+  pris **refuse** (`DuplicateStepIdException`, neuve dans `Editing`).
+- **La validité du graphe reste *tolérée*.** Entrée non posée, cible d'arête inexistante, script vide : le
+  brouillon les laisse passer, le validateur les rapporte — « brouillons permis ». D'où l'asymétrie des
+  gardes de construction : le **sujet** d'une opération doit exister (`SetScript`/`AddEdge` lèvent
+  `UnknownStepException` sur un id/`from` absent — on n'édite pas une étape fantôme), sa **référence** peut
+  pendre (`SetEntryStep` et la *cible* d'`AddEdge` acceptent un id encore à créer — exactement la ligne de
+  `D-020` : « une arête que l'utilisateur *tape* est un autre cas »).
+
+**L'asymétrie `AddStep` désambiguïse / `RenameStep` refuse — assumée.** Même invariant, traitements
+opposés, pour une raison : `AddStep` **dérive** l'id d'un titre (l'ajuster en douce est sans surprise —
+l'utilisateur n'a pas choisi cet id), tandis que `RenameStep` est un **choix d'id délibéré** (le
+désambiguïser en `build-2` trahirait ce que l'utilisateur a tapé ; mieux vaut refuser et le laisser
+choisir). Ceci **supersède** le penchant « admettre » de `D-020`.
+
+**Les ids restent humains (slug), pas opaques.** *Alternative écartée* : des ids opaques (`s1`, `s2`),
+collision-free et qui rendraient `RenameStep` presque inutile. Rejetée parce que `WorkflowDefinition` est
+*« reviewable en Git »* : `compiler` se relit en diff, `s1` non. Ce choix justifie rétroactivement la
+machinerie de retargage de `D-020` — si les ids sont dérivés de libellés éditables, les faire suivre est
+la raison d'être du brouillon. D'où **`Slug`** (helper Core pur, `label → id` : minuscules, diacritiques
+dépliés pour le français, `[a-z0-9-]` seul), réutilisé pour l'id d'étape **et** l'id de fichier de
+workflow (où le rejet des séparateurs le rend légal au regard de `PathOf`, `D-019`).
+
+**Ce que ce jalon ne fait PAS (·3b et au-delà).** Toute UI (VM d'édition, XAML, non testé §7.12) ; la
+couche qui compose slug-de-titre → `catalog.Create` et décide si éditer un libellé re-slugifie l'id ;
+l'édition de `Description`/`MaxVisits`/`WorkingSubdirectory` (purs `with` sans enjeu référentiel) ; le repli
+d'un slug **vide** (un id vide passe, le validateur signale `EmptyStepId` — cohérent avec « tolérée ») ;
+le volet projet (create/rename). Signaler un `FileName` vide comme invalide reste un trou de validation
+connu, hors sujet.
+
+**Conséquences.** `Slug` + `DuplicateStepIdException` neufs dans `Editing` ; `WorkflowDraft` gagne
+`AddStep`/`SetEntryStep`/`SetScript`/`AddEdge`/`RemoveEdge` et une garde de collision sur `RenameStep`.
+Aucun autre type touché (records du domaine réutilisés tels quels). `SlugTests` (6), `WorkflowDraftTests`
+7 → 18. Suite 254 → **271** (Noyau 161 → 178, Core 243, Persistence 28).
+
 **Renvoi** : `architecture.md` §4.2 (le sérialiseur, les deux portes), §4.7 (le catalogue), §4.x (la
 sous-couche `Editing`) ; `schemas.md` §5.2 ; prochaine pierre — ·3 : l'éditeur (UI) et le projet.
