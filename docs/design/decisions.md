@@ -1308,3 +1308,67 @@ binaire `claude` (dogfood), les références inter-étapes (2·3), la session PT
 `CLAUDE.md` (convention Modélisation, désormais illustrée jusque dans la vue) ; `D-030` (le Core de
 l'agent), `D-024` (le piège « Appliquer » évité), `D-021` (`AddStep`/`Slug`, dont `AddAgentStep` est le
 jumeau).
+
+## D-032 — La couture tracker en Core : `TaskStep`, sa clé par le contexte, son geste par le stub
+
+**Contexte.** La jambe 2 (boucle agentique) réclame le 3e `StepKind`, le `TaskStep` (§7.10.4), pour que
+Cursus consomme une vraie tâche d'un tracker et referme sa carte. L'utilisateur a tranché : cible **Linear**,
+ambition **aller-retour complet** (déplacer la carte en entrée, poser l'étiquette en sortie). Cette entrée
+couvre **2·2a** : la couture posée **dans le Core**, TDD contre un tracker stub — aucun réseau, aucun secret.
+Le client Linear réel (**2·2b**) suivra dans un **projet dédié hors Core** (miroir de `Cursus.Persistence`,
+décision d'emplacement actée avec l'utilisateur), pour que la dépendance HTTP/GraphQL ne franchisse pas la
+frontière de `Workflows/`.
+
+**Ce qui est tranché.**
+
+1. **La clé de tâche atteint l'exécuteur par un `StepExecutionContext`.** `IStepExecutor.ExecuteAsync` ne
+   reçoit plus un `workingDirectory` nu mais un contexte `{ WorkingDirectory, TaskKey? }`. La tâche visée
+   n'est **pas** dans la définition (qui reste portable, §7.3) : elle vient du `RunTrigger` du run, que le
+   moteur thread désormais dans `TraverseAsync` et pose sur le contexte de chaque visite. Seul le
+   `TaskStepExecutor` lit la clé ; Script/Agent lisent `context.WorkingDirectory` (comportement inchangé,
+   cascade mécanique). C'est aussi le **foyer futur des références `${ref.output}`** (§4.9) — la sortie
+   d'une étape précédente y viendra sans nouvelle rupture de signature.
+
+2. **Un seul `TaskStep`, portant une `TaskOperation` variante-de-type.** `abstract record TaskOperation` +
+   `ReadTask` / `MoveCard(Column)` / `ApplyLabel(Label)`, chacune ne portant que sa donnée, toutes non-nulles.
+   Un seul `TaskStepExecutor` route sur le type de l'opération. La convention no-nullable de `CLAUDE.md`
+   s'applique à l'opération comme au kind.
+
+3. **`ReadTask` écrit `TASK.md` dans le worktree ; l'agent le lit par convention.** Le corps de la carte
+   descend dans le système de fichiers du run (la mémoire partagée entre étapes, §4.9), le prompt de
+   l'`AgentStep` disant « lis `TASK.md` ». Pas de machinerie `${ref.output}` pour ce premier pont — la
+   convention fichier suffit à fermer la boucle, et la décision 1 garde la porte ouverte pour plus tard.
+
+4. **Une opération sans clé, ou un tracker qui lève, échoue de façon routable — jamais une exception.**
+   Un `MoveCard` dans un run manuel (pas de `TaskKey`), un tracker injoignable : `ScriptResult` d'échec,
+   visible au journal, routable par une arête de secours, borné par `maxVisits` (§7.10.3). La **définition
+   reste valide** — l'absence de clé est un fait de run, pas de graphe (aucune issue de validation pour ça).
+   Corollaire : le moteur tient un **tracker optionnel** (ctor), défaut = null-object `UnconfiguredTaskTracker`
+   qui refuse tout geste, de sorte qu'une définition à étape-tâche reste lançable **avant que Linear existe**.
+
+**Ce que ça supersède.** Rien de tranché ; cela **construit** ce que §7.10.4 annonçait (« `TaskStep` reste
+le cobaye idéal du prochain passage »), et **avance** la note « il faudra rouvrir les références pour
+l'`AgentStep` » (§4.9) en posant leur véhicule (`StepExecutionContext`) sans encore les câbler.
+
+**Alternatives écartées.**
+- *Un 5e paramètre `string? taskKey` sur `ExecuteAsync`* — plus petit diff, mais fige la signature à *une*
+  donnée de run ; le contexte-objet accueillera les références sans nouvelle rupture d'interface.
+- *La convention fichier/env pour la clé* (le moteur l'écrit, le step la relit du disque) — hacky pour une
+  donnée que le moteur tient déjà structurée.
+- *Trois kinds séparés* (`TaskReadStep`/`TaskMoveStep`/`TaskLabelStep`) — la convention no-nullable vise les
+  variantes ; `TaskOperation` en *est* une, et §7.10.4 dit « un exécuteur de plus » (singulier).
+- *`MoveCard`/`ApplyLabel` par deux champs nullables sur `TaskStep`* — états illégaux représentables, proscrit
+  par `CLAUDE.md`.
+- *Câbler `${ref.output}` maintenant* — le construire avant d'en avoir prouvé le besoin ; reporté-non-écarté.
+
+**Conséquences.** Core **292 → 303** (+11 : exécuteur 5, moteur 1, sérialisation 3, validation 2). Suite
+**321 → 332**, 0 warning. Aucune surface : 2·2a est pure Core, l'increment utilisable arrive à 2·2b/c.
+Nouveaux types : `TaskStep`, `TaskOperation`, `ITaskTracker`, `TaskCard`, `StepExecutionContext`,
+`TaskStepExecutor` (+ le null-object `UnconfiguredTaskTracker`). Deux valeurs d'enum : `EmptyTaskMoveColumn`,
+`EmptyTaskLabel`. Le journal n'a **pas** bougé — `exit_code` n'a jamais été promu en colonne (§7.10.4), le
+payload de `StepFinished` d'une tâche s'ajoutera en branche quand 2·2b/c le réclamera.
+
+**Renvoi** : `architecture.md` §5 (le 3e kind parcouru), §7.10.4 (le `TaskStep` natif, désormais en
+construction), §4.9 (`StepExecutionContext` amorce des références) ; `trajectoire.md` §Jambe 2 ; `D-030`
+(le Core de l'agent, précédent parcours de la recette), `D-031` (l'authoring agent, dont 2·2c reprendra le
+patron de ligne polymorphe pour le `TaskStepRow`).
