@@ -127,6 +127,21 @@ public class RunArtifactStoreTests : IDisposable
         Assert.Equal("second tour", store.Read("run-1", "compiler", 2, ArtifactStream.StandardOutput));
     }
 
+    [Fact(DisplayName = "étant donné un puits ouvert sur lequel on écrit sans le clore ni le flusher, quand on suit son flux et qu'on lit, alors on obtient ce qui vient d'être écrit")]
+    public void Output_written_to_an_open_sink_streams_to_a_follower_without_an_explicit_flush()
+    {
+        // arrange — l'étape « tourne » : puits ouvert, jamais clos ni flushé à la main
+        var store = new RunArtifactStore(_root);
+        using var sink = store.Open("run-1", "compiler", 1);
+        var tail = store.Follow("run-1", "compiler", 1, ArtifactStream.StandardOutput);
+
+        // act — une écriture seule, comme la pompe du ProcessRunner (aucun Flush)
+        sink.Stdout.Write(Encoding.UTF8.GetBytes("en direct"));
+
+        // assert — le suiveur voit la sortie tout de suite, pas seulement à la clôture
+        Assert.Equal("en direct", tail.ReadMore());
+    }
+
     [Fact(DisplayName = "étant donné un artefact déjà écrit, quand on le suit et qu'on lit, alors on obtient tout son contenu")]
     public void Following_an_already_written_artifact_reads_all_its_content()
     {
@@ -152,14 +167,12 @@ public class RunArtifactStoreTests : IDisposable
         var store = new RunArtifactStore(_root);
         using var sink = store.Open("run-1", "compiler", 1);
         sink.Stdout.Write(Encoding.UTF8.GetBytes("premier "));
-        sink.Stdout.Flush();
 
         var tail = store.Follow("run-1", "compiler", 1, ArtifactStream.StandardOutput);
         Assert.Equal("premier ", tail.ReadMore());
 
         // act — la sortie grossit après la première lecture
         sink.Stdout.Write(Encoding.UTF8.GetBytes("puis second"));
-        sink.Stdout.Flush();
 
         // assert — seul l'ajout, pas tout le fichier
         Assert.Equal("puis second", tail.ReadMore());
@@ -178,7 +191,6 @@ public class RunArtifactStoreTests : IDisposable
 
         // act — le premier octet crée enfin le fichier
         sink.Stdout.Write(Encoding.UTF8.GetBytes("surgit"));
-        sink.Stdout.Flush();
 
         // assert — le suiveur rattrape ce qui vient d'apparaître
         Assert.Equal("surgit", tail.ReadMore());

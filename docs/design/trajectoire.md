@@ -48,7 +48,7 @@ vivre plutôt qu'en les cochant :
 | Ce qu'elle encaisse | Nature |
 |---|---|
 | **Preuve PATH sur bundle** | `dotnet` résout-il quand Cursus tourne en bundle ? La gate ne démarre pas sinon — donc la preuve se fait d'elle-même. |
-| **Log en streaming intra-étape** | Une suite de tests, c'est de la sortie longue : on veut la voir défiler, pas au flush de clôture. Le puits d'artefact doit streamer. |
+| **Log en streaming intra-étape** ✅ | ~~Une suite de tests, c'est de la sortie longue : on veut la voir défiler, pas au flush de clôture.~~ **Encaissée** (`D-028`) : le puits flush par écriture, le suiveur voit la sortie en direct. |
 | **Routage exit-code vécu** | Le cœur du noyau, enfin éprouvé par l'usage réel et non par le seul test. |
 
 **Confort d'authoring (optionnel, même jambe) :** le champ **« Commande » unique**
@@ -57,7 +57,8 @@ vivre plutôt qu'en les cochant :
 
 **Pré-requis noyau :** aucun. Tout existe (parcours, routage, écran de run, PathStrategy).
 
-**Statut :** à faire — prochaine jambe.
+**Statut :** en cours — 1re brique posée (**log streaming**, `D-028`). Restent : preuve PATH sur bundle
+(manuelle), routage exit-code vécu, et l'authoring du workflow de gate.
 
 ---
 
@@ -86,7 +87,7 @@ pas leur découpe ici) :
 
 | Jambe | Contenu | Pré-requis | Statut |
 |---|---|---|---|
-| **1 — Porte de gate** | Workflow build→test contre le dépôt ; PATH-bundle, log streaming, routage vécu ; (champ Commande) | aucun | **à faire** |
+| **1 — Porte de gate** | Workflow build→test contre le dépôt ; PATH-bundle, ~~log streaming~~ ✅ (`D-028`), routage vécu ; (champ Commande) | aucun | **en cours** |
 | **2 — Boucle agentique** | `AgentStep` (D-012) · déclencheurs état-tâche · intégration Linear | jambe 1 | à venir |
 
 ## Plus loin — directions voulues, pas encore ordonnées

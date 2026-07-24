@@ -1090,3 +1090,41 @@ facette de moins à meubler (le graphe est absorbé, restent les déclencheurs e
 **Renvoi** : `architecture.md` (le graphe de définition, près de l'overlay de run ; `GraphGeometry` foyer
 des pixels) ; `GraphLayout`/`GraphLayoutTests` (orphelines) ; `D-017` (grille testée / pixels non testés),
 `D-026` (le hub dont ceci meuble un onglet).
+
+## D-028 — Le puits d'artefact ruisselle sans flush de l'appelant : flush par écriture, visibilité et non durabilité
+
+**Statut** : accepté, construit. Première brique de la **jambe 1** (`trajectoire.md`).
+
+**Contexte.** La trajectoire vers la boucle de dev agentique fait passer Cursus par une **porte de gate
+déterministe** (jambe 1) : faire tourner `dotnet build` puis `dotnet test` contre son propre dépôt. Cette
+jambe encaisse trois dettes en les *vivant* ; la première est le **log en streaming intra-étape**. En
+l'attaquant, on découvre que le doc l'affirmait déjà (« la sortie ruisselle pendant qu'un script tourne »,
+jalon 6a) mais que la pratique le démentait : `LazyAppendStream.Write` déposait les octets dans le buffer
+managé du `FileStream`, que `Complete()` ne flushait qu'**à la clôture** de l'étude. Un suiveur
+(`ArtifactTail`, autre handle) lisant `file.Length` voyait donc le vide jusqu'au bout — la sortie surgissait
+d'un bloc. Les tests de tail existants **masquaient** le trou en appelant `sink.Stdout.Flush()` à la main :
+un lecteur en aurait conclu que le flush était requis. Un test rouge sans ce flush l'a démasqué.
+
+**Décision.** `LazyAppendStream` pousse son buffer managé vers le handle OS **après chaque écriture**, via
+`Flush(flushToDisk: false)`. C'est exactement ce qu'il faut pour qu'un **autre handle** (le suiveur) voie la
+sortie en la relisant : la visibilité inter-handle, pas la durabilité disque. `Complete()` garde son flush
+de clôture (désormais défensif). Les `Flush()` manuels des tests de tail sont retirés : ils spécifient à
+présent le vrai contrat — *le streaming est intrinsèque*, l'appelant n'a rien à flusher.
+
+**Alternatives écartées.**
+- *`FileOptions.WriteThrough`* — fsync à chaque écriture : durabilité disque dont on n'a aucun besoin (une
+  sortie de test n'est pas une donnée à préserver contre une coupure), au prix d'un coût d'I/O par ligne.
+  On veut voir la sortie, pas la survivre à un crash.
+- *Buffer `FileStream` à 1 octet (quasi-non-bufferisé)* — dégénéré et opaque ; un `Flush` explicite après
+  écriture **dit** son intention là où un buffer minuscule la cache dans un paramètre de constructeur.
+- *Laisser l'appelant flusher (le statu quo masqué)* — c'était le piège : la pompe du `ProcessRunner`
+  (`CopyToAsync`) ne flushe jamais, personne n'était donc placé pour le faire au bon moment.
+
+**Conséquences.** Changement d'une seule classe (`LazyAppendStream`, imbriquée dans `RunArtifactStore`),
+aucun type neuf, **brief inline** (pas de gate). +1 test Persistence (28 → 29) ; noyau 195 / Core 266
+inchangés ; suite **294 → 295**. La promesse du jalon 6a tient enfin au réel. Reste à la jambe 1 : la
+**preuve PATH sur bundle** (manuelle), le **routage exit-code vécu**, et l'**authoring du workflow de
+gate** lui-même.
+
+**Renvoi** : `architecture.md` §4.12 (le magasin de sortie en flux) ; `trajectoire.md` (jambe 1, la dette
+encaissée) ; jalon 6a (`IStepOutputSink`, le puits ouvert avant l'étape).

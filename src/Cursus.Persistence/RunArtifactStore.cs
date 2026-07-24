@@ -152,6 +152,7 @@ public sealed class RunArtifactStore : IRunOutputStore
             EnsureOpen();
             _file!.Write(buffer, offset, count);
             _written += count;
+            StreamToDisk();
         }
 
         public override void Write(ReadOnlySpan<byte> buffer)
@@ -159,7 +160,17 @@ public sealed class RunArtifactStore : IRunOutputStore
             EnsureOpen();
             _file!.Write(buffer);
             _written += buffer.Length;
+            StreamToDisk();
         }
+
+        /// <summary>
+        /// Pousse le buffer managé vers le handle OS après chaque écriture, pour
+        /// qu'un suiveur (<see cref="ArtifactTail"/>, autre handle) voie la sortie
+        /// <b>en direct</b> et pas seulement à la clôture. <c>flushToDisk: false</c> :
+        /// on veut la visibilité inter-handle, pas la durabilité (pas de fsync coûteux
+        /// à chaque ligne de sortie de test).
+        /// </summary>
+        private void StreamToDisk() => _file!.Flush(flushToDisk: false);
 
         private void EnsureOpen()
         {
