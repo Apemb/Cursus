@@ -87,6 +87,24 @@ public sealed class ProjectRegistry
     }
 
     /// <summary>
+    /// Renomme un projet connu. Le nom vit sur disque (dans son <c>project.json</c>),
+    /// pas dans le fichier du registre — qui ne liste que des racines. On réécrit
+    /// donc le disque via <see cref="ProjectStore.Rename"/>, <b>et</b> on remplace
+    /// l'instantané que le registre garde en mémoire : sans ce remplacement, la
+    /// liste ressusciterait l'ancien nom à la prochaine relecture. Aucune écriture
+    /// du registre lui-même — les racines, elles, ne bougent pas.
+    /// </summary>
+    public Project Rename(string projectRoot, string newName)
+    {
+        var root = Path.GetFullPath(projectRoot);
+        var index = _projects.FindIndex(inscribed => inscribed.Root == root);
+
+        var renamed = ProjectStore.Rename(_projects[index], newName);
+        _projects[index] = renamed;
+        return renamed;
+    }
+
+    /// <summary>
     /// Retire un projet de la liste. Ne touche jamais au dépôt qu'il désigne :
     /// oublier un projet et le supprimer sont deux gestes distincts. On normalise
     /// le chemin nous-mêmes plutôt que de passer par <see cref="ProjectStore"/> —

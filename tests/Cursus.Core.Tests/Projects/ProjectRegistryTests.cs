@@ -55,6 +55,23 @@ public sealed class ProjectRegistryTests : IDisposable
         Assert.Single(registry.Projects);
     }
 
+    [Fact(DisplayName = "étant donné un projet inscrit, quand on le renomme, alors la liste reflète le nouveau nom et l'identifiant reste le même")]
+    public void Renaming_a_registered_project_updates_its_name_in_the_list()
+    {
+        // arrange
+        var created = ProjectStore.Create(_root, "Ancien nom");
+        var registry = new ProjectRegistry(_configDir);
+        registry.Add(_root);
+
+        // act
+        registry.Rename(_root, "Nouveau nom");
+
+        // assert — l'instantané du registre suit le disque, sans changer l'identité
+        var listed = Assert.Single(registry.Projects);
+        Assert.Equal("Nouveau nom", listed.Name);
+        Assert.Equal(created.Id, listed.Id);
+    }
+
     [Fact(DisplayName = "étant donné un projet inscrit, quand on le retire, alors il quitte la liste et le dépôt sur disque est intact")]
     public void Removing_a_project_drops_it_without_touching_the_repository()
     {

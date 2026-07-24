@@ -85,6 +85,21 @@ public class ProjectStoreTests : IDisposable
         Assert.Contains("worktrees/", ignored);
     }
 
+    [Fact(DisplayName = "étant donné un projet créé, quand on le renomme puis qu'on le rouvre, alors son nom est le nouveau et son identifiant est inchangé")]
+    public void Renaming_a_project_rewrites_its_name_and_keeps_its_identity()
+    {
+        // arrange
+        var created = ProjectStore.Create(_root, "Ancien nom");
+
+        // act — le renommage ne change que le libellé, jamais l'identité
+        ProjectStore.Rename(created, "Nouveau nom");
+        var reopened = ProjectStore.Open(_root);
+
+        // assert
+        Assert.Equal("Nouveau nom", reopened.Name);
+        Assert.Equal(created.Id, reopened.Id);
+    }
+
     // --- ouverture et découverte ---
 
     [Fact(DisplayName = "étant donné un répertoire sans dossier de projet, quand on l'ouvre, alors l'ouverture échoue en signalant l'absence")]

@@ -56,6 +56,21 @@ public static class ProjectStore
     }
 
     /// <summary>
+    /// Réécrit le nom d'un projet sans toucher à son identité : le <c>project.json</c>
+    /// repart avec le nouveau libellé mais le même <see cref="Project.Id"/>, sans quoi
+    /// le registre machine ne reconnaîtrait plus le même projet. Rend le
+    /// <see cref="Project"/> frais — l'ancien, immuable, garde son ancien nom.
+    /// </summary>
+    public static Project Rename(Project project, string newName)
+    {
+        File.WriteAllText(
+            project.ProjectFilePath,
+            JsonSerializer.Serialize(new ProjectDocument(project.Id, newName), Options));
+
+        return new Project(project.Id, newName, project.Root);
+    }
+
+    /// <summary>
     /// Remonte l'arborescence depuis un point de départ jusqu'au premier projet
     /// rencontré, façon git. Distinct de <see cref="Open"/>, qui exige la racine
     /// exacte : ouvrir ce qu'on désigne et retrouver ce dans quoi on se trouve
