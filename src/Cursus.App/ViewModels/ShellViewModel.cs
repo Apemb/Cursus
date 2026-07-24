@@ -84,7 +84,8 @@ public partial class ShellViewModel : ObservableObject, IDisposable
         // toucher au host elle-même (règle de sens unique).
         CurrentSurface = new OpenProjectViewModel(
             value.Name,
-            workspace.Host.LastRunPerWorkflow(),
+            workspace.Catalog,
+            workspace.Host.LastRunPerWorkflow,
             workflowId => RunViewModel.StartLive(workflowId, workspace.Host, workspace.Artifacts),
             row => RunViewModel.Replay(row.LastRun!, workspace.Host, workspace.Artifacts));
     }

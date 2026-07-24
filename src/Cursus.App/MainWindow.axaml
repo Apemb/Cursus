@@ -78,14 +78,34 @@
                                            FontSize="18" FontWeight="Bold"
                                            Foreground="{DynamicResource TextPrimaryBrush}"
                                            Margin="0,0,0,12" />
+
+                                <!-- Volet catalogue : créer un workflow depuis un titre humain (l'id de fichier en est le slug) -->
+                                <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,14">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Text="{Binding NewWorkflowTitle, Mode=TwoWay}"
+                                                 PlaceholderText="Titre d'un nouveau workflow"
+                                                 Width="280" />
+                                        <Button Content="＋  Nouveau workflow"
+                                                Padding="12,6"
+                                                Command="{Binding NewWorkflowCommand}" />
+                                    </StackPanel>
+                                    <!-- Vide tant que la dernière opération a réussi ; sinon le refus lisible -->
+                                    <TextBlock Text="{Binding CatalogError}"
+                                               TextWrapping="Wrap"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource DangerBrush}" />
+                                </StackPanel>
+
                                 <ListBox ItemsSource="{Binding Workflows}"
                                          Background="Transparent"
                                          BorderThickness="0">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate x:DataType="vm:WorkflowRowViewModel">
                                             <Grid ColumnDefinitions="*,Auto" MinHeight="40">
-                                                <!-- Le passage se rouvre en relecture ; le workflow se lance -->
-                                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+
+                                                <!-- Mode normal : le passage se rouvre en relecture ; le workflow se lance, se renomme, se supprime -->
+                                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center"
+                                                            IsVisible="{Binding !IsEditing}">
                                                     <TextBlock Text="{Binding Name}"
                                                                Foreground="{DynamicResource TextPrimaryBrush}" />
                                                     <Button Content="{Binding LastPassage}"
@@ -97,12 +117,45 @@
                                                             Command="{Binding $parent[ListBox].((vm:OpenProjectViewModel)DataContext).OpenPastRunCommand}"
                                                             CommandParameter="{Binding}" />
                                                 </StackPanel>
-                                                <Button Grid.Column="1"
-                                                        Content="▸ Lancer"
-                                                        VerticalAlignment="Center"
-                                                        Padding="12,6"
-                                                        Command="{Binding $parent[ListBox].((vm:OpenProjectViewModel)DataContext).StartRunCommand}"
-                                                        CommandParameter="{Binding}" />
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                                                            VerticalAlignment="Center"
+                                                            IsVisible="{Binding !IsEditing}">
+                                                    <Button Content="Renommer"
+                                                            Padding="10,6"
+                                                            Background="Transparent"
+                                                            Foreground="{DynamicResource TextSecondaryBrush}"
+                                                            Command="{Binding BeginRenameCommand}" />
+                                                    <Button Content="✕"
+                                                            Padding="10,6"
+                                                            Background="Transparent"
+                                                            Foreground="{DynamicResource TextSecondaryBrush}"
+                                                            Command="{Binding $parent[ListBox].((vm:OpenProjectViewModel)DataContext).DeleteWorkflowCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                    <Button Content="▸ Lancer"
+                                                            Padding="12,6"
+                                                            Command="{Binding $parent[ListBox].((vm:OpenProjectViewModel)DataContext).StartRunCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </StackPanel>
+
+                                                <!-- Mode renommage : le nouvel identifiant sera le slug du titre saisi -->
+                                                <TextBox Grid.Column="0"
+                                                         Text="{Binding DraftTitle, Mode=TwoWay}"
+                                                         VerticalAlignment="Center"
+                                                         Margin="0,0,8,0"
+                                                         IsVisible="{Binding IsEditing}" />
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                                                            VerticalAlignment="Center"
+                                                            IsVisible="{Binding IsEditing}">
+                                                    <Button Content="Renommer"
+                                                            Padding="10,6"
+                                                            Command="{Binding $parent[ListBox].((vm:OpenProjectViewModel)DataContext).RenameWorkflowCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                    <Button Content="Annuler"
+                                                            Padding="10,6"
+                                                            Background="Transparent"
+                                                            Foreground="{DynamicResource TextSecondaryBrush}"
+                                                            Command="{Binding CancelRenameCommand}" />
+                                                </StackPanel>
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>

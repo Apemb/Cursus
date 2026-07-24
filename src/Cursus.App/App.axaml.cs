@@ -28,7 +28,8 @@ public partial class App : Application
                     ProjectRegistry.ForCurrentUser(),
                     project => new ProjectWorkspace(
                         SqliteProjectHost.Open(project),
-                        new RunArtifactStore(project.ArtifactsRoot))),
+                        new RunArtifactStore(project.ArtifactsRoot),
+                        new WorkflowCatalog(project))),
             };
         }
 

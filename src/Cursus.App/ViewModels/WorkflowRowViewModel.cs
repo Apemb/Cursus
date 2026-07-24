@@ -1,5 +1,8 @@
 using System;
 
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+
 using Cursus.Core.Projects;
 using Cursus.Core.Workflows;
 
@@ -11,17 +14,45 @@ namespace Cursus.App.ViewModels;
 /// arbitre le résultat, il ne recopie pas <see cref="RunState"/> (parcours §4).
 /// Non testé, comme toute la vue (§7.12) : le noyau distingue déjà les issues,
 /// il ne reste ici qu'un choix de libellés.
+///
+/// <para>
+/// Elle porte aussi l'état <b>transitoire</b> de son renommage inline
+/// (<see cref="IsEditing"/>/<see cref="DraftTitle"/>) : purement d'UI, le geste
+/// réel (slug + déplacement de fichier) reste au parent, qui seul tient le
+/// catalogue. La ligne ne fait qu'ouvrir et fermer le champ d'édition.
+/// </para>
 /// </summary>
-public sealed class WorkflowRowViewModel
+public partial class WorkflowRowViewModel : ObservableObject
 {
     public WorkflowRowViewModel(WorkflowLastRun workflow)
     {
         Name = workflow.Workflow.Id;
         LastRun = workflow.LastRun;
+        _draftTitle = Name;
     }
 
     /// <summary>Le nom du workflow (son fichier), en tête de ligne.</summary>
     public string Name { get; }
+
+    /// <summary>Vrai quand la ligne montre son champ de renommage plutôt que son libellé.</summary>
+    [ObservableProperty]
+    private bool _isEditing;
+
+    /// <summary>Le titre saisi pendant un renommage ; le parent le slugifie en nouvel identifiant.</summary>
+    [ObservableProperty]
+    private string _draftTitle;
+
+    /// <summary>Ouvre le champ de renommage, pré-rempli du nom courant.</summary>
+    [RelayCommand]
+    private void BeginRename()
+    {
+        DraftTitle = Name;
+        IsEditing = true;
+    }
+
+    /// <summary>Referme le champ sans renommer.</summary>
+    [RelayCommand]
+    private void CancelRename() => IsEditing = false;
 
     /// <summary>Le dernier passage du workflow — <c>null</c> s'il n'a jamais tourné ; ce que la relecture rouvre.</summary>
     public RunSummary? LastRun { get; }
