@@ -79,7 +79,17 @@ pas leur découpe ici) :
 
 **Pré-requis :** la jambe 1 posée (le socle déterministe éprouvé au réel).
 
-**Statut :** à venir — se précisera après la jambe 1.
+**Statut :** **en cours**, décomposée à mesure qu'on s'en approche :
+
+- **2·1 — `AgentStep`** ✅ : le kind agent headless (`claude --model … -p …`), son Core (`D-030`) et
+  son authoring UI (`D-031`). Le vrai cap technique, franchi.
+- **2·2 — le round-trip tracker (Linear)** 🔸 en cours. Un `TaskStep` (3e kind) consomme une tâche et
+  referme sa carte : `2·2a` la **couture Core** (port `ITaskTracker`, `TaskOperation` lire/déplacer/
+  étiqueter, clé du run par `StepExecutionContext`) ✅ **posée** (`D-032`, TDD contre un stub) ; `2·2b`
+  le **client Linear réel** (projet dédié hors Core, secret trousseau) ; `2·2c` l'**authoring UI** (un
+  `TaskStepRow` de plus, patron `D-031`) ; `2·2d` la **boucle bout-en-bout** contre le dépôt.
+- **Déclencheurs état-tâche** ⏳ : l'auto-déclenchement d'un run sur l'état d'une carte (§7.10.6), après
+  le round-trip manuel.
 
 ---
 
@@ -88,7 +98,7 @@ pas leur découpe ici) :
 | Jambe | Contenu | Pré-requis | Statut |
 |---|---|---|---|
 | **1 — Porte de gate** | Workflow build→test contre le dépôt ; ~~PATH-bundle~~ ✅, ~~log streaming~~ ✅ (`D-028`), ~~routage vécu~~ ✅, ~~champ Commande~~ ✅ (`D-029`) | aucun | ✅ **close** |
-| **2 — Boucle agentique** | `AgentStep` (D-012) · déclencheurs état-tâche · intégration Linear | jambe 1 | à venir |
+| **2 — Boucle agentique** | ~~`AgentStep`~~ ✅ (`D-030`/`D-031`) · `TaskStep`/round-trip Linear 🔸 (2·2a Core ✅ `D-032`, reste 2·2b/c/d) · déclencheurs état-tâche ⏳ | jambe 1 | 🔸 **en cours** |
 
 ## Plus loin — directions voulues, pas encore ordonnées
 
