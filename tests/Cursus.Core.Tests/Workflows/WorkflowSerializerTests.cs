@@ -242,6 +242,76 @@ public class WorkflowSerializerTests
         Assert.Equal("Compiler sans le moindre avertissement", step.Description);
     }
 
+    [Fact(DisplayName = "étant donné un document d'étape de kind agent, quand on le lit, alors on obtient un AgentStep portant harness, modèle et prompt")]
+    public void An_agent_step_document_yields_an_agent_step()
+    {
+        // arrange
+        const string document = """
+            {
+              "entryStep": "corriger",
+              "steps": [
+                {
+                  "id": "corriger",
+                  "name": "Corriger",
+                  "kind": "agent",
+                  "maxVisits": 1,
+                  "agent": { "harness": "Claude Code", "model": "opus", "prompt": "Corrige les tests rouges" },
+                  "edges": []
+                }
+              ]
+            }
+            """;
+
+        // act
+        var step = WorkflowSerializer.Read(document).Definition!.GetStep("corriger");
+
+        // assert
+        var agent = Assert.IsType<AgentStep>(step);
+        Assert.Equal("Claude Code", agent.HarnessName);
+        Assert.Equal("opus", agent.ModelId);
+        Assert.Equal("Corrige les tests rouges", agent.Prompt);
+    }
+
+    [Fact(DisplayName = "étant donné un document d'étape sans kind, quand on le lit, alors on obtient un ScriptStep — la retombée qui garde valides les fichiers d'avant les kinds")]
+    public void A_step_document_without_kind_yields_a_script_step()
+    {
+        // arrange — aucun « kind » déclaré, comme tout workflow écrit avant les kinds
+        const string document = """
+            {
+              "entryStep": "A",
+              "steps": [ { "id": "A", "maxVisits": 1, "script": { "fileName": "/usr/bin/true" } } ]
+            }
+            """;
+
+        // act
+        var step = WorkflowSerializer.Read(document).Definition!.GetStep("A");
+
+        // assert
+        Assert.IsType<ScriptStep>(step);
+    }
+
+    [Fact(DisplayName = "étant donné une définition portant une étape-agent, quand on l'écrit puis qu'on la relit, alors le kind, le harness, le modèle et le prompt sont préservés")]
+    public void An_agent_step_round_trips_through_the_document()
+    {
+        // arrange
+        var definition = new WorkflowDefinition("corriger", new StepDefinition[]
+        {
+            new AgentStep(
+                "corriger", "Corriger", "Claude Code", "opus", "Corrige les tests rouges",
+                MaxVisits: 1, []),
+        });
+
+        // act
+        var reread = WorkflowSerializer
+            .Read(WorkflowSerializer.Write(definition)).Definition!.GetStep("corriger");
+
+        // assert
+        var agent = Assert.IsType<AgentStep>(reread);
+        Assert.Equal("Claude Code", agent.HarnessName);
+        Assert.Equal("opus", agent.ModelId);
+        Assert.Equal("Corrige les tests rouges", agent.Prompt);
+    }
+
     [Fact(DisplayName = "étant donné un document au repos, quand on le lit puis qu'on le réécrit, alors on retrouve le même document")]
     public void Reading_then_writing_a_document_reproduces_it()
     {
@@ -257,6 +327,7 @@ public class WorkflowSerializerTests
                   "id": "preparer",
                   "name": "Préparer",
                   "description": null,
+                  "kind": "script",
                   "maxVisits": 1,
                   "script": {
                     "fileName": "/bin/sh",
@@ -269,6 +340,7 @@ public class WorkflowSerializerTests
                     },
                     "timeoutSeconds": 300
                   },
+                  "agent": null,
                   "edges": [
                     {
                       "guard": "success",
@@ -285,6 +357,7 @@ public class WorkflowSerializerTests
                   "id": "tester",
                   "name": "Tester",
                   "description": null,
+                  "kind": "script",
                   "maxVisits": 3,
                   "script": {
                     "fileName": "/usr/bin/make",
@@ -294,6 +367,7 @@ public class WorkflowSerializerTests
                     "environment": null,
                     "timeoutSeconds": null
                   },
+                  "agent": null,
                   "edges": [
                     {
                       "guard": "failure",

@@ -12,8 +12,10 @@ internal sealed record StepDocument(
     string? Id,
     string? Name,
     string? Description,
+    string? Kind,
     int MaxVisits,
     ScriptDocument? Script,
+    AgentDocument? Agent,
     IReadOnlyList<EdgeDocument>? Edges,
     string? WorkingSubdirectory);
 
@@ -22,6 +24,16 @@ internal sealed record ScriptDocument(
     IReadOnlyList<string>? Arguments,
     IReadOnlyDictionary<string, string>? Environment,
     double? TimeoutSeconds);
+
+/// <summary>
+/// La charge d'une étape-agent : quel harness, quel modèle, et le prompt. Symétrique
+/// de <see cref="ScriptDocument"/> — le discriminant <c>kind</c> dit lequel des deux
+/// porte le sens, l'adaptateur construit le sous-type correspondant.
+/// </summary>
+internal sealed record AgentDocument(
+    string? Harness,
+    string? Model,
+    string? Prompt);
 
 /// <summary>
 /// Une arête. La garde s'écrit en chaîne (« success », « exit:2 ») : compact,

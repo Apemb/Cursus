@@ -65,6 +65,25 @@ public static class WorkflowValidator
                 ValidationIssueKind.UnknownEdgeTarget,
                 $"L'étape « {step.Id} » a une arête vers « {edge.Target} », qui n'existe pas.",
                 step.Id);
+
+        // Les règles propres au kind agent.
+        if (step is AgentStep agent)
+        {
+            // Un prompt vide n'a rien à confier à l'agent.
+            if (string.IsNullOrWhiteSpace(agent.Prompt))
+                yield return new ValidationIssue(
+                    ValidationIssueKind.EmptyAgentPrompt,
+                    $"L'étape-agent « {step.Id} » n'a pas de prompt : l'agent n'aurait rien à faire.",
+                    step.Id);
+
+            // Le modèle doit appartenir au harness nommé — un harness inconnu tombe ici aussi.
+            var harness = AgenticHarness.ByName(agent.HarnessName);
+            if (harness is null || !harness.HasModel(agent.ModelId))
+                yield return new ValidationIssue(
+                    ValidationIssueKind.UnknownAgentModel,
+                    $"L'étape-agent « {step.Id} » réclame le modèle « {agent.ModelId} » du harness « {agent.HarnessName} », introuvable.",
+                    step.Id);
+        }
     }
 
     private static IEnumerable<ValidationIssue> UnreachableStepIssues(WorkflowDefinition definition)

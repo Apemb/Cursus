@@ -210,6 +210,38 @@ public class WorkflowValidatorTests
 
     // --- helpers ---
 
+    [Fact(DisplayName = "étant donné une étape-agent au prompt vide, quand on valide, alors le rapport signale un prompt d'agent vide")]
+    public void An_agent_step_with_an_empty_prompt_is_reported()
+    {
+        // arrange — l'entrée pointe l'agent, seul nœud : rien à lui reprocher hormis le prompt
+        var definition = new WorkflowDefinition("corriger", new StepDefinition[]
+        {
+            new AgentStep("corriger", "Corriger", "Claude Code", "opus", "", MaxVisits: 1, []),
+        });
+
+        // act
+        var report = WorkflowValidator.Validate(definition);
+
+        // assert
+        Assert.Contains(report.Issues, i => i.Kind == ValidationIssueKind.EmptyAgentPrompt);
+    }
+
+    [Fact(DisplayName = "étant donné une étape-agent réclamant un modèle absent de son harness, quand on valide, alors le rapport signale un modèle d'agent inconnu")]
+    public void An_agent_step_with_a_model_its_harness_does_not_offer_is_reported()
+    {
+        // arrange — « Claude Code » n'offre pas de modèle « gpt »
+        var definition = new WorkflowDefinition("corriger", new StepDefinition[]
+        {
+            new AgentStep("corriger", "Corriger", "Claude Code", "gpt", "Corrige", MaxVisits: 1, []),
+        });
+
+        // act
+        var report = WorkflowValidator.Validate(definition);
+
+        // assert
+        Assert.Contains(report.Issues, i => i.Kind == ValidationIssueKind.UnknownAgentModel);
+    }
+
     private static readonly ScriptSpec AnyScript = new("/usr/bin/true", []);
 
     private static StepDefinition Step(string id, params Edge[] edges) =>

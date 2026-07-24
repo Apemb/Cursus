@@ -27,6 +27,12 @@ public enum ValidationIssueKind
     /// <summary>Une arête du document déclare une garde que le modèle ne connaît pas.</summary>
     UnknownGuard,
 
+    /// <summary>Une étape-agent n'a pas de prompt : l'agent n'aurait rien à faire.</summary>
+    EmptyAgentPrompt,
+
+    /// <summary>Une étape-agent réclame un modèle qui n'appartient pas à son harness (ou un harness inconnu).</summary>
+    UnknownAgentModel,
+
     /// <summary>Le document n'est pas un JSON décrivant un workflow.</summary>
     MalformedDocument,
 }

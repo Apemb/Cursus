@@ -18,10 +18,12 @@ public sealed class WorkflowEngine
 
     public WorkflowEngine(IProcessRunner runner, IRunJournal journal, IRunOutputStore output)
     {
-        // Le seul kind du noyau à ce jour : l'étape-script. Ajouter un kind, c'est
-        // enrichir cette liste (via un chemin de construction dédié), pas modifier la
-        // boucle ci-dessous.
-        _executors = [new ScriptStepExecutor(runner)];
+        // Les kinds du noyau, chacun avec son exécuteur — script et agent, tous deux
+        // adossés au même runner de process (l'agent est headless). Ajouter un kind, c'est
+        // allonger cette liste, jamais toucher la boucle de traversée : le premier
+        // exécuteur qui reconnaît l'étape la prend, l'ordre départageant un éventuel
+        // recouvrement (aucun aujourd'hui, les kinds étant disjoints par type).
+        _executors = [new ScriptStepExecutor(runner), new AgentStepExecutor(runner)];
         _journal = journal;
         _output = output;
     }

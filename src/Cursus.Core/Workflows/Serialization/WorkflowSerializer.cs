@@ -84,8 +84,22 @@ public static class WorkflowSerializer
         return new ParsedWorkflow(definition, WorkflowValidator.Validate(definition));
     }
 
-    private static StepDefinition ToStep(StepDocument step) =>
-        new ScriptStep(
+    // L'adaptateur : le discriminant `kind` du document choisit le sous-type à
+    // construire. Absent (ou inconnu) retombe sur l'étape-script — c'est ce qui garde
+    // valides les fichiers écrits avant l'arrivée des kinds.
+    private static StepDefinition ToStep(StepDocument step) => step.Kind switch
+    {
+        "agent" => new AgentStep(
+            step.Id ?? "",
+            step.Name ?? step.Id ?? "",
+            step.Agent?.Harness ?? "",
+            step.Agent?.Model ?? "",
+            step.Agent?.Prompt ?? "",
+            step.MaxVisits,
+            (step.Edges ?? []).Select(ToEdge).ToList(),
+            step.WorkingSubdirectory,
+            step.Description),
+        _ => new ScriptStep(
             step.Id ?? "",
             step.Name ?? step.Id ?? "",
             new ScriptSpec(
@@ -98,7 +112,8 @@ public static class WorkflowSerializer
             step.MaxVisits,
             (step.Edges ?? []).Select(ToEdge).ToList(),
             step.WorkingSubdirectory,
-            step.Description);
+            step.Description),
+    };
 
     private static Edge ToEdge(EdgeDocument edge) =>
         new(ToGuard(edge.Guard), edge.Target ?? "");
@@ -138,14 +153,26 @@ public static class WorkflowSerializer
             s.Id,
             s.Name,
             s.Description,
+            "script",
             s.MaxVisits,
             new ScriptDocument(
                 s.Script.FileName,
                 s.Script.Arguments,
                 s.Script.Environment,
                 s.Script.Timeout?.TotalSeconds),
+            Agent: null,
             s.OutEdges.Select(ToDocument).ToList(),
             s.WorkingSubdirectory),
+        AgentStep a => new StepDocument(
+            a.Id,
+            a.Name,
+            a.Description,
+            "agent",
+            a.MaxVisits,
+            Script: null,
+            new AgentDocument(a.HarnessName, a.ModelId, a.Prompt),
+            a.OutEdges.Select(ToDocument).ToList(),
+            a.WorkingSubdirectory),
         _ => throw new ArgumentOutOfRangeException(
             nameof(step), step.GetType().Name, "Type d'étape non sérialisable."),
     };
