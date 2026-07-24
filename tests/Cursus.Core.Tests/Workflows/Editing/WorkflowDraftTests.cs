@@ -187,6 +187,72 @@ public class WorkflowDraftTests
         Assert.Throws<UnknownStepException>(() => draft.SetScript("fantome", new ScriptSpec("/bin/true", [])));
     }
 
+    [Fact(DisplayName = "étant donné un brouillon avec une étape-agent, quand on lui règle un prompt, alors l'export porte ce prompt")]
+    public void Setting_an_agent_prompt_records_it()
+    {
+        // arrange
+        var draft = new WorkflowDraft(Empty);
+        var id = draft.AddAgentStep("Corriger");
+
+        // act
+        draft.SetPrompt(id, "Corrige les tests rouges.");
+
+        // assert
+        Assert.Equal("Corrige les tests rouges.", ((AgentStep)draft.ToDefinition().GetStep(id)).Prompt);
+    }
+
+    [Fact(DisplayName = "étant donné un brouillon avec une étape-agent, quand on lui règle un modèle, alors l'export porte ce modèle")]
+    public void Setting_an_agent_model_records_it()
+    {
+        // arrange
+        var draft = new WorkflowDraft(Empty);
+        var id = draft.AddAgentStep("Corriger");
+
+        // act
+        draft.SetModel(id, "sonnet");
+
+        // assert
+        Assert.Equal("sonnet", ((AgentStep)draft.ToDefinition().GetStep(id)).ModelId);
+    }
+
+    [Fact(DisplayName = "étant donné un brouillon, quand on règle le prompt d'un id absent, alors une UnknownStepException est levée")]
+    public void Setting_a_prompt_on_an_absent_step_throws()
+    {
+        // arrange
+        var draft = new WorkflowDraft(Empty);
+
+        // act / assert
+        Assert.Throws<UnknownStepException>(() => draft.SetPrompt("fantome", "quoi que ce soit"));
+    }
+
+    [Fact(DisplayName = "étant donné un brouillon, quand on règle le modèle d'un id absent, alors une UnknownStepException est levée")]
+    public void Setting_a_model_on_an_absent_step_throws()
+    {
+        // arrange
+        var draft = new WorkflowDraft(Empty);
+
+        // act / assert
+        Assert.Throws<UnknownStepException>(() => draft.SetModel("fantome", "opus"));
+    }
+
+    [Fact(DisplayName = "étant donné un brouillon vide, quand on ajoute une étape-agent « Corriger », alors elle porte l'id « corriger », le libellé « Corriger », le harness Claude Code, le premier modèle et un prompt vide, et l'id est retourné")]
+    public void Adding_an_agent_step_slugs_its_label_and_seeds_the_default_harness_and_model()
+    {
+        // arrange
+        var draft = new WorkflowDraft(Empty);
+
+        // act
+        var id = draft.AddAgentStep("Corriger");
+
+        // assert
+        Assert.Equal("corriger", id);
+        var step = Assert.IsType<AgentStep>(draft.ToDefinition().GetStep("corriger"));
+        Assert.Equal("Corriger", step.Name);
+        Assert.Equal(AgenticHarness.ClaudeCode.Name, step.HarnessName);
+        Assert.Equal(AgenticHarness.ClaudeCode.Models[0].Id, step.ModelId);
+        Assert.Equal("", step.Prompt);
+    }
+
     [Fact(DisplayName = "étant donné un brouillon avec deux étapes A et B, quand on ajoute une arête gardée de A vers B, alors l'export porte cette arête sortante sur A")]
     public void Adding_an_edge_records_it_on_the_source_step()
     {

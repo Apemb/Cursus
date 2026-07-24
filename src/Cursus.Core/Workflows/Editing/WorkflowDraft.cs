@@ -43,6 +43,23 @@ public sealed class WorkflowDraft
     }
 
     /// <summary>
+    /// Ajoute une étape-agent à partir de son titre — jumelle d'<see cref="AddStep"/>
+    /// pour l'autre kind : même slug désambiguïsé, mais l'étape naît confiée au seul
+    /// harness connu (<see cref="AgenticHarness.ClaudeCode"/>) sur son premier modèle,
+    /// avec un prompt vide (elle ne demande rien encore, brouillon permis — le
+    /// validateur signalera le prompt vide). Le harness est en dur ici parce qu'il
+    /// n'y en a qu'un ; le choix du modèle et la rédaction du prompt suivent
+    /// (<see cref="SetModel"/>, <see cref="SetPrompt"/>). Retourne l'id.
+    /// </summary>
+    public string AddAgentStep(string name)
+    {
+        var id = Uniquify(Slug.From(name));
+        var harness = AgenticHarness.ClaudeCode;
+        _steps.Add(new AgentStep(id, name, harness.Name, harness.Models[0].Id, "", 1, []));
+        return id;
+    }
+
+    /// <summary>
     /// Rend un id libre à partir d'un id souhaité, en suffixant au besoin
     /// (« compiler », « compiler-2 », « compiler-3 »…). L'unicité d'id est un
     /// invariant du brouillon — ses propres opérations travaillent par id — donc
@@ -111,9 +128,33 @@ public sealed class WorkflowDraft
     {
         var index = IndexOf(id);
         // Le script est propre au ScriptStep : régler un script suppose une étape-script.
-        // Aujourd'hui l'éditeur n'en construit pas d'autre ; le jour d'un AgentStep,
-        // c'est une opération sœur (SetPrompt/SetModel) qui prendra le relais.
+        // Le cast est le garant du kind — poser un script sur une étape-agent est un
+        // bug d'appelant, pas un état représentable. SetPrompt/SetModel sont ses jumeaux
+        // pour l'autre kind.
         _steps[index] = ((ScriptStep)_steps[index]) with { Script = script };
+    }
+
+    /// <summary>
+    /// Remplace le prompt d'une étape-agent. Jumeau de <see cref="SetScript"/> pour
+    /// l'autre kind : même choke <see cref="IndexOf"/> (le sujet doit exister), et le
+    /// cast sur <see cref="AgentStep"/> garde l'invariant de kind — on ne règle un
+    /// prompt que sur une étape-agent.
+    /// </summary>
+    public void SetPrompt(string id, string prompt)
+    {
+        var index = IndexOf(id);
+        _steps[index] = ((AgentStep)_steps[index]) with { Prompt = prompt };
+    }
+
+    /// <summary>
+    /// Remplace le modèle d'une étape-agent (l'identifiant offert par son harness).
+    /// Jumeau de <see cref="SetPrompt"/> ; permissif sur la valeur — un modèle inconnu
+    /// est signalé par le validateur, pas refusé ici (brouillon permis).
+    /// </summary>
+    public void SetModel(string id, string modelId)
+    {
+        var index = IndexOf(id);
+        _steps[index] = ((AgentStep)_steps[index]) with { ModelId = modelId };
     }
 
     /// <summary>
