@@ -312,6 +312,62 @@ public class WorkflowSerializerTests
         Assert.Equal("Corrige les tests rouges", agent.Prompt);
     }
 
+    [Fact(DisplayName = "étant donné une étape-tâche « déplacer vers En review », quand on l'écrit puis qu'on la relit, alors on retrouve un TaskStep dont l'opération est MoveCard vers cette colonne")]
+    public void A_move_card_task_step_round_trips_through_the_document()
+    {
+        // arrange
+        var definition = new WorkflowDefinition("entrer", new StepDefinition[]
+        {
+            new TaskStep("entrer", "Entrer en review", new TaskOperation.MoveCard("En review"), MaxVisits: 1, []),
+        });
+
+        // act
+        var reread = WorkflowSerializer
+            .Read(WorkflowSerializer.Write(definition)).Definition!.GetStep("entrer");
+
+        // assert
+        var task = Assert.IsType<TaskStep>(reread);
+        var move = Assert.IsType<TaskOperation.MoveCard>(task.Operation);
+        Assert.Equal("En review", move.Column);
+    }
+
+    [Fact(DisplayName = "étant donné une étape-tâche « poser Done », quand on l'écrit puis qu'on la relit, alors on retrouve un TaskStep dont l'opération est ApplyLabel avec cette étiquette")]
+    public void An_apply_label_task_step_round_trips_through_the_document()
+    {
+        // arrange
+        var definition = new WorkflowDefinition("sortir", new StepDefinition[]
+        {
+            new TaskStep("sortir", "Marquer terminé", new TaskOperation.ApplyLabel("Done"), MaxVisits: 1, []),
+        });
+
+        // act
+        var reread = WorkflowSerializer
+            .Read(WorkflowSerializer.Write(definition)).Definition!.GetStep("sortir");
+
+        // assert
+        var task = Assert.IsType<TaskStep>(reread);
+        var label = Assert.IsType<TaskOperation.ApplyLabel>(task.Operation);
+        Assert.Equal("Done", label.Label);
+    }
+
+    [Fact(DisplayName = "étant donné une étape-tâche « lire », quand on l'écrit puis qu'on la relit, alors on retrouve un TaskStep dont l'opération est ReadTask")]
+    public void A_read_task_step_round_trips_through_the_document()
+    {
+        // arrange
+        var definition = new WorkflowDefinition("lire", new StepDefinition[]
+        {
+            new TaskStep("lire", "Lire la tâche", new TaskOperation.ReadTask(), MaxVisits: 1, []),
+        });
+
+        // act
+        var reread = WorkflowSerializer
+            .Read(WorkflowSerializer.Write(definition)).Definition!.GetStep("lire");
+
+        // assert
+        var task = Assert.IsType<TaskStep>(reread);
+        Assert.IsType<TaskOperation.ReadTask>(task.Operation);
+    }
+
     [Fact(DisplayName = "étant donné un document au repos, quand on le lit puis qu'on le réécrit, alors on retrouve le même document")]
     public void Reading_then_writing_a_document_reproduces_it()
     {
@@ -351,7 +407,8 @@ public class WorkflowSerializerTests
                       "target": "preparer"
                     }
                   ],
-                  "workingSubdirectory": "backend"
+                  "workingSubdirectory": "backend",
+                  "task": null
                 },
                 {
                   "id": "tester",
@@ -374,7 +431,8 @@ public class WorkflowSerializerTests
                       "target": "tester"
                     }
                   ],
-                  "workingSubdirectory": null
+                  "workingSubdirectory": null,
+                  "task": null
                 }
               ]
             }

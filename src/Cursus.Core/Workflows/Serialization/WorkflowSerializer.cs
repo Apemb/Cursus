@@ -99,6 +99,14 @@ public static class WorkflowSerializer
             (step.Edges ?? []).Select(ToEdge).ToList(),
             step.WorkingSubdirectory,
             step.Description),
+        "task" => new TaskStep(
+            step.Id ?? "",
+            step.Name ?? step.Id ?? "",
+            ToOperation(step.Task),
+            step.MaxVisits,
+            (step.Edges ?? []).Select(ToEdge).ToList(),
+            step.WorkingSubdirectory,
+            step.Description),
         _ => new ScriptStep(
             step.Id ?? "",
             step.Name ?? step.Id ?? "",
@@ -117,6 +125,15 @@ public static class WorkflowSerializer
 
     private static Edge ToEdge(EdgeDocument edge) =>
         new(ToGuard(edge.Guard), edge.Target ?? "");
+
+    // Le discriminant `operation` choisit la variante ; absent (ou inconnu) retombe
+    // sur la lecture — le geste le plus inoffensif, qui ne mute pas le tableau.
+    private static TaskOperation ToOperation(TaskDocument? task) => task?.Operation switch
+    {
+        "move" => new TaskOperation.MoveCard(task.Column ?? ""),
+        "label" => new TaskOperation.ApplyLabel(task.Label ?? ""),
+        _ => new TaskOperation.ReadTask(),
+    };
 
     /// <summary>
     /// Une garde s'écrit en chaîne : « success », « failure », « default », ou
@@ -173,8 +190,30 @@ public static class WorkflowSerializer
             new AgentDocument(a.HarnessName, a.ModelId, a.Prompt),
             a.OutEdges.Select(ToDocument).ToList(),
             a.WorkingSubdirectory),
+        TaskStep t => new StepDocument(
+            t.Id,
+            t.Name,
+            t.Description,
+            "task",
+            t.MaxVisits,
+            Script: null,
+            Agent: null,
+            t.OutEdges.Select(ToDocument).ToList(),
+            t.WorkingSubdirectory,
+            ToDocument(t.Operation)),
         _ => throw new ArgumentOutOfRangeException(
             nameof(step), step.GetType().Name, "Type d'étape non sérialisable."),
+    };
+
+    // Le geste d'une étape-tâche s'écrit par son discriminant ; column/label ne
+    // portent que pour leur opération. Miroir exact de ToOperation, dont dépend l'aller-retour.
+    private static TaskDocument ToDocument(TaskOperation operation) => operation switch
+    {
+        TaskOperation.ReadTask => new TaskDocument("read", null, null),
+        TaskOperation.MoveCard move => new TaskDocument("move", move.Column, null),
+        TaskOperation.ApplyLabel label => new TaskDocument("label", null, label.Label),
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(operation), operation.GetType().Name, "Opération de tâche non sérialisable."),
     };
 
     private static EdgeDocument ToDocument(Edge edge) => new(WriteGuard(edge.Guard), edge.Target);

@@ -17,7 +17,8 @@ internal sealed record StepDocument(
     ScriptDocument? Script,
     AgentDocument? Agent,
     IReadOnlyList<EdgeDocument>? Edges,
-    string? WorkingSubdirectory);
+    string? WorkingSubdirectory,
+    TaskDocument? Task = null);
 
 internal sealed record ScriptDocument(
     string? FileName,
@@ -34,6 +35,19 @@ internal sealed record AgentDocument(
     string? Harness,
     string? Model,
     string? Prompt);
+
+/// <summary>
+/// La charge d'une étape-tâche : quel geste sur le tableau. Le discriminant
+/// <c>operation</c> (« read » · « move » · « label ») dit laquelle des variantes de
+/// <see cref="Cursus.Core.Workflows.TaskOperation"/> construire ; <c>column</c> et
+/// <c>label</c> ne portent que pour leur opération respective. Ces champs optionnels
+/// vivent <b>dans le document seulement</b> — le modèle, lui, n'admet pas d'état
+/// illégal, chaque variante ne portant que sa donnée.
+/// </summary>
+internal sealed record TaskDocument(
+    string? Operation,
+    string? Column,
+    string? Label);
 
 /// <summary>
 /// Une arête. La garde s'écrit en chaîne (« success », « exit:2 ») : compact,
