@@ -8,10 +8,17 @@ namespace Cursus.Core.Tests.Tasks;
 /// même forme —, à une différence près qui commande tout : <b>le secret n'est pas
 /// ici</b>. Le registre ne porte que ce qui peut s'écrire en clair ; le jeton vit au
 /// trousseau, sous une clé dérivée de l'identifiant de connexion.
+///
+/// <para>
+/// L'identifiant est attribué <b>par le registre</b> : c'est lui qui répond de
+/// l'unicité, et l'appelant ne fait que dire quel genre de connexion construire avec.
+/// </para>
 /// </summary>
 public sealed class TrackerRegistryTests : IDisposable
 {
     private readonly string _configDir = Directory.CreateTempSubdirectory("cursus-trackers-").FullName;
+
+    private static readonly TrackerWorkspace Cursus = new("ws-cursus", "cursus-app", "Cursus");
 
     [Fact(DisplayName = "étant donné un registre vide, quand on ajoute une connexion, alors elle figure dans la liste avec un identifiant attribué")]
     public void Adding_a_connection_lists_it_with_an_identifier()
@@ -20,7 +27,7 @@ public sealed class TrackerRegistryTests : IDisposable
         var registry = new TrackerRegistry(_configDir);
 
         // act
-        var connection = registry.Add("Mon compte Linear", new TrackerScope.WholeWorkspace());
+        var connection = registry.Add(id => new LinearConnection(id, "Mon compte Linear", Cursus));
 
         // assert — l'identifiant est attribué par le registre, pas fourni : c'est lui
         // qui devra désigner le jeton au trousseau
@@ -31,47 +38,35 @@ public sealed class TrackerRegistryTests : IDisposable
     [Fact(DisplayName = "étant donné deux connexions de même libellé, quand on les inscrit, alors leurs identifiants diffèrent")]
     public void Two_connections_never_share_an_identifier()
     {
-        // arrange — le cas réel : deux clés du même espace, une de compte, une de projet
+        // arrange — deux clés du même espace : rien ne l'interdit, et le lien
+        // connexion ↔ projet n'a aucune raison d'être un pour un chez tous les trackers
         var registry = new TrackerRegistry(_configDir);
 
         // act
-        var first = registry.Add("Linear", new TrackerScope.WholeWorkspace());
-        var second = registry.Add("Linear", new TrackerScope.WholeWorkspace());
+        var first = registry.Add(id => new LinearConnection(id, "Linear", Cursus));
+        var second = registry.Add(id => new LinearConnection(id, "Linear", Cursus));
 
         // assert — l'identifiant désigne le jeton au trousseau : le partager ferait
         // s'écraser un secret par l'autre, en silence
         Assert.NotEqual(first.Id, second.Id);
+        Assert.NotEqual(first.SecretKey, second.SecretKey);
         Assert.Equal(2, registry.Connections.Count);
     }
 
-    [Fact(DisplayName = "étant donné une connexion inscrite, quand un registre neuf relit le dossier, alors elle a survécu")]
-    public void A_connection_survives_a_fresh_registry()
+    [Fact(DisplayName = "étant donné une connexion Linear inscrite, quand un registre neuf la relit, alors elle reste une connexion Linear et garde son espace")]
+    public void A_linear_connection_survives_as_a_linear_connection()
     {
         // arrange
-        new TrackerRegistry(_configDir).Add("Mon compte Linear", new TrackerScope.WholeWorkspace());
+        new TrackerRegistry(_configDir).Add(id => new LinearConnection(id, "Mon compte Linear", Cursus));
 
         // act — l'app redémarre : un autre registre, le même dossier
         var reopened = new TrackerRegistry(_configDir);
 
-        // assert
-        Assert.Equal("Mon compte Linear", Assert.Single(reopened.Connections).Label);
-    }
-
-    [Fact(DisplayName = "étant donné une connexion restreinte à des projets, quand un registre neuf la relit, alors sa portée reste une sélection et garde ses projets")]
-    public void A_narrowed_scope_survives_as_a_selection()
-    {
-        // arrange
-        new TrackerRegistry(_configDir).Add(
-            "Clé du projet Robustesse",
-            new TrackerScope.SelectedProjects(["proj-robustesse", "proj-e2e"]));
-
-        // act
-        var reopened = new TrackerRegistry(_configDir);
-
-        // assert — relire « tout l'espace » là où l'utilisateur avait restreint
-        // élargirait sa portée à son insu
-        var scope = Assert.IsType<TrackerScope.SelectedProjects>(Assert.Single(reopened.Connections).Scope);
-        Assert.Equal(["proj-robustesse", "proj-e2e"], scope.ProjectIds);
+        // assert — relire une connexion sans son genre la rendrait inutilisable : c'est
+        // le type concret qui dit à quel tracker parler et ce qu'il faut afficher
+        var connection = Assert.IsType<LinearConnection>(Assert.Single(reopened.Connections));
+        Assert.Equal("Mon compte Linear", connection.Label);
+        Assert.Equal(Cursus, connection.Workspace);
     }
 
     [Fact(DisplayName = "étant donné deux connexions inscrites, quand on en retire une, alors elle quitte la liste et le fichier")]
@@ -79,8 +74,8 @@ public sealed class TrackerRegistryTests : IDisposable
     {
         // arrange
         var registry = new TrackerRegistry(_configDir);
-        var doomed = registry.Add("Clé jetable", new TrackerScope.WholeWorkspace());
-        registry.Add("Clé gardée", new TrackerScope.WholeWorkspace());
+        var doomed = registry.Add(id => new LinearConnection(id, "Clé jetable", Cursus));
+        registry.Add(id => new LinearConnection(id, "Clé gardée", Cursus));
 
         // act
         registry.Remove(doomed.Id);

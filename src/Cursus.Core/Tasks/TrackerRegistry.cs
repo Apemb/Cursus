@@ -53,13 +53,14 @@ public sealed class TrackerRegistry
     public IReadOnlyList<TrackerConnection> Connections => _connections;
 
     /// <summary>
-    /// Inscrit une connexion et lui attribue son identifiant. C'est le registre qui
-    /// l'attribue, jamais l'appelant : cet identifiant désigne le jeton au trousseau,
-    /// et deux connexions ne doivent jamais pouvoir se le disputer.
+    /// Inscrit une connexion. Le registre <b>attribue l'identifiant</b> et le remet au
+    /// constructeur reçu : c'est lui qui répond de l'unicité — cet identifiant désigne
+    /// le jeton au trousseau, et deux connexions ne doivent jamais pouvoir se le
+    /// disputer — tandis que l'appelant seul sait quel genre de connexion bâtir.
     /// </summary>
-    public TrackerConnection Add(string label, TrackerScope scope)
+    public TrackerConnection Add(Func<string, TrackerConnection> build)
     {
-        var connection = new TrackerConnection(Guid.NewGuid().ToString("n"), label, scope);
+        var connection = build(Guid.NewGuid().ToString("n"));
         _connections.Add(connection);
         Save();
         return connection;
@@ -82,33 +83,43 @@ public sealed class TrackerRegistry
 
         var document = JsonSerializer.Deserialize<RegistryDocument>(File.ReadAllText(_filePath), Options);
         foreach (var connection in document?.Connections ?? [])
-            _connections.Add(new TrackerConnection(
-                connection.Id ?? "",
-                connection.Label ?? "",
-                ToScope(connection)));
+            if (ToConnection(connection) is { } read)
+                _connections.Add(read);
     }
 
-    // L'adaptateur : le discriminant `kind` du document choisit le sous-type. Il ne
-    // remonte jamais en propriété du modèle — la portée est un type, pas un champ.
-    // Un kind inconnu (fichier d'une version plus récente) retombe sur « tout
-    // l'espace » : montrer trop de projets se remarque et se corrige, une connexion
-    // muette laisse l'utilisateur sans explication.
-    private static TrackerScope ToScope(ConnectionDocument connection) => connection.Kind switch
+    // L'adaptateur : le discriminant `kind` du document choisit le sous-type, et ne
+    // remonte jamais en propriété du modèle. Un kind inconnu — fichier écrit par une
+    // version plus récente, ou tracker qu'on ne sait pas encore joindre — est
+    // **ignoré** plutôt que dégradé : une connexion dont on ne sait pas à quoi elle
+    // parle n'est pas une connexion, et en fabriquer une approximative ferait échouer
+    // chaque usage sans dire pourquoi.
+    private static TrackerConnection? ToConnection(ConnectionDocument connection) => connection.Kind switch
     {
-        SelectionKind => new TrackerScope.SelectedProjects(connection.Projects ?? []),
-        _ => new TrackerScope.WholeWorkspace(),
+        LinearKind => new LinearConnection(
+            connection.Id ?? "",
+            connection.Label ?? "",
+            new TrackerWorkspace(
+                connection.Workspace?.Id ?? "",
+                connection.Workspace?.Key ?? "",
+                connection.Workspace?.Name ?? "")),
+        _ => null,
     };
 
-    // L'adaptateur dans l'autre sens : chaque portée connaît sa forme de document.
-    private static ConnectionDocument ToDocument(TrackerConnection connection) => connection.Scope switch
+    // L'adaptateur dans l'autre sens : chaque genre de connexion connaît sa forme de
+    // document.
+    private static ConnectionDocument ToDocument(TrackerConnection connection) => connection switch
     {
-        TrackerScope.SelectedProjects selection =>
-            new ConnectionDocument(connection.Id, connection.Label, SelectionKind, selection.ProjectIds),
-        _ => new ConnectionDocument(connection.Id, connection.Label, WorkspaceKind, Projects: null),
+        LinearConnection linear => new ConnectionDocument(
+            linear.Id,
+            linear.Label,
+            LinearKind,
+            new WorkspaceDocument(linear.Workspace.Id, linear.Workspace.Key, linear.Workspace.Name)),
+        _ => throw new NotSupportedException(
+            $"Aucune forme de document pour {connection.GetType().Name} — un genre de connexion "
+            + "s'écrit et se relit, sinon il disparaît au redémarrage."),
     };
 
-    private const string WorkspaceKind = "workspace";
-    private const string SelectionKind = "projects";
+    private const string LinearKind = "linear";
 
     private void Save()
     {
@@ -123,5 +134,7 @@ public sealed class TrackerRegistry
     private sealed record RegistryDocument(IReadOnlyList<ConnectionDocument> Connections);
 
     private sealed record ConnectionDocument(
-        string? Id, string? Label, string? Kind, IReadOnlyList<string>? Projects);
+        string? Id, string? Label, string? Kind, WorkspaceDocument? Workspace);
+
+    private sealed record WorkspaceDocument(string? Id, string? Key, string? Name);
 }

@@ -17,6 +17,25 @@ namespace Cursus.Trackers.Tests.Linear;
 /// </summary>
 public class LinearBoardReaderTests
 {
+    [Fact(DisplayName = "étant donné une réponse d'organisation, quand on lit le workspace, alors on obtient son identité")]
+    public void A_workspace_is_read_from_its_organization()
+    {
+        // arrange — corps réel : une clé Linear voit exactement une organisation, et
+        // c'est elle qui identifie ce à quoi le jeton donne accès
+        const string json = """
+            {"data":{"organization":{"id":"ebb668c1-554c-4941-a124-3eaf885611b4",
+              "name":"Cursus","urlKey":"cursus-app"}}}
+            """;
+
+        // act
+        var workspace = LinearBoardReader.ReadWorkspace(json);
+
+        // assert
+        Assert.Equal("ebb668c1-554c-4941-a124-3eaf885611b4", workspace.Id);
+        Assert.Equal("cursus-app", workspace.Key);
+        Assert.Equal("Cursus", workspace.Name);
+    }
+
     [Fact(DisplayName = "étant donné un projet, quand on lit la réponse, alors son identifiant est rendu")]
     public void A_project_carries_its_identifier()
     {

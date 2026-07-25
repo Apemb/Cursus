@@ -17,6 +17,22 @@ namespace Cursus.Trackers.Linear;
 /// </summary>
 public static class LinearBoardReader
 {
+    /// <summary>
+    /// L'espace auquel le jeton donne accès. Bien moins coûteux que la liste des
+    /// projets, et suffisant pour éprouver une clé : si l'organisation répond, la clé
+    /// vaut, et elle dit du même coup ce qu'elle dessert.
+    /// </summary>
+    public static TrackerWorkspace ReadWorkspace(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var organization = document.RootElement.GetProperty("data").GetProperty("organization");
+
+        return new TrackerWorkspace(
+            organization.GetProperty("id").GetString() ?? "",
+            organization.GetProperty("urlKey").GetString() ?? "",
+            organization.GetProperty("name").GetString() ?? "");
+    }
+
     public static IReadOnlyList<TaskProject> Read(string json)
     {
         using var document = JsonDocument.Parse(json);

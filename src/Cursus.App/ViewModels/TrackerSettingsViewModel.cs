@@ -42,7 +42,7 @@ public partial class TrackerSettingsViewModel : ObservableObject
         _secrets = secrets;
         _boardFor = boardFor;
         Connections = new ObservableCollection<TrackerConnectionRow>(
-            registry.Connections.Select(connection => new TrackerConnectionRow(connection)));
+            registry.Connections.Select(TrackerConnectionRow.For));
     }
 
     public ObservableCollection<TrackerConnectionRow> Connections { get; }
@@ -61,10 +61,9 @@ public partial class TrackerSettingsViewModel : ObservableObject
     private void CancelAdd() => Draft = null;
 
     /// <summary>
-    /// Éprouve le jeton collé et montre ce qu'il donne à voir. C'est l'étape qui rend
-    /// l'ajout possible : la portée d'une clé n'est pas déclarable — Linear en délivre
-    /// qui couvrent le compte et d'autres un seul projet —, elle se constate en
-    /// interrogeant.
+    /// Éprouve le jeton collé et constate à quel espace il donne accès. C'est l'étape
+    /// qui rend l'ajout possible : une clé Linear est attachée à exactement un espace,
+    /// qui ne se déclare donc pas — il s'observe en interrogeant.
     /// </summary>
     [RelayCommand]
     private async Task ProbeAsync()
@@ -89,16 +88,12 @@ public partial class TrackerSettingsViewModel : ObservableObject
             // Le jeton n'est pas encore rangé : on l'éprouve depuis un trousseau de
             // passage, pour n'avoir rien à reprendre s'il est refusé.
             var board = _boardFor(new TransientSecretStore(token), "");
-            var projects = await board.ListProjectsAsync().ConfigureAwait(true);
+            var workspace = await board.DescribeWorkspaceAsync().ConfigureAwait(true);
 
-            draft.Projects.Clear();
-            foreach (var project in projects)
-                draft.Projects.Add(new TrackerProjectChoiceRow(project));
-
-            draft.HasProbed = true;
+            draft.Workspace = workspace;
 
             if (draft.Label.Length == 0)
-                draft.Label = projects.Count == 1 ? projects[0].Name : "Linear";
+                draft.Label = workspace.Name;
         }
         catch (TrackerRejectedException refusal)
         {
@@ -122,16 +117,12 @@ public partial class TrackerSettingsViewModel : ObservableObject
     [RelayCommand]
     private async Task SaveAsync()
     {
-        if (Draft is not { HasProbed: true } draft)
+        if (Draft is not { Workspace: { } workspace } draft)
             return;
 
-        var scope = draft.CoversEverything
-            ? new TrackerScope.WholeWorkspace()
-            : (TrackerScope)new TrackerScope.SelectedProjects(
-                [.. draft.Projects.Where(project => project.IsSelected).Select(project => project.Id)]);
-
         var label = draft.Label.Trim();
-        var connection = _registry.Add(label.Length == 0 ? "Linear" : label, scope);
+        var connection = _registry.Add(id => new LinearConnection(
+            id, label.Length == 0 ? workspace.Name : label, workspace));
 
         try
         {
@@ -146,7 +137,7 @@ public partial class TrackerSettingsViewModel : ObservableObject
             return;
         }
 
-        Connections.Add(new TrackerConnectionRow(connection));
+        Connections.Add(TrackerConnectionRow.For(connection));
         OnPropertyChanged(nameof(HasNoConnection));
         Draft = null;
     }

@@ -1,13 +1,13 @@
-using System.Collections.ObjectModel;
-
 using CommunityToolkit.Mvvm.ComponentModel;
+
+using Cursus.Core.Tasks;
 
 namespace Cursus.App.ViewModels;
 
 /// <summary>
-/// Une connexion en cours d'ajout. Un objet plutôt que six propriétés éparses sur le
-/// panneau, parce que l'ajout a des <b>états</b> — jeton à coller, découverte en
-/// cours, portée à cocher, refus — qui se lisent mieux ensemble.
+/// Une connexion en cours d'ajout. Un objet plutôt que cinq propriétés éparses sur le
+/// panneau, parce que l'ajout a des <b>états</b> — jeton à coller, épreuve en cours,
+/// espace constaté, refus — qui se lisent mieux ensemble.
 ///
 /// <para>
 /// ⚠️ Le jeton reste <b>en mémoire</b> jusqu'à l'enregistrement, et n'est rangé au
@@ -26,7 +26,7 @@ public partial class TrackerConnectionDraft : ObservableObject
     [ObservableProperty]
     private string _label = "";
 
-    /// <summary>Vrai pendant l'interrogation du tracker.</summary>
+    /// <summary>Vrai pendant l'épreuve du jeton.</summary>
     [ObservableProperty]
     private bool _isProbing;
 
@@ -35,19 +35,19 @@ public partial class TrackerConnectionDraft : ObservableObject
     private string? _error;
 
     /// <summary>
-    /// Vrai une fois le jeton éprouvé : la portée n'est proposée qu'à partir de là,
-    /// puisqu'on ne peut pas cocher des projets avant de savoir lesquels le jeton voit.
+    /// L'espace que le jeton dessert, une fois constaté ; <c>null</c> tant qu'il ne
+    /// l'a pas été. Il ne se choisit pas : une clé Linear est attachée à exactement un
+    /// espace — l'épreuve du jeton est donc aussi ce qui révèle le périmètre.
     /// </summary>
     [ObservableProperty]
-    private bool _hasProbed;
+    [NotifyPropertyChangedFor(nameof(HasProbed))]
+    [NotifyPropertyChangedFor(nameof(WorkspaceLabel))]
+    private TrackerWorkspace? _workspace;
 
-    /// <summary>
-    /// Vrai quand la connexion doit couvrir tout ce que le jeton voit. Décoché, ce
-    /// sont les cases individuelles qui décident.
-    /// </summary>
-    [ObservableProperty]
-    private bool _coversEverything = true;
+    /// <summary>Vrai une fois le jeton éprouvé : l'enregistrement n'est offert qu'à partir de là.</summary>
+    public bool HasProbed => Workspace is not null;
 
-    /// <summary>Les projets que ce jeton donne à voir — constatés, jamais déclarés.</summary>
-    public ObservableCollection<TrackerProjectChoiceRow> Projects { get; } = [];
+    /// <summary>L'espace en clair, pour que l'utilisateur voie à quoi il vient de se connecter.</summary>
+    public string WorkspaceLabel =>
+        Workspace is { } workspace ? $"{workspace.Name} ({workspace.Key})" : "";
 }

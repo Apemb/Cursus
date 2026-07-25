@@ -22,4 +22,12 @@ public interface ITaskBoard
     /// sous-tâches suspendues sous leur mère.
     /// </summary>
     Task<IReadOnlyList<TaskProject>> ListProjectsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// L'espace auquel le jeton donne accès. Sert à <b>éprouver</b> une clé au moment
+    /// de la configurer : si l'espace répond, la clé vaut, et elle dit du même coup ce
+    /// qu'elle dessert. Bien moins coûteux que de lister le tableau pour la seule
+    /// satisfaction de savoir si l'on est connecté.
+    /// </summary>
+    Task<TrackerWorkspace> DescribeWorkspaceAsync(CancellationToken cancellationToken = default);
 }

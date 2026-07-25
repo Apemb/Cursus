@@ -4,14 +4,19 @@ namespace Cursus.Core.Tasks;
 /// Une connexion à un tracker : un jeton nommé, et ce qu'il dessert.
 ///
 /// <para>
+/// La variante est un <b>type</b>, chaque sous-type ne portant que ce qui identifie
+/// une connexion <em>chez son tracker</em> — un espace pour Linear, un site et un
+/// projet pour Jira le jour venu, tout non-nul. Le générique ne porte donc que ce qui
+/// est vrai partout : un identifiant, un nom. Loger le <c>Workspace</c> ici en ferait
+/// un champ vide pour tout tracker qui n'en a pas.
+/// </para>
+///
+/// <para>
 /// ⚠️ <b>Le jeton n'est pas ici.</b> Cet objet s'écrit en clair dans le registre
-/// machine ; le secret, lui, vit au trousseau sous une clé dérivée de
-/// <see cref="Id"/>. C'est aussi pourquoi l'identifiant existe : deux connexions
-/// peuvent viser le même espace (une clé de compte et une clé de projet), et une
-/// clé de trousseau indexée par espace les ferait s'écraser l'une l'autre.
+/// machine ; le secret, lui, vit au trousseau sous <see cref="SecretKey"/>.
 /// </para>
 /// </summary>
-public sealed record TrackerConnection(string Id, string Label, TrackerScope Scope)
+public abstract record TrackerConnection(string Id, string Label)
 {
     /// <summary>
     /// La clé sous laquelle le trousseau garde le jeton de cette connexion. Elle vit
@@ -22,3 +27,16 @@ public sealed record TrackerConnection(string Id, string Label, TrackerScope Sco
     /// </summary>
     public string SecretKey => $"tracker:{Id}";
 }
+
+/// <summary>
+/// Une connexion Linear. Elle est identifiée par son <b>espace</b> : une clé Linear
+/// est attachée à exactement un workspace, constaté à la saisie et jamais choisi.
+///
+/// <para>
+/// Le type vit en Core bien que l'adaptateur HTTP vive ailleurs — c'est de la
+/// <em>donnée</em>, au même titre que <c>AgenticHarness.ClaudeCode</c> nomme un
+/// harnais concret sans l'implémenter.
+/// </para>
+/// </summary>
+public sealed record LinearConnection(string Id, string Label, TrackerWorkspace Workspace)
+    : TrackerConnection(Id, Label);

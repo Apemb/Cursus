@@ -65,14 +65,35 @@ public sealed class LinearTaskBoard : ITaskBoard
         _http = http ?? new HttpClient();
     }
 
-    public async Task<IReadOnlyList<TaskProject>> ListProjectsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<TaskProject>> ListProjectsAsync(CancellationToken cancellationToken = default) =>
+        LinearBoardReader.Read(await PostAsync(Query, cancellationToken).ConfigureAwait(false));
+
+    public async Task<TrackerWorkspace> DescribeWorkspaceAsync(CancellationToken cancellationToken = default) =>
+        LinearBoardReader.ReadWorkspace(await PostAsync(WorkspaceQuery, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>
+    /// Ce qui identifie l'espace du jeton. ⚠️ <c>organization</c> est au <b>singulier</b>
+    /// dans le schéma de Linear — une clé est attachée à exactement un espace, il n'y a
+    /// donc rien à choisir, seulement à constater.
+    /// </summary>
+    private const string WorkspaceQuery = """
+        query {
+          organization {
+            id
+            name
+            urlKey
+          }
+        }
+        """;
+
+    private async Task<string> PostAsync(string query, CancellationToken cancellationToken)
     {
         var token = await _secrets.ReadAsync(_secretKey, cancellationToken).ConfigureAwait(false)
             ?? throw new TrackerNotConfiguredException();
 
         using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint)
         {
-            Content = JsonContent.Create(new { query = Query }),
+            Content = JsonContent.Create(new { query }),
         };
 
         // Le jeton se passe brut : c'est une clé personnelle, pas un jeton OAuth (qui
@@ -99,6 +120,6 @@ public sealed class LinearTaskBoard : ITaskBoard
         if (LinearFailure.From(statusCode, body) is { } failed)
             throw failed;
 
-        return LinearBoardReader.Read(body);
+        return body;
     }
 }

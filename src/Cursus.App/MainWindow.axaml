@@ -632,25 +632,21 @@
                                                            IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}"
                                                            Foreground="{DynamicResource DangerBrush}" />
 
-                                                <!-- Second temps : ce que ce jeton dessert -->
+                                                <!-- Second temps : l'espace constaté. Il ne se choisit
+                                                     pas — une clé Linear est attachée à exactement un
+                                                     espace ; on le montre pour que l'utilisateur
+                                                     reconnaisse ses jetons les uns des autres -->
                                                 <StackPanel Spacing="8" IsVisible="{Binding HasProbed}">
+                                                    <StackPanel Spacing="2">
+                                                        <TextBlock Text="Connecté à l'espace" FontSize="12"
+                                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                        <TextBlock Text="{Binding WorkspaceLabel}" FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                    </StackPanel>
+
                                                     <TextBlock Text="Nom de la connexion" FontSize="12"
                                                                Foreground="{DynamicResource TextSecondaryBrush}" />
                                                     <TextBox Text="{Binding Label, Mode=TwoWay}" />
-
-                                                    <CheckBox Content="Tout ce que ce jeton voit"
-                                                              IsChecked="{Binding CoversEverything, Mode=TwoWay}" />
-
-                                                    <ScrollViewer MaxHeight="180" IsVisible="{Binding !CoversEverything}">
-                                                        <ItemsControl ItemsSource="{Binding Projects}">
-                                                            <ItemsControl.ItemTemplate>
-                                                                <DataTemplate x:DataType="vm:TrackerProjectChoiceRow">
-                                                                    <CheckBox Content="{Binding Name}"
-                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}" />
-                                                                </DataTemplate>
-                                                            </ItemsControl.ItemTemplate>
-                                                        </ItemsControl>
-                                                    </ScrollViewer>
                                                 </StackPanel>
 
                                                 <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
