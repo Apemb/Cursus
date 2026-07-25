@@ -42,6 +42,7 @@ public static class LinearBoardReader
         var roots = issues.Where(issue => issue.ParentKey is null || !present.Contains(issue.ParentKey));
 
         return new TaskProject(
+            project.TryGetProperty("id", out var id) ? id.GetString() ?? "" : "",
             project.GetProperty("name").GetString() ?? "",
             [.. roots.Select(root => Suspend(root, byParent))],
             connection.TryGetProperty("pageInfo", out var page)

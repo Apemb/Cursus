@@ -6,10 +6,10 @@ namespace Cursus.Core.Secrets;
 /// dédié plutôt qu'un champ de configuration de plus.
 ///
 /// <para>
-/// La clé est <b>opaque</b> pour ce port ; sa convention (<c>&lt;provider&gt;:&lt;workspace&gt;</c>)
-/// appartient à l'appelant. Elle ne porte pas le projet, parce que <b>le token
-/// appartient au compte, pas au projet</b> : cinq dépôts pilotés depuis le même
-/// Linear partagent une seule saisie.
+/// La clé est <b>opaque</b> pour ce port ; sa convention
+/// (<c>&lt;provider&gt;:&lt;connexion&gt;</c>) appartient à l'appelant. Elle ne porte
+/// pas le projet, parce que <b>le token appartient au compte, pas au projet</b> : cinq
+/// dépôts pilotés depuis le même Linear partagent une seule saisie.
 /// </para>
 /// </summary>
 public interface ISecretStore
@@ -23,4 +23,11 @@ public interface ISecretStore
 
     /// <summary>Range un secret sous cette clé, en remplaçant celui qui s'y trouverait.</summary>
     Task WriteAsync(string key, string value, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Efface le secret rangé sous cette clé. <b>Idempotent</b> : effacer ce qui n'est
+    /// pas là n'est pas un échec. Retirer une connexion doit emporter son jeton —
+    /// sinon le trousseau accumule des secrets que plus rien ne désigne.
+    /// </summary>
+    Task DeleteAsync(string key, CancellationToken cancellationToken = default);
 }

@@ -6,9 +6,15 @@ namespace Cursus.Core.Tasks;
 /// Ne porte que ses tâches de <b>premier rang</b> : les sous-tâches pendent de leur
 /// mère, jamais d'ici.
 /// </summary>
+/// <param name="Id">
+/// L'identifiant du projet chez le tracker. C'est lui que retient une portée de
+/// connexion (<see cref="TrackerScope.SelectedProjects"/>) : un nom se répète et se
+/// renomme, un identifiant désigne.
+/// </param>
 /// <param name="IsTruncated">
 /// Vrai quand le tableau a plus de tâches que la réponse n'en portait. Un écran qui
 /// montrerait une page en la faisant passer pour la liste entière mentirait sans le
 /// dire ; c'est au modèle de porter l'aveu, pas à l'interface de le deviner.
 /// </param>
-public sealed record TaskProject(string Name, IReadOnlyList<TaskSummary> Tasks, bool IsTruncated = false);
+public sealed record TaskProject(
+    string Id, string Name, IReadOnlyList<TaskSummary> Tasks, bool IsTruncated = false);

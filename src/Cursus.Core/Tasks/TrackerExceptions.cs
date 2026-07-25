@@ -5,11 +5,8 @@ namespace Cursus.Core.Tasks;
 /// <b>ordinaire</b> d'une installation neuve, pas une panne — la surface doit
 /// l'attraper pour inviter à configurer, jamais l'afficher comme une erreur.
 /// </summary>
-public sealed class TrackerNotConfiguredException(string workspace)
-    : Exception($"Aucun jeton n'est configuré pour l'espace « {workspace} ».")
-{
-    public string Workspace { get; } = workspace;
-}
+public sealed class TrackerNotConfiguredException()
+    : Exception("Aucun jeton n'est configuré pour cette connexion.");
 
 /// <summary>
 /// Un jeton est bien rangé, mais le tracker le refuse — révoqué, expiré, ou collé

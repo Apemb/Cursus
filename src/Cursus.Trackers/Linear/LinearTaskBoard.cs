@@ -34,6 +34,7 @@ public sealed class LinearTaskBoard : ITaskBoard
         query {
           projects(first: 25) {
             nodes {
+              id
               name
               issues(first: 50) {
                 pageInfo { hasNextPage }
@@ -50,28 +51,36 @@ public sealed class LinearTaskBoard : ITaskBoard
         """;
 
     private readonly ISecretStore _secrets;
-    private readonly string _workspace;
+    private readonly string _secretKey;
     private readonly HttpClient _http;
 
-    /// <param name="workspace">
-    /// L'espace Linear (son <c>urlKey</c>, p. ex. « cursus-app »). Sert à retrouver le
-    /// jeton : la clé du trousseau est <c>linear:&lt;workspace&gt;</c>, jamais indexée
-    /// par projet — le jeton appartient au compte (§7.10.1).
+    /// <param name="secretKey">
+    /// La clé sous laquelle le trousseau garde le jeton de cette connexion — voir
+    /// <see cref="SecretKeyOf"/>.
     /// </param>
-    public LinearTaskBoard(ISecretStore secrets, string workspace, HttpClient? http = null)
+    public LinearTaskBoard(ISecretStore secrets, string secretKey, HttpClient? http = null)
     {
         _secrets = secrets;
-        _workspace = workspace;
+        _secretKey = secretKey;
         _http = http ?? new HttpClient();
     }
 
-    /// <summary>La clé sous laquelle vit le jeton d'un espace — même convention en lecture qu'en écriture.</summary>
-    public static string SecretKeyOf(string workspace) => $"linear:{workspace}";
+    /// <summary>
+    /// La clé sous laquelle vit le jeton d'une connexion — même convention en lecture
+    /// qu'en écriture.
+    ///
+    /// <para>
+    /// ⚠️ Indexée par <b>connexion</b>, jamais par espace : une clé Linear couvre soit
+    /// le compte, soit un projet, donc deux connexions peuvent viser le même espace.
+    /// Sous une clé d'espace, la seconde écraserait le jeton de la première en silence.
+    /// </para>
+    /// </summary>
+    public static string SecretKeyOf(string connectionId) => $"linear:{connectionId}";
 
     public async Task<IReadOnlyList<TaskProject>> ListProjectsAsync(CancellationToken cancellationToken = default)
     {
-        var token = await _secrets.ReadAsync(SecretKeyOf(_workspace), cancellationToken).ConfigureAwait(false)
-            ?? throw new TrackerNotConfiguredException(_workspace);
+        var token = await _secrets.ReadAsync(_secretKey, cancellationToken).ConfigureAwait(false)
+            ?? throw new TrackerNotConfiguredException();
 
         using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint)
         {

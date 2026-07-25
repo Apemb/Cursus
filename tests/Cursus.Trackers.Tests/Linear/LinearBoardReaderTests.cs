@@ -17,6 +17,24 @@ namespace Cursus.Trackers.Tests.Linear;
 /// </summary>
 public class LinearBoardReaderTests
 {
+    [Fact(DisplayName = "étant donné un projet, quand on lit la réponse, alors son identifiant est rendu")]
+    public void A_project_carries_its_identifier()
+    {
+        // arrange — l'identifiant est ce qui permettra de désigner un projet dans une
+        // portée de connexion ; son nom, lui, peut changer et se répéter
+        const string json = """
+            {"data":{"projects":{"nodes":[
+              {"id":"a1b2c3d4-0000-4444-8888-abcdefabcdef","name":"Robustesse d'exécution","issues":{"nodes":[]}}
+            ]}}}
+            """;
+
+        // act
+        var projects = LinearBoardReader.Read(json);
+
+        // assert
+        Assert.Equal("a1b2c3d4-0000-4444-8888-abcdefabcdef", Assert.Single(projects).Id);
+    }
+
     [Fact(DisplayName = "étant donné un projet sans issue, quand on lit la réponse, alors le projet est rendu, vide")]
     public void A_project_without_issues_is_still_a_project()
     {

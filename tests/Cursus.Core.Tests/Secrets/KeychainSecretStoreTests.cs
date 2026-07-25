@@ -86,6 +86,32 @@ public sealed class KeychainSecretStoreTests : IDisposable
         Assert.Equal(awkward, await store.ReadAsync("linear:acme"));
     }
 
+    [Fact(DisplayName = "étant donné un secret rangé, quand on l'efface, alors le relire ne rend plus rien")]
+    public async Task An_erased_secret_is_gone()
+    {
+        // arrange — retirer une connexion doit emporter son jeton, sans quoi le
+        // trousseau accumule des secrets que plus rien ne désigne
+        var store = new KeychainSecretStore(_keychain);
+        await store.WriteAsync("linear:acme", "lin_api_secret");
+
+        // act
+        await store.DeleteAsync("linear:acme");
+
+        // assert
+        Assert.Null(await store.ReadAsync("linear:acme"));
+    }
+
+    [Fact(DisplayName = "étant donné une clé jamais écrite, quand on l'efface, alors rien n'est levé")]
+    public async Task Erasing_what_was_never_there_is_not_a_failure()
+    {
+        // arrange
+        var store = new KeychainSecretStore(_keychain);
+
+        // act / assert — l'effacement suit un échec de configuration aussi bien qu'un
+        // retrait : il doit être idempotent, sinon le rattrapage d'erreur lève à son tour
+        await store.DeleteAsync("linear:jamais-configure");
+    }
+
     /// <summary>
     /// Le montage et le démontage du trousseau de test — hors du sujet mesuré, donc
     /// hors du <see cref="KeychainSecretStore"/> : on ne se sert pas du sujet pour

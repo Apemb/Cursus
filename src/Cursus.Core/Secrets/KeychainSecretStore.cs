@@ -62,6 +62,20 @@ public sealed class KeychainSecretStore : ISecretStore
         Ensure(exitCode, "écrire");
     }
 
+    public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
+    {
+        var (exitCode, _) = await SecurityAsync(
+            cancellationToken, "delete-generic-password", "-s", Service, "-a", key).ConfigureAwait(false);
+
+        // Effacer ce qui n'est pas là, c'est déjà le résultat voulu. L'effacement suit
+        // aussi bien un retrait de connexion qu'un échec de configuration : lever ici
+        // ferait échouer le rattrapage d'erreur lui-même.
+        if (exitCode == ItemNotFound)
+            return;
+
+        Ensure(exitCode, "effacer");
+    }
+
     /// <summary>
     /// ⚠️ <b>Le gotcha de <c>security</c></b>, et la raison de cet encodage : à la
     /// lecture, <c>find-generic-password -w</c> rend la valeur <b>en hexadécimal</b>
