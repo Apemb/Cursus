@@ -3,9 +3,11 @@
     <Project Path="src/Cursus.App/Cursus.App.csproj" />
     <Project Path="src/Cursus.Core/Cursus.Core.csproj" />
     <Project Path="src/Cursus.Persistence/Cursus.Persistence.csproj" />
+    <Project Path="src/Cursus.Trackers/Cursus.Trackers.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Cursus.Core.Tests/Cursus.Core.Tests.csproj" />
     <Project Path="tests/Cursus.Persistence.Tests/Cursus.Persistence.Tests.csproj" />
+    <Project Path="tests/Cursus.Trackers.Tests/Cursus.Trackers.Tests.csproj" />
   </Folder>
 </Solution>

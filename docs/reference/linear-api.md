@@ -85,14 +85,36 @@ rabattre sur `type`, qui est grossier mais monotone.
 Étiquettes (`issueLabels`) sur cet espace : `Feature`, `Bug`. Rien qui ressemble encore au `Done` /
 `Comments` évoqué au §7.10.3 — **le contrat colonnes/étiquettes reste à définir** (c'est `CUR-5`).
 
-## 6. Pagination
+## 6. ⚠️ Le budget de complexité — le piège qui refuse la requête
+
+Linear plafonne la **complexité** d'une requête à **10 000**, et elle se calcule
+**multiplicativement sur les `first:` imbriqués**. Mesuré :
+
+| Requête | Complexité | Verdict |
+|---|---|---|
+| `projects(25) × issues(50)` | sous le seuil | ✅ retenu |
+| `projects(30) × issues(50)` | sous le seuil | ✅ |
+| `projects(50) × issues(100)` | **22 555** | ❌ **400 — « Query too complex »** |
+
+Deux conséquences durables :
+
+- **On ne compense pas la troncature en montant les bornes** — le mur arrive vite. C'est
+  précisément pourquoi `TaskProject.IsTruncated` existe : dire ce qu'on ne montre pas coûte moins
+  cher que tout montrer.
+- **Ajouter un champ à la requête consomme du budget.** Élargir les `first:` *et* enrichir la
+  sélection au même moment, c'est se faire refuser sans savoir lequel des deux est en cause.
+
+⚠️ Le corps de la réponse 400 porte un `userPresentableMessage` qui **donne le chiffre exact**. Tout
+diagnostic sur cette API doit lire le corps : le code HTTP seul n'apprend rien.
+
+## 7. Pagination
 
 Toutes les connexions sont en `first: n` / `after: cursor`, avec
 `pageInfo { hasNextPage endCursor }`. **Vérifié non théorique** : un projet de 4 issues rend déjà
 `hasNextPage: true` à `first: 2`. Le client devra donc paginer, ou assumer explicitement un plafond —
 jamais laisser croire qu'une première page est la liste entière.
 
-## 7. Ce que la sonde n'a pas couvert
+## 8. Ce que la sonde n'a pas couvert
 
 À sonder avant de s'y appuyer :
 
