@@ -90,7 +90,7 @@ pas leur découpe ici) :
   - `2·2b` **l'écran des tâches** 🔸 — `·1` le **trousseau** ✅ (`D-033`, `ISecretStore` sur
     `/usr/bin/security`) · `·2` le **client Linear en lecture** ✅ (`Cursus.Trackers`, port sœur
     `ITaskBoard`, arbre reconstruit, prouvé au réel) · `·3a` **la saisie du jeton dans l'UI** ✅
-    (`D-034`/`D-035` — l'espace ne se déclare pas, il se constate) · `·3b` l'**écran** ✅ (`D-036`,
+    (`D-034`/`D-035` — l'espace ne se déclare pas, il se constate) · `·3b` l'**écran** ✅ (`D-037`,
     4e module de la surface projet, plus le **lien projet ↔ tableau** tranché côté versionné). En
     lecture seule : le client s'est éprouvé sans jamais écrire sur le vrai tableau — `2·2b` est
     **close** ;
@@ -118,7 +118,7 @@ pas leur découpe ici) :
 | Jambe | Contenu | Pré-requis | Statut |
 |---|---|---|---|
 | **1 — Porte de gate** | Workflow build→test contre le dépôt ; ~~PATH-bundle~~ ✅, ~~log streaming~~ ✅ (`D-028`), ~~routage vécu~~ ✅, ~~champ Commande~~ ✅ (`D-029`) | aucun | ✅ **close** |
-| **2 — Boucle agentique** | ~~`AgentStep`~~ ✅ (`D-030`/`D-031`) · `TaskStep`/round-trip Linear 🔸 (2·2a Core ✅ `D-032` · ~~2·2b écran des tâches~~ ✅ : trousseau `D-033` + client lecture + saisie du jeton `D-034`/`D-035` + écran et lien projet ↔ tableau `D-036` · reste 2·2c « lancer sur cette tâche » / 2·2d authoring / 2·2e bout-en-bout) · déclencheurs état-tâche ⏳ | jambe 1 | 🔸 **en cours** |
+| **2 — Boucle agentique** | ~~`AgentStep`~~ ✅ (`D-030`/`D-031`) · `TaskStep`/round-trip Linear 🔸 (2·2a Core ✅ `D-032` · ~~2·2b écran des tâches~~ ✅ : trousseau `D-033` + client lecture + saisie du jeton `D-034`/`D-035` + écran et lien projet ↔ tableau `D-037` · reste 2·2c « lancer sur cette tâche » / 2·2d authoring / 2·2e bout-en-bout) · déclencheurs état-tâche ⏳ | jambe 1 | 🔸 **en cours** |
 
 ## Plus loin — directions voulues, pas encore ordonnées
 

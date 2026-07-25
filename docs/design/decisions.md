@@ -1680,7 +1680,7 @@ la même frontière ticket / plan).
 
 ---
 
-## D-036 — La déclaration est versionnée, le jeton est machine : ce qui rend une divergence visible
+## D-037 — La déclaration est versionnée, le jeton est machine : ce qui rend une divergence visible
 
 **Contexte.** L'écran des tâches (`2·2b·3b`) devait savoir quelle connexion interroger. Le §7.10.1
 laissait la question ouverte à dessein — *« le lien se posera quand l'écran aura montré ce dont il a
