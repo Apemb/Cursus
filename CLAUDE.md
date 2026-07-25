@@ -79,6 +79,17 @@ un bloc `mermaid` qui ne se rend en graphique que lorsqu'on **ouvre le fichier**
 inline dans le terminal. Sans le chemin sous la main, le lecteur ne peut pas atteindre le seul endroit
 où le schéma existe vraiment. Une ligne `> Fichier : <chemin absolu>` en tête suffit.
 
+## Écrire un ticket
+
+Le backlog vit dans Linear (espace `cursus-app`, équipe `CUR`) ; ce que doit **contenir** un ticket vit
+dans **`docs/methode/tickets.md`** — trois niveaux (feature / incrément / pas) et les questions
+auxquelles chacun répond.
+
+La frontière avec le plan gaté ci-dessus mérite d'être tenue : **le ticket dit *quoi* et *pourquoi*, le
+plan dit *comment*.** Un ticket qui prescrit l'implémentation a mangé le plan, et il sera périmé avant
+d'être pris. L'enjeu n'est pas cosmétique : la trajectoire mène à ce que Cursus **consomme ces tickets**,
+et un ticket devient alors l'unique brief d'un agent qui n'a pas eu la conversation.
+
 ## Entretenir la carte visuelle
 
 `docs/design/schemas.md` suit la même règle de fraîcheur que l'architecture, mais avec une nuance : ses
