@@ -84,10 +84,22 @@ pas leur découpe ici) :
 - **2·1 — `AgentStep`** ✅ : le kind agent headless (`claude --model … -p …`), son Core (`D-030`) et
   son authoring UI (`D-031`). Le vrai cap technique, franchi.
 - **2·2 — le round-trip tracker (Linear)** 🔸 en cours. Un `TaskStep` (3e kind) consomme une tâche et
-  referme sa carte : `2·2a` la **couture Core** (port `ITaskTracker`, `TaskOperation` lire/déplacer/
-  étiqueter, clé du run par `StepExecutionContext`) ✅ **posée** (`D-032`, TDD contre un stub) ; `2·2b`
-  le **client Linear réel** (projet dédié hors Core, secret trousseau) ; `2·2c` l'**authoring UI** (un
-  `TaskStepRow` de plus, patron `D-031`) ; `2·2d` la **boucle bout-en-bout** contre le dépôt.
+  referme sa carte :
+  - `2·2a` la **couture Core** (port `ITaskTracker`, `TaskOperation` lire/déplacer/étiqueter, clé du
+    run par `StepExecutionContext`) ✅ **posée** (`D-032`, TDD contre un stub) ;
+  - `2·2b` **l'écran des tâches** 🔸 — `·1` le **trousseau** ✅ (`D-033`, `ISecretStore` sur
+    `/usr/bin/security`) · `·2` le **client Linear en lecture** (projet dédié hors Core) · `·3`
+    l'**écran** (4e module de la surface projet). En lecture seule : le client s'éprouve sans jamais
+    écrire sur le vrai tableau ;
+  - `2·2c` **« lancer ce workflow sur cette tâche »** — rebrancher `RunTrigger.ForTask` ;
+  - `2·2d` l'**authoring UI** (un `TaskStepRow` de plus, patron `D-031`) ;
+  - `2·2e` la **boucle bout-en-bout** contre le dépôt.
+
+  ⚠️ **Ré-ordonnée** (`D-033`). L'authoring venait d'abord ; il aurait meublé une pièce sans porte —
+  `RunTrigger.ForTask` n'a aucun appelant en production, donc l'étape-tâche aurait été composable et
+  **structurellement inerte**. L'écran d'abord, le geste ensuite : c'est ce que `architecture.md`
+  §7.10.4 disait déjà (*le client existe de toute façon, puisque l'écran des actions disponibles
+  impose d'interroger le tableau*), et que la première rédaction de cette liste avait égaré.
 - **Déclencheurs état-tâche** ⏳ : l'auto-déclenchement d'un run sur l'état d'une carte (§7.10.6), après
   le round-trip manuel.
 
@@ -98,7 +110,7 @@ pas leur découpe ici) :
 | Jambe | Contenu | Pré-requis | Statut |
 |---|---|---|---|
 | **1 — Porte de gate** | Workflow build→test contre le dépôt ; ~~PATH-bundle~~ ✅, ~~log streaming~~ ✅ (`D-028`), ~~routage vécu~~ ✅, ~~champ Commande~~ ✅ (`D-029`) | aucun | ✅ **close** |
-| **2 — Boucle agentique** | ~~`AgentStep`~~ ✅ (`D-030`/`D-031`) · `TaskStep`/round-trip Linear 🔸 (2·2a Core ✅ `D-032`, reste 2·2b/c/d) · déclencheurs état-tâche ⏳ | jambe 1 | 🔸 **en cours** |
+| **2 — Boucle agentique** | ~~`AgentStep`~~ ✅ (`D-030`/`D-031`) · `TaskStep`/round-trip Linear 🔸 (2·2a Core ✅ `D-032` · 2·2b écran des tâches 🔸, trousseau ✅ `D-033` · reste 2·2c/d/e) · déclencheurs état-tâche ⏳ | jambe 1 | 🔸 **en cours** |
 
 ## Plus loin — directions voulues, pas encore ordonnées
 

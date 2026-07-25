@@ -1372,3 +1372,71 @@ payload de `StepFinished` d'une tâche s'ajoutera en branche quand 2·2b/c le r�
 construction), §4.9 (`StepExecutionContext` amorce des références) ; `trajectoire.md` §Jambe 2 ; `D-030`
 (le Core de l'agent, précédent parcours de la recette), `D-031` (l'authoring agent, dont 2·2c reprendra le
 patron de ligne polymorphe pour le `TaskStepRow`).
+
+---
+
+## D-033 — L'écran avant le geste : la jambe 2·2 ré-ordonnée, et le trousseau en Core
+
+**Contexte.** `D-032` a posé la couture tracker en Core et annonçait la suite : `2·2b` le client Linear
+réel, `2·2c` l'authoring UI (`TaskStepRow`), `2·2d` la boucle bout-en-bout. Le plan d'authoring était
+rédigé et prêt quand l'utilisateur a posé la question qui l'a renversé : *« si on ne sait pas lister les
+tâches disponibles, on va avoir un problème sur quelle tâche déplacer, non ? »*
+
+La vérification lui a donné raison, et durement : **`RunTrigger.ForTask` n'a aucun appelant en
+production**. `RunViewModel` lance sans déclencheur, donc `TaskKey` est toujours nul, donc
+`TaskStepExecutor` refuse tout geste (« Aucune tâche associée à ce run »). Soigner l'authoring d'une
+opération dans cet état, c'était **meubler une pièce sans porte** : une étape composable et
+structurellement inerte.
+
+**Ce qui est tranché.**
+
+1. **L'écran des tâches précède le geste.** `2·2b` devient *trousseau → client Linear en lecture →
+   écran* ; `2·2c` rebranche `RunTrigger.ForTask` (« lancer ce workflow sur cette tâche ») ; l'authoring
+   de l'opération n'arrive qu'en `2·2d`. Cet ordre **honore le principe ordonnateur de la trajectoire** —
+   chaque jambe utilisable dès qu'elle est posée : voir son tableau dans Cursus rend service sans un seul
+   run, là où une étape-tâche inerte ne rend rien.
+
+2. **Ce n'était pas une découverte, mais un oubli.** `architecture.md` §7.10.4 le disait déjà — *le client
+   Linear existe de toute façon, puisque calculer l'écran des actions disponibles impose d'interroger le
+   tableau* — et le jalon 7 du §9.4 nomme **l'écran** avant le geste. C'est la décomposition de
+   `trajectoire.md`, écrite plus tard, qui avait égaré l'écran en route. Leçon consignée : quand une
+   décomposition fine contredit en silence une section ancienne du document d'architecture, c'est la
+   décomposition qu'il faut soupçonner en premier.
+
+3. **La question « quelle tâche ? » n'est pas un trou de modèle mais un trou d'alimentation.** La réponse
+   est tranchée depuis §7.3 : la clé vient du `RunTrigger` du run, **jamais de la définition**, pour que
+   celle-ci reste portable. Mettre la clé dans l'étape aurait « réglé » le problème en cassant cette
+   portabilité. Ce qui manquait n'était pas un champ, c'était un **chemin d'alimentation** — d'où l'écran,
+   qui est précisément ce qui remplira le déclencheur.
+
+4. **Le trousseau vit dans le Core, en `Secrets/`** (`ISecretStore` + `KeychainSecretStore`). Le « zéro
+   dépendance externe » de `Workflows/` (§1.2) vise les **paquets NuGet**, pas les binaires du système :
+   `ProcessRunner` lance déjà des process. S'adosser à `/usr/bin/security` respecte donc la propriété tout
+   en suivant la convention d'I/O du dépôt — et rend l'adaptateur **véritablement testé** plutôt que
+   simulé. La clé est opaque au port ; sa convention `<provider>:<workspace>` **ne porte pas le projet**,
+   le token appartenant au compte (§7.10.1).
+
+5. **Deux ports, pas un** (tranché, construit en `2·2b·2`). `ITaskTracker` est le port du **geste**,
+   collaborateur du `TaskStepExecutor` ; lister est un besoin de **surface**. Un `ITaskBoard` sœur portera
+   la **requête**. **Écarté** : un port unique « tout tracker » — séduisant parce qu'un seul adaptateur
+   Linear se trouve derrière, mais c'est confondre l'implémentation (une classe) avec le contrat (deux
+   consommateurs aux besoins disjoints) ; tout stub d'exécution devrait alors implémenter une requête dont
+   il n'a que faire. C'est le patron de la **porte sœur** déjà employé au `D-020`.
+
+**⚠️ Gotcha payé au rouge.** `security find-generic-password -w` rend la valeur **en hexadécimal** dès
+qu'elle contient un octet hors ASCII imprimable — tabulation, saut de ligne, ou un simple **accent** —
+sans préfixe ni signal. La valeur remonte donc *silencieusement fausse*, ce qui est pire qu'une erreur, et
+c'est **indétectable à la relecture** : un secret qui serait littéralement une chaîne hexadécimale (un
+hash, une clé) est indiscernable de la forme encodée. D'où le choix de ne jamais laisser `security`
+arbitrer — on range du base64, toujours imprimable. Contrepartie assumée : valeur illisible à l'œil dans
+« Trousseaux d'accès », et un secret déposé à la main hors de Cursus ne se relit pas.
+
+**Écarté.** Le **repli sur fichier en clair** quand le trousseau est indisponible (§7.10.1 le disait
+déjà) — *un fallback silencieux est exactement la façon dont les secrets finissent commités*. Écarté aussi,
+le **token en variable d'environnement** pour amorcer le client plus vite : la jambe 1 a déjà payé le prix
+d'une béquille (`/bin/sh -c`) qu'il a fallu retirer ensuite.
+
+**Renvoi** : `architecture.md` §7.10.1 (trousseau, désormais construit ; le gotcha `security`),
+§7.10.4 (l'écran des actions disponibles, qui l'annonçait), §9.4 jalon 7 ; `trajectoire.md` §Jambe 2·2
+(la décomposition ré-ordonnée) ; `D-032` (la couture qu'elle prolonge), `D-020` (le patron de la porte
+sœur), `D-031` (l'authoring agent, dont `2·2d` reprendra le patron de ligne polymorphe).
