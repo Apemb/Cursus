@@ -1680,69 +1680,6 @@ la même frontière ticket / plan).
 
 ---
 
-## D-037 — La méthode est de la donnée du projet : trois lieux, et le plan qui attend sa prise
-
-**Contexte.** Mettre le flux à plat pour savoir *quels skills écrire* (`docs/methode/flux.md`, neuf) a
-produit deux choses que `D-036` n'avait pas : où la méthode doit vivre, et une contradiction interne
-qu'il fallait lever.
-
-**Tranché — trois lieux, parce que trois choses varient indépendamment.** La **méthode** vit dans un
-**skill** (elle diffère par équipe, par composition, par maturité) ; la **chorégraphie** dans le
-**workflow** Cursus (quelles étapes, dans quel ordre, routées sur quoi — ce que le noyau déterministe
-sait déjà faire) ; le **contexte** dans la **carte**.
-
-C'est le pari central du dépôt d'un cran plus haut : le moteur ne sait pas ce qu'est un agent, il ne
-saura pas non plus ce qu'est un découpage, une spec ou une test list. **La méthode est de la donnée du
-projet, jamais du code du produit.** Le prompt d'un `AgentStep` cesse d'être un brief pour devenir un
-**pointeur** — quel skill, quelle carte.
-
-Conséquence pratique : l'automatisation du flux **ne demande presque aucun développement dans
-Cursus**. Claude Code charge déjà `.claude/skills/` du dépôt de travail ; la méthode se versionne avec
-le code de l'équipe, se relit en revue, et diverge d'un dépôt à l'autre sans que Cursus ait à
-distribuer, stocker ni modéliser quoi que ce soit.
-
-**Corollaire — la question ouverte de `tickets.md` §7 se dissout.** On se demandait si les rappels de
-contexte (0 warning, régime TDD, frontière §7.12, no-nullable) devaient vivre *dans chaque carte* ou
-*dans l'amorce de l'agent*. **Ni l'un ni l'autre** : ils sont dans `CLAUDE.md`, que Claude Code charge
-seul ; la méthode d'équipe est dans le skill ; la carte ne porte que ce qui lui est propre. Reste une
-hypothèse jusqu'au premier round-trip réel, mais elle est plus propre que les deux branches posées.
-
-**Assumé — le flux est Claude Code exclusif.** Le contenu d'un skill est du markdown portable, son
-mécanisme de chargement ne l'est pas. Tranché avec l'utilisateur : c'est un choix de **l'utilisateur de
-Cursus**, garant du sens de ses propres workflows, pas une contrainte que le produit doive abstraire.
-`AgenticHarness.ClaudeCode` (`D-030`) nommait déjà un harnais concret ; on assume la même franchise un
-étage plus haut.
-
-**Révisé depuis `D-036` — le plan d'archi s'écrit à la prise, pas au découpage.** `D-036` affirmait
-qu'il est « écrit une fois, au découpage, par qui a la vue d'ensemble ». Incompatible avec le chemin
-que l'espace porte — `Todo → [Planning → Plan Review] → In Progress` place `Planning` **après** la
-naissance de la carte. La mise à plat a forcé le choix, et c'est la prise qui l'emporte, pour la raison
-qui valait déjà pour la test list : **ce qu'on apprend en faisant le premier incrément change ce qu'on
-sait au quatrième**.
-
-Ce que le découpage capture n'est donc pas la conception mais **les frontières** — ce qui est dans cet
-incrément, ce qui n'y est pas, l'ordre, les dépendances. C'est la part de la vue d'ensemble qui ne se
-recalcule pas, et elle vit dans la description des cartes (`tickets.md` §3, question 6). L'argument de
-`D-036` — *la mémoire du découpeur meurt avec sa session* — reste entier ; il désignait simplement le
-mauvais artefact.
-
-**Tranché — deux étapes n'auront jamais de skill.** `QA Review` et `Validation` : les deux jugements
-sans référentiel opposable. L'absence de skill y est une **décision**, pas un retard, et le tableau de
-`flux.md` §4 doit le dire — sans quoi le prochain lecteur la lira comme un trou à combler.
-
-**Ordre d'écriture des skills.** `prendre-un-pas` d'abord : plus petit périmètre, erreur à un commit,
-aucune dépendance, et il rend tout de suite le signal qui manque — *une carte de pas contient-elle assez
-pour qu'un agent travaille sans avoir eu la conversation ?* Le **découpage écarté comme premier
-skill**, bien qu'il soit le plus tentant : tant qu'aucun pas n'a été exécuté par un agent, on ignore
-quelle **maille** de pas est bonne, or c'est exactement ce que le découpage décide.
-
-**Renvoi** : `docs/methode/flux.md` (la vue étape → skill, et la liste de ce qui reste à écrire),
-`tickets.md` §1/§3/§6.2 (corrigés du même coup) ; `D-036` (ce qu'il révise), `D-030` (le harnais
-concret nommé sans être abstrait), `D-012` (le moteur qui ne sait pas ce qu'est un agent — même pari,
-un cran plus haut).
-
----
-
 ## D-037 — La déclaration est versionnée, le jeton est machine : ce qui rend une divergence visible
 
 **Contexte.** L'écran des tâches (`2·2b·3b`) devait savoir quelle connexion interroger. Le §7.10.1
@@ -1832,3 +1769,66 @@ l'équipe, dans son dépôt.
 `trajectoire.md` (`2·2b` close) ; `D-035` (la variante par le type, et la leçon dont ceci est la borne),
 `D-034` (les deux clés pour une même cible, situation que l'écran doit savoir traiter), `D-033` (l'ordre
 « l'écran avant le geste »), `D-024` (la validation manuelle comme seule preuve d'un module §7.12).
+
+---
+
+## D-038 — La méthode est de la donnée du projet : trois lieux, et le plan qui attend sa prise
+
+**Contexte.** Mettre le flux à plat pour savoir *quels skills écrire* (`docs/methode/flux.md`, neuf) a
+produit deux choses que `D-036` n'avait pas : où la méthode doit vivre, et une contradiction interne
+qu'il fallait lever.
+
+**Tranché — trois lieux, parce que trois choses varient indépendamment.** La **méthode** vit dans un
+**skill** (elle diffère par équipe, par composition, par maturité) ; la **chorégraphie** dans le
+**workflow** Cursus (quelles étapes, dans quel ordre, routées sur quoi — ce que le noyau déterministe
+sait déjà faire) ; le **contexte** dans la **carte**.
+
+C'est le pari central du dépôt d'un cran plus haut : le moteur ne sait pas ce qu'est un agent, il ne
+saura pas non plus ce qu'est un découpage, une spec ou une test list. **La méthode est de la donnée du
+projet, jamais du code du produit.** Le prompt d'un `AgentStep` cesse d'être un brief pour devenir un
+**pointeur** — quel skill, quelle carte.
+
+Conséquence pratique : l'automatisation du flux **ne demande presque aucun développement dans
+Cursus**. Claude Code charge déjà `.claude/skills/` du dépôt de travail ; la méthode se versionne avec
+le code de l'équipe, se relit en revue, et diverge d'un dépôt à l'autre sans que Cursus ait à
+distribuer, stocker ni modéliser quoi que ce soit.
+
+**Corollaire — la question ouverte de `tickets.md` §7 se dissout.** On se demandait si les rappels de
+contexte (0 warning, régime TDD, frontière §7.12, no-nullable) devaient vivre *dans chaque carte* ou
+*dans l'amorce de l'agent*. **Ni l'un ni l'autre** : ils sont dans `CLAUDE.md`, que Claude Code charge
+seul ; la méthode d'équipe est dans le skill ; la carte ne porte que ce qui lui est propre. Reste une
+hypothèse jusqu'au premier round-trip réel, mais elle est plus propre que les deux branches posées.
+
+**Assumé — le flux est Claude Code exclusif.** Le contenu d'un skill est du markdown portable, son
+mécanisme de chargement ne l'est pas. Tranché avec l'utilisateur : c'est un choix de **l'utilisateur de
+Cursus**, garant du sens de ses propres workflows, pas une contrainte que le produit doive abstraire.
+`AgenticHarness.ClaudeCode` (`D-030`) nommait déjà un harnais concret ; on assume la même franchise un
+étage plus haut.
+
+**Révisé depuis `D-036` — le plan d'archi s'écrit à la prise, pas au découpage.** `D-036` affirmait
+qu'il est « écrit une fois, au découpage, par qui a la vue d'ensemble ». Incompatible avec le chemin
+que l'espace porte — `Todo → [Planning → Plan Review] → In Progress` place `Planning` **après** la
+naissance de la carte. La mise à plat a forcé le choix, et c'est la prise qui l'emporte, pour la raison
+qui valait déjà pour la test list : **ce qu'on apprend en faisant le premier incrément change ce qu'on
+sait au quatrième**.
+
+Ce que le découpage capture n'est donc pas la conception mais **les frontières** — ce qui est dans cet
+incrément, ce qui n'y est pas, l'ordre, les dépendances. C'est la part de la vue d'ensemble qui ne se
+recalcule pas, et elle vit dans la description des cartes (`tickets.md` §3, question 6). L'argument de
+`D-036` — *la mémoire du découpeur meurt avec sa session* — reste entier ; il désignait simplement le
+mauvais artefact.
+
+**Tranché — deux étapes n'auront jamais de skill.** `QA Review` et `Validation` : les deux jugements
+sans référentiel opposable. L'absence de skill y est une **décision**, pas un retard, et le tableau de
+`flux.md` §4 doit le dire — sans quoi le prochain lecteur la lira comme un trou à combler.
+
+**Ordre d'écriture des skills.** `prendre-un-pas` d'abord : plus petit périmètre, erreur à un commit,
+aucune dépendance, et il rend tout de suite le signal qui manque — *une carte de pas contient-elle assez
+pour qu'un agent travaille sans avoir eu la conversation ?* Le **découpage écarté comme premier
+skill**, bien qu'il soit le plus tentant : tant qu'aucun pas n'a été exécuté par un agent, on ignore
+quelle **maille** de pas est bonne, or c'est exactement ce que le découpage décide.
+
+**Renvoi** : `docs/methode/flux.md` (la vue étape → skill, et la liste de ce qui reste à écrire),
+`tickets.md` §1/§3/§6.2 (corrigés du même coup) ; `D-036` (ce qu'il révise), `D-030` (le harnais
+concret nommé sans être abstrait), `D-012` (le moteur qui ne sait pas ce qu'est un agent — même pari,
+un cran plus haut).

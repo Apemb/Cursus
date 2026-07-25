@@ -39,8 +39,8 @@ build/out/
 .claude/settings.local.json
 
 # Claude Code — plans gatés : éphémères par nature (leur schéma-delta périme deux marches
-# plus tard, cf. CLAUDE.md). Depuis D-037 ils vivent dans le document de la carte.
+# plus tard, cf. CLAUDE.md). Depuis D-038 ils vivent dans le document de la carte.
 .claude/plans/
 
 # En revanche `.claude/skills/` est **versionné** : la méthode se relit en revue et suit le
-# dépôt (D-037, docs/methode/flux.md §3).
+# dépôt (D-038, docs/methode/flux.md §3).
