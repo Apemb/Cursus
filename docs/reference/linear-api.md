@@ -35,6 +35,23 @@ lui, prendrait `Bearer`. On ne vise pas OAuth : Cursus est un outil de dev mono-
 Convention de l'utilisateur, à respecter par le client : **projet = feature · issue = US ·
 sous-tâche = commit** (voir `docs/methode/tickets.md`).
 
+## 2bis. ⚠️ Une clé = un espace, et il n'y a rien à choisir
+
+`organization` n'existe qu'au **singulier** dans le schéma — `organizations` est refusé par la
+validation GraphQL. Une *Personal API key* est donc attachée à **exactement un workspace**, déterminé
+à sa création : le périmètre d'un jeton ne se déclare pas, il se **constate**.
+
+```graphql
+{ organization { id name urlKey } }
+```
+
+C'est la requête d'épreuve d'un jeton : elle valide la clé *et* identifie l'espace, pour une fraction
+du budget de complexité qu'aurait coûté la liste des projets. Sur cet espace : `Cursus` / `cursus-app`,
+une seule équipe (`teams` → `CUR`).
+
+Le nom « Personal API key » induit en erreur : la clé est personnelle **et** attachée à un espace, pas
+à un utilisateur qui en survolerait plusieurs.
+
 ## 3. La maille — et pourquoi elle tombe juste
 
 Linear n'a pas d'« epic » (c'est un mot Jira). La hiérarchie native se lit ainsi :

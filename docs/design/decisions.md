@@ -1504,3 +1504,58 @@ l'a pas réclamée.
 **Renvoi** : `architecture.md` §7.10.1 (les connexions, la clé par connexion), `docs/reference/linear-api.md`
 §6bis (les trois formes d'échec sondées) ; `D-033` (ce qu'elle supersède), `D-021` (l'attribution d'id par
 le propriétaire de l'unicité, même geste qu'`AddStep`), `D-016` (le panneau comme module de coquille).
+
+---
+
+## D-035 — Une clé = un espace : le genre d'une connexion est un type, pas un champ
+
+**Contexte.** `D-034` faisait cocher des **projets** Linear à la configuration d'une connexion. La
+validation manuelle l'a rejeté : le périmètre utile est le **workspace** — un projet Linear est une
+*epic* au sens Jira, un cran trop bas.
+
+**Ce que la sonde a tranché.** Le schéma Linear n'expose `organization` qu'au **singulier** ;
+`organizations` est refusé par la validation GraphQL. Une clé est donc attachée à **exactement un
+espace**, déterminé à sa création. La question « quel espace ? » n'était pas mal réglée : elle
+n'existait pas. Il n'y a rien à sélectionner, seulement à **constater** — ce que `D-034` avait déjà
+pressenti pour la portée, sans aller jusqu'au bout : la même phrase valait un cran plus haut.
+
+**Supprimé.** `TrackerScope` et son filtrage. Sans choix, plus de portée à modéliser, à sérialiser ni
+à faire survivre au redémarrage. Épreuve d'un jeton également simplifiée : `{ organization { … } }`
+valide la clé *et* dit ce qu'elle dessert, là où on listait tout le tableau pour la seule satisfaction
+de savoir si l'on était connecté — pour une fraction du budget de complexité.
+
+**Tranché — `TrackerConnection` devient une variante par le type.** Ce n'est pas la symétrie avec
+`StepDefinition` qui l'impose, c'est son absence de solution de rechange : le générique aurait porté un
+`Workspace`, concept purement Linear, dans le type que Jira utilisera aussi — un site Atlassian n'est
+pas un workspace, un `owner/repo` GitHub non plus. On serait retombé sur des champs optionnels
+mutuellement exclusifs. Chaque sous-type ne porte donc que ce qui identifie une connexion *chez son
+tracker*. `LinearConnection` vit **en Core** bien que l'adaptateur HTTP vive dans `Cursus.Trackers` :
+c'est de la donnée, au même titre qu'`AgenticHarness.ClaudeCode` nomme un harnais concret sans
+l'implémenter (`D-030`).
+
+**Conséquence sur le registre.** `Add` reçoit un **constructeur** (`id => connexion`) au lieu d'un
+couple de valeurs : le registre garde ce dont il répond — l'unicité de l'identifiant, qui désigne le
+jeton au trousseau — et laisse à l'appelant ce que lui seul sait, le genre à bâtir. Même partage qu'au
+`D-021`, où l'unicité d'un id appartient à qui la tient.
+
+**Renversé depuis `D-034`.** Un `kind` inconnu au chargement est désormais **ignoré**, là où la portée
+retombait sur une valeur par défaut. La nuance tient à ce qui est représenté : une portée approximative
+reste utilisable, une connexion dont on ignore le tracker ne l'est pas — en fabriquer une ferait
+échouer chaque usage sans dire pourquoi.
+
+**Écarté.** La sélection des **équipes** Linear (`teams`), seul découpage réel sous l'espace : aucun
+besoin ne la réclame, et la découpe polymorphe la rend bon marché le jour venu — elle se posera sur
+`LinearConnection` seule, sans toucher au générique. Écarté aussi, **graver le lien un-pour-un** entre
+connexion et projet Cursus : Linear l'est par nature, mais c'est une propriété de Linear et non du
+modèle, et Jira range plusieurs projets sous un même site.
+
+**Ce que la marche enseigne.** Deux renversements en une journée, tous deux venus de la même source :
+la confrontation d'un modèle à l'API réelle et à l'usage réel. Le premier (`D-034`) a supprimé la
+notion d'espace d'un plan qui voulait la faire saisir ; le second supprime la notion de portée d'un
+modèle qui voulait la faire choisir. **Un modèle qui demande à l'utilisateur ce que le système peut
+constater est presque toujours un modèle en avance sur ce qu'il sait.**
+
+**Renvoi** : `architecture.md` §7.10.1 (les connexions, désormais polymorphes),
+`docs/reference/linear-api.md` §2bis (une clé = un espace) ; `D-034` (ce qu'il révise), `D-030`
+(le concept concret nommé en Core), `D-031` (le patron de ligne polymorphe, repris pour l'affichage),
+`D-021` (l'unicité tenue par qui en répond).
