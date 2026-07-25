@@ -1440,3 +1440,67 @@ d'une béquille (`/bin/sh -c`) qu'il a fallu retirer ensuite.
 §7.10.4 (l'écran des actions disponibles, qui l'annonçait), §9.4 jalon 7 ; `trajectoire.md` §Jambe 2·2
 (la décomposition ré-ordonnée) ; `D-032` (la couture qu'elle prolonge), `D-020` (le patron de la porte
 sœur), `D-031` (l'authoring agent, dont `2·2d` reprendra le patron de ligne polymorphe).
+
+---
+
+## D-034 — Une connexion, pas un espace : le jeton se constate avant de se ranger
+
+**Contexte.** La marche `2·2b·3a` devait offrir une UI de saisie du jeton, l'espace Linear restant en
+dur (`cursus-app`) et la clé de trousseau valant `linear:<espace>` — forme héritée du `D-033`. Le plan
+était écrit, son schéma-delta aussi.
+
+**Ce qui l'a renversé.** Une remarque de l'utilisateur au moment de valider : *une clé Linear couvre soit
+tout le compte, soit un projet*. Trois conséquences, dont une correction de sûreté.
+
+1. **Plusieurs connexions coexistent** — l'UI ne peut pas être un formulaire à un jeton. Le registre
+   devient une **liste**.
+2. **La clé de trousseau `linear:<espace>` est un défaut**, pas une simplification : deux connexions
+   vers le même espace (une clé de compte, une clé de projet) s'y seraient **écrasées mutuellement, en
+   silence**. Elle devient `tracker:<id de connexion>`, l'identifiant étant attribué par le registre —
+   et la convention vit sur `TrackerConnection.SecretKey`, parce que laisser chaque appelant composer
+   cette clé, c'est laisser deux d'entre eux la composer différemment.
+3. **La portée d'un jeton n'est pas déclarable, elle est constatable.** On ne demande donc plus l'espace
+   du tout : on colle le jeton, on l'éprouve, et on montre ce qu'il donne à voir. La notion d'espace
+   **disparaît du modèle** — ce que le plan initial n'aurait jamais atteint en partant d'un champ à
+   remplir.
+
+**Le défaut que l'UI a révélé en amont.** Sonder un jeton invalide rend **401** ; le client en faisait un
+`TrackerUnreachableException`. Diagnostic faux *et* remède faux — on part vérifier son réseau pendant que
+sa clé est révoquée. D'où `TrackerRejectedException`, et l'extraction du verdict d'échec dans
+`LinearFailure` (pur, testé sur des corps réels). Constat général : **c'est la première marche qui
+consomme une couture pour de bon qui en révèle les confusions** ; les trois exceptions de domaine
+n'existaient que sur le papier tant que rien n'affichait leur différence.
+
+**Tranché.**
+
+- **Registre global**, jumeau de `ProjectRegistry` — un jeton ne dépend d'aucun dépôt. Il n'y a aucune
+  raison qu'une machine tienne deux registres selon des règles différentes.
+- **`TrackerScope` par le type** (`WholeWorkspace` | `SelectedProjects`), jamais une liste vide valant
+  « tout » : une sélection vide serait ambiguë. La portée **sait filtrer**, pour que l'écran des tâches
+  et le futur choix d'une tâche à lancer ne divergent pas.
+- **Kind inconnu → tout l'espace.** Montrer trop de projets se remarque et se corrige ; une connexion
+  muette n'explique rien.
+- **Le jeton n'est rangé qu'après l'inscription**, sous la clé qu'elle vient de donner. L'ordre inverse
+  aurait obligé, en cas d'abandon ou de refus, à revenir effacer un secret orphelin — un nettoyage qu'on
+  oublie une fois sur deux. D'où `TransientSecretStore` (App), qui laisse éprouver sans rien déposer.
+- **Le panneau appartient à la coquille**, superposé à la fenêtre entière, et non à la surface d'un
+  projet : ce qu'on y configure ne dépend d'aucun projet ouvert.
+
+**Superséde.** `D-033` sur deux points : la clé de trousseau (`linear:<workspace>` → `tracker:<id>`) et
+`TrackerNotConfiguredException(workspace)`, désormais sans paramètre — la connexion est connue de qui
+appelle.
+
+**Revient sur.** L'écart de `DeleteAsync` prononcé quelques heures plus tôt dans la même marche : il
+manquait un besoin, le retrait d'une connexion l'a apporté. Sans effacement, le trousseau accumule des
+secrets que plus rien ne désigne. Idempotent à dessein — l'effacement sert aussi à rattraper un échec de
+configuration, et lever alors ferait échouer le rattrapage lui-même.
+
+**Écarté.** Cocher les projets **avant** de connaître le jeton (impossible : c'est le jeton qui détermine
+ce qui est visible) ; une vraie **fenêtre de préférences ⌘,** (probablement la forme finale, mais une
+fenêtre et son cycle de vie pour un panneau qui ne porte encore que le tracker, c'est payer d'avance) ;
+**persister le lien projet Cursus ↔ connexion** maintenant — forme devinée tant que l'écran des tâches ne
+l'a pas réclamée.
+
+**Renvoi** : `architecture.md` §7.10.1 (les connexions, la clé par connexion), `docs/reference/linear-api.md`
+§6bis (les trois formes d'échec sondées) ; `D-033` (ce qu'elle supersède), `D-021` (l'attribution d'id par
+le propriétaire de l'unicité, même geste qu'`AddStep`), `D-016` (le panneau comme module de coquille).

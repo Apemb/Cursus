@@ -1144,8 +1144,8 @@ Conception issue de la conversation préparatoire au jalon 4. Le **niveau projet
 | Niveau | Où | Quoi | Pourquoi pas ailleurs |
 |---|---|---|---|
 | **Projet** | `.cursus/project.json` + `.cursus/workflows/*.json`, **versionnés** | *construit* : identité du projet (`id`, `name`) et les définitions · *prévu* : provider de tracker, board/équipe, prédicats de disponibilité | c'est l'intention d'une équipe : elle doit se partager et se relire dans une PR |
-| **Machine** | `~/.config/cursus/projects.json` — *construit au 6c·1* (`ProjectRegistry`) | la liste des projets connus · *prévu* : réglages machine | dépend de cet ordinateur ; n'a aucun sens pour un collègue |
-| **Trousseau** | Keychain macOS — *construit en 2·2b·1* (`ISecretStore`/`KeychainSecretStore`) ; libsecret ailleurs, *non construit* | les tokens Linear/Jira | un secret ne s'écrit pas sur disque en clair, même hors dépôt |
+| **Machine** | `~/.config/cursus/projects.json` — *construit au 6c·1* (`ProjectRegistry`) · `~/.config/cursus/trackers.json` — *construit en 2·2b·3a* (`TrackerRegistry`) | la liste des projets connus · les **connexions tracker** (id, libellé, portée — jamais le jeton) · *prévu* : réglages machine | dépend de cet ordinateur ; n'a aucun sens pour un collègue |
+| **Trousseau** | Keychain macOS — *construit en 2·2b·1* (`ISecretStore`/`KeychainSecretStore`) ; libsecret ailleurs, *non construit* | les tokens Linear/Jira, un par connexion | un secret ne s'écrit pas sur disque en clair, même hors dépôt |
 
 L'emplacement machine est `~/.config/cursus/` (ou `$XDG_CONFIG_HOME/cursus`), **et non** `~/Library/Application Support/` : Cursus est un outil de dev non distribué (bundle signé ad-hoc), la convention XDG correspond à ce que son public attend. ⚠️ On le résout **explicitement** (`ProjectRegistry.ResolveConfigDirectory` : `$XDG_CONFIG_HOME` sinon `<home>/.config`, une valeur vide comptant comme absente comme dans le shell) et **surtout pas** par `SpecialFolder.ApplicationData` de .NET — qui rend justement `~/Library/Application Support` sur macOS, le piège découvert au 6c·1. Le fichier y porte des chemins **absolus** — à l'inverse de `project.json`, il ne se partage jamais par git. Décision tranchée au 6c·1 (L-1).
 
@@ -1156,11 +1156,32 @@ Conséquence structurante : **une base = un projet**, donc **aucune table `proje
 Deux pièges à ne pas rater le jour venu :
 
 - **Le registre ne peut pas indexer par chemin seul** : déplacer le dossier casserait le lien en silence. D'où un `id` stable dans `project.json`, le registre portant `(id, chemin, dernière ouverture)` — c'est ce qui permet de distinguer « projet déplacé » de « projet supprimé », deux situations qui appellent des réponses opposées. « Importer » se réduit alors à ajouter une ligne au registre, et « retirer de Cursus » ne touche jamais le dépôt.
-- **Le token appartient au compte, pas au projet** : clé `cursus:<provider>:<workspace>`. Cinq dépôts pilotés depuis le même Linear partagent une seule saisie. L'indexer par projet multiplierait les copies du même secret et imposerait une ressaisie à chaque import.
+- **Le token appartient au compte, pas au projet.** Cinq dépôts pilotés depuis le même Linear partagent une seule saisie. L'indexer par projet multiplierait les copies du même secret et imposerait une ressaisie à chaque import. ⚠️ **Ni par espace** — révision de 2·2b·3a : une clé Linear couvre soit le compte, soit un projet, donc **plusieurs connexions coexistent, y compris deux vers le même espace**. La clé est donc `tracker:<id de connexion>` (`TrackerConnection.SecretKey`), et c'est le registre qui attribue cet identifiant : sous une clé d'espace, la seconde connexion écraserait le jeton de la première en silence.
 
 **Écarté** : mettre le registre en SQLite (une poignée d'entrées, aucune requête à faire) ; un repli sur fichier en clair quand le trousseau est indisponible — un fallback silencieux est exactement la façon dont les secrets finissent commités. L'implémentation s'adosse à `/usr/bin/security` (et `secret-tool` le jour venu), cohérent avec la convention d'adosser les I/O aux binaires POSIX du système ; elle vit **dans le Core** (`Secrets/`), le « zéro dépendance externe » de `Workflows/` visant les paquets NuGet et non les binaires du système — `ProcessRunner` y lance déjà des process.
 
 ⚠️ **Gotcha `security`, et pourquoi la valeur rangée est du base64** : `find-generic-password -w` rend la valeur **en hexadécimal** dès qu'elle contient un octet hors ASCII imprimable (tabulation, saut de ligne, **accent**), sans préfixe ni signal — la valeur remonterait donc *silencieusement fausse*, pire qu'une erreur. C'est indétectable à la relecture : un secret qui serait littéralement une chaîne hexadécimale (un hash, une clé) est indiscernable de la forme encodée. `KeychainSecretStore` ne laisse donc jamais `security` arbitrer et range du base64, toujours imprimable. Contrepartie assumée : la valeur n'est plus lisible à l'œil dans « Trousseaux d'accès », et un secret déposé à la main hors de Cursus ne se relit pas.
+
+##### Les connexions tracker — CONSTRUIT (2·2b·3a, `D-034`)
+
+`TrackerRegistry` est le jumeau de `ProjectRegistry` : même dossier machine, même `ForCurrentUser()`,
+même forme de fichier. Une différence commande tout — **le secret n'y est pas** : le registre ne porte
+que ce qui peut s'écrire en clair (`TrackerConnection` = id, libellé, portée), le jeton vivant au
+trousseau sous `SecretKey`.
+
+**La portée d'un jeton n'est pas déclarable, elle est constatable.** L'utilisateur ne sait pas
+toujours ce que sa clé couvre, et l'`urlKey` d'un espace n'est pas ce qu'il lit dans son navigateur.
+D'où un flux d'ajout en **deux temps** — coller le jeton, l'éprouver, *puis* choisir parmi ce qu'il
+donne à voir — et la disparition complète de la notion d'espace du modèle.
+
+`TrackerScope` est une **variante par le type** (`WholeWorkspace` | `SelectedProjects`), et non une
+liste vide valant « tout » : la convention no-nullable s'applique aux portées comme au reste. Elle
+**sait filtrer** (`Filter`), pour que l'écran des tâches et le futur choix d'une tâche à lancer ne
+recopient pas la même règle à deux endroits.
+
+**Ce qui n'est pas tranché** : *quel projet Cursus utilise quelle connexion*. Le registre est global ;
+le lien se posera dans `project.json` quand l'écran des tâches (`2·2b·3b`) aura montré ce dont il a
+besoin. Décider avant, ce serait persister une forme devinée.
 
 #### 7.10.2 Le déclenchement est un état observé, pas une transition
 
