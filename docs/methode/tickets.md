@@ -55,12 +55,18 @@ au mauvais endroit :
 | Niveau | Artefact | Quand il s'écrit | Sa fraîcheur |
 |---|---|---|---|
 | Feature | Une **spec** | Avant l'ouverture, en `Discovery` puis `Spec` | Datée — c'est un contrat, il ne bouge pas sous les pieds |
-| Incrément | Un **plan d'archi** | **Une fois, au découpage**, par qui a la vue d'ensemble | Datée |
+| Incrément | Un **plan d'archi** | **À la prise de l'incrément**, en `Planning` | Datée |
 | Pas | Une **test list** | **À la prise du pas** | **Vivante** — un cas découvert au rouge s'y ajoute |
 
-Les deux régimes cohabitent sans se contredire : planifier l'architecture d'avance ne périme
-pas, parce qu'elle décrit des frontières ; planifier *tous* les cas de test d'avance périmerait,
-parce que ce qu'on apprend au pas 1 change ce qu'on sait au pas 4.
+**Aucun des deux plans ne s'écrit d'avance**, et pour la même raison : ce qu'on apprend en
+faisant le premier incrément change ce qu'on sait au quatrième, comme ce qu'on apprend au pas 1
+change ce qu'on sait au pas 4. Planifier tout au découpage serait un *waterfall* à petite
+échelle.
+
+Ce que le découpage capture, en revanche, ne se rattrape pas : **les frontières** — ce qui est
+dans cet incrément, ce qui n'y est pas, l'ordre, les dépendances. C'est la vue d'ensemble de
+celui qui découpe, et elle disparaît avec la session qui l'a produite si elle n'est pas déposée
+dans les cartes.
 
 **Équivalence Jira**, pour qui arrive avec ce vocabulaire : feature ≈ epic, incrément ≈ US,
 pas ≈ sous-tâche. Les mots du dépôt restent ceux-ci — « epic » désigne couramment un
@@ -136,9 +142,12 @@ n'arbitre pas une faisabilité sans la tech, et on ne définit pas une recette s
 
 C'est le niveau qui porte la charge, et son artefact est le **plan d'archi** — celui que
 `CLAUDE.md` exige dès qu'un changement crée une classe, traverse des modules ou implique une
-découpe non évidente, schéma-delta compris. Il s'écrit **une fois, au découpage**, par qui a
-la vue d'ensemble de la feature ; c'est aussi le moment où les incréments naissent, et le seul
-où quelqu'un voit leurs frontières les unes par rapport aux autres.
+découpe non évidente, schéma-delta compris. Il s'écrit **à la prise de l'incrément**, en
+`Planning` — pas au découpage, qui n'en sait pas encore assez.
+
+Ce que l'incrément reçoit du découpage, c'est autre chose : **ses frontières**, vues d'en haut,
+au seul moment où quelqu'un les voyait toutes ensemble. Elles vivent dans sa description
+(question 6), et rien ne les recalcule.
 
 ### Les six questions
 
@@ -275,7 +284,7 @@ force à assimiler des étapes qui ne se correspondent pas. D'où deux matrices.
 | **Backlog** | Le cap est nommé et argumenté, pas encore ordonné dans la trajectoire | — |
 | **Discovery** | Le **besoin** est établi et vaut qu'on s'y arrête ; des pistes sont ouvertes, aucune n'est choisie. Sortie légitime vers `Canceled` : *on ne fait pas*, ou *le besoin n'est pas celui-là* | Produit, UX |
 | **Spec** | Les options sont **arbitrées** (faisabilité, coût, écarts écrits), la capacité est énoncée, **la recette est définie** | Produit, UX, **tech, QA** |
-| **In Progress** | Le **découpage a eu lieu** — les incréments existent, avec leur plan d'archi — et au moins l'un d'eux a démarré | — |
+| **In Progress** | Le **découpage a eu lieu** — les incréments existent, avec leurs frontières et leur ordre — et au moins l'un d'eux a démarré | — |
 | **Validation** | La feature est **recettée contre sa spec** | Produit, QA |
 | **Completed** | Tous ses incréments sont `Done`, `trajectoire.md` acte la jambe, un `D-NNN` est écrit si un arbitrage a été tranché | — |
 
@@ -300,7 +309,7 @@ spec un contrat plutôt qu'un document d'intention.
 |---|---|---|
 | **Backlog** | Une **salle d'attente à deux populations** : ce qui est né du découpage mais **pas encore éligible** (un `blockedBy` ouvert), et ce qui **n'a pas de parent** — voir ci-dessous | Créé au découpage, son tour n'est pas venu |
 | **Todo** | **La colonne d'éligibilité** : plus aucun `blockedBy` ouvert, le contexte tient dans la carte | Son incrément est `In Progress` et ce pas est le suivant |
-| **Planning** | **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon **on saute** directement à `In Progress` | — *(un pas qui exigerait son plan d'archi aurait la taille d'un incrément)* |
+| **Planning** | C'est **ici que le plan d'archi s'écrit**, et qu'il découpe l'incrément en pas. **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon **on saute** directement à `In Progress` | — *(un pas qui exigerait son plan d'archi aurait la taille d'un incrément)* |
 | **Plan Review** | Le plan d'archi est écrit, avec son **schéma-delta**, et il est **en cours de revue** — voir §6.3 | — |
 | **In Progress** | La série de cycles TDD tourne ; la documentation se met à jour **au fil**, pas à la fin | Un cycle : rouge observé *pour la bonne raison*, vert, refactor. La test list s'écrit ici et vit ici |
 | **Code Review** | Le comportement est **complet** ; le diff se relit d'un bloc, les commits sont argumentés, `architecture.md` / `decisions.md` sont à jour. La test list et la **formulation des comportements** se raffinent ici | — *(on ne relit pas un commit isolé, on relit un comportement)* |
