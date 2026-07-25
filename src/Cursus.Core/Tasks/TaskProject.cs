@@ -7,8 +7,8 @@ namespace Cursus.Core.Tasks;
 /// mère, jamais d'ici.
 /// </summary>
 /// <param name="Id">
-/// L'identifiant du projet chez le tracker. C'est lui que retient une portée de
-/// connexion (<see cref="TrackerScope.SelectedProjects"/>) : un nom se répète et se
+/// L'identifiant du projet chez le tracker : ce qu'un futur prédicat de disponibilité
+/// retiendra pour désigner une <em>feature</em> sans ambiguïté — un nom se répète et se
 /// renomme, un identifiant désigne.
 /// </param>
 /// <param name="IsTruncated">

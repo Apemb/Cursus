@@ -26,6 +26,19 @@ public abstract record TrackerConnection(string Id, string Label)
     /// n'explique.
     /// </summary>
     public string SecretKey => $"tracker:{Id}";
+
+    /// <summary>
+    /// La <see cref="TrackerBinding"/> qu'un projet doit inscrire pour redésigner cette
+    /// connexion — ou toute autre qui desservirait la même chose, sur un autre poste.
+    ///
+    /// <para>
+    /// Le pendant de <see cref="TrackerBinding.Matches"/>, et abstrait pour la même
+    /// raison : ce qui identifie un tableau <em>chez son tracker</em> n'est connu que du
+    /// sous-type. C'est aussi ce qui fait que <b>l'espace ne se saisit jamais</b> — la
+    /// déclaration se déduit de la connexion qu'on vient de choisir.
+    /// </para>
+    /// </summary>
+    public abstract TrackerBinding ToBinding();
 }
 
 /// <summary>
@@ -39,4 +52,7 @@ public abstract record TrackerConnection(string Id, string Label)
 /// </para>
 /// </summary>
 public sealed record LinearConnection(string Id, string Label, TrackerWorkspace Workspace)
-    : TrackerConnection(Id, Label);
+    : TrackerConnection(Id, Label)
+{
+    public override TrackerBinding ToBinding() => new LinearBinding(Workspace.Key);
+}
