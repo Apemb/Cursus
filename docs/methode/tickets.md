@@ -143,7 +143,64 @@ anglais pour les identifiants de code cités. Diacritiques corrects et complets.
 
 ---
 
-## 6. Écrire pour un agent
+## 6. Le cycle de vie — ce que chaque étape exige, par niveau
+
+**Le principe.** Le statut dit *où en est le travail* ; le niveau dit *ce que cette étape
+exige*. Les deux ne se déduisent pas l'un de l'autre : « In Progress » sur une sous-tâche
+veut dire « un cycle TDD tourne », sur un incrément « la série de cycles est en cours », sur
+une feature « au moins un de ses incréments a démarré ». Même mot, trois exigences.
+
+**Les trois chemins n'ont pas la même longueur**, et c'est voulu :
+
+```
+Sous-tâche   Todo → In Progress → Done
+Incrément    Backlog → Todo → [Planning → Plan Review] → In Progress → Code Review → [QA Review] → Done
+Feature      Backlog → Planned → In Progress → Completed
+```
+
+Les crochets marquent les étapes **conditionnelles** — voir la matrice. Un chemin court
+n'est pas un chemin bâclé : la revue d'une sous-tâche existe, elle a simplement lieu au
+niveau de l'incrément, là où le comportement est enfin observable.
+
+### La matrice
+
+| Statut | **Feature** (projet) | **Incrément** (issue) | **Pas** (sous-tâche) |
+|---|---|---|---|
+| **Backlog** | Le cap est nommé et argumenté, pas encore ordonné dans la trajectoire | L'incrément est décrit ; son « pourquoi maintenant » n'a pas encore de réponse | Y séjourne quand elle a été écrite d'avance parce que l'**ordre des pas était une information** |
+| **Todo** / *Planned* | Le cap est le prochain à ouvrir ; ses pré-requis sont levés | **La colonne d'éligibilité** : plus aucun `blockedBy` ouvert, le contexte tient dans la carte | Son incrément est `In Progress` et ce pas est le suivant |
+| **Planning** | — *(un projet ne se planifie pas, il s'ordonne)* | **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon **on saute** directement à `In Progress` | — *(le plan est porté par l'incrément parent)* |
+| **Plan Review** | — | Le plan est écrit, porte son **chemin de fichier en tout premier** et son **schéma-delta** ; il **attend une validation humaine** | — |
+| **In Progress** | Au moins un incrément a démarré | La série de cycles TDD tourne ; la documentation se met à jour **au fil**, pas à la fin | Un cycle : rouge observé *pour la bonne raison*, vert, refactor |
+| **Code Review** | — | Le comportement est **complet** ; le diff se relit d'un bloc, les commits sont argumentés, `architecture.md` / `decisions.md` sont à jour | — *(on ne relit pas un commit isolé, on relit un comportement)* |
+| **QA Review** | — | **Conditionnel** : obligatoire dès que l'incrément touche la présentation (§7.12, non testée) — l'app est lancée, le parcours refait à la main. **Sautée** pour un incrément purement Core, et le dire vaut mieux que traverser la colonne pour la forme | — |
+| **Done** / *Completed* | Tous ses incréments sont `Done`, `trajectoire.md` acte la jambe, un `D-NNN` est écrit si un arbitrage a été tranché | L'acceptation est cochée **case par case**, la validation manuelle est faite si elle était due | Commit fait, suite verte, **0 warning** |
+
+### Les deux colonnes de rendez-vous
+
+`Plan Review` et `QA Review` ne sont pas des formalités : ce sont les deux endroits où le
+travail **s'arrête et attend un humain**. Elles matérialisent dans l'outil ce que
+`modele-metier.md` §5.1 pose comme état de première classe — `HumanReview`. Une carte ne les
+traverse pas toute seule, quel que soit le verdict de la gate.
+
+C'est aussi la réponse opérationnelle à « le succès d'un agent n'est pas la fermeture de la
+tâche » : quand la boucle tournera, un `AgentStep` déplacera une carte de `Todo` vers
+`In Progress` à l'entrée, puis vers `Code Review` à la sortie — **jamais jusqu'à `Done`**. Le
+dernier pas reste humain, par construction et non par prudence temporaire.
+
+### Ce qui n'est pas une étape
+
+`Canceled` et `Duplicate` sont des **sorties**, pas des colonnes de travail. Une carte
+annulée mérite une phrase disant pourquoi : un abandon non expliqué se re-proposera.
+
+> **Registre.** Les chemins ci-dessus sont **tranchés** ; leur usage par une machine est
+> **tranché mais pas éprouvé** — aucun agent n'a encore déplacé de carte. Ce qui reste
+> **ouvert** : quelle colonne exactement porte l'éligibilité au déclenchement automatique
+> (`Todo` seul, ou `Todo` + une étiquette), et si une reprise après échec de gate renvoie la
+> carte en `Todo` ou la laisse en `In Progress` marquée. Voir `CUR-5`.
+
+---
+
+## 7. Écrire pour un agent
 
 Ce qui suit est **tranché mais pas encore éprouvé** — aucun agent n'a encore consommé de
 ticket de ce backlog. À amender dès que la boucle tournera pour de vrai (`CUR-9`).
@@ -171,7 +228,7 @@ qu'on n'a pas encore écrite. **Question ouverte, à trancher au premier round-t
 
 ---
 
-## 7. Correspondance avec Linear
+## 8. Correspondance avec Linear
 
 | Ici | Linear | Note |
 |---|---|---|
@@ -180,11 +237,15 @@ qu'on n'a pas encore écrite. **Question ouverte, à trancher au premier round-t
 | Pas | Sous-tâche (`parentId`) | Rattachée aussi au projet, pour rester visible |
 | Ordre | `blockedBy` | Ce qui empêche de prendre une carte trop tôt |
 
-La correspondance entre les **statuts** Linear et les états métier de Cursus (`modele-metier.md`
-§5.1) est d'une autre nature — c'est un contrat **machine**, lu par le prédicat de
-disponibilité et écrit par les étapes-tâches. Elle ne vit pas ici : voir `CUR-5` et
-`architecture.md` §7.10.5.
+**Ce que la §6 couvre, et ce qu'elle ne couvre pas.** Elle dit ce qu'un statut **exige** — de
+quoi il faut s'être acquitté pour en sortir, selon le niveau. C'est une convention de
+travail, lue par des humains, et elle a sa place ici.
 
-> Rappel qui vaut d'être écrit une fois : **le succès d'un agent n'est pas la fermeture de la
-> tâche.** `HumanReview` est un état de première classe. Un ticket dont l'acceptation
-> impliquerait qu'un run vert ferme la carte tout seul contredit le modèle métier.
+Le **contrat machine** est autre chose : quels identifiants de colonnes et d'étiquettes le
+prédicat de disponibilité observe, et lesquels les étapes-tâches écrivent. Il vit dans
+`project.json`, se lit sans ambiguïté et ne tolère pas la nuance — d'où sa séparation. Voir
+`CUR-5` et `architecture.md` §7.10.5.
+
+La frontière est facile à perdre de vue : « une carte en `Code Review` attend un humain » est
+une convention ; « la colonne `Code Review` porte l'identifiant `b972d7e7…` » est un contrat.
+Écrire le second ici le condamnerait à diverger du premier renommage de colonne.
