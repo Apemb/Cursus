@@ -11,4 +11,14 @@ namespace Cursus.Core.Tasks;
 /// clé de trousseau indexée par espace les ferait s'écraser l'une l'autre.
 /// </para>
 /// </summary>
-public sealed record TrackerConnection(string Id, string Label, TrackerScope Scope);
+public sealed record TrackerConnection(string Id, string Label, TrackerScope Scope)
+{
+    /// <summary>
+    /// La clé sous laquelle le trousseau garde le jeton de cette connexion. Elle vit
+    /// ici plutôt que chez l'adaptateur : laisser chaque appelant la composer, c'est
+    /// laisser deux d'entre eux la composer différemment — et un jeton rangé sous une
+    /// clé, relu sous une autre, se manifeste par un « aucun jeton configuré » que rien
+    /// n'explique.
+    /// </summary>
+    public string SecretKey => $"tracker:{Id}";
+}

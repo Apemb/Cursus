@@ -29,12 +29,17 @@ public partial class ShellViewModel : ObservableObject, IDisposable
 {
     private readonly ProjectRegistry _registry;
     private readonly Func<Project, ProjectWorkspace> _openWorkspace;
+    private readonly Func<TrackerSettingsViewModel> _openSettings;
     private ProjectWorkspace? _currentWorkspace;
 
-    public ShellViewModel(ProjectRegistry registry, Func<Project, ProjectWorkspace> openWorkspace)
+    public ShellViewModel(
+        ProjectRegistry registry,
+        Func<Project, ProjectWorkspace> openWorkspace,
+        Func<TrackerSettingsViewModel> openSettings)
     {
         _registry = registry;
         _openWorkspace = openWorkspace;
+        _openSettings = openSettings;
         Projects = new ObservableCollection<ProjectRowViewModel>(
             registry.Projects.Select(project => new ProjectRowViewModel(project)));
     }
@@ -98,6 +103,26 @@ public partial class ShellViewModel : ObservableObject, IDisposable
 
     /// <summary>Ferme le workspace encore ouvert : sa connexion SQLite ne doit pas fuir à la fermeture.</summary>
     public void Dispose() => _currentWorkspace?.Dispose();
+
+    // --- les réglages : un panneau de coquille, pas un module de surface ---
+
+    /// <summary>
+    /// Le panneau des connexions tracker quand il est ouvert. Il se superpose à la
+    /// surface au lieu d'y prendre place : un jeton dessert des projets du tracker, pas
+    /// un projet Cursus, et il reste joignable même sans projet ouvert.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSettings))]
+    private TrackerSettingsViewModel? _settings;
+
+    /// <summary>Vrai quand le panneau des réglages couvre la fenêtre.</summary>
+    public bool HasSettings => Settings is not null;
+
+    [RelayCommand]
+    private void OpenSettings() => Settings = _openSettings();
+
+    [RelayCommand]
+    private void CloseSettings() => Settings = null;
 
     /// <summary>Le dernier refus d'ajout ou de création à afficher ; <c>null</c> si le dernier geste a réussi.</summary>
     [ObservableProperty]

@@ -51,6 +51,16 @@
                 </StackPanel>
             </Border>
 
+            <!-- Pied de rail : les réglages, au-dessus des projets comme les connexions
+                 qu'ils portent — un jeton ne dépend d'aucun projet ouvert -->
+            <Border DockPanel.Dock="Bottom" Padding="10,8"
+                    BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,1,0,0">
+                <Button Content="⚙  Réglages"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Command="{Binding OpenSettingsCommand}" />
+            </Border>
+
             <ListBox ItemsSource="{Binding Projects}"
                      SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
                      Background="Transparent"
@@ -563,6 +573,137 @@
                        HorizontalAlignment="Center" VerticalAlignment="Center"
                        Foreground="{DynamicResource TextSecondaryBrush}" />
         </Panel>
+
+        <!-- Réglages : superposés à toute la fenêtre, rail compris. Ils ne sont pas un
+             module de la surface — ce qu'on y configure ne dépend d'aucun projet -->
+        <Border Grid.Column="0" Grid.ColumnSpan="2"
+                IsVisible="{Binding HasSettings}"
+                Background="{DynamicResource ChromeRailBrush}">
+            <ContentControl Content="{Binding Settings}">
+                <ContentControl.ContentTemplate>
+                    <DataTemplate x:DataType="vm:TrackerSettingsViewModel">
+                        <DockPanel Margin="24">
+
+                            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+                                <StackPanel Grid.Column="0" Spacing="4">
+                                    <TextBlock Text="Connexions au tracker" FontSize="18" FontWeight="Bold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                                    <TextBlock Text="Un jeton par connexion. Il est rangé dans le trousseau du système, jamais sur le disque."
+                                               FontSize="11" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Fermer" VerticalAlignment="Top"
+                                        Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).CloseSettingsCommand}" />
+                            </Grid>
+
+                            <!-- Ajout en cours : le flux en deux temps, jeton puis portée -->
+                            <Border DockPanel.Dock="Bottom" Margin="0,16,0,0" Padding="14"
+                                    IsVisible="{Binding Draft, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="1"
+                                    CornerRadius="6">
+                                <ContentControl Content="{Binding Draft}">
+                                    <ContentControl.ContentTemplate>
+                                        <DataTemplate x:DataType="vm:TrackerConnectionDraft">
+                                            <StackPanel Spacing="10">
+
+                                                <!-- Premier temps : le jeton. On ne peut rien cocher
+                                                     avant de savoir ce que cette clé donne à voir -->
+                                                <StackPanel Spacing="6" IsVisible="{Binding !HasProbed}">
+                                                    <TextBlock Text="Jeton d'API" FontSize="12"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBox Grid.Column="0" Margin="0,0,8,0"
+                                                                 PasswordChar="•"
+                                                                 PlaceholderText="lin_api_…"
+                                                                 Text="{Binding Token, Mode=TwoWay}" />
+                                                        <Button Grid.Column="1" Content="Connecter"
+                                                                IsEnabled="{Binding !IsProbing}"
+                                                                Command="{Binding $parent[ContentControl].((vm:TrackerSettingsViewModel)DataContext).ProbeCommand}" />
+                                                    </Grid>
+                                                </StackPanel>
+
+                                                <TextBlock Text="Interrogation du tracker…"
+                                                           IsVisible="{Binding IsProbing}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+
+                                                <TextBlock Text="{Binding Error}" TextWrapping="Wrap" FontSize="11"
+                                                           IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                           Foreground="{DynamicResource DangerBrush}" />
+
+                                                <!-- Second temps : ce que ce jeton dessert -->
+                                                <StackPanel Spacing="8" IsVisible="{Binding HasProbed}">
+                                                    <TextBlock Text="Nom de la connexion" FontSize="12"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                    <TextBox Text="{Binding Label, Mode=TwoWay}" />
+
+                                                    <CheckBox Content="Tout ce que ce jeton voit"
+                                                              IsChecked="{Binding CoversEverything, Mode=TwoWay}" />
+
+                                                    <ScrollViewer MaxHeight="180" IsVisible="{Binding !CoversEverything}">
+                                                        <ItemsControl ItemsSource="{Binding Projects}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate x:DataType="vm:TrackerProjectChoiceRow">
+                                                                    <CheckBox Content="{Binding Name}"
+                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </ScrollViewer>
+                                                </StackPanel>
+
+                                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                                    <Button Content="Enregistrer"
+                                                            IsVisible="{Binding HasProbed}"
+                                                            Command="{Binding $parent[ContentControl].((vm:TrackerSettingsViewModel)DataContext).SaveCommand}" />
+                                                    <Button Content="Annuler"
+                                                            Command="{Binding $parent[ContentControl].((vm:TrackerSettingsViewModel)DataContext).CancelAddCommand}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ContentControl.ContentTemplate>
+                                </ContentControl>
+                            </Border>
+
+                            <Button DockPanel.Dock="Bottom" Content="＋  Ajouter une connexion"
+                                    HorizontalAlignment="Left" Margin="0,12,0,0"
+                                    IsVisible="{Binding Draft, Converter={x:Static ObjectConverters.IsNull}}"
+                                    Command="{Binding BeginAddCommand}" />
+
+                            <!-- L'absence de connexion est l'état d'une installation neuve : une
+                                 invitation, pas une erreur -->
+                            <TextBlock Text="Aucune connexion. Ajoutez-en une pour voir vos tâches dans Cursus."
+                                       DockPanel.Dock="Top"
+                                       IsVisible="{Binding HasNoConnection}"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+
+                            <ListBox ItemsSource="{Binding Connections}"
+                                     Background="Transparent" BorderThickness="0" Padding="0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:TrackerConnectionRow">
+                                        <Grid ColumnDefinitions="*,Auto" MinHeight="34">
+                                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                                <TextBlock Text="{Binding Label}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                <TextBlock Text="{Binding ScopeLabel}" FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="✕"
+                                                    VerticalAlignment="Center"
+                                                    CommandParameter="{Binding}"
+                                                    Command="{Binding $parent[ListBox].((vm:TrackerSettingsViewModel)DataContext).RemoveCommand}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                        </DockPanel>
+                    </DataTemplate>
+                </ContentControl.ContentTemplate>
+            </ContentControl>
+        </Border>
 
     </Grid>
 </Window>

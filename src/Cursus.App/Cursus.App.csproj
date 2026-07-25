@@ -24,5 +24,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Cursus.Core\Cursus.Core.csproj" />
     <ProjectReference Include="..\Cursus.Persistence\Cursus.Persistence.csproj" />
+    <ProjectReference Include="..\Cursus.Trackers\Cursus.Trackers.csproj" />
   </ItemGroup>
 </Project>

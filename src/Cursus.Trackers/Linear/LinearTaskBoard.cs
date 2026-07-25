@@ -65,18 +65,6 @@ public sealed class LinearTaskBoard : ITaskBoard
         _http = http ?? new HttpClient();
     }
 
-    /// <summary>
-    /// La clé sous laquelle vit le jeton d'une connexion — même convention en lecture
-    /// qu'en écriture.
-    ///
-    /// <para>
-    /// ⚠️ Indexée par <b>connexion</b>, jamais par espace : une clé Linear couvre soit
-    /// le compte, soit un projet, donc deux connexions peuvent viser le même espace.
-    /// Sous une clé d'espace, la seconde écraserait le jeton de la première en silence.
-    /// </para>
-    /// </summary>
-    public static string SecretKeyOf(string connectionId) => $"linear:{connectionId}";
-
     public async Task<IReadOnlyList<TaskProject>> ListProjectsAsync(CancellationToken cancellationToken = default)
     {
         var token = await _secrets.ReadAsync(_secretKey, cancellationToken).ConfigureAwait(false)

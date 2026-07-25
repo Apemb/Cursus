@@ -3,7 +3,10 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Cursus.App.ViewModels;
 using Cursus.Core.Projects;
+using Cursus.Core.Secrets;
+using Cursus.Core.Tasks;
 using Cursus.Persistence;
+using Cursus.Trackers.Linear;
 
 namespace Cursus.App;
 
@@ -22,6 +25,13 @@ public partial class App : Application
             // machine par défaut, et le préréglage SQLite comme fabrique de hosts.
             // C'est l'unique endroit qui lie les deux mondes — les modules
             // reçoivent leurs dépendances construites, ils ne composent jamais.
+            // Le trousseau et le registre des connexions vivent au-dessus des projets,
+            // comme le registre des projets lui-même : un jeton n'appartient pas à un
+            // dépôt. Le panneau reçoit une fabrique (trousseau, clé) → tableau — c'est
+            // le seul endroit qui sait que le tracker est Linear.
+            var secrets = new KeychainSecretStore();
+            var trackers = TrackerRegistry.ForCurrentUser();
+
             desktop.MainWindow = new MainWindow
             {
                 DataContext = new ShellViewModel(
@@ -29,7 +39,11 @@ public partial class App : Application
                     project => new ProjectWorkspace(
                         SqliteProjectHost.Open(project),
                         new RunArtifactStore(project.ArtifactsRoot),
-                        new WorkflowCatalog(project))),
+                        new WorkflowCatalog(project)),
+                    () => new TrackerSettingsViewModel(
+                        trackers,
+                        secrets,
+                        (store, key) => new LinearTaskBoard(store, key))),
             };
         }
 
