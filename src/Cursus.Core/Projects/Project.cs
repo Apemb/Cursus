@@ -1,3 +1,5 @@
+using Cursus.Core.Tasks;
+
 namespace Cursus.Core.Projects;
 
 /// <summary>
@@ -8,11 +10,12 @@ namespace Cursus.Core.Projects;
 /// </summary>
 public sealed class Project
 {
-    internal Project(string id, string name, string root)
+    internal Project(string id, string name, string root, TrackerBinding? tracker = null)
     {
         Id = id;
         Name = name;
         Root = root;
+        Tracker = tracker;
     }
 
     /// <summary>
@@ -26,6 +29,14 @@ public sealed class Project
 
     /// <summary>Racine absolue et normalisée du workspace : le dossier qui contient le <c>.cursus/</c>.</summary>
     public string Root { get; }
+
+    /// <summary>
+    /// Le tableau de tâches que ce dépôt déclare viser, ou <c>null</c> s'il n'en suit
+    /// aucun. Nullable à bon droit : c'est une <b>valeur qui peut manquer</b>, pas une
+    /// variante de type — un dépôt sans tableau reste un dépôt, il ne devient pas un
+    /// autre genre de projet.
+    /// </summary>
+    public TrackerBinding? Tracker { get; }
 
     public string CursusDirectory => Path.Combine(Root, ProjectStore.DirectoryName);
 

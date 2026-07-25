@@ -1,4 +1,5 @@
 using Cursus.Core.Projects;
+using Cursus.Core.Tasks;
 
 namespace Cursus.Core.Tests.Projects;
 
@@ -98,6 +99,92 @@ public class ProjectStoreTests : IDisposable
         // assert
         Assert.Equal("Nouveau nom", reopened.Name);
         Assert.Equal(created.Id, reopened.Id);
+    }
+
+    // --- le tableau de tâches que le dépôt déclare viser ---
+
+    [Fact(DisplayName = "étant donné un projet fraîchement créé, quand on l'ouvre, alors il ne déclare aucun tracker")]
+    public void A_fresh_project_declares_no_tracker()
+    {
+        // arrange
+        ProjectStore.Create(_root, "Démo");
+
+        // act
+        var project = ProjectStore.Open(_root);
+
+        // assert — une déclaration absente est une valeur qui manque, pas un genre de
+        // projet distinct : un dépôt sans tableau reste un dépôt
+        Assert.Null(project.Tracker);
+    }
+
+    [Fact(DisplayName = "étant donné un projet, quand on lui déclare un tracker, alors le projet rendu porte la déclaration")]
+    public void Declaring_a_tracker_yields_a_project_that_carries_it()
+    {
+        // arrange
+        var created = ProjectStore.Create(_root, "Démo");
+
+        // act
+        var declared = ProjectStore.DeclareTracker(created, new LinearBinding("cursus-app"));
+
+        // assert — l'appelant doit obtenir le projet frais sans relire le disque ;
+        // l'ancien, immuable, garde son absence de déclaration
+        Assert.Equal(new LinearBinding("cursus-app"), declared.Tracker);
+        Assert.Null(created.Tracker);
+    }
+
+    [Fact(DisplayName = "étant donné un projet dont le tracker est déclaré, quand on le rouvre depuis le disque, alors la déclaration est relue")]
+    public void A_declared_tracker_survives_being_written_and_read_back()
+    {
+        // arrange
+        var created = ProjectStore.Create(_root, "Démo");
+        ProjectStore.DeclareTracker(created, new LinearBinding("cursus-app"));
+
+        // act — la déclaration est versionnée : c'est tout son intérêt, elle doit
+        // atterrir dans le fichier que la revue lira
+        var reopened = ProjectStore.Open(_root);
+
+        // assert
+        var declaration = Assert.IsType<LinearBinding>(reopened.Tracker);
+        Assert.Equal("cursus-app", declaration.WorkspaceKey);
+    }
+
+    [Fact(DisplayName = "étant donné un projet dont le tracker est déclaré, quand on le renomme depuis un instantané qui l'ignore, alors la déclaration survit")]
+    public void Renaming_from_a_stale_snapshot_preserves_the_declared_tracker()
+    {
+        // arrange — l'instantané d'avant la déclaration, tel que le registre machine en
+        // garde un depuis le démarrage de l'application
+        var stale = ProjectStore.Create(_root, "Ancien nom");
+        ProjectStore.DeclareTracker(stale, new LinearBinding("cursus-app"));
+
+        // act — le registre renomme depuis sa liste en mémoire, qui ne sait rien de la
+        // déclaration posée entre-temps
+        ProjectStore.Rename(stale, "Nouveau nom");
+
+        // assert — un écrivain partiel de project.json relit le disque avant d'écrire ;
+        // sans cela la déclaration s'effacerait sans un mot, et le projet cesserait de
+        // viser un tableau au moment le moins soupçonnable
+        var reopened = ProjectStore.Open(_root);
+        Assert.Equal("Nouveau nom", reopened.Name);
+        Assert.Equal(new LinearBinding("cursus-app"), reopened.Tracker);
+    }
+
+    [Fact(DisplayName = "étant donné un document dont le genre de tracker est inconnu, quand on l'ouvre, alors aucune déclaration n'est rendue")]
+    public void An_unknown_tracker_kind_is_ignored_rather_than_degraded()
+    {
+        // arrange — le dépôt d'un collègue, versionné par une version qui sait joindre un
+        // tracker que celle-ci ignore
+        var created = ProjectStore.Create(_root, "Démo");
+        File.WriteAllText(
+            created.ProjectFilePath,
+            """{"id":"p-1","name":"Démo","tracker":{"kind":"jira","site":"acme"}}""");
+
+        // act
+        var reopened = ProjectStore.Open(_root);
+
+        // assert — ignoré, jamais dégradé : viser un tableau approximatif enverrait des
+        // gestes au mauvais endroit, là où n'en viser aucun se voit et se corrige
+        Assert.Null(reopened.Tracker);
+        Assert.Equal("Démo", reopened.Name);
     }
 
     // --- ouverture et découverte ---
