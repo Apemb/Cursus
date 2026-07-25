@@ -88,9 +88,15 @@ pas leur découpe ici) :
   - `2·2a` la **couture Core** (port `ITaskTracker`, `TaskOperation` lire/déplacer/étiqueter, clé du
     run par `StepExecutionContext`) ✅ **posée** (`D-032`, TDD contre un stub) ;
   - `2·2b` **l'écran des tâches** 🔸 — `·1` le **trousseau** ✅ (`D-033`, `ISecretStore` sur
-    `/usr/bin/security`) · `·2` le **client Linear en lecture** (projet dédié hors Core) · `·3`
-    l'**écran** (4e module de la surface projet). En lecture seule : le client s'éprouve sans jamais
-    écrire sur le vrai tableau ;
+    `/usr/bin/security`) · `·2` le **client Linear en lecture** ✅ (`Cursus.Trackers`, port sœur
+    `ITaskBoard`, arbre reconstruit, prouvé au réel) · `·3a` **la saisie du jeton dans l'UI** ·
+    `·3b` l'**écran** (4e module de la surface projet). En lecture seule : le client s'éprouve sans
+    jamais écrire sur le vrai tableau ;
+
+    > **Pourquoi `·3a` existe** (tranché avec l'utilisateur, 2026-07-25) : l'écran ne peut rien
+    > montrer sans jeton, et le ranger à la main serait précisément la **béquille** que la jambe 1 a
+    > appris à ne pas poser (`/bin/sh -c`, retirée ensuite). On configure donc par l'interface dès
+    > le premier affichage, plutôt que d'ajouter un geste manuel qu'il faudrait défaire.
   - `2·2c` **« lancer ce workflow sur cette tâche »** — rebrancher `RunTrigger.ForTask` ;
   - `2·2d` l'**authoring UI** (un `TaskStepRow` de plus, patron `D-031`) ;
   - `2·2e` la **boucle bout-en-bout** contre le dépôt.
@@ -110,7 +116,7 @@ pas leur découpe ici) :
 | Jambe | Contenu | Pré-requis | Statut |
 |---|---|---|---|
 | **1 — Porte de gate** | Workflow build→test contre le dépôt ; ~~PATH-bundle~~ ✅, ~~log streaming~~ ✅ (`D-028`), ~~routage vécu~~ ✅, ~~champ Commande~~ ✅ (`D-029`) | aucun | ✅ **close** |
-| **2 — Boucle agentique** | ~~`AgentStep`~~ ✅ (`D-030`/`D-031`) · `TaskStep`/round-trip Linear 🔸 (2·2a Core ✅ `D-032` · 2·2b écran des tâches 🔸, trousseau ✅ `D-033` · reste 2·2c/d/e) · déclencheurs état-tâche ⏳ | jambe 1 | 🔸 **en cours** |
+| **2 — Boucle agentique** | ~~`AgentStep`~~ ✅ (`D-030`/`D-031`) · `TaskStep`/round-trip Linear 🔸 (2·2a Core ✅ `D-032` · 2·2b écran des tâches 🔸 : trousseau ✅ `D-033` + client lecture ✅, reste ·3a saisie du jeton / ·3b écran · puis 2·2c/d/e) · déclencheurs état-tâche ⏳ | jambe 1 | 🔸 **en cours** |
 
 ## Plus loin — directions voulues, pas encore ordonnées
 
