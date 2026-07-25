@@ -1637,11 +1637,12 @@ arbitrage technique**. Et la QA à la table de `Spec` est **d'où descend l'acce
 comment la feature se recettera, le découpage répartit ensuite cette recette entre les stories.
 
 **Tranché — `Backlog` porte deux fonctions selon le niveau.** Au niveau **projet**, c'est le début du
-flux nominal. Au niveau **issue**, il est *structurellement vide* en nominal : les stories naissent au
-découpage — quand la feature entre en `In Progress` — donc directement en `Todo`. Ce qui y vit est ce
-qui **n'a pas de parent** : le refacto qu'aucune fonctionnalité ne tire, la dette autonome, plus les
-stories explicitement déportées d'un découpage. C'est **l'entrée latérale du backlog**, et elle règle
-le sort du refacto orphelin, qui n'avait jusqu'ici aucune porte.
+flux nominal. Au niveau **issue**, c'est une **salle d'attente** : une story *éligible* n'y passe pas,
+puisqu'elle naît en `Todo` au découpage de sa feature. Y séjournent celles qui attendent une dépendance
+— et surtout celles qui **n'ont pas de parent** : le refacto qu'aucune fonctionnalité ne tire, la dette
+autonome, plus les stories explicitement déportées d'un découpage. C'est **l'entrée latérale du
+backlog**, la seule voie par laquelle un travail arrive sans passer par une spec, et elle règle le sort
+du refacto orphelin qui n'avait jusqu'ici aucune porte.
 
 **Conséquence — le ticket cesse d'être un brief pour devenir un lieu de dialogue.** On le pensait en
 entrée (le contexte) et en sortie (l'acceptation) ; la boucle en fait aussi le **journal d'une

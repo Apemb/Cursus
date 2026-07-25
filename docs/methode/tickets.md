@@ -174,6 +174,10 @@ où quelqu'un voit leurs frontières les unes par rapport aux autres.
   changement crée une classe, traverse des modules ou implique une découpe non évidente. Le
   ticket dit *quoi* et *pourquoi* ; le plan dit *comment*. Un ticket qui prescrit
   l'implémentation ligne à ligne a mangé le plan — et il sera périmé avant d'être pris.
+
+  Que l'incrément **porte** son plan d'archi ne contredit pas cette frontière : le plan vit
+  dans le **document attaché** à la carte, écrit en `Planning`, pas dans la description qui
+  sert de brief. Les deux se lisent séparément et ne vieillissent pas au même rythme.
 - **La liste des tests.** Un incrément qui énumère ses cas a mangé le plan ; il peut nommer
   l'invariant à prouver, pas les cas. La *test list* appartient au **pas** (§4), et elle s'y
   écrit à sa prise — ce qui est proscrit, c'est la test list **en amont du découpage**, pas la
@@ -186,7 +190,8 @@ où quelqu'un voit leurs frontières les unes par rapport aux autres.
 ## 4. Ce que contient un **pas** (sous-tâche Linear)
 
 Le pas est **entièrement technique** — et c'est le niveau destiné à être **entièrement
-automatisé** : plan, développement, revue. Son artefact est la **test list**, et elle
+automatisé** : test list, développement, revue. Il n'a pas de plan d'archi à lui ; celui de son
+incrément a déjà placé ses frontières. Son artefact est la **test list**, et elle
 s'écrit à la prise du pas, pas au découpage : ce qu'on apprend au pas 1 change ce qu'on sait
 au pas 4, et une test list planifiée d'avance serait un petit *waterfall* qui périmerait. Elle
 reste vivante pendant le cycle — un cas découvert au rouge s'y ajoute.
@@ -245,55 +250,129 @@ anglais pour les identifiants de code cités. Diacritiques corrects et complets.
 **Le principe.** Le statut dit *où en est le travail* ; le niveau dit *ce que cette étape
 exige*. Les deux ne se déduisent pas l'un de l'autre : « In Progress » sur une sous-tâche
 veut dire « un cycle TDD tourne », sur un incrément « la série de cycles est en cours », sur
-une feature « au moins un de ses incréments a démarré ». Même mot, trois exigences.
+une feature « le découpage a eu lieu et l'un des incréments a démarré ». Même mot, trois
+exigences.
 
 **Les trois chemins n'ont pas la même longueur**, et c'est voulu :
 
 ```
-Sous-tâche   Todo → In Progress → Done
-Incrément    Backlog → Todo → [Planning → Plan Review] → In Progress → Code Review → [QA Review] → Done
-Feature      Backlog → Planned → In Progress → Completed
+Feature     Backlog → Discovery → Spec → In Progress → Validation → Completed
+Incrément   [Backlog] → Todo → [Planning → Plan Review] → In Progress → Code Review → [QA Review] → Done
+Pas         [Backlog] → Todo → In Progress → Done
 ```
 
-Les crochets marquent les étapes **conditionnelles** — voir la matrice. Un chemin court
-n'est pas un chemin bâclé : la revue d'une sous-tâche existe, elle a simplement lieu au
-niveau de l'incrément, là où le comportement est enfin observable.
+Les crochets marquent ce qui est **conditionnel** — voir les matrices. Un chemin court n'est
+pas un chemin bâclé : la revue d'un pas existe, elle a simplement lieu là où son effet devient
+observable.
 
-### La matrice
+Les features et les issues n'ont pas le même jeu de colonnes ; les mettre dans un seul tableau
+force à assimiler des étapes qui ne se correspondent pas. D'où deux matrices.
 
-| Statut | **Feature** (projet) | **Incrément** (issue) | **Pas** (sous-tâche) |
-|---|---|---|---|
-| **Backlog** | Le cap est nommé et argumenté, pas encore ordonné dans la trajectoire | L'incrément est décrit ; son « pourquoi maintenant » n'a pas encore de réponse | Y séjourne quand elle a été écrite d'avance parce que l'**ordre des pas était une information** |
-| **Todo** / *Planned* | Le cap est le prochain à ouvrir ; ses pré-requis sont levés | **La colonne d'éligibilité** : plus aucun `blockedBy` ouvert, le contexte tient dans la carte | Son incrément est `In Progress` et ce pas est le suivant |
-| **Planning** | — *(un projet ne se planifie pas, il s'ordonne)* | **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon **on saute** directement à `In Progress` | — *(le plan est porté par l'incrément parent)* |
-| **Plan Review** | — | Le plan est écrit, porte son **chemin de fichier en tout premier** et son **schéma-delta** ; il **attend une validation humaine** | — |
-| **In Progress** | Au moins un incrément a démarré | La série de cycles TDD tourne ; la documentation se met à jour **au fil**, pas à la fin | Un cycle : rouge observé *pour la bonne raison*, vert, refactor |
-| **Code Review** | — | Le comportement est **complet** ; le diff se relit d'un bloc, les commits sont argumentés, `architecture.md` / `decisions.md` sont à jour | — *(on ne relit pas un commit isolé, on relit un comportement)* |
-| **QA Review** | — | **Conditionnel** : obligatoire dès que l'incrément touche la présentation (§7.12, non testée) — l'app est lancée, le parcours refait à la main. **Sautée** pour un incrément purement Core, et le dire vaut mieux que traverser la colonne pour la forme | — |
-| **Done** / *Completed* | Tous ses incréments sont `Done`, `trajectoire.md` acte la jambe, un `D-NNN` est écrit si un arbitrage a été tranché | L'acceptation est cochée **case par case**, la validation manuelle est faite si elle était due | Commit fait, suite verte, **0 warning** |
+### 6.1 La feature (projet)
 
-### Les deux colonnes de rendez-vous
+| Statut | Ce que l'étape exige | Autour de la table |
+|---|---|---|
+| **Backlog** | Le cap est nommé et argumenté, pas encore ordonné dans la trajectoire | — |
+| **Discovery** | Le **besoin** est établi et vaut qu'on s'y arrête ; des pistes sont ouvertes, aucune n'est choisie. Sortie légitime vers `Canceled` : *on ne fait pas*, ou *le besoin n'est pas celui-là* | Produit, UX |
+| **Spec** | Les options sont **arbitrées** (faisabilité, coût, écarts écrits), la capacité est énoncée, **la recette est définie** | Produit, UX, **tech, QA** |
+| **In Progress** | Le **découpage a eu lieu** — les incréments existent, avec leur plan d'archi — et au moins l'un d'eux a démarré | — |
+| **Validation** | La feature est **recettée contre sa spec** | Produit, QA |
+| **Completed** | Tous ses incréments sont `Done`, `trajectoire.md` acte la jambe, un `D-NNN` est écrit si un arbitrage a été tranché | — |
 
-`Plan Review` et `QA Review` ne sont pas des formalités : ce sont les deux endroits où le
-travail **s'arrête et attend un humain**. Elles matérialisent dans l'outil ce que
-`modele-metier.md` §5.1 pose comme état de première classe — `HumanReview`. Une carte ne les
-traverse pas toute seule, quel que soit le verdict de la gate.
+**Attention au `type` que Linear range derrière ces noms** — c'est lui, jamais le nom, qui
+décide de ce qui compte comme démarré (`startedAt`, filtres, graphes). Ici : `Backlog` est
+`backlog`, `Discovery` est **`planned`**, et `Spec`, `In Progress` et `Validation` sont **tous
+trois `started`**. Autrement dit, la bascule *pas engagé → engagé* tombe à l'entrée en `Spec`,
+pas à l'entrée en `In Progress` : une fois le besoin priorisé et la tech à la table, ça avance.
+C'est cohérent avec §2.1 — `Discovery` est le seul endroit où une feature peut encore mourir
+sans coût. Conséquence à retenir pour le jour où un prédicat machine lira ces états : **filtrer
+sur le type `started` ramène trois colonnes**, ce n'est pas un synonyme d'`In Progress`.
 
-C'est aussi la réponse opérationnelle à « le succès d'un agent n'est pas la fermeture de la
-tâche » : quand la boucle tournera, un `AgentStep` déplacera une carte de `Todo` vers
-`In Progress` à l'entrée, puis vers `Code Review` à la sortie — **jamais jusqu'à `Done`**. Le
-dernier pas reste humain, par construction et non par prudence temporaire.
+**Pourquoi `Validation` n'est pas redondante** avec les `QA Review` déjà passées : **toutes
+les stories peuvent être vertes sans que la capacité promise soit là**. Chaque niveau se
+recette contre son **propre** artefact — le pas contre sa test list (le vert), l'incrément
+contre son acceptation (`QA Review`), la feature contre sa **spec**. C'est ce qui fait de la
+spec un contrat plutôt qu'un document d'intention.
+
+### 6.2 L'incrément et le pas (issues)
+
+| Statut | **Incrément** (issue) | **Pas** (sous-tâche) |
+|---|---|---|
+| **Backlog** | Une **salle d'attente à deux populations** : ce qui est né du découpage mais **pas encore éligible** (un `blockedBy` ouvert), et ce qui **n'a pas de parent** — voir ci-dessous | Créé au découpage, son tour n'est pas venu |
+| **Todo** | **La colonne d'éligibilité** : plus aucun `blockedBy` ouvert, le contexte tient dans la carte | Son incrément est `In Progress` et ce pas est le suivant |
+| **Planning** | **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon **on saute** directement à `In Progress` | — *(un pas qui exigerait son plan d'archi aurait la taille d'un incrément)* |
+| **Plan Review** | Le plan d'archi est écrit, avec son **schéma-delta**, et il est **en cours de revue** — voir §6.3 | — |
+| **In Progress** | La série de cycles TDD tourne ; la documentation se met à jour **au fil**, pas à la fin | Un cycle : rouge observé *pour la bonne raison*, vert, refactor. La test list s'écrit ici et vit ici |
+| **Code Review** | Le comportement est **complet** ; le diff se relit d'un bloc, les commits sont argumentés, `architecture.md` / `decisions.md` sont à jour. La test list et la **formulation des comportements** se raffinent ici | — *(on ne relit pas un commit isolé, on relit un comportement)* |
+| **QA Review** | **Conditionnel** : obligatoire dès que l'incrément touche la présentation (§7.12, non testée) — l'app est lancée, le parcours refait à la main. **Sautée** pour un incrément purement Core, et le dire vaut mieux que traverser la colonne pour la forme | — |
+| **Done** | L'acceptation est cochée **case par case**, la validation manuelle est faite si elle était due | Commit fait, suite verte, **0 warning** |
+
+**`Backlog` porte deux fonctions selon le niveau**, et c'est le piège du mot. Au niveau
+**projet**, c'est le début du flux nominal. Au niveau **issue**, c'est une salle d'attente : un
+incrément **éligible** n'y passe pas, puisqu'il naît en `Todo` au découpage de sa feature. Ce
+qui y séjourne, c'est ce qui attend une dépendance — et surtout ce qui **n'a pas de parent** :
+le refacto qu'aucune fonctionnalité ne tire, la dette autonome, plus les incréments
+explicitement déportés d'un découpage. C'est **l'entrée latérale du backlog**, la seule voie par
+laquelle un travail arrive sans passer par une spec.
+
+### 6.3 Qui juge — trois régimes, selon la nature du jugement
+
+La ligne ne passe pas entre les niveaux mais entre **les jugements qui ont un référentiel
+opposable et ceux qui n'en ont pas**.
+
+| Régime | Où | Comment |
+|---|---|---|
+| **Trio** | `Discovery`, `Spec` | Un **binôme humain ↔ agent** rédige ; un **agent de revue distinct** valide. L'humain est du côté de la **production** |
+| **Boucle** | `Plan Review`, `Code Review` | **Agent de plan ⇄ agent de revue**. L'humain n'est convoqué qu'en **arbitre d'exception** |
+| **Œil** | `QA Review`, `Validation` | Humain, irréductiblement. L'app est lancée, le parcours refait |
+
+Sont **délégables** le plan contre l'architecture, la test list contre le comportement
+attendu, le code contre le standard : deux agents peuvent converger parce qu'il existe quelque
+chose contre quoi trancher. Ne le sont **pas** la spec (aucun agent ne juge que c'est *ça*
+qu'on veut construire) ni la validation de présentation (§7.12).
+
+**Le piège du binôme.** Un agent qui a co-écrit la spec ne la valide pas — et si on lui demande
+un verdict, **il le donnera**. Un faux accord est pire qu'aucune relecture : il donne le
+sentiment d'avoir été contredit. Sa posture est celle du régime de *Vérification* de
+`CLAUDE.md` : **lister les divergences, ne pas trancher**. La validation revient à un tiers.
+
+En `Spec`, il n'y a **pas d'escalade** : si le relecteur refuse, l'humain est déjà dans la
+pièce.
+
+### 6.4 L'escalade — ce que la boucle exige
+
+L'humain est convoqué quand l'agent de plan et l'agent de revue n'ont pas convergé après
+**deux ou trois tours**. Le mécanisme n'a rien à inventer : **escalader, c'est s'assigner la
+carte.** Une carte en revue **non assignée** boucle ; **assignée**, elle attend un humain. Ni
+colonne, ni étiquette.
+
+Trois exigences en découlent, sans lesquelles l'escalade coûte plus cher que d'avoir relu dès
+le début :
+
+1. **Un verdict structuré** — accord / désaccord **et le point en litige**. De la prose ne se
+   compare pas d'un tour à l'autre.
+2. **Un compteur de tours**, porté par la carte.
+3. **Un litige reconstituable en une minute** par qui arrive sans avoir suivi la boucle.
+
+Conséquence de fond : **le ticket cesse d'être un brief pour devenir un lieu de dialogue.** On
+le pensait en entrée (le contexte) et en sortie (l'acceptation) ; la boucle en fait aussi le
+**journal d'une négociation** — et c'est ce journal, pas le brief, qui décide si l'escalade est
+utilisable.
 
 ### Ce qui n'est pas une étape
 
 `Canceled` et `Duplicate` sont des **sorties**, pas des colonnes de travail. Une carte
 annulée mérite une phrase disant pourquoi : un abandon non expliqué se re-proposera.
 
-> **Registre.** Les chemins ci-dessus sont **tranchés** ; leur usage par une machine est
-> **tranché mais pas éprouvé** — aucun agent n'a encore déplacé de carte. Ce qui reste
-> **ouvert** : quelle colonne exactement porte l'éligibilité au déclenchement automatique
-> (`Todo` seul, ou `Todo` + une étiquette), et si une reprise après échec de gate renvoie la
-> carte en `Todo` ou la laisse en `In Progress` marquée. Voir `CUR-5`.
+> **Registre.** Les chemins et les régimes ci-dessus sont **tranchés** (`D-036`) ; le trio de
+> la spec a été **éprouvé ailleurs** sur quelques tickets, jamais sur ce dépôt, et **aucun
+> agent n'y a encore parcouru une boucle**. Ce qui reste **ouvert** : distinguer *trois tours
+> sur le même litige* de *trois tours qui dérivent de sujet* — ils se comptent pareil, ne valent
+> pas pareil, et le second ressemble à du progrès ; quelle colonne exactement porte
+> l'éligibilité au déclenchement automatique (`Todo` seul, ou `Todo` + une étiquette), et si une
+> reprise après échec de gate renvoie la carte en `Todo` ou la laisse en `In Progress` marquée
+> (`CUR-5`) ; enfin, le refacto orphelin a désormais une porte d'entrée mais **pas de spec**,
+> donc pas de recette de niveau feature.
 
 ---
 
@@ -318,6 +397,23 @@ humain du projet sait sans qu'on le lui dise :
 - **Les conventions de modélisation** — en particulier : pas de nullable pour distinguer des
   **types** d'objets. C'est la règle la plus facile à violer de bonne foi.
 
+### Ce que la navigation change, et ce qu'elle ne change pas
+
+Un agent branché sur le tracker peut **remonter au parent et lire ses frères** pour comprendre
+les limites de ce qu'il implémente. Il n'a donc pas besoin qu'on lui recopie le contexte : le
+principe « **renvoyer, systématiquement** » (§5) devient une capacité, plus seulement une
+hygiène.
+
+Deux corollaires, de sens opposés :
+
+- **Ce qui n'est écrit nulle part reste perdu.** Pouvoir lire le parent ne donne accès qu'à ce
+  que le parent *contient*. La vue d'ensemble de celui qui a découpé — pourquoi ce pas-ci, à
+  cette place — meurt avec la session qui l'a produite si elle n'a pas été déposée dans la
+  carte (§4, question 2).
+- **Lire le parent, c'est voir tout ce qui reste à faire.** La navigation augmente le risque
+  d'élargissement au lieu de le réduire. Le hors-périmètre (§3, question 6) doit donc être
+  écrit **en regard des frères**, en les nommant.
+
 **Ce qui reste à décider** quand la boucle tournera : jusqu'où le ticket doit porter ces
 rappels lui-même, et jusqu'où l'amorce de l'agent (son prompt système) les porte à sa place.
 Dupliquer dans chaque carte est coûteux et vieillit mal ; ne rien dire suppose une amorce
@@ -333,6 +429,12 @@ qu'on n'a pas encore écrite. **Question ouverte, à trancher au premier round-t
 | Incrément | Issue | Le niveau qui porte la charge |
 | Pas | Sous-tâche (`parentId`) | Rattachée aussi au projet, pour rester visible |
 | Ordre | `blockedBy` | Ce qui empêche de prendre une carte trop tôt |
+| Escalade | Assignation | Une carte en revue assignée attend un humain ; non assignée, elle boucle |
+| Spec, plan d'archi | Document attaché | Linear **rend le mermaid nativement** (`/diagram`, ou un bloc ` ```mermaid ` collé) — le schéma-delta se lit sur la carte, sans fichier intermédiaire dans le dépôt |
+
+**Le niveau d'une carte se déduit de sa structure**, il n'a pas à être encodé : projet =
+feature, issue sans parent = incrément, issue avec `parentId` = pas. Ni étiquette à maintenir,
+ni convention à faire respecter — et un contrat machine de moins à écrire.
 
 **Ce que la §6 couvre, et ce qu'elle ne couvre pas.** Elle dit ce qu'un statut **exige** — de
 quoi il faut s'être acquitté pour en sortir, selon le niveau. C'est une convention de

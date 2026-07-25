@@ -74,10 +74,20 @@ nœud, où le schéma périme) et les cartes d'état permanentes vivent dans **`
 compagnon visuel de l'architecture, sans autorité sur elle. Le schéma se lit sur le vocabulaire du
 modèle §3 de ce fichier (définition vs exécution) : il double la prose du plan, il ne la remplace pas.
 
-Le plan **indique son propre chemin de fichier en tout premier** (avant le titre) : le schéma-delta est
-un bloc `mermaid` qui ne se rend en graphique que lorsqu'on **ouvre le fichier** dans un aperçu — jamais
-inline dans le terminal. Sans le chemin sous la main, le lecteur ne peut pas atteindre le seul endroit
-où le schéma existe vraiment. Une ligne `> Fichier : <chemin absolu>` en tête suffit.
+**Où vit le plan.** Le schéma-delta est un bloc `mermaid` : il ne se rend jamais inline dans le
+terminal, seulement là où quelqu'un peut l'ouvrir. Deux cas, et le premier est le nominal dès qu'un
+backlog porte le travail :
+
+- **Le travail est porté par une carte** — le plan vit dans le **document attaché** à l'incrément,
+  écrit en `Planning`. Linear **rend le mermaid nativement** (`/diagram`, ou un bloc ` ```mermaid `
+  collé) : le schéma se lit sur la carte, sans fichier intermédiaire à créer puis à nettoyer, et la
+  revue a lieu au même endroit que le reste.
+- **Le travail n'est porté par aucune carte** — le plan est un fichier, et il **indique son propre
+  chemin en tout premier** (avant le titre), parce que le schéma n'existe vraiment que dans l'aperçu
+  du fichier. Une ligne `> Fichier : <chemin absolu>` en tête suffit.
+
+Le plan d'archi est l'artefact de l'**incrément** — un pas n'en a pas, il porte une **test list** ; une
+feature n'en a pas, elle porte une **spec**. Voir `docs/methode/tickets.md` §1 et `D-036`.
 
 ## Écrire un ticket
 
@@ -89,6 +99,12 @@ La frontière avec le plan gaté ci-dessus mérite d'être tenue : **le ticket d
 plan dit *comment*.** Un ticket qui prescrit l'implémentation a mangé le plan, et il sera périmé avant
 d'être pris. L'enjeu n'est pas cosmétique : la trajectoire mène à ce que Cursus **consomme ces tickets**,
 et un ticket devient alors l'unique brief d'un agent qui n'a pas eu la conversation.
+
+Trois registres, un par niveau, qu'il ne faut pas confondre (`D-036`) : la **feature** arbitre *quelle
+solution et si elle vaut le coup* et le consigne dans sa **spec** ; l'**incrément** conçoit *comment
+c'est structuré* dans son **plan d'archi** ; le **pas** prouve, et sa **test list** s'écrit à sa prise,
+jamais d'avance. Le juge de ce qui mérite d'être un incrément plutôt qu'un pas est le **rôle produit** :
+est-ce recettable par quelqu'un qui ne lit pas le code ?
 
 ## Entretenir la carte visuelle
 
