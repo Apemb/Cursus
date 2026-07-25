@@ -6,6 +6,7 @@
         xmlns:views="using:Cursus.App.Views"
         xmlns:projects="using:Cursus.Core.Projects"
         xmlns:wf="using:Cursus.Core.Workflows"
+        xmlns:tasks="using:Cursus.Core.Tasks"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
         x:Class="Cursus.App.MainWindow"
         x:DataType="vm:ShellViewModel"
@@ -133,11 +134,18 @@
 
                             <!-- Liste des workflows : le contenu par défaut de la surface (ni run, ni éditeur) -->
                             <DockPanel Margin="20" IsVisible="{Binding IsShowingList}">
-                                <TextBlock DockPanel.Dock="Top"
-                                           Text="{Binding Name}"
-                                           FontSize="18" FontWeight="Bold"
-                                           Foreground="{DynamicResource TextPrimaryBrush}"
-                                           Margin="0,0,0,12" />
+                                <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Name}"
+                                               VerticalAlignment="Center"
+                                               FontSize="18" FontWeight="Bold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                                    <!-- L'écran des tâches : au niveau du projet et non d'un
+                                         workflow, puisque le tableau visé est une propriété du dépôt -->
+                                    <Button Grid.Column="1" Content="Tâches"
+                                            Padding="12,6"
+                                            Command="{Binding OpenTaskBoardCommand}" />
+                                </Grid>
 
                                 <!-- Volet catalogue : créer un workflow depuis un titre humain (l'id de fichier en est le slug) -->
                                 <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,14">
@@ -557,6 +565,135 @@
                                                     </ContentControl>
 
                                                 </Panel>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ContentControl.ContentTemplate>
+                                </ContentControl>
+                            </DockPanel>
+
+                            <!-- L'écran des tâches : 4e contenu du même espace, sans routeur (D-016) -->
+                            <DockPanel IsVisible="{Binding IsShowingTasks}">
+                                <ContentControl Content="{Binding CurrentTaskBoard}">
+                                    <ContentControl.ContentTemplate>
+                                        <DataTemplate x:DataType="vm:TaskBoardViewModel">
+                                            <DockPanel Margin="20">
+
+                                                <!-- En-tête : retour, titre, le jeton qui parle, rafraîchir -->
+                                                <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,14">
+                                                    <Button Grid.Column="0" Content="‹  Projet"
+                                                            Padding="10,6" Margin="0,0,12,0"
+                                                            Command="{Binding $parent[ContentControl].((vm:OpenProjectViewModel)DataContext).CloseTaskBoardCommand}" />
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="Tâches" FontSize="18" FontWeight="Bold"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                        <!-- On sait toujours quel jeton parle : deux clés peuvent
+                                                             desservir la même cible -->
+                                                        <TextBlock Text="{Binding ConnectionLabel}" FontSize="11"
+                                                                   IsVisible="{Binding IsShowingBoard}"
+                                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8"
+                                                                VerticalAlignment="Center"
+                                                                IsVisible="{Binding IsShowingBoard}">
+                                                        <Button Content="Changer de tableau"
+                                                                Command="{Binding RedeclareCommand}" />
+                                                        <Button Content="↻  Rafraîchir"
+                                                                IsEnabled="{Binding !IsLoading}"
+                                                                Command="{Binding LoadCommand}" />
+                                                    </StackPanel>
+                                                </Grid>
+
+                                                <!-- Ce qu'on demande, ou ce qu'on constate : jamais une erreur
+                                                     technique. Une divergence entre le tableau que le dépôt
+                                                     déclare et les jetons de ce poste s'affiche ici -->
+                                                <StackPanel DockPanel.Dock="Top" Spacing="10" Margin="0,0,0,14"
+                                                            IsVisible="{Binding Message, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                                    <TextBlock Text="{Binding Message}" TextWrapping="Wrap"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+
+                                                    <!-- Le choix vaut déclaration : rien à saisir, une connexion à désigner -->
+                                                    <ItemsControl ItemsSource="{Binding Candidates}"
+                                                                  IsVisible="{Binding IsChoosing}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:TrackerConnectionRow">
+                                                                <Button HorizontalAlignment="Left" Margin="0,0,0,6"
+                                                                        Padding="12,8"
+                                                                        HorizontalContentAlignment="Left"
+                                                                        CommandParameter="{Binding}"
+                                                                        Command="{Binding $parent[ItemsControl].((vm:TaskBoardViewModel)DataContext).ChooseCommand}">
+                                                                    <StackPanel Spacing="2">
+                                                                        <TextBlock Text="{Binding Label}"
+                                                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                                        <TextBlock Text="{Binding ScopeLabel}" FontSize="11"
+                                                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                    </StackPanel>
+                                                                </Button>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
+                                                    <!-- Sans issue : le renvoi vers les réglages, ou pointer ailleurs -->
+                                                    <StackPanel Orientation="Horizontal" Spacing="8"
+                                                                IsVisible="{Binding IsStuck}">
+                                                        <Button Content="Ouvrir les réglages"
+                                                                Command="{Binding OpenSettingsCommand}" />
+                                                        <Button Content="Choisir un autre tableau"
+                                                                Command="{Binding RedeclareCommand}" />
+                                                    </StackPanel>
+                                                </StackPanel>
+
+                                                <TextBlock DockPanel.Dock="Top" Text="Lecture du tableau…"
+                                                           IsVisible="{Binding IsLoading}"
+                                                           FontSize="11" Margin="0,0,0,8"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+
+                                                <TextBlock DockPanel.Dock="Top" Text="{Binding Error}"
+                                                           TextWrapping="Wrap" FontSize="11" Margin="0,0,0,8"
+                                                           IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                           Foreground="{DynamicResource DangerBrush}" />
+
+                                                <!-- L'aveu de troncature vient du modèle : montrer une page en
+                                                     la faisant passer pour la liste entière mentirait -->
+                                                <TextBlock DockPanel.Dock="Bottom" Margin="0,8,0,0"
+                                                           Text="Le tableau porte plus de tâches que cette lecture n'en montre."
+                                                           IsVisible="{Binding IsTruncated}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+
+                                                <!-- L'arbre tel que le port le rend : projets du tracker
+                                                     (les features), tâches, sous-tâches sous leur mère. Aucune
+                                                     ligne d'enrobage — rien n'y porte d'état à ce stade -->
+                                                <TreeView ItemsSource="{Binding Projects}"
+                                                          Background="Transparent" BorderThickness="0">
+                                                    <TreeView.DataTemplates>
+                                                        <TreeDataTemplate DataType="tasks:TaskProject"
+                                                                          ItemsSource="{Binding Tasks}">
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                        </TreeDataTemplate>
+                                                        <TreeDataTemplate DataType="tasks:TaskSummary"
+                                                                          ItemsSource="{Binding Children}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                <TextBlock Text="{Binding Key}"
+                                                                           FontFamily="Menlo, Cascadia Code, Consolas, monospace"
+                                                                           FontSize="11" VerticalAlignment="Center"
+                                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                <TextBlock Text="{Binding Title}"
+                                                                           VerticalAlignment="Center"
+                                                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                                <Border Background="{DynamicResource ChromeSidebarBrush}"
+                                                                        BorderBrush="{DynamicResource SeparatorBrush}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="3" Padding="6,1"
+                                                                        VerticalAlignment="Center">
+                                                                    <TextBlock Text="{Binding Column}" FontSize="10"
+                                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                </Border>
+                                                            </StackPanel>
+                                                        </TreeDataTemplate>
+                                                    </TreeView.DataTemplates>
+                                                </TreeView>
+
                                             </DockPanel>
                                         </DataTemplate>
                                     </ContentControl.ContentTemplate>

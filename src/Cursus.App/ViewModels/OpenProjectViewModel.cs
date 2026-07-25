@@ -32,6 +32,7 @@ public partial class OpenProjectViewModel : ObservableObject
     private readonly Func<string, RunViewModel> _startLive;
     private readonly Func<RunSummary, RunViewModel> _replay;
     private readonly Func<string, IReadOnlyList<RunSummary>> _runsOf;
+    private readonly Func<TaskBoardViewModel> _openTaskBoard;
 
     public OpenProjectViewModel(
         string name,
@@ -39,7 +40,8 @@ public partial class OpenProjectViewModel : ObservableObject
         Func<IReadOnlyList<WorkflowLastRun>> loadWorkflows,
         Func<string, RunViewModel> startLive,
         Func<RunSummary, RunViewModel> replay,
-        Func<string, IReadOnlyList<RunSummary>> runsOf)
+        Func<string, IReadOnlyList<RunSummary>> runsOf,
+        Func<TaskBoardViewModel> openTaskBoard)
     {
         Name = name;
         _catalog = catalog;
@@ -47,6 +49,7 @@ public partial class OpenProjectViewModel : ObservableObject
         _startLive = startLive;
         _replay = replay;
         _runsOf = runsOf;
+        _openTaskBoard = openTaskBoard;
         Workflows = new ObservableCollection<WorkflowRowViewModel>();
         RefreshWorkflows();
     }
@@ -172,6 +175,16 @@ public partial class OpenProjectViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsShowingList))]
     private WorkflowPageViewModel? _currentWorkflowPage;
 
+    /// <summary>
+    /// L'écran des tâches du projet, ou <c>null</c>. Quatrième contenu du même espace :
+    /// il ne dépend pas d'un workflow, d'où sa place au niveau de la surface et non dans
+    /// la page (le lien projet ↔ tableau est une propriété du dépôt).
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsShowingTasks))]
+    [NotifyPropertyChangedFor(nameof(IsShowingList))]
+    private TaskBoardViewModel? _currentTaskBoard;
+
     // La page à ré-afficher quand on ferme un run lancé depuis elle : le workflow
     // reste le contexte courant, on ne retombe pas sur la liste.
     private WorkflowPageViewModel? _pageBehindRun;
@@ -182,8 +195,30 @@ public partial class OpenProjectViewModel : ObservableObject
     /// <summary>Vrai quand la page d'un workflow occupe la surface.</summary>
     public bool IsShowingPage => CurrentWorkflowPage is not null;
 
-    /// <summary>Vrai quand ni run ni page n'occupe la surface : c'est la liste qui s'affiche.</summary>
-    public bool IsShowingList => !IsShowingRun && !IsShowingPage;
+    /// <summary>Vrai quand l'écran des tâches occupe la surface.</summary>
+    public bool IsShowingTasks => CurrentTaskBoard is not null;
+
+    /// <summary>Vrai quand aucun autre module n'occupe la surface : c'est la liste qui s'affiche.</summary>
+    public bool IsShowingList => !IsShowingRun && !IsShowingPage && !IsShowingTasks;
+
+    /// <summary>
+    /// Ouvre l'écran des tâches du projet. Le module est monté à la demande par une
+    /// fabrique reçue : la surface n'apprend ni ce qu'est un tracker, ni où vit son
+    /// registre.
+    /// </summary>
+    [RelayCommand]
+    private void OpenTaskBoard()
+    {
+        CurrentRun?.Dispose();
+        CurrentRun = null;
+        CurrentWorkflowPage = null;
+        _pageBehindRun = null;
+        CurrentTaskBoard = _openTaskBoard();
+    }
+
+    /// <summary>Referme l'écran des tâches et revient à la liste.</summary>
+    [RelayCommand]
+    private void CloseTaskBoard() => CurrentTaskBoard = null;
 
     /// <summary>
     /// Ouvre la page du workflow d'une ligne — le clic sur son corps. La page compose
@@ -198,6 +233,7 @@ public partial class OpenProjectViewModel : ObservableObject
 
         CurrentRun?.Dispose();
         CurrentRun = null;
+        CurrentTaskBoard = null;
         _pageBehindRun = null;
         CurrentWorkflowPage = new WorkflowPageViewModel(
             row.Name, _catalog, _runsOf, _startLive, _replay, ShowRun, RefreshWorkflows, CloseWorkflowPage);
@@ -244,6 +280,7 @@ public partial class OpenProjectViewModel : ObservableObject
     {
         _pageBehindRun = CurrentWorkflowPage;
         CurrentWorkflowPage = null;
+        CurrentTaskBoard = null;
         CurrentRun?.Dispose();
         CurrentRun = run;
     }

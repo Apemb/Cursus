@@ -43,7 +43,17 @@ public partial class App : Application
                     () => new TrackerSettingsViewModel(
                         trackers,
                         secrets,
-                        (store, key) => new LinearTaskBoard(store, key))),
+                        (store, key) => new LinearTaskBoard(store, key)),
+
+                    // L'écran des tâches reçoit le registre des connexions et une
+                    // fabrique (connexion) → tableau. La clé du trousseau se déduit de
+                    // la connexion elle-même : la laisser composer ici, c'est risquer
+                    // qu'un second appelant la compose autrement.
+                    (project, openSettings) => new TaskBoardViewModel(
+                        project,
+                        trackers,
+                        connection => new LinearTaskBoard(secrets, connection.SecretKey),
+                        openSettings)),
             };
         }
 

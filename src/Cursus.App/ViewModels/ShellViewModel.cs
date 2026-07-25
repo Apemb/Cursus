@@ -30,16 +30,19 @@ public partial class ShellViewModel : ObservableObject, IDisposable
     private readonly ProjectRegistry _registry;
     private readonly Func<Project, ProjectWorkspace> _openWorkspace;
     private readonly Func<TrackerSettingsViewModel> _openSettings;
+    private readonly Func<Project, Action, TaskBoardViewModel> _openTaskBoard;
     private ProjectWorkspace? _currentWorkspace;
 
     public ShellViewModel(
         ProjectRegistry registry,
         Func<Project, ProjectWorkspace> openWorkspace,
-        Func<TrackerSettingsViewModel> openSettings)
+        Func<TrackerSettingsViewModel> openSettings,
+        Func<Project, Action, TaskBoardViewModel> openTaskBoard)
     {
         _registry = registry;
         _openWorkspace = openWorkspace;
         _openSettings = openSettings;
+        _openTaskBoard = openTaskBoard;
         Projects = new ObservableCollection<ProjectRowViewModel>(
             registry.Projects.Select(project => new ProjectRowViewModel(project)));
     }
@@ -98,7 +101,13 @@ public partial class ShellViewModel : ObservableObject, IDisposable
             workspace.Host.LastRunPerWorkflow,
             workflowId => RunViewModel.StartLive(workflowId, workspace.Host, workspace.Artifacts),
             summary => RunViewModel.Replay(summary, workspace.Host, workspace.Artifacts),
-            workspace.Host.RunsOf);
+            workspace.Host.RunsOf,
+
+            // L'écran des tâches n'appartient pas au workspace du projet : le registre
+            // des connexions est global, et le tableau ne se monte qu'une fois la
+            // connexion arrêtée. La coquille lui remet aussi de quoi ouvrir les
+            // réglages, sa seule issue quand aucun jeton ne dessert la cible déclarée.
+            () => _openTaskBoard(project, OpenSettings));
     }
 
     /// <summary>Ferme le workspace encore ouvert : sa connexion SQLite ne doit pas fuir à la fermeture.</summary>
