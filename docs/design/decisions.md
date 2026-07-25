@@ -1559,3 +1559,212 @@ constater est presque toujours un modèle en avance sur ce qu'il sait.**
 `docs/reference/linear-api.md` §2bis (une clé = un espace) ; `D-034` (ce qu'il révise), `D-030`
 (le concept concret nommé en Core), `D-031` (le patron de ligne polymorphe, repris pour l'affichage),
 `D-021` (l'unicité tenue par qui en répond).
+
+---
+
+## D-036 — Un artefact par niveau, un régime par nature de jugement : l'humain remonte vers la spec
+
+**Contexte.** `docs/methode/tickets.md` (`084de92`, `89e5381`) posait trois niveaux — feature /
+incrément / pas — et une matrice statut × niveau. Une passe de clarification menée avec l'utilisateur
+(2026-07-25) a montré qu'il lui manquait trois choses : **quel artefact** chaque niveau produit, **qui
+juge** cet artefact, et un flux qui soit celui de l'espace plutôt que celui d'usine.
+
+Écarté d'emblée comme méthode : **confronter le gabarit aux tickets existants**. Ils ont été écrits à
+partir de ce même fichier, par le même auteur ; la comparaison n'aurait mesuré que la fidélité de la
+copie.
+
+**Tranché — un artefact par niveau, et ce ne sont pas trois formes du même « plan ».** La **feature**
+produit une **spec**, la **story** un **plan d'archi** (celui de `CLAUDE.md`, avec son schéma-delta),
+le **pas** une **test list**. Ils n'ont ni le même régime de fraîcheur ni le même moment d'écriture :
+le plan d'archi est écrit **une fois, au découpage**, par qui a la vue d'ensemble ; la test list se
+génère **à la prise du pas**, et reste vivante — en TDD, un cas découvert au rouge s'y ajoute.
+
+Ce que ça corrige : §3 du document interdit la test list au backlog (« *elle naît du plan, pas du
+backlog* »). Juste pour une story — qui énumérerait ses cas aurait mangé le plan. **Faux pour un pas**,
+dont la test list est le contenu même. La règle vise l'amont du découpage, pas la test list en soi.
+
+**Tranché — le lecteur du test de départage est le rôle produit.** « *Si on le livrait seul, quelqu'un
+le remarquerait-il ?* » laissait chacun choisir son lecteur : l'utilisateur de l'app, le développeur du
+lendemain, l'agent. C'est le **PM** — une story est *recettable par un rôle produit*. Le test n'était
+pas trop sévère (un client Linear en lecture seule reste un pas), il était **sous-spécifié**.
+
+**Renversé — le rendez-vous humain n'est plus sur le chemin.** §6 affirmait que `Plan Review` et
+`QA Review` sont *les deux endroits où le travail s'arrête et attend un humain*, et qu'un agent ne
+pousserait jamais jusqu'à `Done` « **par construction et non par prudence temporaire** ». Cette
+formule est **révisée** : `Plan Review` et `Code Review` sont des **boucles agent ⇄ agent** (agent de
+plan contre agent de revue), et l'humain n'est convoqué qu'en **arbitre d'exception**, après deux ou
+trois tours sans accord. Il n'est plus sur le chemin, il est sur la sortie de secours.
+
+L'escalade ne demande aucun mécanisme neuf : **escalader, c'est s'assigner la carte**. Une carte en
+revue non assignée boucle ; assignée, elle attend un humain. Pas de colonne, pas d'étiquette.
+
+**Tranché — la frontière n'est pas de niveau, elle est de nature de jugement.** La ligne cherchée
+n'était pas entre story et pas. Est **délégable à un désaccord entre agents** tout ce qui a un
+référentiel opposable : le plan contre l'architecture, la test list contre le comportement attendu, le
+code contre le standard — deux agents peuvent converger parce qu'il existe quelque chose contre quoi
+trancher. Reste **irréductiblement humain** ce qui n'en a pas : la **spec** (aucun agent ne juge que
+c'est *ça* qu'on veut construire) et **l'œil** de la validation de présentation (§7.12).
+
+**Tranché — la spec se produit à trois, et le producteur ne se valide pas.** Un **binôme
+humain ↔ agent** rédige (l'agent réduit les angles morts et accélère le raisonnement) ; un **agent de
+revue distinct** valide. La séparation production / validation tient, avec l'humain **du côté de la
+production**. Corollaire à ne pas perdre : un agent de binôme à qui l'on demande un verdict **le
+donnera** — un faux accord est pire qu'aucune relecture, puisqu'il donne le sentiment d'avoir été
+contredit. Sa posture est celle du régime de *Vérification* de `CLAUDE.md` : lister les divergences,
+ne pas trancher. Et **pas d'escalade à ce niveau** : si le relecteur refuse, l'humain est déjà dans la
+pièce. Le compteur de tours ne concerne que `Plan Review` et `Code Review`.
+
+Régime : **tranché, éprouvé ailleurs, pas ici.** Le dispositif a tourné sur quelques tickets hors de
+ce dépôt ; aucun agent n'a encore parcouru une boucle sur `cursus-app`.
+
+**Tranché — chaque niveau se recette contre son propre artefact.** Le pas contre sa **test list** (le
+vert), la story contre son **acceptation** (`QA Review`), la feature contre sa **spec**
+(`Validation`). C'est ce qui empêche `Validation` d'être redondante avec les QA déjà passées :
+**toutes les stories peuvent être vertes sans que la capacité promise soit là**. Corollaire qui engage
+la rédaction : la spec n'est pas un document d'intention, c'est **le contrat contre lequel on
+recettera**.
+
+**Corrigé — le flux des features était celui d'usine.** Le document décrivait
+`Backlog → Planned → In Progress → Completed` : ce sont les **noms par défaut de Linear**. Le flux réel
+est `Backlog · Discovery · Spec · In Progress · Validation · Completed`.
+
+La frontière `Discovery` | `Spec` n'est pas un moment du raisonnement mais un **changement de
+composition** : `Discovery` réunit produit et UX autour de la seule question *à quel besoin
+répond-on ?*, quitte à ouvrir sur des solutions possibles ; `Spec` y ajoute **la tech et la QA**, et
+c'est pourquoi **l'arbitrage y vit** — on n'arbitre pas une faisabilité sans la tech. Garder
+`Discovery` à part, c'est se réserver le droit de **tuer une feature avant d'avoir dépensé le moindre
+arbitrage technique**. Et la QA à la table de `Spec` est **d'où descend l'acceptation** : elle définit
+comment la feature se recettera, le découpage répartit ensuite cette recette entre les stories.
+
+**Tranché — `Backlog` porte deux fonctions selon le niveau.** Au niveau **projet**, c'est le début du
+flux nominal. Au niveau **issue**, il est *structurellement vide* en nominal : les stories naissent au
+découpage — quand la feature entre en `In Progress` — donc directement en `Todo`. Ce qui y vit est ce
+qui **n'a pas de parent** : le refacto qu'aucune fonctionnalité ne tire, la dette autonome, plus les
+stories explicitement déportées d'un découpage. C'est **l'entrée latérale du backlog**, et elle règle
+le sort du refacto orphelin, qui n'avait jusqu'ici aucune porte.
+
+**Conséquence — le ticket cesse d'être un brief pour devenir un lieu de dialogue.** On le pensait en
+entrée (le contexte) et en sortie (l'acceptation) ; la boucle en fait aussi le **journal d'une
+négociation**. Trois exigences en découlent, qui n'existent nulle part aujourd'hui : un **verdict
+structuré** (accord / désaccord *et le point en litige* — de la prose ne se compte pas d'un tour à
+l'autre) ; un **compteur de tours** ; un litige **reconstituable en une minute** par qui arrive sans
+avoir suivi la boucle — sans quoi l'escalade coûte plus cher que d'avoir relu dès le début.
+
+**Acquis sans effort, notés pour ne pas être redécouverts.** (1) Le **niveau d'une carte se déduit de
+sa structure** — projet = feature, issue sans parent = story, issue avec `parentId` = pas : ni
+étiquette à maintenir, ni convention à faire respecter, **un contrat machine de moins** dans
+`project.json`. (2) **Linear rend le mermaid nativement** (`/diagram`, ou un bloc ` ```mermaid `
+collé) : un plan peut vivre dans le document attaché à la carte, schéma-delta rendu. La règle de
+`CLAUDE.md` exigeant que le plan « indique son propre chemin de fichier en tout premier » n'existait
+que pour compenser l'absence de rendu inline — elle tombe.
+
+**Écarté.** L'**assignation comme discriminant du travail de spec** (proposée quand on croyait qu'il
+manquait une colonne entre `Backlog` et le début du travail : `Discovery` et `Spec` existent, la parade
+répondait à un problème inventé). Une **colonne de revue de spec** supplémentaire : `Validation` et le
+trio suffisent, et une colonne de plus sur un flux de six serait disproportionnée. Le **vocabulaire
+epic / US / sous-tâche** : accepté comme équivalent de travail (Jira), mais les mots du dépôt restent
+*feature / incrément / pas*, parce qu'« epic » désigne couramment un conteneur thématique sans fin —
+exactement ce que la définition « un cap qui se ferme » refuse.
+
+**Reste ouvert.** Distinguer **trois tours sur le même litige** de **trois tours qui dérivent de
+sujet** : ils se comptent pareil, ne valent pas pareil, et le second — l'échec grave — ressemble à du
+progrès. Relève de la conception d'agent, pas du gabarit. Ouvert aussi : le refacto orphelin a
+désormais une entrée, mais **pas de spec, donc pas de recette de niveau feature**.
+
+**Renvoi** : `docs/methode/tickets.md` (§2, §3, §4 et §6, à réécrire sur cette base), `CLAUDE.md`
+(§Méthode de développement — le chemin de fichier du plan, la test list rattachée au plan),
+`architecture.md` §7.12 (la frontière testé / validé à l'œil, seul jugement qui ne se délègue pas),
+§7.10.5 (le contrat machine, distinct de la convention) ; `D-033` (l'autocritique de `CUR-15`, née de
+la même frontière ticket / plan).
+
+---
+
+## D-036 — La déclaration est versionnée, le jeton est machine : ce qui rend une divergence visible
+
+**Contexte.** L'écran des tâches (`2·2b·3b`) devait savoir quelle connexion interroger. Le §7.10.1
+laissait la question ouverte à dessein — *« le lien se posera quand l'écran aura montré ce dont il a
+besoin »*. Il en a eu besoin, et la question qui restait n'était pas *s'il faut un lien* mais **à quel
+niveau de stockage il vit**.
+
+**Ce qui a renversé le premier plan.** Ma proposition initiale était de **ne rien persister** : un
+sélecteur de connexion en session, auto-choisi s'il n'y en a qu'une, en invoquant la leçon du `D-035`
+(ne pas modéliser en avance de ce qu'on sait). Une remarque de l'utilisateur l'a défaite en deux
+phrases : *partager les réglages du tracker entre les membres d'une équipe est pertinent, surtout si on
+partage les déclencheurs — et ça permet de signifier à l'utilisateur qu'il a connecté quelque chose de
+différent.*
+
+Le second point est celui que je n'avais pas vu, et il est décisif. **Un appariement rangé au registre
+machine *est* la vérité, donc il ne peut jamais être faux.** Il n'a rien à quoi se comparer. Une
+déclaration versionnée, elle, crée un écart **observable** entre ce que le dépôt dit viser et ce que ce
+poste sait joindre — exactement la forme d'erreur qui coûte cher autrement : un run déplaçant une carte
+dans le mauvais espace sans qu'un mot l'ait annoncé. La persistance n'était donc pas du confort
+d'ergonomie qu'on peut reporter ; elle était la condition d'un diagnostic.
+
+Le premier point est un argument de cohérence : les prédicats de disponibilité vivent déjà dans
+`project.json` (§7.10.3). Un déclencheur partagé nommant une colonne, dont l'espace où trouver cette
+colonne serait un réglage machine invisible, serait à moitié partagé — la moitié relisible en revue, la
+moitié devinée.
+
+**Tranché.**
+
+- **Le lien se coupe en deux moitiés** à deux niveaux différents : la **déclaration** (`TrackerBinding`,
+  nœud `tracker` de `project.json`, versionnée) et la **connexion** (`TrackerConnection` + jeton au
+  trousseau, machine). Ce n'est pas une duplication : ce sont deux faits distincts dont la comparaison
+  est le produit utile.
+- **`TrackerBinding` est une variante par le type**, comme `TrackerConnection` au `D-035` et pour la
+  même raison : ce qui identifie un tableau *chez son tracker* n'est vrai nulle part ailleurs. Le
+  générique n'aurait porté que des champs vides. C'est aussi ce qui interdit de graver un lien
+  un-pour-un — Linear l'est par nature, mais c'est une propriété de Linear, pas du modèle.
+- **`Project.Tracker` est nullable, et c'est légitime.** La convention proscrit le nullable pour
+  distinguer des *types d'objets*, pas pour une *valeur qui peut manquer* : un dépôt sans tableau reste
+  un dépôt. La variante, elle, est portée par les sous-types.
+- **L'appariement sans discrimination**, par deux membres abstraits qui se répondent :
+  `TrackerBinding.Matches(connexion)` et `TrackerConnection.ToBinding()`. Deux membres virtuels pour un
+  seul sous-type de chaque côté, c'est cher à première vue ; ce qu'on achète est qu'aucun `switch` sur le
+  genre de tracker ne remonte dans l'App, et qu'une `JiraConnection` apportera les siens sans que
+  l'écran bouge.
+- **On apparie sur la clé lisible** (`cursus-app`), pas sur l'identifiant opaque : un fichier versionné
+  dont le contenu ne se relit pas en revue perd la raison d'être qui l'y a mis. Contrepartie assumée —
+  renommer l'espace rompt l'appariement, ce qui se **signale** comme divergence au lieu de suivre en
+  silence. C'est le comportement voulu, pas un défaut.
+- **La déclaration s'écrit comme conséquence d'un choix**, jamais par un champ à remplir : le `D-035`
+  poussé d'un cran. On montre les connexions, et désigner l'une d'elles l'inscrit (`ToBinding`).
+
+**Le piège trouvé par la relecture, pas par l'usage.** `ProjectRegistry.Rename` renomme depuis son
+instantané en mémoire, chargé au démarrage, et `ProjectStore.Rename` réécrivait le document **entier**
+depuis ce `Project`. Dès que `project.json` porte une donnée de plus, cette écriture l'efface sans un
+mot — on déclare son tableau, on renomme le projet, la déclaration a disparu, et rien ne relie les deux
+gestes dans l'esprit de qui les pose. Le remède est un invariant **local** et non une précaution
+d'appelant : **un écrivain partiel de `project.json` relit le disque avant d'écrire**
+(`ProjectStore.Rewrite`, unique chemin de réécriture et unique point de sérialisation d'un projet
+existant). Contrepartie assumée : réécrire exige un document lisible — un `project.json` invalide fait
+désormais échouer le renommage au lieu de l'écraser.
+
+**Écarté.**
+
+- **Ne rien persister** (ma proposition) — défaite par l'argument de la divergence ci-dessus.
+- **L'appariement au registre machine** (`projects.json` gagnant un `trackerConnectionId`) : plus court
+  d'un type, mais rien à partager en revue et **rien à quoi se comparer**.
+- **Écrire l'`id` de connexion dans `project.json`** : cet identifiant est un `Guid` attribué par le
+  registre *machine*. Versionné, il serait faux chez tout collègue — piège qu'il valait mieux nommer
+  que découvrir.
+- **Un `TrackerResolver` en Core** qui apparierait par discrimination : il concentrerait au même endroit
+  la connaissance de tous les trackers, exactement ce que la découpe par le type disperse.
+- **Une ligne d'enrobage pour les tâches de l'arbre** : rien n'y porte d'état à ce stade. Une
+  `TaskRowViewModel` viendra au `2·2c`, quand « lancer ce workflow sur cette tâche » lui donnera quelque
+  chose à porter — l'introduire maintenant serait deviner sa forme.
+- **La délaison** (revenir à « aucun tableau déclaré ») : redéclarer couvre tout besoin connu.
+- **Le sondage périodique** de l'écran : il brûlerait le quota d'API en silence, et
+  l'auto-déclenchement sur l'état d'une carte reste la question ouverte du §7.10.6.
+
+**Ce que la marche enseigne.** Le `D-035` concluait qu'*un modèle qui demande à l'utilisateur ce que le
+système peut constater est presque toujours en avance sur ce qu'il sait*. Cette marche en donne la
+borne : **certaines choses ne se constatent pas.** Qu'un dépôt suive tel tableau est une intention
+d'équipe, que rien dans l'API ne révèle — la demander est correct, et la partager l'est aussi. La
+question utile n'est donc pas « peut-on éviter de demander ? » mais « qui détient la réponse ». Ici :
+l'équipe, dans son dépôt.
+
+**Renvoi** : `architecture.md` §7.10.1 (le lien projet ↔ tableau, la question ouverte refermée),
+`trajectoire.md` (`2·2b` close) ; `D-035` (la variante par le type, et la leçon dont ceci est la borne),
+`D-034` (les deux clés pour une même cible, situation que l'écran doit savoir traiter), `D-033` (l'ordre
+« l'écran avant le geste »), `D-024` (la validation manuelle comme seule preuve d'un module §7.12).

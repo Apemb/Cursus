@@ -1,6 +1,6 @@
 # Architecture de Cursus
 
-> **Statut** : document vivant, à jour de l'**`AgentStep` headless** (`D-030`, jambe 2·1 — Core construit) : le noyau sait confier une étape à un agent. `StepDefinition` est devenue **abstraite**, `ScriptStep`/`AgentStep` en héritent (le kind est un *type*, pas un discriminant-propriété), l'exécution vit dans un `IStepExecutor` **par type** que le moteur choisit sans connaître les kinds, et le harness agentique est un concept **nommé** (`AgenticHarness` « Claude Code » + ses `AgentModel`) plutôt qu'un enum. L'agent tourne en **headless** (`claude --model … -p …`, `ScriptResult`, routable par les gardes existantes) ; la session PTY (§2.2) reste reportée. L'**authoring** du kind agent est ouvert à l'écran (`D-031`, jambe 2·1b) : le brouillon construit les deux kinds par portes sœurs (`AddAgentStep`/`SetPrompt`/`SetModel` jumeaux d'`AddStep`/`SetScript`), et la ligne d'éditeur est **polymorphe** — `StepEditorRow` abstraite, `ScriptStepRow` (commande) / `AgentStepRow` (modèle + prompt), la convention no-nullable appliquée jusque dans la vue (§7.12). Jalon de code précédent : *le champ « Commande » unique* (`D-029`, jambe 1 close). Jalon de code précédent : *streaming intra-étape* (`D-028`, §4.12). Le graphe de la **définition** n'est pas un onglet frère, c'est la **seconde vue des étapes** : `DefinitionGraphViewModel` rend la silhouette statique d'une `WorkflowDefinition` (orphelines comprises — `GraphLayout` place toute étape) et **coiffe l'onglet Étapes** de l'éditeur, recalculée à chaque mutation (`D-027`, supersède la note « onglet Graphe statique » de `D-026`). La traduction grille→pixels est extraite dans `GraphGeometry`, **foyer partagé** avec l'overlay de run : les deux graphes rendent identiquement. Incrément **entièrement présentation** (§7.12), **aucun test neuf** — la garantie de l'orpheline est déjà verrouillée au Core (`GraphLayoutTests`) ; validé à la main. Jalon **le plus récent** : *la couture tracker en Core* (`D-032`, jambe 2·2a) — le **3e kind**, `TaskStep`, entre par son exécuteur : il porte une `TaskOperation` (`ReadTask`/`MoveCard`/`ApplyLabel`, variante de *type*) et agit sur le tableau via le port `ITaskTracker` (jumeau d'`IProcessRunner`, testé sur un stub). La clé de la tâche visée descend du `RunTrigger` jusqu'à l'exécuteur par un **`StepExecutionContext`** neuf (qui remplace le `workingDirectory` nu et accueillera les futures références `${ref.output}`) ; `ReadTask` dépose le corps de la carte dans `TASK.md` du worktree (la mémoire partagée du run, §4.9). Le client Linear réel reste à venir (**2·2b**, projet dédié hors Core) ; en son absence le moteur tient un tracker optionnel dont le défaut refuse tout geste (échec routable). Jalon précédent : *page du workflow* (§4.23, `D-026`) — le **workflow est un lieu** (hub à onglets `WorkflowPageViewModel` : Historique adossé à `ProjectHost.RunsOf` + Étapes ; surface `liste / run / page` sans routeur). Jalon clos : **jambe 1 — la porte de gate déterministe** (`trajectoire.md`), ses trois dettes encaissées — streaming intra-étape (`D-028`), **preuve PATH sur bundle** faite au réel (PATH vidé, `dotnet` nu résolu via `~/.asdf/shims`, sort 0 : la béquille `/bin/sh -c` est superflue), routage exit-code **vécu** (44 runs de la gate) — plus l'authoring naturel : un **champ « Commande » unique** (1er token = binaire, `CommandLine`/`D-029`). Suite de tests : **332 verts** (303 Core + 29 Persistence), build 0 warning.
+> **Statut** : document vivant, à jour de l'**`AgentStep` headless** (`D-030`, jambe 2·1 — Core construit) : le noyau sait confier une étape à un agent. `StepDefinition` est devenue **abstraite**, `ScriptStep`/`AgentStep` en héritent (le kind est un *type*, pas un discriminant-propriété), l'exécution vit dans un `IStepExecutor` **par type** que le moteur choisit sans connaître les kinds, et le harness agentique est un concept **nommé** (`AgenticHarness` « Claude Code » + ses `AgentModel`) plutôt qu'un enum. L'agent tourne en **headless** (`claude --model … -p …`, `ScriptResult`, routable par les gardes existantes) ; la session PTY (§2.2) reste reportée. L'**authoring** du kind agent est ouvert à l'écran (`D-031`, jambe 2·1b) : le brouillon construit les deux kinds par portes sœurs (`AddAgentStep`/`SetPrompt`/`SetModel` jumeaux d'`AddStep`/`SetScript`), et la ligne d'éditeur est **polymorphe** — `StepEditorRow` abstraite, `ScriptStepRow` (commande) / `AgentStepRow` (modèle + prompt), la convention no-nullable appliquée jusque dans la vue (§7.12). Jalon de code précédent : *le champ « Commande » unique* (`D-029`, jambe 1 close). Jalon de code précédent : *streaming intra-étape* (`D-028`, §4.12). Le graphe de la **définition** n'est pas un onglet frère, c'est la **seconde vue des étapes** : `DefinitionGraphViewModel` rend la silhouette statique d'une `WorkflowDefinition` (orphelines comprises — `GraphLayout` place toute étape) et **coiffe l'onglet Étapes** de l'éditeur, recalculée à chaque mutation (`D-027`, supersède la note « onglet Graphe statique » de `D-026`). La traduction grille→pixels est extraite dans `GraphGeometry`, **foyer partagé** avec l'overlay de run : les deux graphes rendent identiquement. Incrément **entièrement présentation** (§7.12), **aucun test neuf** — la garantie de l'orpheline est déjà verrouillée au Core (`GraphLayoutTests`) ; validé à la main. Jalon **le plus récent** : *l'écran des tâches* (`D-036`, jambe 2·2b·3b) — le **lien projet ↔ tableau** est tranché **côté versionné** : `project.json` déclare le tableau visé (`TrackerBinding`, variante par le type), le registre machine garde le jeton, et l'appariement passe par deux membres abstraits qui se répondent (`Matches` / `ToBinding`) de sorte que l'écran ne nomme jamais Linear. Ce découpage existe pour rendre une **divergence observable** — un dépôt qui vise un tableau que ce poste ne sait pas joindre le dit, là où un appariement purement machine *est* la vérité et ne peut donc jamais être faux. Nerf caché : tout écrivain partiel de `project.json` **relit le disque avant d'écrire** (`ProjectStore.Rewrite`), sans quoi un renommage depuis l'instantané du registre effaçait la déclaration en silence. L'écran lui-même est **4e module de la surface projet** (§7.12, aucun test neuf), lecture seule, à quatre situations (rien de déclaré / divergence / plusieurs jetons / le tableau). Jalons précédents de la jambe 2·2b : le **client Linear en lecture** (`Cursus.Trackers`, port `ITaskBoard`), puis les **connexions tracker** et leur saisie (`D-034`/`D-035` — l'espace ne se déclare pas, il se constate). Jalon précédent : *la couture tracker en Core* (`D-032`, jambe 2·2a) — le **3e kind**, `TaskStep`, entre par son exécuteur : il porte une `TaskOperation` (`ReadTask`/`MoveCard`/`ApplyLabel`, variante de *type*) et agit sur le tableau via le port `ITaskTracker` (jumeau d'`IProcessRunner`, testé sur un stub). La clé de la tâche visée descend du `RunTrigger` jusqu'à l'exécuteur par un **`StepExecutionContext`** neuf (qui remplace le `workingDirectory` nu et accueillera les futures références `${ref.output}`) ; `ReadTask` dépose le corps de la carte dans `TASK.md` du worktree (la mémoire partagée du run, §4.9). Le client Linear réel reste à venir (**2·2b**, projet dédié hors Core) ; en son absence le moteur tient un tracker optionnel dont le défaut refuse tout geste (échec routable). Jalon précédent : *page du workflow* (§4.23, `D-026`) — le **workflow est un lieu** (hub à onglets `WorkflowPageViewModel` : Historique adossé à `ProjectHost.RunsOf` + Étapes ; surface `liste / run / page` sans routeur). Jalon clos : **jambe 1 — la porte de gate déterministe** (`trajectoire.md`), ses trois dettes encaissées — streaming intra-étape (`D-028`), **preuve PATH sur bundle** faite au réel (PATH vidé, `dotnet` nu résolu via `~/.asdf/shims`, sort 0 : la béquille `/bin/sh -c` est superflue), routage exit-code **vécu** (44 runs de la gate) — plus l'authoring naturel : un **champ « Commande » unique** (1er token = binaire, `CommandLine`/`D-029`). Suite de tests : **363 verts** (322 Core + 29 Persistence + 12 Trackers), build 0 warning.
 >
 > **Ce document détient l'état réel du dépôt** : ce qui est construit, où, et ce qui n'est pas relié. Il ne redit pas les autres documents :
 > - `docs/design/noyau-deterministe.md` — le modèle cible du noyau v0 et ses questions ouvertes ;
@@ -1135,7 +1135,7 @@ Rien de ce qui suit n'existe en code. Le raisonnement complet, les preuves exter
 
 ### 7.10 Le projet, le tableau de tâches et les trois niveaux de stockage — PARTIELLEMENT CONSTRUIT
 
-Conception issue de la conversation préparatoire au jalon 4. Le **niveau projet** existe depuis le jalon 5 (§4.11) — dans sa forme minimale : identité, définitions, emplacements. Le **registre machine** a désormais sa première pierre — la liste des projets connus (`ProjectRegistry`, jalon 6c·1, §4.14) ; le **trousseau** est **CONSTRUIT** (jambe 2·2b·1, `D-033` — `Secrets/ISecretStore` et `KeychainSecretStore` adossé à `/usr/bin/security`) ; le **tracker** reste **TRANCHÉ, NON CONSTRUIT**.
+Conception issue de la conversation préparatoire au jalon 4. Le **niveau projet** existe depuis le jalon 5 (§4.11) — dans sa forme minimale : identité, définitions, emplacements. Le **registre machine** a désormais sa première pierre — la liste des projets connus (`ProjectRegistry`, jalon 6c·1, §4.14) ; le **trousseau** est **CONSTRUIT** (jambe 2·2b·1, `D-033` — `Secrets/ISecretStore` et `KeychainSecretStore` adossé à `/usr/bin/security`) ; le **tracker** est **CONSTRUIT EN LECTURE** — client Linear (`Cursus.Trackers`, 2·2b·2), connexions et leur saisie (2·2b·3a, `D-034`/`D-035`), lien projet ↔ tableau et écran des tâches (2·2b·3b, `D-036`). Ce qui manque est le **geste** : aucune écriture sur le tableau depuis l'écran, et `RunTrigger.ForTask` n'a toujours aucun appelant en production (2·2c).
 
 ⚠️ **Une rectification, tranchée au jalon 5** : le tableau ci-dessous listait « racine du workspace » parmi le contenu de `project.json`. Elle n'y est pas et n'y sera pas — ce fichier est versionné, un chemin absolu y serait faux chez tout collègue. La racine est **déduite** : c'est le dossier qui contient le `.cursus/`, ce qui rejoint la formule « l'identité d'un projet est l'emplacement de son `.cursus/` » deux paragraphes plus bas.
 
@@ -1143,8 +1143,8 @@ Conception issue de la conversation préparatoire au jalon 4. Le **niveau projet
 
 | Niveau | Où | Quoi | Pourquoi pas ailleurs |
 |---|---|---|---|
-| **Projet** | `.cursus/project.json` + `.cursus/workflows/*.json`, **versionnés** | *construit* : identité du projet (`id`, `name`) et les définitions · *prévu* : provider de tracker, board/équipe, prédicats de disponibilité | c'est l'intention d'une équipe : elle doit se partager et se relire dans une PR |
-| **Machine** | `~/.config/cursus/projects.json` — *construit au 6c·1* (`ProjectRegistry`) · `~/.config/cursus/trackers.json` — *construit en 2·2b·3a* (`TrackerRegistry`) | la liste des projets connus · les **connexions tracker** (id, libellé, portée — jamais le jeton) · *prévu* : réglages machine | dépend de cet ordinateur ; n'a aucun sens pour un collègue |
+| **Projet** | `.cursus/project.json` + `.cursus/workflows/*.json`, **versionnés** | *construit* : identité du projet (`id`, `name`), les définitions, et le **tableau visé** (`tracker`, 2·2b·3b — `TrackerBinding`) · *prévu* : prédicats de disponibilité | c'est l'intention d'une équipe : elle doit se partager et se relire dans une PR |
+| **Machine** | `~/.config/cursus/projects.json` — *construit au 6c·1* (`ProjectRegistry`) · `~/.config/cursus/trackers.json` — *construit en 2·2b·3a* (`TrackerRegistry`) | la liste des projets connus · les **connexions tracker** (id, libellé, espace — jamais le jeton) · *prévu* : réglages machine | dépend de cet ordinateur ; n'a aucun sens pour un collègue |
 | **Trousseau** | Keychain macOS — *construit en 2·2b·1* (`ISecretStore`/`KeychainSecretStore`) ; libsecret ailleurs, *non construit* | les tokens Linear/Jira, un par connexion | un secret ne s'écrit pas sur disque en clair, même hors dépôt |
 
 L'emplacement machine est `~/.config/cursus/` (ou `$XDG_CONFIG_HOME/cursus`), **et non** `~/Library/Application Support/` : Cursus est un outil de dev non distribué (bundle signé ad-hoc), la convention XDG correspond à ce que son public attend. ⚠️ On le résout **explicitement** (`ProjectRegistry.ResolveConfigDirectory` : `$XDG_CONFIG_HOME` sinon `<home>/.config`, une valeur vide comptant comme absente comme dans le shell) et **surtout pas** par `SpecialFolder.ApplicationData` de .NET — qui rend justement `~/Library/Application Support` sur macOS, le piège découvert au 6c·1. Le fichier y porte des chemins **absolus** — à l'inverse de `project.json`, il ne se partage jamais par git. Décision tranchée au 6c·1 (L-1).
@@ -1187,10 +1187,48 @@ garde ce dont il répond — l'unicité, puisque cet identifiant désigne le jet
 **ignoré**, pas dégradé : une connexion dont on ignore le tracker n'est pas utilisable, et en
 fabriquer une approximative ferait échouer chaque usage sans dire pourquoi.
 
-**Ce qui n'est pas tranché** : *quel projet Cursus utilise quelle connexion*. Le registre est global ;
-le lien se posera dans `project.json` quand l'écran des tâches (`2·2b·3b`) aura montré ce dont il a
-besoin. ⚠️ **Rien ne grave un lien un-pour-un** — Linear l'est par nature, mais c'est une propriété de
-Linear, pas du modèle : Jira range plusieurs projets sous un même site.
+##### Le lien projet ↔ tableau — CONSTRUIT (2·2b·3b, `D-036`)
+
+La question laissée ouverte ci-dessus — *quel projet Cursus utilise quelle connexion* — est **tranchée
+côté versionné**, et elle se coupe en deux moitiés qui ne vivent pas au même niveau :
+
+| Moitié | Où | Ce qu'elle porte |
+|---|---|---|
+| **La déclaration** — ce que le dépôt dit viser | `project.json`, nœud `tracker` | `TrackerBinding` : `LinearBinding(workspaceKey)` |
+| **La connexion** — ce que ce poste sait joindre | `trackers.json` + trousseau | `TrackerConnection` et son jeton |
+
+Deux raisons, et la seconde est celle qui a renversé le premier plan (qui rangeait l'appariement au
+registre machine, plus court d'un type) :
+
+1. **La déclaration voisine les déclencheurs.** Les prédicats de disponibilité (§7.10.3) vivent déjà
+   dans `project.json`. Un déclencheur partagé nommant une colonne, dont l'espace où trouver cette
+   colonne serait un réglage machine invisible, serait à moitié partagé : la moitié relisible en revue,
+   la moitié devinée.
+2. **Une divergence n'est observable que là.** Un appariement rangé au seul registre machine *est* la
+   vérité, donc il ne peut jamais être faux. Une déclaration versionnée crée un écart **visible** entre
+   ce que le dépôt vise et ce que ce poste joint — précisément la forme d'erreur qui coûte cher
+   autrement : un run déplaçant une carte dans le mauvais espace sans qu'un mot l'ait annoncé.
+
+**L'appariement est sans discrimination de genre**, porté par deux membres abstraits qui se répondent :
+`TrackerBinding.Matches(connexion)` et `TrackerConnection.ToBinding()`. Deux membres virtuels pour un
+seul sous-type de chaque côté, mais l'écran ne nomme jamais Linear, et une `JiraConnection` apportera les
+siens sans qu'il bouge. La discrimination subsiste pour le seul **affichage** (`TrackerBindingRow`,
+App) : un libellé français n'a pas à descendre dans un modèle qui n'a pas d'écran.
+
+⚠️ **On apparie sur la clé lisible** de l'espace (`cursus-app`), pas sur son identifiant opaque : un
+fichier versionné dont le contenu ne se relit pas en revue perd la raison d'être qui l'y a mis.
+Contrepartie **assumée** — renommer l'espace chez le tracker rompt l'appariement, ce qui se **signale**
+comme divergence au lieu de suivre en silence.
+
+⚠️ **Un écrivain partiel de `project.json` relit le disque avant d'écrire** (`ProjectStore.Rewrite`,
+unique chemin de réécriture). Le registre machine garde un instantané des projets pris au démarrage :
+renommer depuis cet instantané réécrivait le document entier, et effaçait donc la déclaration posée
+entre-temps — en silence, au moment le moins soupçonnable. L'invariant est **local**, pour ne pas être
+une précaution que chaque appelant doive se rappeler.
+
+⚠️ **Rien ne grave un lien un-pour-un** — Linear l'est par nature, mais c'est une propriété de Linear,
+pas du modèle : Jira range plusieurs projets sous un même site. C'est pourquoi la déclaration est un
+type à part et non un champ recopié de la connexion.
 
 #### 7.10.2 Le déclenchement est un état observé, pas une transition
 
@@ -1512,7 +1550,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **332 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **363 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
 
 ---
 

@@ -25,19 +25,46 @@
 
 | Niveau | Linear | La question à laquelle il répond | Portée |
 |---|---|---|---|
-| **Feature** | Projet | *De quoi sera-t-on capable qu'on ne pouvait pas ?* | Un cap de la trajectoire |
-| **Incrément** (US) | Issue | *Quel comportement observable s'ajoute ?* | Livrable seul, suite verte |
+| **Feature** | Projet | *À quel besoin répond-on, et qu'est-ce qu'on construit ?* | Un cap de la trajectoire |
+| **Incrément** (story) | Issue | *Quel comportement observable s'ajoute ?* | Livrable seul, suite verte |
 | **Pas** | Sous-tâche | *Quel est le prochain pas concret ?* | Un commit, un cycle TDD |
 
 **Le test qui départage un incrément d'un pas** : si on le livrait seul et qu'on arrêtait
-là, quelqu'un le remarquerait-il ? Oui → c'est un **incrément**. Non → c'est un **pas**.
+là, **le rôle produit** le remarquerait-il ? Autrement dit : est-ce **recettable** par
+quelqu'un qui ne lit pas le code ? Oui → c'est un **incrément**. Non → c'est un **pas**.
+
+Le lecteur compte autant que la question. Formulée avec un « quelqu'un » anonyme, elle laisse
+chacun choisir son juge — l'utilisateur de l'app, le développeur du lendemain, l'agent — et
+ils ne répondent pas pareil. Le juge est le **rôle produit**, sur ce dépôt une casquette de
+l'auteur plutôt qu'une personne distincte.
 
 Ce test est plus fiable que la taille. « Écrire l'adaptateur Keychain » est petit mais reste
 un pas : seul, il ne change rien pour personne. « Le jeton vit dans le trousseau » est un
 incrément, même s'il tient en deux commits — après lui, un secret ne traîne plus en clair.
+Un client Linear **en lecture seule**, qui ne touche jamais le vrai tableau, est un pas
+malgré ses cinq commits : rien de recettable n'en sort.
 
 **Corollaire** : un incrément qui n'a qu'un seul pas n'a pas besoin de sous-tâches. On ne
 découpe pas pour découper ; on découpe quand l'ordre des pas est **une information**.
+
+### Chaque niveau produit son propre artefact
+
+Ce ne sont pas trois formes du même « plan », et les confondre fait écrire la mauvaise chose
+au mauvais endroit :
+
+| Niveau | Artefact | Quand il s'écrit | Sa fraîcheur |
+|---|---|---|---|
+| Feature | Une **spec** | Avant l'ouverture, en `Discovery` puis `Spec` | Datée — c'est un contrat, il ne bouge pas sous les pieds |
+| Incrément | Un **plan d'archi** | **Une fois, au découpage**, par qui a la vue d'ensemble | Datée |
+| Pas | Une **test list** | **À la prise du pas** | **Vivante** — un cas découvert au rouge s'y ajoute |
+
+Les deux régimes cohabitent sans se contredire : planifier l'architecture d'avance ne périme
+pas, parce qu'elle décrit des frontières ; planifier *tous* les cas de test d'avance périmerait,
+parce que ce qu'on apprend au pas 1 change ce qu'on sait au pas 4.
+
+**Équivalence Jira**, pour qui arrive avec ce vocabulaire : feature ≈ epic, incrément ≈ US,
+pas ≈ sous-tâche. Les mots du dépôt restent ceux-ci — « epic » désigne couramment un
+conteneur thématique sans fin, exactement ce que « un cap qui se ferme » refuse.
 
 ---
 
@@ -47,26 +74,71 @@ Une feature est un **cap**, pas un thème. « Round-trip Linear » en est un ; �
 diverses » n'en est pas un — un fourre-tout n'a pas de fin, donc pas de moment où on le
 ferme.
 
-Les questions, dans l'ordre où elles se posent au lecteur :
+Son artefact est la **spec**, et elle s'écrit en **deux temps** — qui sont deux colonnes,
+mais surtout **deux compositions**. C'est le changement de composition qui fait la frontière,
+pas un moment du raisonnement.
 
-1. **Quel est le but ?** Une phrase, en capacité gagnée. Pas une liste de tâches.
-2. **Où en est-on déjà ?** Ce qui est **construit** et sert de socle — sans ça, le lecteur
+### 2.1 `Discovery` — à quel besoin répond-on ?
+
+Autour de la table : le **produit** et l'**UX**. Une seule question, et elle est assez
+importante pour occuper une colonne à elle seule.
+
+1. **Quel besoin, et pour qui ?** Pas une solution déguisée en besoin. « Il faut un cache »
+   n'est pas un besoin ; « l'écran met quatre secondes à s'ouvrir » en est un.
+2. **Pourquoi ce besoin mérite-t-il qu'on s'y arrête maintenant ?** Sa place dans la
+   trajectoire, ce qu'il débloque, ce qu'il coûte de ne rien faire.
+3. **Quelles pistes existent ?** Une **ouverture**, pas un choix. Nommer des directions
+   possibles est utile pour jauger le terrain ; les départager ne se fait pas ici.
+
+**Ce que `Discovery` ne fait pas : arbitrer.** Et c'est sa raison d'être. Garder ce temps
+séparé, c'est se réserver le droit de **tuer une feature avant d'avoir dépensé le moindre
+arbitrage technique** — « on ne fait pas », ou « le besoin n'est pas celui-là », sont des
+sorties légitimes et bon marché.
+
+### 2.2 `Spec` — qu'est-ce qu'on construit ?
+
+La **tech** et la **QA** rejoignent la table. C'est ce qui rend l'arbitrage possible : on
+n'arbitre pas une faisabilité sans la tech, et on ne définit pas une recette sans la QA.
+
+1. **Quelles options, à quel coût ?** L'étude de faisabilité et l'estimation — légère, elle
+   sert à *arbitrer*, pas à s'engager. **L'écart mérite d'être écrit autant que le choix** :
+   ce qui a été envisagé puis écarté, et pourquoi. Un arbitrage structurant se déverse
+   ensuite en `D-NNN`.
+2. **Qu'est-ce qu'on construit ?** La capacité gagnée, énoncée précisément. Une phrase à
+   l'indicatif, pas une liste de tâches.
+3. **Comment le recettera-t-on ?** La QA à la table sert à ça, et c'est **d'ici que descend
+   l'acceptation** : la recette de la feature est ce contre quoi `Validation` jugera, et le
+   découpage la répartira ensuite entre les incréments. Une spec sans recette est un document
+   d'intention ; avec elle, c'est un contrat.
+4. **Où en est-on déjà ?** Ce qui est **construit** et sert de socle — sans ça, le lecteur
    suivant refait ce qui existe. Renvoyer au `D-NNN` plutôt que recopier.
-3. **Que reste-t-il ?** Les incréments, nommés, dans leur ordre de dépendance.
-4. **Quel est le pré-requis ?** Ce qui doit exister avant que cette feature ait un sens.
+5. **Quel est le pré-requis ?** Ce qui doit exister avant que cette feature ait un sens.
    Souvent une autre feature ; parfois rien.
-5. **Qu'est-ce qui est déjà tranché, et qu'est-ce qui ne l'est pas ?** Les trois registres
+6. **Qu'est-ce qui est déjà tranché, et qu'est-ce qui ne l'est pas ?** Les trois registres
    de `architecture.md` valent ici aussi : **construit** / **tranché mais pas construit** /
    **question ouverte**. Un « prévu » présenté comme un « fait » désoriente autant dans un
    ticket que dans un document.
-6. **Quelles vertus doivent survivre ?** Les invariants que l'implémentation ne doit pas
+7. **Quelles vertus doivent survivre ?** Les invariants que l'implémentation ne doit pas
    casser en chemin — souvent la partie la plus facile à perdre.
+
+### Ce qu'une feature **ne** contient pas
+
+- **Ses incréments, nommés et ordonnés.** Le découpage a lieu au **passage en
+  `In Progress`**, pas à l'écriture de la spec. Ce qu'elle peut porter, c'est une *intention*
+  de découpage — une idée de la maille. Les cartes naissent à l'ouverture, pas au backlog.
+- **Le plan d'archi.** Il appartient à l'incrément. La feature décide *quelle solution et si
+  elle vaut le coup* ; l'incrément décide *comment c'est structuré*. Le premier est un
+  arbitrage, le second une conception.
 
 ---
 
 ## 3. Ce que contient un **incrément** (issue Linear)
 
-C'est le niveau qui porte la charge. Un agent qui reçoit une carte reçoit **ça**.
+C'est le niveau qui porte la charge, et son artefact est le **plan d'archi** — celui que
+`CLAUDE.md` exige dès qu'un changement crée une classe, traverse des modules ou implique une
+découpe non évidente, schéma-delta compris. Il s'écrit **une fois, au découpage**, par qui a
+la vue d'ensemble de la feature ; c'est aussi le moment où les incréments naissent, et le seul
+où quelqu'un voit leurs frontières les unes par rapport aux autres.
 
 ### Les six questions
 
@@ -84,9 +156,17 @@ C'est le niveau qui porte la charge. Un agent qui reçoit une carte reçoit **ç
 5. **Quelle est l'acceptation ?** Des cases à cocher **observables**. « Ça marche » n'est
    pas une acceptation ; « un run rouge ne ferme pas la carte » en est une. Y inclure la
    preuve *négative* quand elle existe : ce qui doit **rester** vrai, et le cas d'échec.
+   Elle ne s'invente pas ici : elle est **la part de la recette de la feature** (§2.2) qui
+   revient à cet incrément. Si une part de la recette n'atterrit dans aucun incrément, le
+   découpage a un trou.
 6. **Qu'est-ce qui reste explicitement dehors ?** Le hors-périmètre assumé, et ce qui est
    volontairement laissé ouvert. Sans ça, l'exécutant élargit — ou pire, croit avoir
    trouvé un oubli et « corrige » une décision.
+
+   À écrire **en regard des frères**, pas dans l'absolu. Un exécutant qui peut remonter à la
+   feature et lire les incréments voisins voit du même coup *tout ce qui reste à faire* : la
+   navigation rend cette question plus critique, pas moins. « Pas ici, c'est `CUR-12` » vaut
+   mieux que « hors périmètre ».
 
 ### Ce qu'un incrément **ne** contient pas
 
@@ -94,8 +174,10 @@ C'est le niveau qui porte la charge. Un agent qui reçoit une carte reçoit **ç
   changement crée une classe, traverse des modules ou implique une découpe non évidente. Le
   ticket dit *quoi* et *pourquoi* ; le plan dit *comment*. Un ticket qui prescrit
   l'implémentation ligne à ligne a mangé le plan — et il sera périmé avant d'être pris.
-- **La liste des tests.** La *test list* naît du plan, pas du backlog. Le ticket peut nommer
-  l'invariant à prouver ; il n'énumère pas les cas.
+- **La liste des tests.** Un incrément qui énumère ses cas a mangé le plan ; il peut nommer
+  l'invariant à prouver, pas les cas. La *test list* appartient au **pas** (§4), et elle s'y
+  écrit à sa prise — ce qui est proscrit, c'est la test list **en amont du découpage**, pas la
+  test list dans le backlog.
 - **Ce que le dépôt dit déjà.** On **renvoie** (`D-032`, `architecture.md` §7.10.5), on ne
   recopie pas : une copie diverge, un renvoi vieillit honnêtement.
 
@@ -103,17 +185,32 @@ C'est le niveau qui porte la charge. Un agent qui reçoit une carte reçoit **ç
 
 ## 4. Ce que contient un **pas** (sous-tâche Linear)
 
-Trois lignes suffisent souvent. Les questions :
+Le pas est **entièrement technique** — et c'est le niveau destiné à être **entièrement
+automatisé** : plan, développement, revue. Son artefact est la **test list**, et elle
+s'écrit à la prise du pas, pas au découpage : ce qu'on apprend au pas 1 change ce qu'on sait
+au pas 4, et une test list planifiée d'avance serait un petit *waterfall* qui périmerait. Elle
+reste vivante pendant le cycle — un cas découvert au rouge s'y ajoute.
+
+Les questions :
 
 1. **Quel est le pas ?** Un titre qui tient en une action.
-2. **Pourquoi celui-là, à cette place ?** Surtout quand l'ordre n'est pas évident — « les
-   trois opérations en dépendent, la faire d'abord évite de la disperser en trois copies ».
+2. **Pourquoi celui-là, à cette place, et où s'arrête-t-il ?** **La question la plus
+   importante des trois, et la seule qui ne se rattrape pas.** Au découpage, quelqu'un avait
+   toute la feature en tête et voyait les frontières entre les pas ; cette vue disparaît avec
+   la session qui l'a produite. Ce qui n'est pas écrit là n'existe plus. Nommer le frère
+   voisin vaut mieux qu'une justification abstraite — « les trois opérations en dépendent, la
+   faire d'abord évite de la disperser en trois copies ».
 3. **Quel est le piège local ?** S'il y en a un. Sinon, ne rien écrire vaut mieux qu'un
    paragraphe de remplissage.
 
-Un pas **n'a pas besoin d'acceptation formelle** : son acceptation est le cycle TDD lui-même
-— un rouge observé, un vert, un refactor. La suite verte et les 0 warning sont l'acceptation
-de **tous** les pas, elle n'a pas à être répétée dans chacun.
+Un pas **n'a pas besoin d'acceptation formelle** : la suite verte et les 0 warning sont
+l'acceptation de **tous** les pas, elle n'a pas à être répétée dans chacun.
+
+En revanche, **le vert n'est pas une validation de la test list**. Il prouve que le test
+passe ; il ne dit ni que le bon comportement est prouvé, ni qu'il est bien formulé — un test
+peut être vert, conforme à la convention `étant donné / quand / alors`, et vérifier la
+mauvaise chose. Le raffinement de la test list et de la formulation des comportements relève
+donc de la revue (§6), au même titre que le code.
 
 ---
 
