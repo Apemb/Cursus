@@ -107,6 +107,31 @@ Deux conséquences durables :
 ⚠️ Le corps de la réponse 400 porte un `userPresentableMessage` qui **donne le chiffre exact**. Tout
 diagnostic sur cette API doit lire le corps : le code HTTP seul n'apprend rien.
 
+## 6bis. Les formes d'échec — sondées
+
+Trois façons distinctes d'échouer, qui appellent trois remèdes différents :
+
+| Cause | HTTP | Ce que dit le corps |
+|---|---|---|
+| Jeton invalide ou révoqué | **401** | `code: AUTHENTICATION_ERROR` |
+| Requête refusée (trop complexe) | **400** | `code: INPUT_ERROR` + le chiffre dans `userPresentableMessage` |
+| Entité introuvable | **200** ⚠️ | `errors` peuplé, `data: null` |
+
+⚠️ **La troisième ligne est le piège** : GraphQL rend **200** alors que rien n'a abouti. Conclure au
+succès sur le seul code HTTP laisse passer l'échec silencieusement — c'est la présence d'`errors`
+qui tranche, jamais le statut.
+
+⚠️ **`message` n'est pas `userPresentableMessage`.** Le premier est laconique (« Query too
+complex ») ; le second porte le diagnostic exploitable (« Complexity: 17055… Maximum allowed:
+10000 »). Toujours préférer le second, se rabattre sur le premier.
+
+**L'authentification passe avant l'analyse de la requête** : une requête trop complexe présentée
+avec un mauvais jeton rend 401, pas 400. On ne peut donc pas calibrer la complexité sans une clé
+valide.
+
+Ces trois formes sont traduites par `LinearFailure` (testé sur ces corps réels) vers
+`TrackerRejectedException` / `TrackerUnreachableException`.
+
 ## 7. Pagination
 
 Toutes les connexions sont en `first: n` / `after: cursor`, avec

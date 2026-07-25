@@ -1,5 +1,4 @@
 using System.Net.Http.Json;
-using System.Text.Json;
 
 using Cursus.Core.Secrets;
 using Cursus.Core.Tasks;
@@ -83,17 +82,13 @@ public sealed class LinearTaskBoard : ITaskBoard
         // prendrait « Bearer »). Vérifié à la sonde — docs/reference/linear-api.md §1.
         request.Headers.TryAddWithoutValidation("Authorization", token);
 
+        int statusCode;
         string body;
         try
         {
             using var response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            statusCode = (int)response.StatusCode;
             body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-
-            // Le corps accompagne le code : un « 400 » nu n'apprend rien à qui doit
-            // corriger, alors que Linear dit précisément ce qu'il reproche.
-            if (!response.IsSuccessStatusCode)
-                throw new TrackerUnreachableException(
-                    $"Linear a répondu {(int)response.StatusCode} — {Excerpt(body)}");
         }
         catch (HttpRequestException failure)
         {
@@ -102,24 +97,11 @@ public sealed class LinearTaskBoard : ITaskBoard
             throw new TrackerUnreachableException(failure.Message);
         }
 
-        // GraphQL répond 200 même en cas d'erreur applicative (jeton révoqué, champ
-        // inconnu) : le code HTTP ne suffit pas à conclure au succès.
-        EnsureNoGraphQlErrors(body);
+        // Le verdict — « jeton refusé » ou « tableau injoignable » — se décide ailleurs,
+        // là où il est testé. Ici on poste et on lève ce qu'on nous rend.
+        if (LinearFailure.From(statusCode, body) is { } failed)
+            throw failed;
 
         return LinearBoardReader.Read(body);
-    }
-
-    /// <summary>Un extrait du corps, assez long pour diagnostiquer, assez court pour un message.</summary>
-    private static string Excerpt(string body) =>
-        body.Length <= 400 ? body : body[..400] + "…";
-
-    private static void EnsureNoGraphQlErrors(string body)
-    {
-        using var document = JsonDocument.Parse(body);
-        if (!document.RootElement.TryGetProperty("errors", out var errors) || errors.GetArrayLength() == 0)
-            return;
-
-        var first = errors[0].TryGetProperty("message", out var message) ? message.GetString() : null;
-        throw new TrackerUnreachableException(first ?? "erreur GraphQL sans message.");
     }
 }

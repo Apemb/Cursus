@@ -12,6 +12,15 @@ public sealed class TrackerNotConfiguredException(string workspace)
 }
 
 /// <summary>
+/// Un jeton est bien rangé, mais le tracker le refuse — révoqué, expiré, ou collé
+/// incomplet. À distinguer de <see cref="TrackerUnreachableException"/> : ici le
+/// tableau <b>a</b> répondu, et le remède est de refaire une clé, pas de vérifier sa
+/// connexion. Confondre les deux envoie l'utilisateur chercher au mauvais endroit.
+/// </summary>
+public sealed class TrackerRejectedException()
+    : Exception("Le jeton a été refusé par le tracker — il est peut-être révoqué, expiré, ou collé incomplet.");
+
+/// <summary>
 /// Le tableau n'a pas répondu, ou a répondu une erreur. Exception <b>de domaine</b>
 /// (elle vit dans le noyau, pas dans l'adaptateur) pour que la surface l'attrape sans
 /// rien connaître de HTTP ni de GraphQL : le jour où un second tracker arrive, elle
