@@ -102,27 +102,50 @@ rabattre sur `type`, qui est grossier mais monotone.
 Étiquettes (`issueLabels`) sur cet espace : `Feature`, `Bug`. Rien qui ressemble encore au `Done` /
 `Comments` évoqué au §7.10.3 — **le contrat colonnes/étiquettes reste à définir** (c'est `CUR-5`).
 
-## 6. ⚠️ Le budget de complexité — le piège qui refuse la requête
+## 6. ⚠️ Deux limites de nature différente — on les confond à ses frais
 
-Linear plafonne la **complexité** d'une requête à **10 000**, et elle se calcule
-**multiplicativement sur les `first:` imbriqués**. Mesuré :
+Linear en applique **deux**. Les mélanger conduit à optimiser la mauvaise (mesuré le
+2026-07-26, en-têtes de réponse à l'appui) :
 
-| Requête | Complexité | Verdict |
-|---|---|---|
-| `projects(25) × issues(50)` | sous le seuil | ✅ retenu |
-| `projects(30) × issues(50)` | sous le seuil | ✅ |
-| `projects(50) × issues(100)` | **22 555** | ❌ **400 — « Query too complex »** |
+| | Ce que c'est | Valeur | Comment on l'apprend |
+|---|---|---|---|
+| **Complexité par requête** | un plafond *a priori*, calculé sur les `first:` **avant** d'exécuter | **10 000** | un **400** `INPUT_ERROR` — la requête n'a pas tourné |
+| **Budget par fenêtre** | ce que les requêtes acceptées ont réellement **consommé** | **3 000 000** | les en-têtes `x-ratelimit-complexity-*` |
 
-Deux conséquences durables :
+Plus un plafond de **2 500 requêtes** par fenêtre (`x-ratelimit-requests-limit`), qui est
+la seule limite qu'une pagination longue peut approcher.
 
-- **On ne compense pas la troncature en montant les bornes** — le mur arrive vite. C'est
-  précisément pourquoi `TaskProject.IsTruncated` existe : dire ce qu'on ne montre pas coûte moins
-  cher que tout montrer.
-- **Ajouter un champ à la requête consomme du budget.** Élargir les `first:` *et* enrichir la
-  sélection au même moment, c'est se faire refuser sans savoir lequel des deux est en cause.
+⚠️ **Toute réponse porte son coût dans l'en-tête `x-complexity`.** C'est la façon la moins
+chère de mesurer : inutile de chercher le mur par dichotomie de 400 — il suffit de lire
+l'en-tête d'une requête qui passe.
 
-⚠️ Le corps de la réponse 400 porte un `userPresentableMessage` qui **donne le chiffre exact**. Tout
+⚠️ Le corps d'une réponse 400 porte un `userPresentableMessage` qui **donne le chiffre exact**. Tout
 diagnostic sur cette API doit lire le corps : le code HTTP seul n'apprend rien.
+
+### 6a. Ce que coûte chaque forme — et pourquoi la forme actuelle est au bord du mur
+
+| Requête | `x-complexity` | Verdict |
+|---|---|---|
+| `projects(25) × issues(50) × labels(10)` — **celle du client aujourd'hui** | **8 280** | ✅ mais à **83 %** du plafond |
+| `projects(50) × issues(100) × labels(10)` | **33 060** | ❌ 400, refusée |
+| `issues(250) × labels(10)` — **à la racine** | **9** | ✅ |
+| `projects(250)` nu | 300 | ✅ |
+| `projects(6)` nu | 8 | ✅ |
+
+⚠️ **Correction d'une affirmation de ce document.** Il disait que `25 × 50` tenait « avec de
+la marge » : c'est faux, il n'en reste **1 720**. L'ajout de `labels(first: 10)` en a mangé
+une large part — sur la forme haute, le refus mesuré est passé de 22 555 à **33 060**. Un
+champ de plus sur cette requête pouvait la faire sauter, et l'aurait fait sans prévenir
+autrement que par un 400.
+
+⚠️ **Une anomalie non expliquée, et assumée comme telle.** Le coût de `projects` suit sa
+borne `first:` (8 à 6, 300 à 250), tandis que celui d'`issues` **racine** n'en dépend pas du
+tout (9 à 50, 100 et 250 indifféremment). Aucune formule connue ne rend compte des deux, et
+on ne va pas en inventer une. Le client ne s'appuie donc pas sur la formule mais sur la
+**borne du pire cas** : même en supposant le calcul multiplicatif, `issues(250) × labels(10)`
+vaut 2 500 estimés, sous le plafond dans les *deux* hypothèses. C'est ce raisonnement — et
+non le 9 mesuré, qui pourrait n'être vrai que sur un petit espace — qui justifie la borne
+retenue.
 
 ## 6bis. Les formes d'échec — sondées
 
@@ -149,14 +172,72 @@ valide.
 Ces trois formes sont traduites par `LinearFailure` (testé sur ces corps réels) vers
 `TrackerRejectedException` / `TrackerUnreachableException`.
 
-## 7. Pagination
+## 7. Pagination — mesurée de bout en bout
 
 Toutes les connexions sont en `first: n` / `after: cursor`, avec
 `pageInfo { hasNextPage endCursor }`. **Vérifié non théorique** : un projet de 4 issues rend déjà
-`hasNextPage: true` à `first: 2`. Le client devra donc paginer, ou assumer explicitement un plafond —
-jamais laisser croire qu'une première page est la liste entière.
+`hasNextPage: true` à `first: 2`.
 
-## 8. Ce que la sonde n'a pas couvert
+| | |
+|---|---|
+| Page **maximale** | **250** — au-delà, un 400 `INVALID_INPUT` : « *first must not be greater than 250* » |
+| Page par défaut | **50**, si l'on ne dit rien |
+| Ordre | `createdAt` par défaut, `updatedAt` disponible par `orderBy` |
+
+⚠️ Le refus au-delà de 250 est une **erreur de validation d'argument**, pas un refus de
+complexité : les deux plafonds sont indépendants, et le premier atteint gagne.
+
+**`after:` fonctionne — vérifié en chaînant deux appels**, pas en le supposant :
+`issues(first: 2)` rend `CUR-45, CUR-44` avec un `endCursor` ; la même requête portant cet
+`after:` rend `CUR-43, CUR-42`. Le test vaut la peine : un curseur silencieusement ignoré
+rendrait la première page indéfiniment, et **la boucle ne s'arrêterait jamais**.
+
+### 7bis. ⚠️ La pagination imbriquée est le vrai piège — `issues` racine le contourne
+
+`projects { issues }` porte **un curseur par projet**. Paginer sous cette forme demande N
+boucles imbriquées, une par projet, chacune avec son propre état — et le coût se multiplie.
+
+`issues` **existe à la racine**, et rend `project { id name }` sur chaque issue. Un seul
+curseur, donc **une seule boucle**. C'est la forme retenue par `CUR-45`, et la table du §6a
+dit l'écart de coût : 9 contre 8 280.
+
+⚠️ Contrepartie, qui impose **deux** requêtes plutôt qu'une : un projet **sans aucune issue**
+n'apparaît dans aucune issue, et disparaîtrait donc du tableau. Les projets se demandent à
+part (`projects` nu, bon marché), et les issues s'y raccrochent par `project.id`.
+
+⚠️ Une issue peut n'appartenir à **aucun** projet (`project: null`). Invisible quand on
+partait des projets, elle remonte dès qu'on part des issues — il faut donc en décider.
+
+## 8. `filter:` — le filtre serveur
+
+Sondé, et il marche **sur `issues` racine** :
+
+| Forme | Verdict |
+|---|---|
+| `issues(filter: { labels: { name: { eq: "Feature" } } })` | ✅ accepté (0 résultat ici, voir l'avertissement ci-dessous) |
+| `issues(filter: { project: { null: false } })` | ✅ accepté — **non documenté**, mesuré |
+
+Comparateurs (documentés, non tous mesurés) : `eq` `neq` `in` `nin` partout ; `lt` `lte`
+`gt` `gte` sur nombres et dates ; `contains` `startsWith` `endsWith` et leurs variantes
+`IgnoreCase` / `not…` sur les chaînes ; `null` sur les champs optionnels.
+
+⚠️ **Aucune carte de cet espace ne porte d'étiquette** au 2026-07-26 — toutes les sondes
+rendent `labels: { nodes: [] }`. La lecture des étiquettes (`TaskSummary.Labels`) est donc
+prouvée par ses tests unitaires sur fragments réels, **pas encore par une carte réelle
+étiquetée**. À reprendre quand le prédicat de `CUR-5` en aura besoin.
+
+## 9. ⚠️ L'API rend les noms HTML-échappés
+
+Mesuré : le projet nommé `Finition de l'app — visuel & configuration` revient du GraphQL
+comme `…visuel &amp; configuration`. Le tiret cadratin, lui, passe intact — seules les
+**entités HTML** sont touchées. Le MCP Linear, interrogé sur le même espace, rend `&` : ce
+n'est donc pas la donnée stockée qui porte l'entité, c'est **cette API** qui l'échappe.
+
+Conséquence directe, et visible : **l'écran des tâches de Cursus affiche `&amp;`**. À
+dé-échapper à la traduction, là où le reste de la lecture se fait — pas dans la vue, sinon
+chaque affichage devra s'en souvenir.
+
+## 10. Ce que la sonde n'a pas couvert
 
 À sonder avant de s'y appuyer :
 
@@ -164,5 +245,8 @@ jamais laisser croire qu'une première page est la liste entière.
   sur le vrai tableau, donc réservées à `2·2b`+ et à faire sur une issue de test ;
 - **l'idempotence** exigée au §7.10.3 : déplacer vers la colonne où la carte est déjà doit réussir —
   à vérifier, pas à supposer ;
-- les **limites de débit** (Linear en documente ; aucune rencontrée sur ces requêtes) ;
+- les **limites de débit** en pratique : les plafonds sont connus (§6), mais aucune fenêtre n'a
+  été poussée jusqu'au 429 ;
+- la **stabilité du curseur** sous écriture concurrente : si une carte est créée entre deux pages,
+  rien ne dit si elle est vue deux fois, une fois, ou pas du tout ;
 - le champ `triage` et les projets d'autres équipes (une seule équipe ici).
