@@ -54,9 +54,16 @@ au mauvais endroit :
 
 | Niveau | Artefact | Quand il s'écrit | Sa fraîcheur |
 |---|---|---|---|
-| Feature | Une **spec** | Avant l'ouverture, en `Discovery` puis `Spec` | Datée — c'est un contrat, il ne bouge pas sous les pieds |
+| Feature | Une **discovery** | En `Discovery` | Datée — un instantané du besoin, figé dès que la spec existe |
+| Feature | Une **spec** | En `Spec` | Datée — c'est un contrat, il ne bouge pas sous les pieds |
 | Incrément | Un **plan d'archi** | **À la prise de l'incrément**, en `Planning` | Datée |
 | Pas | Une **test list** | **À la prise du pas** | **Vivante** — un cas découvert au rouge s'y ajoute |
+
+**Un artefact, un document** (`D-041`). La discovery et la spec sont **deux** documents Linear, pas
+deux moitiés d'un même. Leurs fraîcheurs diffèrent — l'une meurt, l'autre est un contrat vivant
+jusqu'à `Validation` — et surtout, les réunir invite à **arbitrer en rédigeant le besoin**, ce que
+`Discovery` s'interdit précisément (§2.1). Une feature tuée en discovery se lit alors à la structure :
+un document, pas l'autre.
 
 **Aucun des deux plans ne s'écrit d'avance**, et pour la même raison : ce qu'on apprend en
 faisant le premier incrément change ce qu'on sait au quatrième, comme ce qu'on apprend au pas 1
@@ -262,6 +269,24 @@ veut dire « un cycle TDD tourne », sur un incrément « la série de cycles es
 une feature « le découpage a eu lieu et l'un des incréments a démarré ». Même mot, trois
 exigences.
 
+**Le flux est *tiré*, pas poussé** (`D-041`). Une carte entre dans une colonne quand le travail de
+cette colonne **commence** — c'est celui qui prend le travail qui tire la carte à lui, et elle y
+reste jusqu'à ce que l'aval la tire plus loin. La colonne dit donc *« ça se fait ici »*, jamais
+*« c'est fini »*. Deux conséquences qui ne sautent pas aux yeux :
+
+- **Une DoD n'est pas une condition de sortie que l'amont s'applique à lui-même** : c'est ce que
+  **l'aval vérifie avant de tirer**. Celui qui bute repose la carte.
+- **Il faut donc un second signal pour dire qu'une étape est achevée**, puisque la colonne ne le
+  dit plus. C'est le rôle des étiquettes du groupe *Advancement Labels* — `Done` (tirable) et
+  `Rework Needed` (ne tirez pas), mutuellement exclusives. Elles **n'avancent pas** la carte ;
+  elles autorisent qu'on l'avance.
+
+**Où vivent les critères.** Ce que chaque étape exige tient en une ligne dans les matrices
+ci-dessous ; le **détail opposable** vit dans un fichier par niveau et par statut, sous
+`docs/methode/dod/`. La séparation est délibérée : répondre à « cette feature peut-elle être tirée ? »
+ne doit pas coûter de charger le fonctionnement des pas. Une case sans lien est une étape dont les
+critères n'ont pas encore été écrits — état légitime, et lisible.
+
 **Les trois chemins n'ont pas la même longueur**, et c'est voulu :
 
 ```
@@ -282,8 +307,8 @@ force à assimiler des étapes qui ne se correspondent pas. D'où deux matrices.
 | Statut | Ce que l'étape exige | Autour de la table |
 |---|---|---|
 | **Backlog** | Le cap est nommé et argumenté, pas encore ordonné dans la trajectoire | — |
-| **Discovery** | Le **besoin** est établi et vaut qu'on s'y arrête ; des pistes sont ouvertes, aucune n'est choisie. Sortie légitime vers `Canceled` : *on ne fait pas*, ou *le besoin n'est pas celui-là* | Produit, UX |
-| **Spec** | Les options sont **arbitrées** (faisabilité, coût, écarts écrits), la capacité est énoncée, **la recette est définie** | Produit, UX, **tech, QA** |
+| **Discovery** | Le **besoin** est établi et vaut qu'on s'y arrête ; des pistes sont ouvertes, aucune n'est choisie. Sortie légitime vers `Canceled` : *on ne fait pas*, ou *le besoin n'est pas celui-là* → [`dod/feature/discovery.md`](dod/feature/discovery.md) | Produit, UX |
+| **Spec** | Les options sont **arbitrées** (faisabilité, coût, écarts écrits), la capacité est énoncée, **la recette est définie** → [`dod/feature/spec.md`](dod/feature/spec.md) | Produit, UX, **tech, QA** |
 | **In Progress** | Le **découpage a eu lieu** — les incréments existent, avec leurs frontières et leur ordre — et au moins l'un d'eux a démarré | — |
 | **Validation** | La feature est **recettée contre sa spec** | Produit, QA |
 | **Completed** | Tous ses incréments sont `Done`, `trajectoire.md` acte la jambe, un `D-NNN` est écrit si un arbitrage a été tranché | — |
@@ -331,7 +356,7 @@ opposable et ceux qui n'en ont pas**.
 
 | Régime | Où | Comment |
 |---|---|---|
-| **Trio** | `Discovery`, `Spec` | Un **binôme humain ↔ agent** rédige ; un **agent de revue distinct** valide. L'humain est du côté de la **production** |
+| **Trio** | `Discovery`, `Spec` | Un **binôme humain ↔ agent** rédige ; un **agent de revue distinct** prononce sur la **conformité** — il pose `Done` ou `Rework Needed` contre la DoD, il ne déplace pas la carte. L'humain est du côté de la **production**, et c'est lui qui **engage** en tirant la carte |
 | **Boucle** | `Plan Review`, `Code Review` | **Agent de plan ⇄ agent de revue**. L'humain n'est convoqué qu'en **arbitre d'exception** |
 | **Œil** | `QA Review`, `Validation` | Humain, irréductiblement. L'app est lancée, le parcours refait |
 
@@ -344,6 +369,18 @@ qu'on veut construire) ni la validation de présentation (§7.12).
 un verdict, **il le donnera**. Un faux accord est pire qu'aucune relecture : il donne le
 sentiment d'avoir été contredit. Sa posture est celle du régime de *Vérification* de
 `CLAUDE.md` : **lister les divergences, ne pas trancher**. La validation revient à un tiers.
+
+**Deux verdicts, pas un** (`D-041`). La formule d'origine — « le tiers valide » — se contredisait
+avec la ligne « la spec n'est pas délégable, aucun agent ne juge que c'est *ça* qu'on veut
+construire ». Elles parlaient en fait de deux choses :
+
+| Objet du jugement | La question | Son référentiel | Qui prononce |
+|---|---|---|---|
+| **Conformité** | L'artefact est-il complet et opposable ? | la **DoD** | le relecteur tiers, par une étiquette |
+| **Justesse** | Est-ce *ça* qu'on veut construire ? | aucun | l'humain, en tirant la carte |
+
+Ce partage n'était pas possible avant que les DoD existent : sans référentiel écrit, le tiers
+n'avait rien contre quoi trancher, et « lister les divergences » restait la seule posture tenable.
 
 En `Spec`, il n'y a **pas d'escalade** : si le relecteur refuse, l'humain est déjà dans la
 pièce.
@@ -439,7 +476,7 @@ qu'on n'a pas encore écrite. **Question ouverte, à trancher au premier round-t
 | Pas | Sous-tâche (`parentId`) | Rattachée aussi au projet, pour rester visible |
 | Ordre | `blockedBy` | Ce qui empêche de prendre une carte trop tôt |
 | Escalade | Assignation | Une carte en revue assignée attend un humain ; non assignée, elle boucle |
-| Spec, plan d'archi | Document attaché | Linear **rend le mermaid nativement** (`/diagram`, ou un bloc ` ```mermaid ` collé) — le schéma-delta se lit sur la carte, sans fichier intermédiaire dans le dépôt |
+| Discovery, spec, plan d'archi | Document attaché — **un artefact, un document** | Linear **rend le mermaid nativement** (`/diagram`, ou un bloc ` ```mermaid ` collé) — le schéma-delta se lit sur la carte, sans fichier intermédiaire dans le dépôt |
 
 **Le niveau d'une carte se déduit de sa structure**, il n'a pas à être encodé : projet =
 feature, issue sans parent = incrément, issue avec `parentId` = pas. Ni étiquette à maintenir,

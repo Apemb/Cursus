@@ -1995,3 +1995,91 @@ frictions réelles avant de s'écrire.
 pagination imbriquée), §9 (les noms HTML-échappés) ; `architecture.md` §4.24, §7.10.2 (le modèle pull
 qu'il honore enfin) ; `CUR-46` (le `&amp;`) ; `CUR-5` (le prédicat qui consommera ce tableau complet) ;
 `D-035` (ne pas modeler en avance, invoqué deux fois ici).
+
+---
+
+## D-041 — Le flux est tiré, donc l'étiquette dit la fin et la colonne dit le présent
+
+**Contexte.** Première exécution du flux de `flux.md` sur un cas réel — la Discovery de la feature
+« Un agent pilote Cursus ». L'exercice a buté avant d'avoir commencé : rien ne disait **à quoi
+ressemble la fin d'une étape**. `tickets.md` §2.2 listait sept questions, §6.1 posait trois
+exigences de sortie, et les deux ne se recouvraient pas. Quatre décisions en sont sorties, liées
+entre elles : chacune est la conséquence de la précédente.
+
+### 1. Le flux est tiré, pas poussé
+
+Une carte entre dans une colonne quand le travail de cette colonne **commence** ; celui qui prend le
+travail tire la carte à lui. La convention était **déjà pratiquée sans être écrite** — §6.1 disait
+que « la bascule pas engagé → engagé tombe à l'entrée en `Spec` », ce qui n'a de sens qu'en flux
+tiré. Faute de l'avoir lue, la première Discovery a été produite avec sa carte restée en `Backlog`.
+
+Ce que ça change, et qui n'est pas cosmétique : **la colonne ne peut plus dire « c'est fini »**, elle
+dit « ça se fait ici ». Une étape achevée dont personne n'a encore pris la suite n'a aucun moyen de
+se signaler.
+
+### 2. D'où l'étiquette : `Done` ne pousse pas la carte, elle autorise qu'on la tire
+
+Le groupe *Advancement Labels* (`Done`, `Rework Needed`, mutuellement exclusifs) comble exactement
+ce trou. Un agent peut l'apposer **sans danger**, parce qu'un avis sur un artefact est révocable et
+sans effet de bord — contrairement à un déplacement de colonne, qui engage. Aucun impact machine
+aujourd'hui ; c'est en revanche la matière du prédicat de `CUR-5`, et la réponse, au niveau feature,
+à la question que §6.3 laissait ouverte (« quelle colonne porte l'éligibilité — `Todo` seul, ou
+`Todo` + une étiquette »).
+
+Frontière à tenir (§8) : « un projet portant `Done` a une spec conforme » est une **convention** ;
+« le label `Done` porte tel identifiant » est un **contrat machine**, et il ne vit pas dans la DoD.
+
+### 3. Les critères sortent dans `docs/methode/dod/<niveau>/<statut>.md`
+
+Répondre à « cette feature peut-elle être prise ? » imposait de charger 460 lignes décrivant aussi
+le fonctionnement des pas. Le grief est **cardinal, pas grammatical** (`D-039`) : c'est le nombre de
+règles chargées qui dégrade leur suivi, et le biais de primauté achève celles du bas.
+
+Grain retenu : **niveau × statut**, parce qu'un même statut exige trois choses différentes selon le
+niveau — le chemin porte le niveau, et l'ambiguïté du mot `Backlog` disparaît sans qu'on ait à
+l'expliquer. La matrice §6 **devient l'index** et cesse d'être le contenu ; le détail vit dans les
+fichiers. Une case sans lien est une étape dont les critères ne sont pas écrits, état lisible et
+légitime — même patron que `flux.md` §4.
+
+**Écarté** : loger la DoD dans le skill de l'étape. Le relecteur la lit *pour vérifier contre elle*,
+et l'humain pour savoir si une carte peut bouger : ni l'un ni l'autre n'exécute le skill. Dupliquée,
+elle diverge.
+
+**N'ont été écrites que les deux DoD dont l'exécution a révélé le besoin** (`feature/discovery.md`,
+`feature/spec.md`). Écrire les quinze autres d'avance serait la méthode-sur-cas-imaginé que `D-039`
+proscrit.
+
+### 4. Le tiers prononce sur la conformité, l'humain sur la justesse — révision de `D-036`
+
+`D-036` disait « un agent de revue distinct **valide** ». §6.3 disait deux paragraphes plus bas que
+la spec **n'est pas délégable** et que la posture du relecteur est de « lister les divergences, ne
+pas trancher ». Contradiction réelle, et les deux formulations parlaient de deux objets distincts :
+
+- la **conformité** — l'artefact est-il complet et opposable ? Référentiel : la DoD. Délégable ;
+- la **justesse** — est-ce *ça* qu'on veut construire ? Aucun référentiel. Irréductible.
+
+Le tiers pose l'étiquette ; l'humain engage en tirant la carte. **Ce partage n'était pas disponible
+avant la décision 3** : sans DoD écrite, le tiers n'avait rien contre quoi trancher, et la posture
+« lister sans trancher » était la seule tenable. Une décision a rendu l'autre possible.
+
+### 5. Un artefact, un document
+
+La discovery et la spec sont **deux** documents Linear. Motif principal, et il n'est pas le volume :
+réunies, elles invitent à **arbitrer en rédigeant le besoin** — exactement ce que `Discovery`
+s'interdit, et ce qui lui donne sa valeur (tuer une feature avant d'avoir dépensé un arbitrage
+technique). S'y ajoutent des fraîcheurs opposées (l'une meurt, l'autre est un contrat vivant jusqu'à
+`Validation`) et une lisibilité gratuite : une feature tuée en discovery a un document et pas
+l'autre. Le plan d'archi observait déjà cette règle sans qu'elle soit nommée.
+
+### Ce que l'exécution a coûté, et pourquoi c'est le sujet
+
+Seize frictions journalisées en une session (`docs/methode/journal-frictions.md`), dont trois que
+personne n'aurait imaginées à froid : la Discovery a dû **désarbitrer** des conclusions produites
+avant elle ; le tableau de pistes que j'avais inventé **appelait le pré-arbitrage** par sa seule
+colonne de commentaire ; et l'artefact s'adressait au dépôt (chemins de fichiers, numéros de jalons
+périssables, méta-commentaires de méthode) au lieu de son lecteur dans le tracker. C'est la ligne de
+base que `D-039` réclamait avant d'écrire le moindre skill.
+
+**Renvoi** : `docs/methode/dod/` · `docs/methode/journal-frictions.md` · `tickets.md` §1, §6, §6.3,
+§8 · `flux.md` §2 · `D-036` (révisé sur le verdict de revue) · `D-039` (la récolte) · `CUR-5` (le
+prédicat qui lira ces étiquettes).
