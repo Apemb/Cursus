@@ -33,6 +33,12 @@ warning, régime TDD, frontière testé/non-testé §7.12, règle no-nullable) s
 que Claude Code charge de lui-même ; la méthode d'équipe est dans le skill ; la carte ne porte
 que ce qui lui est propre. Trois lieux, aucune redondance.
 
+**Un contre-point utile** : *Symphony* (OpenAI) fait le même pari du tableau-control-plane mais
+**remplit la seule case chorégraphie** — un niveau de travail unique, aucun découpage, un
+gabarit de prompt par dépôt, zéro skill. Il ne supprime pas le besoin de méthode, il le laisse
+à la charge de l'équipe, et déplace donc le goulot sur la qualité du ticket humain. Ce que ces
+huit skills portent est exactement ce qu'il laisse vide. Voir `docs/reference/symphony.md`.
+
 ---
 
 ## 2. Le flux complet

@@ -145,6 +145,12 @@ approchera.
   le headless, c'est ce qui laisse les **déclencheurs** (jambe 2) tourner en tâche de fond.
   À ordonner quand la jambe 2 se dessinera — les deux se renforcent.
 
+  **Preuve d'existence de cette forme** : *Symphony* (OpenAI, 2026) est exactement ce daemon —
+  un service résident qui interroge Linear, crée un workspace par issue et y lance un agent.
+  Il fait le même pari que nous et le résout autrement : un seul niveau de travail, aucun
+  découpage, un unique gabarit de prompt par dépôt, et du **retry** là où nous **escaladons**.
+  Sa mécanique de reprise mérite d'être lue avant `2·2c`. Voir `docs/reference/symphony.md`.
+
   > Ce qui suit est **pressenti, pas construit** — une cible de forme, pas une décision
   > actée. Le seul point déjà tranché en discussion est le **nom** `Host` (voir plus bas) ;
   > le reste attend l'implémentation, qui ouvrira son `D-NNN` dans `decisions.md`.
