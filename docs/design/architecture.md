@@ -142,7 +142,7 @@ Deux coutures étaient structurellement disponibles ; la seconde est **tranchée
 
 ## 3. Le pivot : pourquoi un noyau déterministe d'abord
 
-La trajectoire initiale commençait par le plus visible : une app Avalonia affichant des sessions terminal réelles avec un moteur VT natif. Une phase de recherche a ensuite produit un modèle métier complet orienté agents (`Task > Workspace > Session`, quatre machines à états, HITL, capture de scrollback, confinement OS). Deux commits au même horodatage (`a74d3cc` doc, `e683139` code) actent alors le pivot : on met le modèle agent de côté et on construit d'abord un moteur qui parcourt un graphe d'étapes-scripts et route chaque étape sur son code de sortie, **sans jamais savoir ce qu'est un agent**.
+La trajectoire initiale commençait par le plus visible : une app Avalonia affichant des sessions terminal réelles avec un moteur VT natif. Une phase de recherche a ensuite produit un modèle métier complet orienté agents (`Task > Workspace > Session`, quatre machines à états, HITL, capture de scrollback, confinement OS). Deux commits au même horodatage (`2516e39` doc, `f4be0fa` code) actent alors le pivot : on met le modèle agent de côté et on construit d'abord un moteur qui parcourt un graphe d'étapes-scripts et route chaque étape sur son code de sortie, **sans jamais savoir ce qu'est un agent**.
 
 **Les trois raisons**, dans l'ordre :
 
@@ -1142,9 +1142,9 @@ L'abstraction la plus consensuelle du champ (LangGraph, Temporal, MAF, CrewAI, C
 
 ### 7.3 Déclaratif relatif vs opérationnel absolu — TRANCHÉ
 
-`StepDefinition.WorkingSubdirectory` est **relatif**, `ScriptSpec.WorkingDirectory` **absolu** ; le point de traduction est unique (`ExecuteAsync`). **Pourquoi** : la définition doit rester portable d'un workspace à l'autre — deux projets, et plus tard un worktree git isolé. **Écarté** : hériter le cwd du process hôte — gotcha du commit `9c2c2c6`, cela donnerait `/Applications` une fois Cursus installé. Corollaire : `ScriptDocument` n'expose aucun `workingDirectory`.
+`StepDefinition.WorkingSubdirectory` est **relatif**, `ScriptSpec.WorkingDirectory` **absolu** ; le point de traduction est unique (`ExecuteAsync`). **Pourquoi** : la définition doit rester portable d'un workspace à l'autre — deux projets, et plus tard un worktree git isolé. **Écarté** : hériter le cwd du process hôte — gotcha du commit `af5ddf8`, cela donnerait `/Applications` une fois Cursus installé. Corollaire : `ScriptDocument` n'expose aucun `workingDirectory`.
 
-### 7.4 JSON plutôt que YAML — TRANCHÉ (`ab1dc4e`)
+### 7.4 JSON plutôt que YAML — TRANCHÉ (`aaf1210`)
 
 > L'argument décisif n'est pas la lisibilité mais **l'aller-retour** : dès que l'éditeur graphique réécrira le fichier, un YAML perdrait commentaires et mise en forme à chaque sauvegarde.
 
@@ -1158,13 +1158,13 @@ Pour que le format survive aux refactors du noyau, et qu'un document syntaxiquem
 
 Justifié par **deux consommateurs, dont un qui n'existe pas encore** : le futur éditeur graphique, qui affichera les problèmes en continu. D'où l'**ordre stable** des issues et le fait qu'elles nomment **l'étape source** d'une arête cassée — c'est elle qu'on corrige et que l'éditeur mettra en évidence. Voir la dette du §4.6 : deux chemins échappent encore à l'agrégation.
 
-### 7.7 `WorkflowDefinition` reste un record permissif — TRANCHÉ, décision de NE PAS faire (`dd8fb6e`)
+### 7.7 `WorkflowDefinition` reste un record permissif — TRANCHÉ, décision de NE PAS faire (`1a4ece3`)
 
 La rendre valide par construction exigerait un second type pour l'état intermédiaire — qui est le modèle brouillon de l'éditeur. La décision est reportée **avec** sa raison : elle se rouvrira quand l'éditeur arrivera.
 
 ### 7.8 Domaine sans MVVM, contrat async — TRANCHÉ
 
-Le **modèle** de `Workflows/` est fait de records immuables ; ses collaborateurs (`WorkflowEngine`, `ProcessRunner`, `RunContext`, les deux classes statiques) sont des classes scellées sans état mutable observable. Aucun n'hérite d'`ObservableObject`, contrairement à `SessionWorkspace` — **écarté délibérément**. Le passage async (`70b359c`) n'est pas cosmétique : il conditionne la lecture concurrente des tubes, l'annulation propre, et une UI Avalonia non bloquée.
+Le **modèle** de `Workflows/` est fait de records immuables ; ses collaborateurs (`WorkflowEngine`, `ProcessRunner`, `RunContext`, les deux classes statiques) sont des classes scellées sans état mutable observable. Aucun n'hérite d'`ObservableObject`, contrairement à `SessionWorkspace` — **écarté délibérément**. Le passage async (`d444c4d`) n'est pas cosmétique : il conditionne la lecture concurrente des tubes, l'annulation propre, et une UI Avalonia non bloquée.
 
 **Le contrat async est tenu honnêtement (`D-015`)** : aucun `sync-over-async` (pas de `.GetAwaiter().GetResult()` ni `.Result`) — une méthode async attend l'I/O sans détenir un thread —, et la bibliothèque `ConfigureAwait(false)` sur **chaque** `await`, pour que ses continuations courent sur le pool et ne remontent pas sur le contexte de l'appelant (l'UI). C'est ce qui permet à la vue de faire un simple `await`, sans `Task.Run` cache-misère. La règle miroir vaut côté présentation : le `RunViewModel`, lui, **ne** met **pas** `ConfigureAwait(false)`, parce que sa continuation doit précisément revenir sur le thread d'UI (`DispatcherTimer`, propriétés bindées).
 
@@ -1346,7 +1346,7 @@ Portées côté modèle par `RunTrigger`, passé à `ExecuteAsync` et embarqué 
 - **Forme des prédicats de disponibilité** dans `project.json` — non conçue.
 - **Un journal ou deux ?** Si un historique de board apparaît un jour, ses durées de vie divergent de celles des runs : un run est purgeable après quelques semaines, l'historique d'un projet est sa mémoire. Deux tables reliées par `trigger_task_key`, pour ne pas amputer l'un en nettoyant l'autre.
 
-### 7.11 SQLite dans un projet séparé plutôt que dans le noyau — TRANCHÉ (`7f86a74`)
+### 7.11 SQLite dans un projet séparé plutôt que dans le noyau — TRANCHÉ (`0423076`)
 
 `Workflows/` revendique le **zéro dépendance externe** (§1.2) et le journal du jalon 4 avait besoin de SQLite. Deux façons d'en sortir : faire tomber la propriété, ou déplacer l'implémentation.
 
@@ -1606,7 +1606,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **363 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`e683139`, `873a525`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **363 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`f4be0fa`, `6c9d7fa`).
 
 ---
 

@@ -1,6 +1,6 @@
 # Schémas d'architecture — la carte visuelle de Cursus
 
-> **Statut** : compagnon visuel de `architecture.md`, à jour du commit `8f2c961`
+> **Statut** : compagnon visuel de `architecture.md`, à jour du commit `1ad3470`
 > (jalon 6c·3c — l'écran de run, la projection à deux alimentations). Rendu par
 > l'aperçu Markdown de Rider, GitHub et VS Code (Mermaid natif, aucune étape de
 > build).

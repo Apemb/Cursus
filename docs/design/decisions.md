@@ -56,8 +56,8 @@ Les briques (HITL, worktree, détection d'état) sont **reportées, non écarté
 **Décision.** Construire **d'abord** un moteur qui parcourt un graphe d'étapes-scripts
 et route chaque étape sur son code de sortie, **sans jamais savoir ce qu'est un
 agent**. L'`AgentStep` se greffera plus tard comme un `StepKind` de plus, sans
-réécrire la traversée. Acté par deux commits au même horodatage (`a74d3cc` doc,
-`e683139` code).
+réécrire la traversée. Acté par deux commits au même horodatage (`2516e39` doc,
+`f4be0fa` code).
 
 **Alternatives écartées.**
 - *Agent-first* ([D-001]) — Netflix/Orkes Conductor a greffé l'IA **sans** réécrire
@@ -482,7 +482,7 @@ précisément revenir sur le thread d'UI. `ConfigureAwait(false)` est un outil d
 de vue.
 
 **Alternatives écartées.**
-- *Garder le `Task.Run` (le correctif précédent, `daf8750`)* — déguise le mensonge au lieu de le
+- *Garder le `Task.Run` (le correctif précédent, `7996368`)* — déguise le mensonge au lieu de le
   réparer ; c'est ce que l'utilisateur a justement refusé.
 - *`ProvisionAsync` async mais `Dispose` synchrone (`IDisposable`)* — le démontage resterait un
   sync-over-async : à moitié corrigé, et incohérent. D'où `IAsyncDisposable`.
@@ -492,7 +492,7 @@ de vue.
 **Conséquences.** Refactor de forme : comportement identique, 210 tests verts après passage des
 signatures et des doubles aux formes async (`await using`, `ProvisionAsync`, `DisposeAsync`,
 `ThrowsAsync`). L'écriture du journal court désormais sur un thread du pool (déjà le cas depuis
-`daf8750`) ; la lecture concurrente d'un run en cours reste non supportée (connexion SQLite unique,
+`7996368`) ; la lecture concurrente d'un run en cours reste non supportée (connexion SQLite unique,
 §7.13). « L'UI ne gèle plus » reste vérifié à la main (pas de harnais Avalonia headless, §9.2-11).
 
 **Renvoi** : `architecture.md` §4.13, §7.8, §9.2 ; `D-011` (le flux qui alimente l'écran).
@@ -1564,7 +1564,7 @@ constater est presque toujours un modèle en avance sur ce qu'il sait.**
 
 ## D-036 — Un artefact par niveau, un régime par nature de jugement : l'humain remonte vers la spec
 
-**Contexte.** `docs/methode/tickets.md` (`084de92`, `89e5381`) posait trois niveaux — feature /
+**Contexte.** `docs/methode/tickets.md` (`4251057`, `ca2b800`) posait trois niveaux — feature /
 incrément / pas — et une matrice statut × niveau. Une passe de clarification menée avec l'utilisateur
 (2026-07-25) a montré qu'il lui manquait trois choses : **quel artefact** chaque niveau produit, **qui
 juge** cet artefact, et un flux qui soit celui de l'espace plutôt que celui d'usine.
