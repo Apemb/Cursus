@@ -263,6 +263,67 @@ public class LinearBoardReaderTests
         Assert.Null(page.NextCursor);
     }
 
+    [Fact(DisplayName = "étant donné une page d'issues racine, quand on la lit, alors chaque issue porte le projet dont elle pend")]
+    public void A_page_of_root_issues_says_which_project_each_hangs_from()
+    {
+        // arrange — la connexion « issues » prise à la RACINE, pas sous un projet :
+        // un seul curseur pour tout le tableau, et chaque issue dit son projet. C'est
+        // ce raccrochage qui remplace le groupement que l'API faisait pour nous.
+        const string json = """
+            {"data":{"issues":{
+              "pageInfo":{"hasNextPage":true,"endCursor":"df571bc6-f6ba-4f1f-9849-4e4bba0f2499"},
+              "nodes":[
+                {"identifier":"CUR-45","title":"Voir tout le tableau, pas sa première page",
+                 "state":{"name":"Todo"},"parent":null,"labels":{"nodes":[]},
+                 "project":{"id":"ac8d4db8-01d3-4010-b5ac-e3f323434e33","name":"Round-trip Linear (jambe 2·2)"}},
+                {"identifier":"CUR-43","title":"Renommer le projet ouvert rafraîchit son titre de surface",
+                 "state":{"name":"Backlog"},"parent":null,"labels":{"nodes":[]},
+                 "project":{"id":"2e4b71e6-a6ca-4be2-87c4-91dd66a69a99","name":"Finition de l'app"}}
+              ]}}}
+            """;
+
+        // act
+        var page = LinearBoardReader.ReadIssues(json);
+
+        // assert — l'identifiant, pas le nom : un nom se renomme et se répète
+        Assert.Equal(
+            ["ac8d4db8-01d3-4010-b5ac-e3f323434e33", "2e4b71e6-a6ca-4be2-87c4-91dd66a69a99"],
+            page.Items.Select(issue => issue.ProjectId));
+
+        // et le reste de la carte se lit comme avant — la forme de l'issue n'a pas
+        // changé en remontant à la racine, seul son contexte a changé
+        Assert.Equal(["CUR-45", "CUR-43"], page.Items.Select(issue => issue.Key));
+        Assert.Equal(["Todo", "Backlog"], page.Items.Select(issue => issue.Column));
+        Assert.Equal("df571bc6-f6ba-4f1f-9849-4e4bba0f2499", page.NextCursor);
+    }
+
+    [Fact(DisplayName = "étant donné une issue qui n'appartient à aucun projet, quand on la lit, alors elle ne dit aucun projet plutôt que de faire échouer la lecture")]
+    public void An_issue_belonging_to_no_project_says_so()
+    {
+        // arrange — Linear autorise une issue sans projet (« project: null »). Le cas
+        // était invisible tant qu'on partait des projets ; il remonte dès qu'on part
+        // des issues racine, et il ne doit pas casser la page entière pour autant.
+        //
+        // ⚠️ Ce test naît VERT : la tolérance a été écrite au pas précédent, réclamée
+        // par un autre rouge (6 tests de `Read`, dont les fragments imbriqués n'ont pas
+        // de champ « project » — vérifié en la retirant). Il est ici pour verrouiller
+        // le comportement sous son PROPRE nom, pas pour le faire naître.
+        const string json = """
+            {"data":{"issues":{
+              "pageInfo":{"hasNextPage":false,"endCursor":"df571bc6-f6ba-4f1f-9849-4e4bba0f2499"},
+              "nodes":[
+                {"identifier":"CUR-45","title":"Voir tout le tableau","state":{"name":"Todo"},
+                 "parent":null,"labels":{"nodes":[]},"project":null}
+              ]}}}
+            """;
+
+        // act
+        var page = LinearBoardReader.ReadIssues(json);
+
+        // assert
+        Assert.Null(Assert.Single(page.Items).ProjectId);
+    }
+
     [Fact(DisplayName = "étant donné une réponse dont les issues débordent d'une page, quand on la lit, alors le projet se dit tronqué")]
     public void A_project_whose_issues_overflow_says_so()
     {

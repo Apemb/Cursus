@@ -66,6 +66,22 @@ public static class LinearBoardReader
             ? page.GetProperty("endCursor").GetString()
             : null;
 
+    /// <summary>
+    /// Une page de la connexion <c>issues</c> prise <b>à la racine</b> — donc un seul
+    /// curseur pour tout le tableau, là où la forme imbriquée en avait un par projet.
+    /// Chaque issue y dit son projet : c'est ce raccrochage qui remplace le groupement
+    /// que l'API faisait auparavant.
+    /// </summary>
+    public static LinearPage<FlatIssue> ReadIssues(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var connection = document.RootElement.GetProperty("data").GetProperty("issues");
+
+        return new LinearPage<FlatIssue>(
+            [.. connection.GetProperty("nodes").EnumerateArray().Select(ReadFlat)],
+            NextCursorOf(connection));
+    }
+
     public static IReadOnlyList<TaskProject> Read(string json)
     {
         using var document = JsonDocument.Parse(json);
@@ -114,7 +130,12 @@ public static class LinearBoardReader
         issue.TryGetProperty("parent", out var parent) && parent.ValueKind is not JsonValueKind.Null
             ? parent.GetProperty("identifier").GetString()
             : null,
-        ReadLabels(issue));
+        ReadLabels(issue),
+        // Tolère le champ absent : la requête imbriquée ne le demande pas (le projet est
+        // déjà connu par le nœud parent), la requête racine si.
+        issue.TryGetProperty("project", out var project) && project.ValueKind is not JsonValueKind.Null
+            ? project.GetProperty("id").GetString()
+            : null);
 
     /// <summary>
     /// Les noms des étiquettes, ou aucune. Tolère le champ <b>absent</b> autant que la
@@ -128,15 +149,4 @@ public static class LinearBoardReader
             ? [.. nodes.EnumerateArray().Select(label => label.GetProperty("name").GetString() ?? "")]
             : [];
 
-    /// <summary>
-    /// Une issue telle que l'API la rend : sans ses enfants, mais sachant de qui elle
-    /// pend. La forme intermédiaire de la première passe — le domaine, lui, ne connaît
-    /// que l'arbre reconstruit.
-    /// </summary>
-    private sealed record FlatIssue(
-        string Key,
-        string Title,
-        string Column,
-        string? ParentKey,
-        IReadOnlyList<string> Labels);
 }
