@@ -42,3 +42,11 @@ ce qui serait supprimé ; `--purge` sur la désinstallation enchaîne les deux.
 > installé par Homebrew ou `asdf` échouera dans l'application installée alors qu'elle fonctionne en
 > `dotnet run` — le `PATH` d'une application lancée depuis le Finder est tronqué
 > ([architecture.md §6.6](docs/design/architecture.md)).
+
+## Licence
+
+[Apache-2.0](LICENSE) — Copyright 2026 Antoine Boileau.
+
+Les paquets tiers consommés par l'application (`RoyalApps.RoyalTerminal.*`, Avalonia,
+`CommunityToolkit.Mvvm`, `Microsoft.Data.Sqlite`) restent sous leurs licences respectives : ils sont
+restaurés depuis NuGet, jamais redistribués par ce dépôt.
