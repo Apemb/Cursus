@@ -100,9 +100,6 @@ public partial class TaskBoardViewModel : ObservableObject
     /// <summary>Le nom de la connexion qui sert — pour qu'on sache toujours quel jeton parle.</summary>
     public string ConnectionLabel => Connection?.Label ?? "";
 
-    /// <summary>Vrai dès qu'un projet du tableau avoue avoir plus de tâches que la réponse n'en portait.</summary>
-    public bool IsTruncated => Projects.Any(project => project.IsTruncated);
-
     /// <summary>
     /// Apparie ce que le dépôt déclare et ce que ce poste sait joindre, et arrête la
     /// situation de l'écran. Quatre issues, dans cet ordre de traitement :
@@ -225,8 +222,6 @@ public partial class TaskBoardViewModel : ObservableObject
             Projects.Clear();
             foreach (var project in projects)
                 Projects.Add(project);
-
-            OnPropertyChanged(nameof(IsTruncated));
         }
         catch (TrackerRejectedException refusal)
         {
@@ -250,6 +245,5 @@ public partial class TaskBoardViewModel : ObservableObject
         OnPropertyChanged(nameof(IsStuck));
         OnPropertyChanged(nameof(IsShowingBoard));
         OnPropertyChanged(nameof(ConnectionLabel));
-        OnPropertyChanged(nameof(IsTruncated));
     }
 }

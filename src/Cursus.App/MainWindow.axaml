@@ -652,14 +652,6 @@
                                                            IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}"
                                                            Foreground="{DynamicResource DangerBrush}" />
 
-                                                <!-- L'aveu de troncature vient du modèle : montrer une page en
-                                                     la faisant passer pour la liste entière mentirait -->
-                                                <TextBlock DockPanel.Dock="Bottom" Margin="0,8,0,0"
-                                                           Text="Le tableau porte plus de tâches que cette lecture n'en montre."
-                                                           IsVisible="{Binding IsTruncated}"
-                                                           FontSize="11"
-                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
-
                                                 <!-- L'arbre tel que le port le rend : projets du tracker
                                                      (les features), tâches, sous-tâches sous leur mère. Aucune
                                                      ligne d'enrobage — rien n'y porte d'état à ce stade -->

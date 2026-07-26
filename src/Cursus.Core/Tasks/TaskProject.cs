@@ -11,10 +11,5 @@ namespace Cursus.Core.Tasks;
 /// retiendra pour désigner une <em>feature</em> sans ambiguïté — un nom se répète et se
 /// renomme, un identifiant désigne.
 /// </param>
-/// <param name="IsTruncated">
-/// Vrai quand le tableau a plus de tâches que la réponse n'en portait. Un écran qui
-/// montrerait une page en la faisant passer pour la liste entière mentirait sans le
-/// dire ; c'est au modèle de porter l'aveu, pas à l'interface de le deviner.
-/// </param>
 public sealed record TaskProject(
-    string Id, string Name, IReadOnlyList<TaskSummary> Tasks, bool IsTruncated = false);
+    string Id, string Name, IReadOnlyList<TaskSummary> Tasks);

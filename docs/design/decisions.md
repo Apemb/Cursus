@@ -1905,3 +1905,93 @@ quelle **maille** de pas est bonne, or c'est exactement ce que le découpage dé
 `tickets.md` §1/§3/§6.2 (corrigés du même coup) ; `D-036` (ce qu'il révise), `D-030` (le harnais
 concret nommé sans être abstrait), `D-012` (le moteur qui ne sait pas ce qu'est un agent — même pari,
 un cran plus haut).
+
+---
+
+## D-040 — Renverser la lecture du tableau : deux requêtes plutôt qu'un curseur par projet
+
+**Date** : 2026-07-26 · **Statut** : construit (`CUR-45`, §4.24) · **Portée** : `Cursus.Trackers`
+
+**Le problème n'était pas l'affichage.** L'écran des tâches montrait la première page du tableau et
+l'avouait (`TaskProject.IsTruncated`). L'enjeu réel est en aval : le prédicat de déclenchement
+(`CUR-5`) évaluera sur ce que le client rapatrie. Une carte éligible mais hors page ne serait **jamais
+proposée, sans qu'aucune erreur ne s'affiche** — un faux négatif silencieux, pire qu'une panne.
+
+**L'ordre a été tranché contre ma recommandation, et à raison.** J'avais proposé de faire le prédicat
+d'abord, au motif qu'un filtre serveur rendrait la pagination rare. L'utilisateur a répondu : *« elle
+sera toujours utile quoi qu'il se passe ; le risque est que ce soit lent parfois, et on regardera à ce
+moment-là. »* Mon argument supposait que la pagination puisse devenir **inutile**, ce qu'elle ne peut
+pas : un tableau montré à moitié est faux quelle que soit la suite, tandis que la lenteur se mesure
+après.
+
+### Ce que la sonde a corrigé dans nos propres écrits
+
+La décision reposait sur une croyance fausse consignée dans `linear-api.md` §6 : que `projects(25) ×
+issues(50)` tenait « avec de la marge ». **Elle était à 8 280 sur 10 000**, et le `labels(first: 10)`
+ajouté la veille en avait mangé une large part. Un champ de plus faisait sauter l'écran des tâches,
+sans autre avertissement qu'un 400.
+
+Deux apprentissages durables, tous deux mesurés :
+
+- **il y a deux limites**, et les confondre conduit à optimiser la mauvaise : une complexité *par
+  requête* (10 000, calculée a priori sur les `first:`, qui refuse avant d'exécuter) et un budget *par
+  fenêtre* (3 000 000, consommé). Le §6 n'en décrivait qu'une, sous le nom de l'autre ;
+- **toute réponse porte son coût dans `x-complexity`**. Nous avions cherché le mur par dichotomie de
+  400 ; il suffisait de lire un en-tête.
+
+### La forme retenue, et la correction du ticket
+
+Le ticket disait « renverser la requête sur `issues` racine ». **C'était incomplet** : un projet sans
+issue n'est nommé par aucune issue, et disparaîtrait de l'écran — la garantie « un projet vide n'est
+pas une absence de projet » existe depuis le premier jour du client. D'où **deux** requêtes, chacune
+paginée sur son curseur : les projets **nus** (600, et les vides survivent) plus les issues racine (8,
+un seul curseur au lieu d'un par projet). **608 contre 8 280.**
+
+### Trois décisions de fond
+
+**1. La boucle est un objet testé, pas une boucle dans l'adaptateur.** `LinearTaskBoard` est mince et
+non testé parce qu'il ne décide rien ; une pagination décide, et casse en **silence** — curseur non
+transmis, dernière page perdue, arrêt jamais atteint, aucun des trois ne lève d'exception.
+`LinearBoardCollector` reçoit son transport en **délégué** : aucune interface neuve, aucun
+`HttpMessageHandler` simulé, et le faux transport **retient les requêtes**. Ce dernier point n'est pas
+un détail de confort : sans lui, une boucle qui redemande éternellement la première page passe le test,
+dès lors que le double avance de lui-même. La doctrine du client s'en trouve resserrée — le seul
+non-testé est désormais le POST.
+
+**2. `IsTruncated` est supprimé, non conservé à `false`.** Un aveu qui ne peut plus être vrai est un
+mensonge inverse, et un champ mort induit le prochain lecteur en erreur. **Écarté** : le garder « au
+cas où » (`D-035`, ne pas modeler en avance). S'il faut un jour un plafond de sécurité, l'aveu qu'on
+remettra dira la vérité *de ce plafond* — ce qui n'est pas la même proposition.
+
+Corollaire : **aucun plafond de pages**, conformément à l'arbitrage produit. La seule protection contre
+l'infini est une **garde de non-progression** — on s'arrête si l'API renvoie le curseur avec lequel on
+vient de demander. Elle est indispensable parce que Linear rend un `endCursor` **plein sur la dernière
+page** : `hasNextPage` décide, jamais la présence du curseur.
+
+**3. Les issues sans projet sont écartées.** Linear en autorise ; invisibles quand on partait des
+projets, elles remontent quand on part des issues. `TaskProject` est *le* regroupement du modèle : une
+carte hors projet n'a aucun rang où aller, et **ne pas l'afficher est exactement le comportement
+d'avant** — donc zéro régression. **Écarté** : un pseudo-projet « Sans projet », qui serait une
+fonctionnalité neuve déguisée en correction.
+
+### Trous connus, actés
+
+- une issue dont le projet n'est dans aucune page lue est **perdue sans bruit**. Le cas est réel (deux
+  requêtes successives), et il contredit un principe tenu ailleurs — « une tâche absente ne se
+  remarque pas ». Figé dans un test qui le nomme, plutôt que corrigé par un rattrapage inventé ;
+- un curseur qui **alterne** (A → B → A) échapperait à la garde ; rien ne l'atteste ;
+- `labels(first: 10)` reste une troncature **silencieuse**, indépendante de la pagination.
+
+### Une friction de méthode, consignée pour le skill à récolter
+
+Deux fois de suite — hier sur `ReadLabels`, aujourd'hui sur la lecture de `project` — j'ai écrit une
+garde de tolérance **sans avoir observé le rouge qui la réclame**. Elle était bien réclamée les deux
+fois (vérifié à rebours : 6 tests tombent quand on la retire), mais l'observation manquait, et la
+vérifier coûtait dix secondes. Ce n'est pas la règle qui manque, c'est le réflexe de la tenir quand le
+code « évident » se présente. Matière pour `D-039`, qui veut qu'un skill se **récolte** sur des
+frictions réelles avant de s'écrire.
+
+**Renvoi** : `docs/reference/linear-api.md` §6 (les deux limites), §6a (les coûts), §7bis (la
+pagination imbriquée), §9 (les noms HTML-échappés) ; `architecture.md` §4.24, §7.10.2 (le modèle pull
+qu'il honore enfin) ; `CUR-46` (le `&amp;`) ; `CUR-5` (le prédicat qui consommera ce tableau complet) ;
+`D-035` (ne pas modeler en avance, invoqué deux fois ici).
