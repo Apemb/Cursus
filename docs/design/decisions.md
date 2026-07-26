@@ -1812,6 +1812,79 @@ naissance de la carte. La mise à plat a forcé le choix, et c'est la prise qui 
 qui valait déjà pour la test list : **ce qu'on apprend en faisant le premier incrément change ce qu'on
 sait au quatrième**.
 
+## D-039 — Un skill se récolte avant de s'écrire : la ligne de base est le premier livrable
+
+**Contexte.** `D-038` a posé *où* vit la méthode et *quels* skills écrire ; restait *comment* les
+écrire. Une recherche en cinq sondes (doc officielle, corpus open source, fiabilité headless,
+outillage d'évaluation, travail produit et entretien de corpus) a été menée avant d'en rédiger un
+seul. Son matériel est consigné dans **`docs/reference/skills.md`** — matériel externe sondé, avec
+chaque affirmation étiquetée *mesuré* / *documenté* / *folklore*, parce que la littérature du domaine
+mélange les trois sans prévenir et que quatre conseils universellement répétés s'y sont révélés faux.
+
+**Tranché — l'ordre d'écriture s'inverse.** On n'écrit pas un skill puis on l'éprouve. On **exécute la
+tâche sans skill**, on tient un **journal des frictions** — chaque correction, chaque étape sautée,
+chaque précision qui aurait dû être sur la carte —, et **le journal écrit le skill**. Deux sources
+indépendantes prescrivent exactement cette séquence : Anthropic (*« créez les évaluations AVANT
+d'écrire une documentation extensive »*, la ligne de base se mesure **sans** le skill) et ETH Zürich
+(arXiv:2602.11988 — *partir d'un fichier vide et ajouter les règles une par une, sur erreurs répétées
+observées*).
+
+La raison profonde est qu'un skill écrit d'avance ne peut pas être évalué. Le mode d'échec numéro un
+mesuré sur l'outillage officiel est le **100 %/100 %** : sur des cas imaginés, l'exécution avec et sans
+skill marque pareil et le signal est nul. Un cas tiré d'un échec vécu discrimine par construction.
+C'est la transposition, à la méthode, de la règle que le dépôt s'applique déjà au code : **pas de
+production sans un rouge observé qui la réclame**.
+
+**Conséquence sur le premier pas.** `flux.md` §4 proposait `prendre-un-pas` en tête. Le choix tient —
+c'est le seul qu'on puisse exécuter à la main sans dépendre d'un autre — mais **la première action
+n'est plus d'écrire, c'est d'exécuter**. Terrain retenu : l'incrément **`2·2c`** (« lancer ce workflow
+sur cette tâche »), qui ferme la boucle E2E de la jambe 2 et traverse Core et App. Le dogfooding
+*est* la ligne de base : le produit avance pendant qu'on récolte.
+
+**Écarté — écrire les huit skills d'affilée.** Huit documents fondés sur des échecs imaginés, dont on
+ne saurait pas lesquels sont des *no-op* (une ligne qui ne change rien par rapport au comportement par
+défaut, et coûte quand même). L'anti-patron est observable jusque dans le corpus officiel d'Anthropic :
+des skills qui ne portent qu'un tableau de définitions, sans instruction ni critère d'arrêt.
+
+**Écarté — commencer par `decoupage`**, plus tentant parce que plus haut dans le flux. Tant qu'aucun
+pas n'a été exécuté par un agent, on ne sait pas quelle **maille** de pas est bonne — or c'est
+exactement ce que le découpage décide. L'argument préexistait dans `flux.md` §4 ; la recherche le
+confirme sans le modifier.
+
+**Écarté — outiller l'évaluation d'abord.** L'outil officiel existe (`skill-creator`, modes
+Eval/Improve/Benchmark depuis mars 2026, `evals/evals.json` versionné à côté du `SKILL.md`), mais il
+coûte deux exécutions d'agent par cas et n'a pas de CLI — c'est un **rituel de jalon**, pas un test
+unitaire. Et 74 % des équipes en production reposent principalement sur du jugement humain
+(arXiv:2512.04123, ICML 2026). Un projet solo qui regarde plutôt que de construire un harnais n'est pas
+en retard sur l'état de l'art.
+
+**Referme une question ouverte de `flux.md` §5.** On se demandait comment distinguer *trois tours sur
+le même litige* de *trois tours qui dérivent de sujet*. La réponse est mesurée, et elle déplace la
+question : ce qui compte n'est pas le tour, c'est le **contexte**. Relire dans la même session
+n'apporte rien (p = 0,11) et dégrade légèrement ; relire **dans un contexte frais, sans le prompt de
+génération**, gagne 4 points de F1 et **11 points sur les erreurs critiques** (*Cross-Context Review*,
+arXiv:2603.12123 — préprint, N = 30, à confirmer). Donner au relecteur l'intention de l'auteur
+**l'ancre**. Corollaire pour `revue-plan` et `revue-code` : une relecture est une **session neuve sur
+l'artefact seul**, pas une itération de plus dans la conversation qui l'a produit.
+
+**Conforte `tickets.md` §6.4, pour une meilleure raison.** Le plafond de deux ou trois tours avant
+escalade était justifié par le coût. La vraie raison est que le **taux de consensus fallacieux
+remonte** au-delà — 3,9 % au tour 2, 5,1 % au tour 5 (arXiv:2510.12697). Un plafond de tours est une
+mesure de **qualité**, pas d'économie.
+
+**Non tranché à dessein.** Sept questions restent ouvertes (`docs/reference/skills.md` §10) : le
+régime `--bare`, le grain des huit skills, qui parle à Linear, la langue du `description`, le nom en
+collision, la forme du verdict de revue, les compteurs à nommer. Elles se trancheront mieux avec un
+skill réel sous les yeux ; les décider maintenant serait spéculer.
+
+**Deux faits d'architecture à ne pas perdre de vue**, tous deux documentés et tous deux silencieux le
+jour où ils mordront. **(1)** `--bare` — qui saute la découverte des skills, hooks, MCP et `CLAUDE.md`
+— **deviendra le défaut de `claude -p`** ; le pointeur de `D-038` cessera alors de résoudre, et le
+pipeline ne plantera pas : il produira des artefacts qui ne respectent plus les conventions du projet.
+**(2)** Un skill **personnel** écrase silencieusement son homonyme de projet, ce qui entame l'argument
+« la méthode se relit en revue » de `D-038` : ce qui est relu n'est pas nécessairement ce qui
+s'exécute.
+
 Ce que le découpage capture n'est donc pas la conception mais **les frontières** — ce qui est dans cet
 incrément, ce qui n'y est pas, l'ordre, les dépendances. C'est la part de la vue d'ensemble qui ne se
 recalcule pas, et elle vit dans la description des cartes (`tickets.md` §3, question 6). L'argument de

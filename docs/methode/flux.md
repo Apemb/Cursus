@@ -108,6 +108,13 @@ portable, son mécanisme de chargement ne l'est pas. C'est un choix de l'utilisa
 pas une contrainte du produit — l'utilisateur est garant du fait que ses workflows ont du sens
 sur son harnais.
 
+**Comment on les écrit** : `docs/reference/skills.md` — état de l'art sondé le 25 juillet 2026 sur
+l'anatomie d'un skill, sa validation et son entretien, avec chaque affirmation étiquetée *mesuré*
+/ *documenté* / *folklore*. Quatre de ses constats contraignent l'architecture avant la rédaction
+(§1 de cette note) : la fiabilité par étape se compose en `pass^k`, `--bare` va cesser de charger
+les skills automatiquement, le faux succès est le mode de défaillance dominant, et un skill
+personnel écrase silencieusement son homonyme du dépôt.
+
 ---
 
 ## 4. Les skills à écrire
@@ -127,12 +134,33 @@ Remplacer « à écrire » par un lien vers le fichier au fur et à mesure. Une 
 une étape encore manuelle — c'est l'unique état d'avancement que ce document a le droit de
 porter.
 
-**Ordre proposé** : `prendre-un-pas` d'abord. C'est le plus petit périmètre, l'erreur y coûte un
-commit, il ne dépend d'aucun autre — on peut lui tendre un pas écrit à la main — et il rend
-tout de suite le signal qui manque : *une carte de pas contient-elle assez pour qu'un agent
-travaille sans avoir eu la conversation ?* Le découpage est plus tentant et c'est le mauvais
-premier pas : tant qu'aucun pas n'a été exécuté par un agent, on ne sait pas quelle **maille**
-de pas est bonne — or c'est précisément ce que le découpage décide.
+**Ordre** : `prendre-un-pas` d'abord. C'est le plus petit périmètre, l'erreur y coûte un commit,
+il ne dépend d'aucun autre — on peut lui tendre un pas écrit à la main — et il rend tout de
+suite le signal qui manque : *une carte de pas contient-elle assez pour qu'un agent travaille
+sans avoir eu la conversation ?* Le découpage est plus tentant et c'est le mauvais premier pas :
+tant qu'aucun pas n'a été exécuté par un agent, on ne sait pas quelle **maille** de pas est
+bonne — or c'est précisément ce que le découpage décide.
+
+### Comment on les écrit — la ligne de base d'abord (`D-039`)
+
+**On n'écrit pas un skill puis on l'éprouve.** On exécute la tâche **sans** skill, on tient un
+journal des frictions, et le journal écrit le skill. Trois étapes :
+
+1. **Exécuter** l'incrément à la main, selon la méthode que le skill devra porter.
+2. **Journaliser les frictions** au fil de l'eau — chaque correction, chaque étape sautée, chaque
+   précision demandée qui aurait dû être sur la carte. Une ligne brute par occurrence.
+3. **Écrire**, à partir du journal et de rien d'autre, une fois deux ou trois passages observés.
+
+La raison n'est pas la prudence, c'est l'évaluabilité : un skill écrit d'avance se teste sur des
+cas imaginés, où l'exécution avec et sans skill marque pareil — le signal est nul. Un cas tiré
+d'un échec vécu discrimine par construction. C'est la règle du dépôt appliquée à la méthode :
+**pas de production sans un rouge observé qui la réclame.**
+
+Le terrain retenu pour la première récolte est l'incrément **`2·2c`** — le dogfooding *est* la
+ligne de base, donc le produit avance pendant qu'on récolte.
+
+Le matériel de référence — anatomie, budgets, patrons, validation, et les quatre faits qui
+contraignent l'architecture avant la rédaction — vit dans `docs/reference/skills.md`.
 
 ---
 
@@ -141,16 +169,28 @@ de pas est bonne — or c'est précisément ce que le découpage décide.
 **Construit** : rien. Aucun skill n'existe, aucune étape n'est automatisée.
 
 **Tranché mais pas construit** : le flux et ses régimes (`D-036`), les trois lieux, l'escalade
-par assignation, le rangement des skills dans `.claude/skills/`.
+par assignation, le rangement des skills dans `.claude/skills/`, la méthode d'écriture des
+skills (`D-039`).
 
 **Tranché ailleurs, pas ici** : le trio de la spec (étapes 1–3) a tourné sur quelques tickets
 hors de ce dépôt.
 
+**Refermé** : *distinguer trois tours sur le même litige de trois tours qui dérivent*. La
+question était mal posée — ce qui compte n'est pas le tour mais le **contexte**. Relire dans la
+même session n'apporte rien ; relire dans une session neuve, **sur l'artefact seul, sans le
+prompt qui l'a produit**, gagne nettement, et davantage encore sur les erreurs critiques
+(`D-039`). Une relecture est donc une session neuve, pas une itération de plus.
+
 **Questions ouvertes** :
 
-- Distinguer *trois tours sur le même litige* de *trois tours qui dérivent de sujet* — ils se
-  comptent pareil et ne valent pas pareil.
 - La répartition du contexte entre `CLAUDE.md`, le skill et la carte est une **hypothèse**, à
-  confirmer au premier round-trip réel (`tickets.md` §7).
+  confirmer au premier round-trip réel (`tickets.md` §7). Elle est fragilisée par un fait
+  documenté : en mode `--bare`, appelé à devenir le défaut de `claude -p`, **`CLAUDE.md` n'est
+  pas chargé** (`docs/reference/skills.md` §1.2).
 - Le refacto orphelin entre par le `Backlog` des issues, mais **sans spec** — donc sans recette
-  de niveau feature. Aucune étape de ce flux ne le couvre.
+  de niveau feature. Aucune étape de ce flux ne le couvre. Un précédent existe : le skill
+  `to-tickets` de Matt Pocock traite le refacto large comme **l'exception nommée** au découpage
+  vertical, avec expand–migrate–contract sur des tickets séparés.
+- Les sept points laissés ouverts à dessein par `D-039` (`docs/reference/skills.md` §10) —
+  régime `--bare`, grain des skills, qui parle à Linear, langue du `description`, nom en
+  collision, forme du verdict de revue, compteurs à nommer.
