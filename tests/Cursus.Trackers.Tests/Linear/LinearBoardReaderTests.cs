@@ -324,6 +324,126 @@ public class LinearBoardReaderTests
         Assert.Null(Assert.Single(page.Items).ProjectId);
     }
 
+    [Fact(DisplayName = "étant donné des projets et des issues, quand on assemble, alors chaque issue se raccroche au projet qu'elle nomme")]
+    public void Assembling_hangs_each_issue_under_the_project_it_names()
+    {
+        // arrange — le groupement que l'API faisait pour nous quand on partait des
+        // projets ; il se fait désormais ici, sur l'identifiant que chaque issue porte.
+        BareProject[] projects = [new("p-1", "Round-trip Linear"), new("p-2", "Robustesse")];
+        FlatIssue[] issues =
+        [
+            new("CUR-45", "Voir tout le tableau", "Todo", null, [], "p-1"),
+            new("CUR-38", "L'annulation tue tout l'arbre", "Backlog", null, [], "p-2"),
+            new("CUR-44", "L'écran des tâches", "Done", null, [], "p-1"),
+        ];
+
+        // act
+        var assembled = LinearBoardReader.Assemble(projects, issues);
+
+        // assert — l'ordre des projets est celui de leur page ; celui des tâches, celui
+        // de la leur
+        Assert.Equal(["Round-trip Linear", "Robustesse"], assembled.Select(project => project.Name));
+        Assert.Equal(["CUR-45", "CUR-44"], assembled[0].Tasks.Select(task => task.Key));
+        Assert.Equal(["CUR-38"], assembled[1].Tasks.Select(task => task.Key));
+    }
+
+    [Fact(DisplayName = "étant donné une sous-issue listée avant sa mère, quand on assemble, alors elle pend d'elle et non du premier rang")]
+    public void Assembling_hangs_a_child_under_its_parent_whatever_the_order()
+    {
+        // arrange — ⚠️ l'enfant PRÉCÈDE sa mère, comme le fait la vraie API. Un
+        // algorithme en un seul passage, qui supposerait la mère déjà vue, la perdrait.
+        BareProject[] projects = [new("p-1", "Round-trip Linear")];
+        FlatIssue[] issues =
+        [
+            new("CUR-12", "ReadTask contre l'API réelle", "Backlog", "CUR-6", [], "p-1"),
+            new("CUR-6", "Le client Linear réel", "Todo", null, [], "p-1"),
+        ];
+
+        // act
+        var assembled = LinearBoardReader.Assemble(projects, issues);
+
+        // assert — la sous-tâche ne doit apparaître qu'à UN endroit : sous sa mère
+        var parent = Assert.Single(Assert.Single(assembled).Tasks);
+        Assert.Equal("CUR-6", parent.Key);
+        Assert.Equal("CUR-12", Assert.Single(parent.Children).Key);
+    }
+
+    // Les quatre tests qui suivent naissent VERTS, et c'est assumé : ils verrouillent
+    // sous le nom de l'assemblage des garanties que la lecture imbriquée tenait déjà et
+    // dont `Group` hérite. Ils n'ont pas à faire naître du code — ils ont à empêcher que
+    // la disparition de `Read` (pas 5) emporte silencieusement ce qu'il garantissait.
+
+    [Fact(DisplayName = "étant donné un projet sans aucune issue, quand on assemble, alors il figure quand même, vide")]
+    public void Assembling_keeps_a_project_that_has_no_issue()
+    {
+        // arrange — LA raison pour laquelle la lecture demande les projets à part. Partir
+        // des issues seules ferait disparaître ce projet, puisqu'aucune ne le nomme.
+        BareProject[] projects = [new("p-1", "Round-trip Linear"), new("p-2", "Tests E2E")];
+        FlatIssue[] issues = [new("CUR-45", "Voir tout le tableau", "Todo", null, [], "p-1")];
+
+        // act
+        var assembled = LinearBoardReader.Assemble(projects, issues);
+
+        // assert — un projet vide n'est pas une absence de projet
+        Assert.Equal(2, assembled.Count);
+        Assert.Empty(assembled[1].Tasks);
+        Assert.Equal("Tests E2E", assembled[1].Name);
+    }
+
+    [Fact(DisplayName = "étant donné une issue sans projet, quand on assemble, alors elle n'apparaît sous aucun projet")]
+    public void Assembling_drops_an_issue_that_belongs_to_no_project()
+    {
+        // arrange — Linear autorise une issue hors projet. TaskProject étant LE
+        // regroupement du modèle, une telle carte n'a aucun rang où aller.
+        BareProject[] projects = [new("p-1", "Round-trip Linear")];
+        FlatIssue[] issues =
+        [
+            new("CUR-45", "Voir tout le tableau", "Todo", null, [], "p-1"),
+            new("CUR-99", "Une carte hors projet", "Todo", null, [], null),
+        ];
+
+        // act
+        var assembled = LinearBoardReader.Assemble(projects, issues);
+
+        // assert — la jeter n'est pas une régression : elle était déjà invisible quand
+        // la lecture partait des projets. L'afficher serait une fonctionnalité neuve.
+        Assert.Equal(["CUR-45"], Assert.Single(assembled).Tasks.Select(task => task.Key));
+    }
+
+    [Fact(DisplayName = "étant donné une issue dont le projet n'est pas dans la liste, quand on assemble, alors elle est écartée")]
+    public void Assembling_drops_an_issue_whose_project_is_unknown()
+    {
+        // arrange — les deux listes sont lues par deux requêtes successives : une carte
+        // créée entre les deux, dans un projet créé entre les deux, nommerait un projet
+        // que la liste ne porte pas. Rare, mais réel.
+        BareProject[] projects = [new("p-1", "Round-trip Linear")];
+        FlatIssue[] issues = [new("CUR-99", "Créée entre deux requêtes", "Todo", null, [], "p-inconnu")];
+
+        // act
+        var assembled = LinearBoardReader.Assemble(projects, issues);
+
+        // assert — ⚠️ TROU CONNU, acté ici plutôt que découvert plus tard : la carte est
+        // perdue SANS BRUIT, ce qui contredit le principe tenu ailleurs (« une tâche
+        // absente ne se remarque pas »). Inventer un projet de rattrapage serait modeler
+        // en avance ; le comportement est donc figé et visible dans ce test.
+        Assert.Empty(Assert.Single(assembled).Tasks);
+    }
+
+    [Fact(DisplayName = "étant donné une sous-issue dont la mère manque, quand on assemble, alors elle remonte au premier rang plutôt que d'être perdue")]
+    public void Assembling_surfaces_an_orphan_rather_than_losing_it()
+    {
+        // arrange — la mère « CUR-6 » n'est pas là : rattachée à un autre projet, ou pas
+        // encore lue. L'arbre se reconstruit projet par projet, donc le cas est ordinaire.
+        BareProject[] projects = [new("p-1", "Round-trip Linear")];
+        FlatIssue[] issues = [new("CUR-12", "ReadTask contre l'API réelle", "Backlog", "CUR-6", [], "p-1")];
+
+        // act
+        var assembled = LinearBoardReader.Assemble(projects, issues);
+
+        // assert — suspendre à une mère absente reviendrait à ne l'afficher nulle part
+        Assert.Equal("CUR-12", Assert.Single(Assert.Single(assembled).Tasks).Key);
+    }
+
     [Fact(DisplayName = "étant donné une réponse dont les issues débordent d'une page, quand on la lit, alors le projet se dit tronqué")]
     public void A_project_whose_issues_overflow_says_so()
     {

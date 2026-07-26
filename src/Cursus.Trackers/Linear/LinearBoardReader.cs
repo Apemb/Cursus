@@ -82,6 +82,42 @@ public static class LinearBoardReader
             NextCursorOf(connection));
     }
 
+    /// <summary>
+    /// Raccroche les issues à leurs projets. Le groupement que l'API faisait quand on
+    /// partait des projets se fait désormais ici, sur l'identifiant que chaque issue
+    /// porte.
+    /// </summary>
+    public static IReadOnlyList<TaskProject> Assemble(
+        IReadOnlyList<BareProject> projects,
+        IReadOnlyList<FlatIssue> issues) =>
+        [.. projects.Select(project => Group(
+            project,
+            [.. issues.Where(issue => issue.ProjectId == project.Id)]))];
+
+    /// <summary>
+    /// Reconstruit l'arbre d'un projet à partir de ses issues à plat.
+    ///
+    /// <para>
+    /// ⚠️ <b>L'arbre se reconstruit projet par projet</b>, jamais globalement. Une
+    /// sous-issue dont la mère vit dans un <em>autre</em> projet remonte donc au premier
+    /// rang du sien, plutôt que d'être déplacée sous sa mère : on ne sort pas une carte
+    /// de son projet pour satisfaire une arête.
+    /// </para>
+    /// </summary>
+    private static TaskProject Group(BareProject project, IReadOnlyList<FlatIssue> issues)
+    {
+        var byParent = issues.Where(issue => issue.ParentKey is not null).ToLookup(issue => issue.ParentKey!);
+        var present = issues.Select(issue => issue.Key).ToHashSet();
+
+        // Est racine ce qui n'a pas de mère — mais aussi ce dont la mère manque à
+        // l'appel (rattachée ailleurs, ou pas encore lue). Sans cette seconde clause,
+        // l'orpheline ne serait suspendue à rien et disparaîtrait de l'écran : une
+        // tâche au mauvais rang se remarque, une tâche absente ne se remarque pas.
+        var roots = issues.Where(issue => issue.ParentKey is null || !present.Contains(issue.ParentKey));
+
+        return new TaskProject(project.Id, project.Name, [.. roots.Select(root => Suspend(root, byParent))]);
+    }
+
     public static IReadOnlyList<TaskProject> Read(string json)
     {
         using var document = JsonDocument.Parse(json);
@@ -90,29 +126,29 @@ public static class LinearBoardReader
         return [.. nodes.EnumerateArray().Select(ReadProject)];
     }
 
+    /// <summary>
+    /// La forme <b>imbriquée</b>, appelée à disparaître avec <see cref="Read"/> : elle
+    /// passe par le même <see cref="Group"/> que la lecture paginée, pour qu'il n'existe
+    /// pas deux logiques d'arbre susceptibles de diverger pendant la transition.
+    /// </summary>
     private static TaskProject ReadProject(JsonElement project)
     {
         var connection = project.GetProperty("issues");
-        var issues = connection.GetProperty("nodes").EnumerateArray()
-            .Select(ReadFlat)
-            .ToList();
-
-        var byParent = issues.Where(issue => issue.ParentKey is not null).ToLookup(issue => issue.ParentKey!);
-        var present = issues.Select(issue => issue.Key).ToHashSet();
-
-        // Est racine ce qui n'a pas de mère — mais aussi ce dont la mère manque à
-        // l'appel (page tronquée, ou mère rattachée ailleurs). Sans cette seconde
-        // clause, l'orpheline ne serait suspendue à rien et disparaîtrait de l'écran :
-        // une tâche au mauvais rang se remarque, une tâche absente ne se remarque pas.
-        var roots = issues.Where(issue => issue.ParentKey is null || !present.Contains(issue.ParentKey));
-
-        return new TaskProject(
+        var bare = new BareProject(
             project.TryGetProperty("id", out var id) ? id.GetString() ?? "" : "",
-            project.GetProperty("name").GetString() ?? "",
-            [.. roots.Select(root => Suspend(root, byParent))],
-            connection.TryGetProperty("pageInfo", out var page)
+            project.GetProperty("name").GetString() ?? "");
+
+        var grouped = Group(bare, [.. connection.GetProperty("nodes").EnumerateArray().Select(ReadFlat)]);
+
+        // ⚠️ Pas NextCursorOf : « il y a une suite » et « où reprendre » ne sont pas la
+        // même question. Cette requête-ci demande hasNextPage sans endCursor — elle
+        // avoue la troncature sans savoir la franchir.
+        return grouped with
+        {
+            IsTruncated = connection.TryGetProperty("pageInfo", out var page)
                 && page.TryGetProperty("hasNextPage", out var more)
-                && more.GetBoolean());
+                && more.GetBoolean(),
+        };
     }
 
     /// <summary>Suspend récursivement les enfants d'une issue sous elle.</summary>
