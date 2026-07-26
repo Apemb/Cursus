@@ -149,9 +149,25 @@ dotnet test    # suite entièrement verte
 
 Un warning n'est pas toléré, même dans les tests. Ce standard est tenu depuis le premier jalon.
 
-## Commits
+## Branches
 
-- Un commit par comportement terminé (suite verte, refactor fait).
-- Message argumenté : le **pourquoi**, et les alternatives écartées quand il y a eu arbitrage. Les
-  messages de ce dépôt sont longs à dessein — ils portent le raisonnement que le code ne peut pas dire.
-- Travail sur `main`. **Ne jamais pousser sans demande explicite.**
+**Aucun code n'arrive sur `main` autrement que par une PR.** Une branche et une PR par niveau de
+ticket, fusionnées en cascade — `pas/` en **squash** dans `story/`, `story/` en **rebase puis
+fast-forward** dans `feature/`, `feature/` en **rebase puis `--no-ff`** dans `main`. La branche de
+feature n'est pas systématique : elle se décide en Spec, et seulement si la feature expose une
+surface qui doit apparaître d'un bloc. Le détail, les pièges de chaque mode de fusion et le motif
+vivent dans `docs/methode/flux.md` §6 et `D-042`.
+
+Sur une branche de pas, **commiter librement** — WIP, correction de revue, refactor. Le squash de
+fusion produit le commit propre ; ce n'est plus une discipline à tenir, c'est une mécanique.
+
+**L'exception** : le travail sur *la façon de travailler* — méthode, documentation, outillage — va
+directement sur `main`. Il n'est porté par aucune carte, donc aucune branche ne lui correspond. Si
+ce cas devenait fréquent au point de mériter sa propre règle, ce sera le moment de légiférer.
+
+**Sur un squash, réécrire le corps à la main** : GitHub y colle par défaut la concaténation des
+messages de WIP, et c'est ce commit-là qui reste dans l'histoire.
+
+**Ne jamais citer un hash de commit dans la documentation** — écrire l'identifiant Linear (`CUR-45`).
+Le rebase des branches périme tout hash écrit au fil du développement, et dans `decisions.md`, qui
+est append-only, un hash périmé est incorrigible. Pour désigner un état précis du code, un **tag**.

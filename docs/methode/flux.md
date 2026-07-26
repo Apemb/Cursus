@@ -200,3 +200,76 @@ prompt qui l'a produit**, gagne nettement, et davantage encore sur les erreurs c
 - Les sept points laissés ouverts à dessein par `D-039` (`docs/reference/skills.md` §10) —
   régime `--bare`, grain des skills, qui parle à Linear, langue du `description`, nom en
   collision, forme du verdict de revue, compteurs à nommer.
+
+---
+
+## 6. Où le flux touche git (`D-042`)
+
+*Cette section vient après le registre parce que renuméroter aurait cassé un renvoi `flux.md §5`
+logé dans `decisions.md`, qui est append-only et donc incorrigible.*
+
+### La correspondance
+
+Un niveau de ticket, une branche, une PR. Le nom porte l'identifiant Linear, ce qui suffit à Linear
+pour rattacher seul la branche et la PR à sa carte — une couture de moins à coder.
+
+| Niveau | Branche | PR vers | Fusion |
+|---|---|---|---|
+| Pas | `pas/CUR-45-3-slug` | la story | **squash** |
+| Incrément *(story)* | `story/CUR-45-slug` | la feature | **rebase puis fast-forward** |
+| Feature | `feature/CUR-xx-slug` | `main` | **rebase puis `--no-ff`** |
+
+**`feature/` n'est pas systématique.** Elle se décide **en Spec**, feature par feature, sur une
+seule question : *cette feature expose-t-elle une surface qui doit apparaître d'un bloc ?* Si non,
+ses stories vont directement sur `main` — chaque incrément étant « livrable seul, suite verte »
+(`tickets.md` §1), `main` n'est jamais laissé à moitié fait. Le défaut est donc **non**, et l'écrire
+dans la spec en fait une décision plutôt qu'un rituel.
+
+### Les trois pièges du mode de fusion
+
+**Le fast-forward n'en est pas un.** Il n'est possible que si la cible n'a pas divergé. Deux stories
+d'une même feature en parallèle : la seconde exige un rebase avant de pouvoir avancer en FF. C'est
+« rebase puis FF », toujours — pas « FF » avec un rebase occasionnel.
+
+**Le corps du squash se réécrit à la main.** GitHub le pré-remplit avec la concaténation des
+messages de WIP. Or c'est ce commit-là qui reste dans l'histoire, et ce dépôt écrit ses messages
+longs à dessein — le titre ne peut pas porter le raisonnement ni les alternatives écartées. Accepter
+le défaut, c'est perdre en silence ce que la convention de commit exige.
+
+**Le rebase réécrit les hashes.** D'où la règle ci-dessous, qui n'est pas séparable de celle-ci.
+
+### Ce que le squash autorise, et qui change le cycle
+
+L'agent **commite librement pendant un pas** — WIP, correction de revue, refactor — puisque le
+squash produit le commit propre à la fusion. Deux conséquences :
+
+- il existe des **points de reprise** en cours de cycle, que la règle « un commit par comportement
+  terminé » interdisait — elle a été retirée de `CLAUDE.md`, devenue sans objet ;
+- la **revue d'un pas peut avoir lieu après le commit**, sur la PR, sans polluer l'historique. C'est
+  ce qui justifie la strate `pas/` — et c'est une justification **datée** : elle sert à récolter le
+  matériau du skill `revue-code` (`D-039`). À rejuger une fois ce skill rodé.
+
+La propriété qu'exigeait cette règle n'est pas perdue, elle est **produite autrement** : un commit
+de `main` est un pas squashé, donc un comportement terminé, suite verte et zéro warning. Ce n'est
+plus une discipline que quelqu'un tient, c'est une conséquence de la mécanique de fusion.
+
+### Le travail sans carte va directement sur `main`
+
+Le travail sur *la façon de travailler* — méthode, documentation, outillage — n'est porté par aucune
+carte, donc aucune branche ne lui correspond : il se commite sur `main`. La cascade ci-dessus ne
+régit que le **code**, qui lui vient toujours d'un ticket.
+
+C'est une exception assumée, pas un oubli, et elle recoupe une question ouverte de la §5 — le refacto
+orphelin, qui entre par le `Backlog` des issues sans spec. Si le cas devenait assez fréquent pour
+peser, ce sera le moment de légiférer ; le faire maintenant serait de la méthode sur cas imaginé,
+que `D-039` proscrit.
+
+### Les documents ne citent plus de hashes
+
+**On écrit `CUR-45`, jamais un hash de commit.** Le rebase des branches rend tout hash écrit pendant
+le développement caduc à la fusion ; et dans `decisions.md`, append-only, un hash périmé est
+incorrigible. L'identifiant Linear survit à toute réécriture et dit *quel travail*, quand un hash ne
+dit que *quel objet git*.
+
+Pour désigner un état précis du code — besoin qui ne s'est pas encore présenté — la réponse est un
+**tag**, pas un hash. Les hashes déjà écrits restent : ils pointent sur `main`, qui ne bouge plus.

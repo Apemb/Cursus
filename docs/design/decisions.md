@@ -2083,3 +2083,96 @@ base que `D-039` réclamait avant d'écrire le moindre skill.
 **Renvoi** : `docs/methode/dod/` · `docs/methode/journal-frictions.md` · `tickets.md` §1, §6, §6.3,
 §8 · `flux.md` §2 · `D-036` (révisé sur le verdict de revue) · `D-039` (la récolte) · `CUR-5` (le
 prédicat qui lira ces étiquettes).
+
+## D-042 — Une branche par niveau de ticket, et les docs cessent de citer des hashes
+
+**Contexte.** Le travail se faisait sur `main`, en direct. Trois changements simultanés ont rendu
+cette pratique intenable : le dépôt est devenu **public** avec un remote GitHub, sous Apache-2.0, le
+backlog est passé au grain **feature** (six projets Linear), et la
+trajectoire prévoit des **agents qui poussent leur travail** — plusieurs, en parallèle, chacun sur
+un pas. Or la méthode ne disait pas un mot de git : ni `flux.md`, ni `tickets.md`, ni
+`architecture.md` ne mentionnaient une branche, une PR ou une fusion. Le flux s'arrêtait au tracker.
+
+### 1. Trois niveaux de branches, trois modes de fusion
+
+Un niveau de ticket, une branche, une PR :
+
+| Branche | Fusionnée dans | Mode | Ce que le mode préserve |
+|---|---|---|---|
+| `pas/CUR-45-3-slug` | la story | **squash** | un commit propre par pas, quel que soit le désordre en amont |
+| `story/CUR-45-slug` | la feature | **rebase puis fast-forward** | les commits de pas, sans commit de fusion parasite |
+| `feature/CUR-xx-slug` | `main` | **rebase puis `--no-ff`** | l'historique complet, et un point de fusion qui nomme la feature |
+
+**Le fast-forward n'est pas un mode de fusion mais une contrainte** : il n'est possible que si la
+cible n'a pas divergé. Dès que deux stories d'une même feature avancent en parallèle — ce que le
+travail par agents vise — la seconde exige un rebase préalable. La règle honnête est donc « rebase
+puis FF », et elle est écrite ainsi pour que personne ne découvre la marche en la manquant.
+
+### 2. Le squash au niveau pas découple *commiter* de *avoir fini*
+
+Le motif n'est pas la lisibilité, qui n'en est qu'un effet. `CLAUDE.md` exigeait « un commit par
+comportement terminé (suite verte, refactor fait) » — ce qui **interdisait de commiter en cours de
+cycle**, donc privait de tout point de reprise, et faisait d'un retour de revue arrivé après le
+commit une pollution permanente de l'historique.
+
+Le squash dissout les deux : l'agent commite librement pendant le pas (WIP, correction de revue,
+refactor), et le commit propre est produit **par la fusion**, pas par la discipline. Conséquence qui
+justifie à elle seule la strate : **la revue d'un pas peut avoir lieu après le commit**, sur une PR,
+sans que l'histoire en garde la trace.
+
+Corollaire à ne pas manquer : c'est le **corps** du squash qui porte le raisonnement et les écarts,
+jamais le titre. GitHub pré-remplit ce corps avec la concaténation des messages de WIP — c'est
+exactement le bruit qu'on voulait éviter, et il faut donc le **réécrire à la main** à chaque fusion.
+
+### 3. Les documents cessent de citer des hashes de commit
+
+C'est la **condition de viabilité** du point 1, pas un ajustement de style. Rebaser une branche
+réécrit tous ses hashes ; or `CLAUDE.md` impose que la documentation se mette à jour « au fil, pas à
+la fin ». Tout hash écrit pendant le développement pointerait donc sur un objet mort au moment de la
+fusion — systématiquement, à chaque feature.
+
+Et le coup de grâce : **ce document est append-only**. Un hash périmé dans une entrée `D-NNN` ne
+peut pas être corrigé sans violer la règle qui le fonde. La dérogation prise une fois pour le
+remappage consécutif à la réécriture d'historique était exceptionnelle ; répétée à chaque feature,
+elle abroge la règle.
+
+Désormais on cite l'identifiant Linear — `CUR-45`. Il est **plus stable** (il survit à toute
+réécriture), **plus informatif** (il porte le raisonnement de la carte, quand un hash ne porte qu'un
+diff) et cohérent avec le tracker comme control plane. Ce qu'il ne fait pas : désigner un état
+précis du code. Si ce besoin apparaît, la réponse est un **tag**, pas un hash.
+
+Les hashes déjà écrits restent — ils désignent des commits de `main`, qui ne bougeront plus.
+
+### Écarté — l'incrément fusionné directement dans `main`
+
+Défendu longuement, et sur un argument tiré de la méthode elle-même : `tickets.md` §1 définit un
+incrément comme « **livrable seul, suite verte** », propriété qui rend la branche de feature
+redondante — si chaque incrément est livrable seul, `main` n'est jamais à moitié fait.
+
+**Ce que cet argument rate** : une feature peut exposer une **surface qui doit apparaître d'un
+bloc**. « Un agent pilote Cursus » en est l'exemple — chaque outil MCP est un incrément vert et
+livrable, mais publier la moitié des outils sur un dépôt public, c'est publier une API bancale.
+« Livrable seul » y est vrai techniquement et faux pour l'utilisateur.
+
+La réponse canonique à ce cas est le **feature flag** — le code atterrit, la surface n'est pas
+branchée. Écarté aussi, mais pour une raison purement conjoncturelle : **aucun mécanisme de flag
+n'existe dans le code**, et le construire est un chantier que rien d'autre ne réclame aujourd'hui.
+La branche de feature est, à cette date, strictement moins chère. Si un flag apparaît un jour pour
+d'autres motifs, ce choix mérite d'être rejugé.
+
+### Ce qui reste daté, et doit être rejugé
+
+**La strate `pas/` est instrumentale, pas structurelle.** Elle ne se justifie pas par l'ingénierie —
+une branche pour un commit relu par une seule personne est de la cérémonie — mais par la **récolte**
+que `D-039` impose avant d'écrire un skill : la PR de pas est le matériau qui servira à écrire
+`revue-code`, parce qu'elle produit une trace opposable ligne à ligne que ni Linear ni une boucle
+intra-session ne donnent.
+
+Elle a donc une **condition de sortie** : le jour où `revue-code` est écrit et rodé, la question « la
+branche de pas sert-elle encore à quelque chose ? » doit être reposée. Faute de l'écrire ici, elle
+deviendrait permanente par inertie, et personne ne saurait plus pourquoi elle existe.
+
+**Renvoi** : `flux.md` §6 (la convention opérationnelle) · `tickets.md` §8 (la correspondance
+Linear) · `CLAUDE.md` §Branches — qui **remplace** l'ancienne §Commits, devenue sans objet : le
+grain du commit n'est plus une discipline mais une conséquence du squash · `D-036` (les trois
+niveaux) · `D-039` (la récolte avant le skill) · `D-041` (le flux tiré).

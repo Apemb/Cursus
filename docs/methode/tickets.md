@@ -477,6 +477,7 @@ qu'on n'a pas encore écrite. **Question ouverte, à trancher au premier round-t
 | Ordre | `blockedBy` | Ce qui empêche de prendre une carte trop tôt |
 | Escalade | Assignation | Une carte en revue assignée attend un humain ; non assignée, elle boucle |
 | Discovery, spec, plan d'archi | Document attaché — **un artefact, un document** | Linear **rend le mermaid nativement** (`/diagram`, ou un bloc ` ```mermaid ` collé) — le schéma-delta se lit sur la carte, sans fichier intermédiaire dans le dépôt |
+| Le code du niveau | Branche + PR portant l'identifiant | `feature/` · `story/` · `pas/`, fusionnées en cascade — voir `flux.md` §6 et `D-042`. L'identifiant dans le nom suffit à Linear pour rattacher branche et PR à leur carte |
 
 **Le niveau d'une carte se déduit de sa structure**, il n'a pas à être encodé : projet =
 feature, issue sans parent = incrément, issue avec `parentId` = pas. Ni étiquette à maintenir,
