@@ -33,6 +33,39 @@ public static class LinearBoardReader
             organization.GetProperty("name").GetString() ?? "");
     }
 
+    /// <summary>
+    /// Une page de projets <b>nus</b>. Requête bon marché, et la seule qui garde les
+    /// projets vides visibles.
+    /// </summary>
+    public static LinearPage<BareProject> ReadProjects(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var connection = document.RootElement.GetProperty("data").GetProperty("projects");
+
+        return new LinearPage<BareProject>(
+            [.. connection.GetProperty("nodes").EnumerateArray().Select(project => new BareProject(
+                project.GetProperty("id").GetString() ?? "",
+                project.GetProperty("name").GetString() ?? ""))],
+            NextCursorOf(connection));
+    }
+
+    /// <summary>
+    /// Où reprendre, ou <c>null</c> si la page est la dernière.
+    ///
+    /// <para>
+    /// ⚠️ <b>C'est <c>hasNextPage</c> qui décide, jamais la présence du curseur</b> :
+    /// Linear rend un <c>endCursor</c> plein <b>même sur la dernière page</b> (mesuré —
+    /// <c>linear-api.md</c> §7). Le lire sans cette garde offrirait une page suivante
+    /// là où il n'y en a aucune, et la boucle redemanderait éternellement la même.
+    /// </para>
+    /// </summary>
+    private static string? NextCursorOf(JsonElement connection) =>
+        connection.TryGetProperty("pageInfo", out var page)
+        && page.TryGetProperty("hasNextPage", out var more)
+        && more.GetBoolean()
+            ? page.GetProperty("endCursor").GetString()
+            : null;
+
     public static IReadOnlyList<TaskProject> Read(string json)
     {
         using var document = JsonDocument.Parse(json);

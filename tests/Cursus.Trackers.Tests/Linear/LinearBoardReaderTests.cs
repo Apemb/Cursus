@@ -194,6 +194,75 @@ public class LinearBoardReaderTests
         Assert.Empty(Assert.Single(Assert.Single(projects).Tasks).Labels);
     }
 
+    [Fact(DisplayName = "étant donné une page de projets nus, quand on la lit, alors chaque projet porte son identifiant et son nom")]
+    public void A_page_of_bare_projects_yields_its_projects()
+    {
+        // arrange — la requête bon marché de CUR-45 : les projets SANS leurs issues.
+        // C'est elle qui garde les projets vides visibles, que la requête sur les
+        // issues racine ferait disparaître (voir linear-api.md §7bis).
+        const string json = """
+            {"data":{"projects":{
+              "pageInfo":{"hasNextPage":false,"endCursor":"318513ed-fd96-4403-a21f-dac24e48d405"},
+              "nodes":[
+                {"id":"95b9f60f-b09b-477a-8837-7aac896a21e5","name":"Robustesse d'exécution"},
+                {"id":"47a006a9-2743-475b-bc42-c28b420472f5","name":"Tests E2E de l'application"}
+              ]}}}
+            """;
+
+        // act
+        var page = LinearBoardReader.ReadProjects(json);
+
+        // assert
+        Assert.Equal(
+            ["95b9f60f-b09b-477a-8837-7aac896a21e5", "47a006a9-2743-475b-bc42-c28b420472f5"],
+            page.Items.Select(project => project.Id));
+        Assert.Equal(
+            ["Robustesse d'exécution", "Tests E2E de l'application"],
+            page.Items.Select(project => project.Name));
+    }
+
+    [Fact(DisplayName = "étant donné une page qui annonce une suite, quand on la lit, alors elle porte le curseur où reprendre")]
+    public void A_page_that_announces_more_carries_the_cursor_to_resume_from()
+    {
+        // arrange — ⚠️ « hasNextPage: true » a été observé sur la connexion « issues »,
+        // pas sur « projects » : cet espace n'a que 6 projets, il n'en déborde jamais.
+        // La forme de pageInfo, elle, est la MÊME sur toute connexion de cette API —
+        // c'est ce que le type générique acte.
+        const string json = """
+            {"data":{"projects":{
+              "pageInfo":{"hasNextPage":true,"endCursor":"318513ed-fd96-4403-a21f-dac24e48d405"},
+              "nodes":[{"id":"95b9f60f-b09b-477a-8837-7aac896a21e5","name":"Robustesse d'exécution"}]}}}
+            """;
+
+        // act
+        var page = LinearBoardReader.ReadProjects(json);
+
+        // assert — sans ce curseur, la page suivante est inatteignable et le tableau
+        // reste amputé sans le dire. C'est tout l'objet de CUR-45.
+        Assert.Equal("318513ed-fd96-4403-a21f-dac24e48d405", page.NextCursor);
+    }
+
+    [Fact(DisplayName = "étant donné une dernière page, quand on la lit, alors elle ne porte aucun curseur bien que la réponse en contienne un")]
+    public void A_last_page_carries_no_cursor_even_though_the_response_holds_one()
+    {
+        // arrange — ⚠️ LE PIÈGE, mesuré : Linear rend un « endCursor » plein alors même
+        // que « hasNextPage » est faux. Ce fragment est celui de la sonde du 2026-07-26,
+        // à un projet près. Lire le curseur sans regarder hasNextPage donnerait une
+        // page suivante là où il n'y en a pas — donc une BOUCLE SANS FIN, qui
+        // redemanderait éternellement la même dernière page.
+        const string json = """
+            {"data":{"projects":{
+              "pageInfo":{"hasNextPage":false,"endCursor":"318513ed-fd96-4403-a21f-dac24e48d405"},
+              "nodes":[{"id":"95b9f60f-b09b-477a-8837-7aac896a21e5","name":"Robustesse d'exécution"}]}}}
+            """;
+
+        // act
+        var page = LinearBoardReader.ReadProjects(json);
+
+        // assert — c'est « hasNextPage » qui décide, jamais la présence du curseur
+        Assert.Null(page.NextCursor);
+    }
+
     [Fact(DisplayName = "étant donné une réponse dont les issues débordent d'une page, quand on la lit, alors le projet se dit tronqué")]
     public void A_project_whose_issues_overflow_says_so()
     {
