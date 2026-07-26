@@ -29,6 +29,16 @@ public sealed class LinearTaskBoard : ITaskBoard
     /// la troncature se dit (<c>IsTruncated</c>) au lieu de se compenser par des bornes
     /// toujours plus hautes.
     /// </para>
+    ///
+    /// <para>
+    /// ⚠️ <b>Les étiquettes coûtent un troisième facteur</b> — <c>25 × 50 × 10</c>. Le
+    /// <c>first:</c> y est explicite <b>à dessein</b> : l'omettre laisserait Linear
+    /// appliquer son défaut (50), et le budget partirait sans qu'on l'ait décidé. Dix
+    /// étiquettes sur une carte est déjà beaucoup ; au-delà, la troncature est
+    /// <b>silencieuse</b>, et un prédicat qui vise l'étiquette tronquée conclurait à tort
+    /// que la carte ne la porte pas. Dette connue, à porter dans le modèle le jour où une
+    /// carte réelle dépasse — pas avant.
+    /// </para>
     /// </summary>
     private const string Query = """
         query {
@@ -43,6 +53,7 @@ public sealed class LinearTaskBoard : ITaskBoard
                   title
                   state { name }
                   parent { identifier }
+                  labels(first: 10) { nodes { name } }
                 }
               }
             }

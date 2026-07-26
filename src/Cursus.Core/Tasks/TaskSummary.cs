@@ -8,8 +8,15 @@ namespace Cursus.Core.Tasks;
 /// </summary>
 /// <param name="Key">La clé humaine (« CUR-12 ») — celle-là même que porte le déclencheur d'un run.</param>
 /// <param name="Column">Le nom de la colonne où siège la carte, tel que le tableau l'affiche.</param>
+/// <param name="Labels">
+/// Les étiquettes que porte la carte, par leur nom d'affichage. Avec
+/// <paramref name="Column"/>, elles forment la maille que le prédicat de déclenchement
+/// observe (architecture.md §7.10.2). Vide plutôt qu'absente : une carte sans étiquette
+/// est un état, pas une donnée manquante.
+/// </param>
 public sealed record TaskSummary(
     string Key,
     string Title,
     string Column,
+    IReadOnlyList<string> Labels,
     IReadOnlyList<TaskSummary> Children);

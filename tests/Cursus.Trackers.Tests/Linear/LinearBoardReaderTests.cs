@@ -150,6 +150,50 @@ public class LinearBoardReaderTests
         Assert.Equal("CUR-12", orphan.Key);
     }
 
+    [Fact(DisplayName = "étant donné une issue étiquetée, quand on lit la réponse, alors elle porte ses étiquettes")]
+    public void An_issue_carries_its_labels()
+    {
+        // arrange — la moitié de la maille (colonne, étiquettes) que le prédicat de
+        // déclenchement observe. Linear rend les étiquettes en connexion, comme tout
+        // le reste : « labels » enveloppe des « nodes ».
+        const string json = """
+            {"data":{"projects":{"nodes":[
+              {"name":"Round-trip Linear","issues":{"nodes":[
+                {"identifier":"CUR-12","title":"ReadTask contre l'API réelle","state":{"name":"Todo"},
+                 "parent":null,"labels":{"nodes":[{"name":"Feature"},{"name":"cursus:ready"}]}}
+              ]}}
+            ]}}}
+            """;
+
+        // act
+        var projects = LinearBoardReader.Read(json);
+
+        // assert
+        var task = Assert.Single(Assert.Single(projects).Tasks);
+        Assert.Equal(["Feature", "cursus:ready"], task.Labels);
+    }
+
+    [Fact(DisplayName = "étant donné une issue dont la réponse ne dit rien des étiquettes, quand on la lit, alors elle n'en porte aucune plutôt que de faire échouer la lecture")]
+    public void An_issue_without_the_labels_field_carries_none()
+    {
+        // arrange — le champ est absent, pas vide : c'est ce que rend toute requête qui
+        // ne l'a pas demandé. La lecture ne doit pas dépendre d'une requête particulière,
+        // sinon enrichir la sélection casserait la traduction au lieu de l'enrichir.
+        const string json = """
+            {"data":{"projects":{"nodes":[
+              {"name":"Round-trip Linear","issues":{"nodes":[
+                {"identifier":"CUR-12","title":"ReadTask","state":{"name":"Todo"},"parent":null}
+              ]}}
+            ]}}}
+            """;
+
+        // act
+        var projects = LinearBoardReader.Read(json);
+
+        // assert
+        Assert.Empty(Assert.Single(Assert.Single(projects).Tasks).Labels);
+    }
+
     [Fact(DisplayName = "étant donné une réponse dont les issues débordent d'une page, quand on la lit, alors le projet se dit tronqué")]
     public void A_project_whose_issues_overflow_says_so()
     {

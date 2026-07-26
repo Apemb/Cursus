@@ -71,6 +71,7 @@ public static class LinearBoardReader
         issue.Key,
         issue.Title,
         issue.Column,
+        issue.Labels,
         [.. byParent[issue.Key].Select(child => Suspend(child, byParent))]);
 
     private static FlatIssue ReadFlat(JsonElement issue) => new(
@@ -79,12 +80,30 @@ public static class LinearBoardReader
         issue.GetProperty("state").GetProperty("name").GetString() ?? "",
         issue.TryGetProperty("parent", out var parent) && parent.ValueKind is not JsonValueKind.Null
             ? parent.GetProperty("identifier").GetString()
-            : null);
+            : null,
+        ReadLabels(issue));
+
+    /// <summary>
+    /// Les noms des étiquettes, ou aucune. Tolère le champ <b>absent</b> autant que la
+    /// liste vide : les deux disent « cette carte ne porte rien », et exiger le champ
+    /// ferait dépendre la lecture d'une requête particulière.
+    /// </summary>
+    private static IReadOnlyList<string> ReadLabels(JsonElement issue) =>
+        issue.TryGetProperty("labels", out var labels)
+        && labels.ValueKind is not JsonValueKind.Null
+        && labels.TryGetProperty("nodes", out var nodes)
+            ? [.. nodes.EnumerateArray().Select(label => label.GetProperty("name").GetString() ?? "")]
+            : [];
 
     /// <summary>
     /// Une issue telle que l'API la rend : sans ses enfants, mais sachant de qui elle
     /// pend. La forme intermédiaire de la première passe — le domaine, lui, ne connaît
     /// que l'arbre reconstruit.
     /// </summary>
-    private sealed record FlatIssue(string Key, string Title, string Column, string? ParentKey);
+    private sealed record FlatIssue(
+        string Key,
+        string Title,
+        string Column,
+        string? ParentKey,
+        IReadOnlyList<string> Labels);
 }
