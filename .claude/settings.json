@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet restore)",
+      "Bash(dotnet restore:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git switch:*)",
+      "Bash(git checkout -b:*)",
+      "Bash(git branch:*)",
+      "Bash(git rebase:*)",
+      "Bash(git merge --ff-only:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh pr review:*)"
+    ],
+    "deny": [
+      "Read(./**/.env)",
+      "Read(./**/.env.*)"
+    ]
+  }
+}
