@@ -132,6 +132,19 @@ diagnostic sur cette API doit lire le corps : le code HTTP seul n'apprend rien.
 | `projects(250)` nu | 300 | ✅ |
 | `projects(6)` nu | 8 | ✅ |
 
+Et les deux requêtes que le client compose désormais (mesurées le 2026-07-26, après bascule) :
+
+| Requête du client | `x-complexity` |
+|---|---|
+| `projects(250) { pageInfo, id, name }` | **600** |
+| `issues(250) { … labels(10), project { id } }` | **8** |
+| **total pour le tableau entier** | **608** — contre 8 280 |
+
+⚠️ Le poste dominant a changé de camp : c'est désormais la liste des **projets** qui coûte,
+et son coût suit sa borne `first:` (le `pageInfo` en double le prix : 300 → 600). Le
+descendre serait facile mais imposerait de paginer plus souvent ; à 6 % du plafond, il n'y
+a rien à gagner.
+
 ⚠️ **Correction d'une affirmation de ce document.** Il disait que `25 × 50` tenait « avec de
 la marge » : c'est faux, il n'en reste **1 720**. L'ajout de `labels(first: 10)` en a mangé
 une large part — sur la forme haute, le refus mesuré est passé de 22 555 à **33 060**. Un

@@ -15,52 +15,6 @@ public sealed class LinearTaskBoard : ITaskBoard
 {
     private const string Endpoint = "https://api.linear.app/graphql";
 
-    /// <summary>
-    /// Ce qu'on demande au tableau. ⚠️ On ne demande <b>pas</b> <c>children</c>, bien que
-    /// l'API le rende : <c>parent</c> suffit à reconstruire l'arbre (les deux disent la
-    /// même arête, vue des deux bouts) et demander moins allège la réponse. Le
-    /// <c>pageInfo</c>, lui, n'est pas décoratif — il porte l'aveu de troncature.
-    ///
-    /// <para>
-    /// ⚠️ <b>Linear plafonne la complexité d'une requête à 10 000</b>, et elle se
-    /// multiplie sur les <c>first:</c> imbriqués : <c>50 × 100</c> vaut 22 555 et se fait
-    /// refuser en 400. Les bornes ci-dessous (25 × 50) tiennent avec de la marge. Les
-    /// relever <b>sans recalibrer</b> casserait l'appel — et c'est précisément pourquoi
-    /// la troncature se dit (<c>IsTruncated</c>) au lieu de se compenser par des bornes
-    /// toujours plus hautes.
-    /// </para>
-    ///
-    /// <para>
-    /// ⚠️ <b>Les étiquettes coûtent un troisième facteur</b> — <c>25 × 50 × 10</c>. Le
-    /// <c>first:</c> y est explicite <b>à dessein</b> : l'omettre laisserait Linear
-    /// appliquer son défaut (50), et le budget partirait sans qu'on l'ait décidé. Dix
-    /// étiquettes sur une carte est déjà beaucoup ; au-delà, la troncature est
-    /// <b>silencieuse</b>, et un prédicat qui vise l'étiquette tronquée conclurait à tort
-    /// que la carte ne la porte pas. Dette connue, à porter dans le modèle le jour où une
-    /// carte réelle dépasse — pas avant.
-    /// </para>
-    /// </summary>
-    private const string Query = """
-        query {
-          projects(first: 25) {
-            nodes {
-              id
-              name
-              issues(first: 50) {
-                pageInfo { hasNextPage }
-                nodes {
-                  identifier
-                  title
-                  state { name }
-                  parent { identifier }
-                  labels(first: 10) { nodes { name } }
-                }
-              }
-            }
-          }
-        }
-        """;
-
     private readonly ISecretStore _secrets;
     private readonly string _secretKey;
     private readonly HttpClient _http;
@@ -76,8 +30,13 @@ public sealed class LinearTaskBoard : ITaskBoard
         _http = http ?? new HttpClient();
     }
 
-    public async Task<IReadOnlyList<TaskProject>> ListProjectsAsync(CancellationToken cancellationToken = default) =>
-        LinearBoardReader.Read(await PostAsync(Query, cancellationToken).ConfigureAwait(false));
+    /// <summary>
+    /// Le tableau <b>entier</b>. La composition des requêtes et le suivi des curseurs
+    /// appartiennent au <see cref="LinearBoardCollector"/> — ici on ne prête que le POST,
+    /// qui est bien tout ce que cette classe sait faire.
+    /// </summary>
+    public Task<IReadOnlyList<TaskProject>> ListProjectsAsync(CancellationToken cancellationToken = default) =>
+        new LinearBoardCollector(PostAsync).CollectAsync(cancellationToken);
 
     public async Task<TrackerWorkspace> DescribeWorkspaceAsync(CancellationToken cancellationToken = default) =>
         LinearBoardReader.ReadWorkspace(await PostAsync(WorkspaceQuery, cancellationToken).ConfigureAwait(false));

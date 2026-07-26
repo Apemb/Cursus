@@ -9,10 +9,17 @@ namespace Cursus.Trackers.Linear;
 /// <b>testée</b> du client, parce que c'est la seule qui décide quelque chose.
 ///
 /// <para>
-/// ⚠️ <b>L'arbre n'est pas donné par l'API, il se reconstruit.</b> Linear rend
-/// <c>project.issues</c> <b>à plat</b>, parents et enfants confondus et dans un ordre
-/// quelconque (l'enfant précède souvent sa mère). Le lien se lit sur <c>parent</c>,
-/// jamais sur la position dans la liste — d'où deux passes : indexer, puis suspendre.
+/// ⚠️ <b>L'arbre n'est pas donné par l'API, il se reconstruit.</b> Linear rend les issues
+/// <b>à plat</b>, parents et enfants confondus et dans un ordre quelconque (l'enfant
+/// précède souvent sa mère). Le lien se lit sur <c>parent</c>, jamais sur la position dans
+/// la liste — d'où deux passes : indexer, puis suspendre.
+/// </para>
+///
+/// <para>
+/// ⚠️ <b>Le regroupement par projet ne vient plus de l'API non plus.</b> La lecture part
+/// désormais des issues prises à la racine, pour n'avoir qu'un curseur au lieu d'un par
+/// projet (<c>linear-api.md</c> §7bis) ; c'est <see cref="Assemble"/> qui raccroche
+/// chaque carte au projet qu'elle nomme.
 /// </para>
 /// </summary>
 public static class LinearBoardReader
@@ -116,39 +123,6 @@ public static class LinearBoardReader
         var roots = issues.Where(issue => issue.ParentKey is null || !present.Contains(issue.ParentKey));
 
         return new TaskProject(project.Id, project.Name, [.. roots.Select(root => Suspend(root, byParent))]);
-    }
-
-    public static IReadOnlyList<TaskProject> Read(string json)
-    {
-        using var document = JsonDocument.Parse(json);
-        var nodes = document.RootElement.GetProperty("data").GetProperty("projects").GetProperty("nodes");
-
-        return [.. nodes.EnumerateArray().Select(ReadProject)];
-    }
-
-    /// <summary>
-    /// La forme <b>imbriquée</b>, appelée à disparaître avec <see cref="Read"/> : elle
-    /// passe par le même <see cref="Group"/> que la lecture paginée, pour qu'il n'existe
-    /// pas deux logiques d'arbre susceptibles de diverger pendant la transition.
-    /// </summary>
-    private static TaskProject ReadProject(JsonElement project)
-    {
-        var connection = project.GetProperty("issues");
-        var bare = new BareProject(
-            project.TryGetProperty("id", out var id) ? id.GetString() ?? "" : "",
-            project.GetProperty("name").GetString() ?? "");
-
-        var grouped = Group(bare, [.. connection.GetProperty("nodes").EnumerateArray().Select(ReadFlat)]);
-
-        // ⚠️ Pas NextCursorOf : « il y a une suite » et « où reprendre » ne sont pas la
-        // même question. Cette requête-ci demande hasNextPage sans endCursor — elle
-        // avoue la troncature sans savoir la franchir.
-        return grouped with
-        {
-            IsTruncated = connection.TryGetProperty("pageInfo", out var page)
-                && page.TryGetProperty("hasNextPage", out var more)
-                && more.GetBoolean(),
-        };
     }
 
     /// <summary>Suspend récursivement les enfants d'une issue sous elle.</summary>
