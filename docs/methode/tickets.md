@@ -309,9 +309,9 @@ force à assimiler des étapes qui ne se correspondent pas. D'où deux matrices.
 | **Backlog** | Le cap est nommé et argumenté, pas encore ordonné dans la trajectoire | — |
 | **Discovery** | Le **besoin** est établi et vaut qu'on s'y arrête ; des pistes sont ouvertes, aucune n'est choisie. Sortie légitime vers `Canceled` : *on ne fait pas*, ou *le besoin n'est pas celui-là* → [`dod/feature/discovery.md`](dod/feature/discovery.md) | Produit, UX |
 | **Spec** | Les options sont **arbitrées** (faisabilité, coût, écarts écrits), la capacité est énoncée, **la recette est définie** → [`dod/feature/spec.md`](dod/feature/spec.md) | Produit, UX, **tech, QA** |
-| **In Progress** | Le **découpage a eu lieu** — les incréments existent, avec leurs frontières et leur ordre — et au moins l'un d'eux a démarré | — |
-| **Validation** | La feature est **recettée contre sa spec** | Produit, QA |
-| **Completed** | Tous ses incréments sont `Done`, `trajectoire.md` acte la jambe, un `D-NNN` est écrit si un arbitrage a été tranché | — |
+| **In Progress** | Le **découpage a eu lieu** — les incréments existent, avec leurs frontières et leur ordre — et au moins l'un d'eux a démarré → [`dod/feature/in-progress.md`](dod/feature/in-progress.md) | — |
+| **Validation** | La feature est **recettée contre sa spec** → [`dod/feature/validation.md`](dod/feature/validation.md) | Produit, QA |
+| **Completed** | Tous ses incréments sont `Done`, `trajectoire.md` acte la jambe, un `D-NNN` est écrit si un arbitrage a été tranché → [`dod/feature/completed.md`](dod/feature/completed.md) | — |
 
 **Attention au `type` que Linear range derrière ces noms** — c'est lui, jamais le nom, qui
 décide de ce qui compte comme démarré (`startedAt`, filtres, graphes). Ici : `Backlog` est
@@ -332,14 +332,14 @@ spec un contrat plutôt qu'un document d'intention.
 
 | Statut | **Incrément** (issue) | **Pas** (sous-tâche) |
 |---|---|---|
-| **Backlog** | Une **salle d'attente à deux populations** : ce qui est né du découpage mais **pas encore éligible** (un `blockedBy` ouvert), et ce qui **n'a pas de parent** — voir ci-dessous | Créé au découpage, son tour n'est pas venu |
-| **Todo** | **La colonne d'éligibilité** : plus aucun `blockedBy` ouvert, le contexte tient dans la carte | Son incrément est `In Progress` et ce pas est le suivant |
+| **Backlog** | Une **salle d'attente à deux populations** : ce qui est né du découpage mais **pas encore éligible** (un `blockedBy` ouvert), et ce qui **n'a pas de parent** — voir ci-dessous → [`dod/story/backlog.md`](dod/story/backlog.md) | Créé au découpage, son tour n'est pas venu |
+| **Todo** | **La colonne d'éligibilité** : plus aucun `blockedBy` ouvert, le contexte tient dans la carte → [`dod/story/todo.md`](dod/story/todo.md) | Son incrément est `In Progress` et ce pas est le suivant → [`dod/pas/todo.md`](dod/pas/todo.md) |
 | **Planning** | C'est **ici que le plan d'archi s'écrit**, et qu'il découpe l'incrément en pas. **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon **on saute** directement à `In Progress` | — *(un pas qui exigerait son plan d'archi aurait la taille d'un incrément)* |
-| **Plan Review** | Le plan d'archi est écrit, avec son **schéma-delta**, et il est **en cours de revue** — voir §6.3 | — |
+| **Plan Review** | Le plan d'archi est écrit, avec son **schéma-delta**, et il est **en cours de revue** — voir §6.3 → [`dod/story/plan-review.md`](dod/story/plan-review.md) | — |
 | **In Progress** | La série de cycles TDD tourne ; la documentation se met à jour **au fil**, pas à la fin | Un cycle : rouge observé *pour la bonne raison*, vert, refactor. La test list s'écrit ici et vit ici |
-| **Code Review** | Le comportement est **complet** ; le diff se relit d'un bloc, les commits sont argumentés, `architecture.md` / `decisions.md` sont à jour. La test list et la **formulation des comportements** se raffinent ici | — *(on ne relit pas un commit isolé, on relit un comportement)* |
-| **QA Review** | **Conditionnel** : obligatoire dès que l'incrément touche la présentation (§7.12, non testée) — l'app est lancée, le parcours refait à la main. **Sautée** pour un incrément purement Core, et le dire vaut mieux que traverser la colonne pour la forme | — |
-| **Done** | L'acceptation est cochée **case par case**, la validation manuelle est faite si elle était due | Commit fait, suite verte, **0 warning** |
+| **Code Review** | Le comportement est **complet** ; le diff se relit d'un bloc, les commits sont argumentés, `architecture.md` / `decisions.md` sont à jour. La test list et la **formulation des comportements** se raffinent ici → [`dod/story/code-review.md`](dod/story/code-review.md) | — *(on ne relit pas un commit isolé, on relit un comportement)* |
+| **QA Review** | **Conditionnel** : obligatoire dès que l'incrément touche la présentation (§7.12, non testée) — l'app est lancée, le parcours refait à la main. **Sautée** pour un incrément purement Core, et le dire vaut mieux que traverser la colonne pour la forme → [`dod/story/qa-review.md`](dod/story/qa-review.md) | — |
+| **Done** | L'acceptation est cochée **case par case**, la validation manuelle est faite si elle était due → [`dod/story/done.md`](dod/story/done.md) | Commit fait, suite verte, **0 warning** → [`dod/pas/done.md`](dod/pas/done.md) |
 
 **`Backlog` porte deux fonctions selon le niveau**, et c'est le piège du mot. Au niveau
 **projet**, c'est le début du flux nominal. Au niveau **issue**, c'est une salle d'attente : un

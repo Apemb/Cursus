@@ -127,18 +127,27 @@ personnel écrase silencieusement son homonyme du dépôt.
 
 | Skill | Étape | Ce qu'il porte | État |
 |---|---|---|---|
-| `discovery` | 1 | Établir le besoin sans le confondre avec une solution ; ouvrir des pistes sans arbitrer ; savoir conclure *on ne fait pas* | **à écrire** |
-| `spec` | 2 | Arbitrer les options avec faisabilité et coût, **écrire les écarts**, énoncer la capacité, définir la recette | **à écrire** |
-| `revue-spec` | 3 | Valider une spec qu'on n'a pas co-écrite. Lister les divergences, **ne pas réécrire** | **à écrire** |
-| `decoupage` | 4 | Produire les incréments et leurs **frontières** ; déposer dans chacun le hors-périmètre **en nommant les frères** | **à écrire** |
-| `plan-archi` | 5 | Le plan gaté de `CLAUDE.md` : schéma-delta, blocs touchés, découpage en pas | **à écrire** |
-| `revue-plan` | 6 | La boucle : verdict structuré, compteur de tours, escalade par assignation | **à écrire** |
-| `prendre-un-pas` | 7 | Test list, cycles TDD (rouge observé *pour la bonne raison*), commit argumenté | **à écrire** |
-| `revue-code` | 8 | Relire un **comportement**, pas un commit ; raffiner la test list et la formulation des comportements | **à écrire** |
+| `discovery` | 1 | Établir le besoin sans le confondre avec une solution ; ouvrir des pistes sans arbitrer ; savoir conclure *on ne fait pas* | [**draft**](../../.claude/skills/discovery/SKILL.md) |
+| `spec` | 2 | Arbitrer les options avec faisabilité et coût, **écrire les écarts**, énoncer la capacité, définir la recette | [**draft**](../../.claude/skills/spec/SKILL.md) |
+| `revue-spec` | 3 | Valider une spec qu'on n'a pas co-écrite. Lister les divergences, **ne pas réécrire** | [**draft**](../../.claude/skills/revue-spec/SKILL.md) |
+| `decoupage` | 4 | Produire les incréments et leurs **frontières** ; déposer dans chacun le hors-périmètre **en nommant les frères** | [**draft**](../../.claude/skills/decoupage/SKILL.md) |
+| `plan-archi` | 5 | Le plan gaté de `CLAUDE.md` : schéma-delta, blocs touchés, découpage en pas | [**draft**](../../.claude/skills/plan-archi/SKILL.md) |
+| `revue-plan` | 6 | La boucle : verdict structuré, compteur de tours, escalade par assignation | [**draft**](../../.claude/skills/revue-plan/SKILL.md) |
+| `prendre-un-pas` | 7 | Test list, cycles TDD (rouge observé *pour la bonne raison*), commit argumenté | [**draft**](../../.claude/skills/prendre-un-pas/SKILL.md) |
+| `revue-code` | 8 | Relire un **comportement**, pas un commit ; raffiner la test list et la formulation des comportements | [**draft**](../../.claude/skills/revue-code/SKILL.md) |
 
-Remplacer « à écrire » par un lien vers le fichier au fur et à mesure. Une ligne sans lien est
-une étape encore manuelle — c'est l'unique état d'avancement que ce document a le droit de
-porter.
+Une ligne sans lien est une étape encore manuelle — c'est l'unique état d'avancement que ce
+document a le droit de porter. **`draft` n'est pas `écrit`** : le fichier existe et se charge, mais
+il a été rédigé d'après l'état de l'art au lieu d'être récolté sur une exécution réelle, contre ce
+que prescrit la sous-section suivante. Chaque draft porte cet aveu en tête. Le premier usage réel
+promeut ou corrige, et c'est le journal des frictions qui tranche — pas le fichier.
+
+Deux **primitifs** s'ajoutent aux huit, parce que trois skills réinventaient le même geste :
+[`interrogatoire`](../../.claude/skills/interrogatoire/SKILL.md) porte l'entretien — les *faits* sont à la
+charge de l'agent, les *décisions* reviennent à l'humain, une question à la fois — et
+[`revue`](../../.claude/skills/revue/SKILL.md) porte la mécanique commune aux trois relectures :
+deux axes jamais fondus, citation obligatoire du référentiel et de l'extrait, abstention explicite
+quand le référentiel manque. Les autres les invoquent au lieu de les recopier.
 
 **Ordre** : `prendre-un-pas` d'abord. C'est le plus petit périmètre, l'erreur y coûte un commit,
 il ne dépend d'aucun autre — on peut lui tendre un pas écrit à la main — et il rend tout de
@@ -172,7 +181,10 @@ contraignent l'architecture avant la rédaction — vit dans `docs/reference/ski
 
 ## 5. Registre
 
-**Construit** : rien. Aucun skill n'existe, aucune étape n'est automatisée.
+**Construit** : rien d'**éprouvé**. Les dix skills existent en **draft** (les huit étapes, plus
+les primitifs `interrogatoire` et `revue`) et les douze DoD sont écrites — mais aucun n'a servi sur un
+travail réel, donc tout cela est du *tranché non validé*, pas du construit. Aucune étape n'est
+automatisée.
 
 **Tranché mais pas construit** : le flux et ses régimes (`D-036`), les trois lieux, l'escalade
 par assignation, le rangement des skills dans `.claude/skills/`, la méthode d'écriture des

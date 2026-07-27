@@ -2176,3 +2176,91 @@ deviendrait permanente par inertie, et personne ne saurait plus pourquoi elle ex
 Linear) · `CLAUDE.md` §Branches — qui **remplace** l'ancienne §Commits, devenue sans objet : le
 grain du commit n'est plus une discipline mais une conséquence du squash · `D-036` (les trois
 niveaux) · `D-039` (la récolte avant le skill) · `D-041` (le flux tiré).
+
+---
+
+## D-043 — Drafter les skills contre `D-039` : ce qui a un référentiel se traduit, le reste se récolte
+
+**Contexte.** `D-039` avait renversé l'ordre d'écriture des skills : on exécute la tâche **sans**
+skill, on tient un journal des frictions, et le journal écrit le skill. Le motif n'était pas la
+prudence mais l'**évaluabilité** — un skill écrit d'avance se teste sur des cas imaginés, où
+l'exécution avec et sans marque pareil. Trois mois plus tard, l'état réel était : **seize entrées de
+journal, zéro skill**, et une seule étape du flux réellement exécutée (la Discovery de `D-041`).
+
+Deux faits ont changé l'arbitrage. D'abord, l'étude de trois corpus extérieurs
+(`docs/reference/{bmad,task-master,mattpocock-skills}.md`) a comblé le trou qui rendait l'écriture
+risquée : on ne savait pas ce qu'est un bon `SKILL.md`, on le sait désormais. Ensuite, le
+contre-exemple de Task Master a nommé le risque **inverse** de celui que `D-039` couvrait — un
+artefact d'apprentissage que rien ne recharge devient une archive, et leur propre règle
+d'auto-amélioration des règles n'a jamais été modifiée en six mois. Un journal parfait que personne
+ne consomme perd contre un skill imparfait qui tourne.
+
+### 1. Le test qui départage, et qui n'est pas un compromis
+
+**Le contenu existe-t-il déjà ailleurs, écrit et validé ?**
+
+- **Oui → drafter.** C'est une *traduction* — transformer un référentiel en processus qui le
+  satisfait — et il existe quelque chose contre quoi juger le résultat.
+- **Non → récolter.** Sans référentiel, on ne sait pas distinguer un bon skill d'un skill plausible.
+  C'est exactement l'argument de `D-039`, et il n'est **pas** réfuté ici.
+
+Ce test n'est pas neuf : `D-041` l'appliquait sans le nommer, en n'écrivant que les deux DoD dont
+l'exécution avait révélé le besoin.
+
+### 2. Ce qui a été fait, et sous quelle réserve
+
+Dix skills et douze DoD, draftés d'un bloc. Seuls `discovery` et `spec` passaient le test ; les
+autres ont été draftés quand même, contre la règle, au motif du §Contexte. La réserve est donc
+**inscrite dans les artefacts eux-mêmes** : chaque fichier porte en tête l'aveu qu'il a été écrit
+d'après l'état de l'art au lieu d'être récolté, et que le journal des frictions prime sur lui en cas
+de désaccord. `flux.md` §5 les classe en *tranché non validé* — **`draft` n'est pas `écrit`**.
+
+C'est la contrepartie qui rend la dérogation acceptable : un draft qui ne dit pas qu'il est un draft
+serait indiscernable d'une méthode validée dans trois semaines, et c'est précisément le piège que
+`mattpocock-skills.md` documente sous le nom de *template riche que rien ne charge*.
+
+### 3. Deux primitifs, parce que trois skills réinventaient le même geste
+
+`interrogatoire` porte l'entretien — les **faits** sont à la charge de l'agent, les **décisions**
+reviennent à l'humain, une question à la fois, avec une réponse recommandée. `revue` porte la
+mécanique commune aux trois relectures : deux axes **jamais fondus**, citation obligatoire du
+référentiel et de l'extrait, **abstention explicite** quand le référentiel manque.
+
+L'extraction est faite d'emblée plutôt qu'après coup, sur la foi d'une mesure extérieure : dans le
+corpus de Matt Pocock, le skill qui invoque le primitif d'entretien est passé de 79 à **7 lignes** le
+jour où ce primitif a été extrait. Le coût de l'extraction tardive est donc connu, et il est payé
+par tous les appelants.
+
+### 4. Ce que les DoD gagnent à épouser les branches
+
+Les DoD vivent en `docs/methode/dod/{feature,story,pas}/` — `story/` et non `incrément/`, pour que
+les trois répertoires **coïncident avec les préfixes de branche de `D-042`**. Un seul vocabulaire de
+niveau sert désormais au tracker, aux branches et aux DoD.
+
+### 5. Le droit de ne pas écrire un fichier
+
+Quatre fichiers ont été refusés avec leur motif — `feature/backlog` (aucun aval ne tire la carte,
+donc rien à vérifier), `pas/backlog`, `pas/in-progress`, et l'annexe des code smells de `revue-code`
+(le modèle les connaît ; en charger la liste serait un no-op).
+
+**Une case sans DoD est un état lisible ; un fichier creux est un mensonge.** Cette clause vaut
+au-delà des DoD : c'est la règle qui empêche un corpus de méthode de se remplir pour paraître
+complet.
+
+### Ce qui reste daté, et doit être rejugé
+
+**La dérogation est ponctuelle, pas un renversement de `D-039`.** Son argument d'évaluabilité tient
+toujours : ces drafts n'ont **aucune** validation, et rien ne dit encore lequel améliore quoi que ce
+soit. Le premier travail de code réel — qui inaugurera aussi la cascade de `D-042`, jamais appliquée
+— est leur mise à l'épreuve. Trois issues possibles par skill, et il faut les nommer maintenant pour
+ne pas se contenter de la première : **promu** (il a servi tel quel), **corrigé par le journal**, ou
+**retiré** parce qu'il décrivait un geste que personne ne fait.
+
+Si la troisième issue domine, alors `D-039` avait raison sur toute la ligne et c'est cette entrée-ci
+qu'il faudra superséder.
+
+**Renvoi** : `flux.md` §4 (les dix drafts et les deux primitifs) et §5 (le registre) · `tickets.md`
+§6.1–§6.2 (les douze DoD reliées) · `docs/reference/mattpocock-skills.md` (l'artisanat, et la
+mesure du primitif extrait) · `docs/reference/task-master.md` (le risque inverse, chiffré) ·
+`D-039` (la récolte, non réfutée) · `D-041` (les DoD, et le test appliqué sans être nommé) ·
+`D-042` (les préfixes de branche que les DoD épousent).
