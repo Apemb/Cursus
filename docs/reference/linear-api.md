@@ -24,6 +24,19 @@ curl -s -X POST https://api.linear.app/graphql \
 ⚠️ **Le jeton se passe brut**, sans préfixe `Bearer` — c'est une *Personal API key*. (Un jeton OAuth,
 lui, prendrait `Bearer`. On ne vise pas OAuth : Cursus est un outil de dev mono-utilisateur.)
 
+⚠️ **L'introspection, elle, ne demande aucun jeton** (mesuré le 2026-07-27). Le même endpoint rend le
+schéma sans en-tête `Authorization` — c'est de loin la façon la moins chère de vérifier qu'un champ
+existe **avant** d'écrire du code contre lui, et elle ne consomme aucun budget de complexité :
+
+```bash
+curl -s -X POST https://api.linear.app/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{ __type(name: \"CommentCreateInput\") { inputFields { name } } }"}'
+```
+
+Le jeton n'est requis que pour lire ou écrire des **données**. Corollaire pratique : on peut sonder la
+forme d'une mutation depuis n'importe où, sans clé et sans rien risquer sur le vrai tableau.
+
 ## 2. L'espace sondé
 
 | | |
@@ -250,12 +263,69 @@ Conséquence directe, et visible : **l'écran des tâches de Cursus affiche `&am
 dé-échapper à la traduction, là où le reste de la lecture se fait — pas dans la vue, sinon
 chaque affichage devra s'en souvenir.
 
-## 10. Ce que la sonde n'a pas couvert
+## 10. Commentaires — les ancrer, et les solder
+
+> Sondé le 2026-07-27, **par introspection du schéma seulement**. Aucune de ces mutations n'a été
+> exécutée : ce qui suit dit ce que l'API *permet*, pas ce qu'elle *fait*. La distinction vaut plus
+> ici qu'ailleurs — un commentaire écrit est visible de tous sur la carte, et ne se retire pas
+> discrètement.
+
+**Le motif de la sonde.** Le MCP Linear (`save_comment`) ne sait **ni ancrer un commentaire, ni le
+résoudre** — son input n'a ni ancre ni champ de résolution, et le `quotedText` qu'il rend en lecture
+est à sens unique. GraphQL sait faire les deux. C'est ce qui départage les deux voies dès qu'un agent
+doit rendre une relecture d'artefact sur la carte plutôt que dans un terminal.
+
+### 10a. L'ancre
+
+`CommentCreateInput` porte `quotedText` **et** `documentContentId`. Et `Document` expose
+`documentContentId` en champ direct — inutile de traverser `DocumentContent` pour l'obtenir :
+
+```graphql
+{ document(id: "…") { documentContentId } }
+
+mutation {
+  commentCreate(input: {
+    documentContentId: "…"
+    quotedText: "le passage exact, tel qu'il figure dans le document"
+    body: "la divergence, en Markdown"
+  }) { comment { id } }
+}
+```
+
+Les autres ancres du même input, non sondées : `issueId`, `projectId`, `initiativeId`,
+`projectUpdateId`, `initiativeUpdateId`, `postId`, et `parentId` pour répondre dans un fil.
+
+### 10b. Le solde
+
+```
+commentResolve(id, resolvingCommentId)
+commentUnresolve(id)
+```
+
+⚠️ `resolvingCommentId` nomme **quel commentaire solde la divergence**, pas seulement qu'elle l'est.
+C'est très exactement la clause de `docs/methode/dod/feature/spec.md` §2 — *« reprise, ou refusée avec
+sa raison écrite ; une divergence sans suite écrite n'est pas soldée »*. Le modèle de données porte
+déjà la sémantique de la méthode : il n'y a rien à simuler à côté.
+
+Corollaire de répartition, si un agent relit : il **pose**, l'humain **résout**. Ce n'est pas une
+limite technique — c'est la DoD qui le veut (*« l'humain prononce l'accord »*).
+
+### 10c. Deux champs à éprouver avant de bâtir dessus
+
+`CommentCreateInput` porte aussi `createAsUser` et `displayIconUrl` : de quoi faire signer un
+commentaire par un relecteur **nommé** plutôt que par le porteur de la clé — ce qui rendrait une revue
+tierce lisible comme telle sur la carte. Ces champs sont, chez d'autres API, réservés aux jetons
+d'application ; avec une *Personal API key*, c'est à vérifier **tôt**, avant d'avoir construit autour.
+
+## 11. Ce que la sonde n'a pas couvert
 
 À sonder avant de s'y appuyer :
 
 - **les mutations** (`issueUpdate` pour déplacer, `issueAddLabel` pour étiqueter) — elles écrivent
   sur le vrai tableau, donc réservées à `2·2b`+ et à faire sur une issue de test ;
+- **les mutations de commentaire du §10** — leur *schéma* est sondé, leur *exécution* ne l'est pas.
+  Notamment : ce que Linear fait d'un `quotedText` qui ne correspond à aucun passage du document, et
+  si `createAsUser` est accepté d'une *Personal API key* ;
 - **l'idempotence** exigée au §7.10.3 : déplacer vers la colonne où la carte est déjà doit réussir —
   à vérifier, pas à supposer ;
 - les **limites de débit** en pratique : les plafonds sont connus (§6), mais aucune fenêtre n'a
