@@ -182,11 +182,15 @@ c'est pour ça qu'il est explicite.
 
 ## 8. Registre
 
-**Construit** : le vocabulaire n'existe qu'à moitié dans Linear — `Rework Needed` et `Done` sont
-en place depuis `D-041` ; `Review Requested`, `Rework Done`, `Human Review` et `Escalated` sont à
-créer. Côté outillage, les gestes de la boucle sont construits et éprouvés contre le vrai Linear :
-poser une remarque située, lister les ouvertes, en solder une en écrivant ce qui la solde
-(`D-046`).
+**Construit** : le vocabulaire existe **en entier** dans Linear depuis le 2026-07-30 — `Rework
+Needed` et `Done` depuis `D-041`, `Review Requested`, `Rework Done` et `Human Review` créées dans
+`Advancement Labels`, `Escalated` créée hors groupe. La colonne d'issue `In Review`, orpheline, a été
+supprimée le même jour. Côté outillage, les gestes de la boucle sont construits et éprouvés contre le
+vrai Linear : poser une remarque située, lister les ouvertes, en solder une en écrivant ce qui la
+solde (`D-046`).
+
+⚠️ **Aucune de ces étiquettes n'a encore été posée par un skill.** Exister n'est pas servir : le
+registre ci-dessous reste celui d'un dispositif non éprouvé.
 
 **Tranché mais pas construit** : tout le reste de ce fichier. Aucun tour n'a tourné. Les deux
 primitifs que le cycle réclame — `correction` et `verification` — **n'existent pas**, et
