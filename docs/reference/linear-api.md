@@ -265,15 +265,26 @@ chaque affichage devra s'en souvenir.
 
 ## 10. Commentaires — les ancrer, et les solder
 
-> Sondé le 2026-07-27, **par introspection du schéma seulement**. Aucune de ces mutations n'a été
-> exécutée : ce qui suit dit ce que l'API *permet*, pas ce qu'elle *fait*. La distinction vaut plus
-> ici qu'ailleurs — un commentaire écrit est visible de tous sur la carte, et ne se retire pas
-> discrètement.
+> Schéma introspecté le 2026-07-27 ; **mutations exécutées pour de vrai le 2026-07-28**, sur le
+> document du plan d'archi de `CUR-45` (incrément clos), et les cinq commentaires de sonde
+> supprimés derrière. Ce qui suit dit donc ce que l'API *fait*, non ce qu'elle promet — et
+> l'écart entre les deux s'est révélé considérable (§10d).
+>
+> **Seconde campagne le 2026-07-30**, déclenchée par une observation de l'utilisateur : un
+> commentaire posé par l'API apparaissait « resolved » dans l'application. Elle a **renversé la
+> conclusion du §10d**, qui affirmait que l'ancrage était une recherche de texte à l'affichage.
+> C'est faux. La leçon de dispositif vaut d'être notée : le §10d était une **inférence** tirée
+> d'une mesure juste (`quotedText` n'est pas validé), et elle a tenu deux jours parce que rien ne
+> l'avait confrontée à l'interface. Une mutation qui réussit ne dit pas ce que l'utilisateur voit.
 
-**Le motif de la sonde.** Le MCP Linear (`save_comment`) ne sait **ni ancrer un commentaire, ni le
-résoudre** — son input n'a ni ancre ni champ de résolution, et le `quotedText` qu'il rend en lecture
-est à sens unique. GraphQL sait faire les deux. C'est ce qui départage les deux voies dès qu'un agent
-doit rendre une relecture d'artefact sur la carte plutôt que dans un terminal.
+**Le motif de la sonde.** Le MCP Linear (`save_comment`) ne sait pas **résoudre** un commentaire —
+son input n'a pas de champ de résolution. GraphQL sait le faire. C'est ce qui départage les deux
+voies dès qu'un agent doit solder une divergence sur la carte plutôt que dans un terminal.
+
+⚠️ **Ce motif était plus large, et il a été réduit par la mesure.** On croyait aussi que GraphQL
+savait *ancrer* là où le MCP ne savait pas. **Personne ne sait ancrer** : l'ancre est une marque
+dans le document, et aucune API ne l'écrit (§10d). Un agent ne peut donc pas poser de remarque
+visible sur un **document** — il pose sur le **projet** ou l'**issue** qui le porte (§10e).
 
 ### 10a. L'ancre
 
@@ -292,8 +303,14 @@ mutation {
 }
 ```
 
-Les autres ancres du même input, non sondées : `issueId`, `projectId`, `initiativeId`,
-`projectUpdateId`, `initiativeUpdateId`, `postId`, et `parentId` pour répondre dans un fil.
+Les autres ancres du même input : `issueId`, `projectId`, `initiativeId`, `projectUpdateId`,
+`initiativeUpdateId`, `postId`. **Exactement une** est exigée — mesuré, message de validation à
+l'appui. `parentId`, qui répond dans un fil, **n'en dispense pas** : une réponse porte à la fois son
+parent et l'ancre du fil, faute de quoi la mutation est refusée en `INVALID_INPUT`.
+
+⚠️ **Deux identifiants à ne pas confondre.** On **écrit** contre le `documentContentId`, mais on
+**lit** par l'`id` du document (`document(id:) { comments }`) — et `documentContent` n'existe pas à
+la racine du schéma. `Document` expose les deux champs, donc l'aller-retour se fait en une requête.
 
 ### 10b. Le solde
 
@@ -307,8 +324,28 @@ C'est très exactement la clause de `docs/methode/dod/feature/spec.md` §2 — *
 sa raison écrite ; une divergence sans suite écrite n'est pas soldée »*. Le modèle de données porte
 déjà la sémantique de la méthode : il n'y a rien à simuler à côté.
 
-Corollaire de répartition, si un agent relit : il **pose**, l'humain **résout**. Ce n'est pas une
-limite technique — c'est la DoD qui le veut (*« l'humain prononce l'accord »*).
+Trois mesures qui bornent l'usage :
+
+| Ce qu'on tente | Ce que Linear fait |
+|---|---|
+| `commentResolve` **sans** `resolvingCommentId` | ✅ résout, pose `resolvedAt` et `resolvingUser` — le champ est **optionnel** |
+| `resolvingCommentId` = une **réponse du fil** (enfant du commentaire résolu) | ✅ résout, `resolvingComment` relisible |
+| `resolvingCommentId` = un commentaire **frère** | ❌ `INTERNAL_SERVER_ERROR` — un 500 nu, pas une erreur de validation |
+
+⚠️ Le troisième cas est le piège : l'erreur ne se présente pas comme une faute d'usage, elle
+ressemble à une panne de Linear. **Un solde s'écrit donc en deux temps** — créer la réponse (ancre +
+`parentId`), puis résoudre en la nommant. C'est aussi la bonne ergonomie : la raison du solde
+s'écrit, et c'est elle qui solde.
+
+Résoudre un commentaire **déjà résolu** réussit et re-pose `resolvedAt` — l'idempotence exigée au
+§7.10.3 est donc tenue ici. (Non mesuré : si un `resolvingCommentId` déjà posé survit à un second
+`commentResolve` qui l'omet.)
+
+Corollaire de répartition — **révisé le 2026-07-30**. On écrivait ici « l'agent pose, l'humain
+résout », en s'appuyant sur la DoD (*« l'humain prononce l'accord »*). `D-045` a tranché autrement :
+un agent-vérificateur **solde**, et l'humain garde le dernier mot en relisant ce que le cycle a
+dégrossi. L'API ne contraint rien dans un sens ni dans l'autre — c'est bien une décision de méthode,
+et elle est là-bas, pas ici.
 
 ### 10c. Deux champs à éprouver avant de bâtir dessus
 
@@ -317,17 +354,167 @@ commentaire par un relecteur **nommé** plutôt que par le porteur de la clé �
 tierce lisible comme telle sur la carte. Ces champs sont, chez d'autres API, réservés aux jetons
 d'application ; avec une *Personal API key*, c'est à vérifier **tôt**, avant d'avoir construit autour.
 
+### 10d. ⚠️ L'ancre n'est pas une ancre — elle n'est jamais vérifiée
+
+Le fait le plus important de cette sonde, et le plus contre-intuitif. **Quatre citations envoyées,
+quatre acceptées**, `success: true` à chaque fois :
+
+| Citation envoyée | Réponse de Linear |
+|---|---|
+| un passage **exact et unique** du document | acceptée |
+| un passage **absent** du document, inventé pour la sonde | **acceptée** — rendue verbatim |
+| un passage **présent deux fois** (ambigu) | **acceptée** — sans signalement |
+| un passage **à cheval sur deux blocs** (fin de paragraphe + titre `##`) | **acceptée** — sauts de ligne conservés |
+
+Et l'introspection de `Comment` le confirme : le type ne porte **aucun champ positionnel** — ni
+offset, ni sélection, ni intervalle. Idem pour `CommentCreateInput`, dont les 18 champs ont été
+listés : rien qui situe. `quotedText` est un `String`, rien de plus.
+
+**Mais la conclusion qu'on en tirait était fausse.** L'ancrage n'est pas une recherche de texte à
+l'affichage : c'est une **marque posée dans le document**, et `quotedText` n'est qu'un texte
+d'affichage — ce qui explique enfin pourquoi Linear ne le valide jamais. Il ne s'en sert pas pour
+ancrer.
+
+**La marque, mesurée le 2026-07-30.** `DocumentContent` porte un champ `contentState` : l'état
+[Yjs](https://github.com/yjs/yjs) de l'éditeur, en base64. Décodé, on y trouve une marque par
+commentaire ancré :
+
+```json
+inlineComment {"commentId":"606b4fc5-…","createdBy":null,"resolved":false,"block":false}
+```
+
+Le protocole qui l'a établie, sur un document portant neuf commentaires :
+
+| Ce qu'on observe | Ce qu'on en tire |
+|---|---|
+| `documentContent.updatedAt` bouge **175 ms avant** la création d'un commentaire depuis l'UI | c'est le **client** qui écrit la marque, pas le serveur |
+| un commentaire créé par `commentCreate` n'a **aucune** marque | l'API ne l'écrit jamais |
+| 2 commentaires sur 9 portent une marque, et ce sont **exactement** les 2 que l'interface affiche | la marque **est** l'ancre ; corrélation parfaite |
+| les 7 autres sont rangés par l'UI avec les **résolus**, alors que `resolvedAt` est `null` | un commentaire sans marque n'a pas de position, donc l'UI le sort du texte |
+
+Le cas qui isole la cause : un commentaire posé par l'API dont le passage cité était **toujours
+présent, au caractère près** — vérifié jusque dans l'état Yjs décodé — et qui n'apparaissait pas
+malgré tout. Ce n'est donc pas la disparition du texte qui décide, c'est la marque.
+
+**Comment une marque meurt.** Six des sept commentaires sans marque en avaient une : leur passage a
+été réécrit, et Yjs a supprimé la marque **avec** le texte qui la portait. C'est structurel, et
+lourd de conséquence pour tout cycle de revue — l'étape qui *corrige* détruit par construction les
+ancres de l'étape qui a *relu*. Deux marques orphelines subsistent par ailleurs, pointant vers un
+commentaire supprimé : `commentDelete` ne nettoie pas le document.
+
+**Ce que l'interface lit pour l'état résolu.** `Comment.resolvedAt`, et non le `resolved` de la
+marque — mesuré : une résolution par l'API a replié le fil dans l'application **en temps réel**,
+alors que la marque portait encore `resolved: false`. Le client la rattrape ensuite (18 s plus tard
+dans la mesure), donc les deux porteurs divergent transitoirement. Sans importance à l'usage, mais
+il ne faut pas lire la marque pour connaître l'état d'un commentaire.
+
+**Trois conséquences, toutes à la charge du client :**
+
+1. **Ne pas ancrer sur un document par l'API.** C'est impossible, et le résultat est pire qu'un
+   échec : le commentaire existe, se lit comme une divergence située, et **personne ne le voit**.
+   Poser sur le projet ou l'issue (§10e).
+2. **Vérifier quand même que la citation existe, et qu'elle est unique.** Non plus pour Linear, qui
+   n'en fait rien, mais pour l'**humain et l'agent qui liront** : une citation est le seul moyen de
+   désigner un passage, et une citation ambiguë ne désigne rien. Le refus à l'écriture, avec le
+   nombre d'occurrences, force à élargir jusqu'à ce qu'elle désigne.
+3. **Ne pas présumer de la stabilité.** Le document édité après coup, la citation ne correspond plus
+   à rien. Un passage cité n'est pas une référence, c'est une **empreinte**.
+
+Corollaire pour tout client qui écrit ici : la validation de la citation reste du **vrai travail**,
+mais son métier a changé — elle ne prépare plus une ancre, elle garantit qu'une désignation est
+sans ambiguïté pour le lecteur suivant.
+
+### 10e. Poser une remarque là où elle se voit — le projet ou l'issue
+
+Puisqu'un document est hors de portée (§10d), la remarque se pose sur ce qui le **porte**. Et le
+rattachement, mesuré sur les quatre documents de l'espace, épouse exactement les niveaux de
+`docs/methode/tickets.md` :
+
+| Document | `Document.…` | Ancre du commentaire |
+|---|---|---|
+| Discovery, Spec | `project` | `projectId` |
+| Plan d'archi | `issue` | `issueId` |
+
+`Document` expose aussi `initiative`, `release` et `cycle`, non utilisés ici. Le porteur se **déduit**
+donc du document visé : c'est une lecture, pas une décision — ni l'appelant ni un agent n'a à le
+choisir.
+
+Ces deux ancres n'ont **rien à ancrer**, donc rien qui puisse échouer : un commentaire de projet ou
+d'issue est visible sans marque. Mesuré le 2026-07-30 sur `CUR-20` (issue, état `Canceled`) et sur le
+projet `Un agent pilote Cursus`, les commentaires de sonde supprimés derrière :
+
+- `quotedText` est **accepté et affiché** sur les deux, alors qu'il n'y a aucun texte à citer ;
+- le fil (`parentId`) et le solde (`commentResolve` + `resolvingCommentId`) fonctionnent — mesurés
+  sur l'**issue**, et l'interface montre l'en-tête « Resolution » sur la réponse qui solde. **Non
+  mesuré sur un projet**, le solde n'y ayant pas été tenté ;
+- un commentaire de projet atterrit dans l'onglet **Activity** du projet.
+
+⚠️ **`quotedText` est aplati à l'affichage.** Les sauts de ligne sont conservés par l'API — relus,
+ils sont bien là — mais l'interface rend la citation **sur une seule ligne**. Aucune mise en page
+n'est donc possible dedans. Le corollaire est pratique : tout ce qui doit être mis en forme (le
+repère du passage, par exemple) va dans le **corps**, qui est du Markdown rendu ; la citation reste
+le passage nu.
+
+### 10f. ⚠️ Deux façons de lire les commentaires, dont une qui ment
+
+| Porteur | Ce qui marche |
+|---|---|
+| document | `document(id:) { comments { nodes } }` — et **non** par `documentContentId`, cf. §10a |
+| issue | `issue(id:) { comments { nodes } }` |
+| **projet** | ❌ `project(id:) { comments }` renvoie **une liste vide** |
+
+Pour un projet, il faut la racine filtrée :
+
+```graphql
+{ comments(filter: { project: { id: { eq: "…" } } }, first: 50) { nodes { id body quotedText resolvedAt } } }
+```
+
+Le champ `comments` **existe** sur `Project` et ne rend aucune erreur — il rend `[]`. Mesuré avec
+quatre commentaires bel et bien présents sur le projet, visibles dans l'interface. C'est le mode
+d'échec le plus coûteux qui soit : silencieux, et indiscernable d'un projet sans commentaire. Un
+client qui construit une revue là-dessus conclurait « aucune remarque » et passerait le gate.
+
+### 10g. ⚠️⚠️ Réécrire un document par l'API détruit l'ancrage de ses commentaires
+
+Le piège le plus grave de cette référence, parce qu'il est invisible et qu'il frappe précisément au
+moment où l'on travaille bien.
+
+`DocumentUpdateInput` n'expose **pas** `contentState` — introspecté : ses 16 champs comportent
+`content` (une `String` Markdown) et rien qui touche à l'état de l'éditeur. Écrire par ce chemin
+**reconstruit** l'état Yjs depuis le Markdown, donc **efface toutes les marques** `inlineComment` du
+document, donc désancre tous ses commentaires d'un coup. Ils survivent comme objets ; ils disparaissent
+du texte.
+
+C'est ce que fait `save_document` du MCP Linear — l'outil qu'un agent prend naturellement pour
+appliquer les corrections d'une revue. **Un agent qui corrige d'après les remarques efface les
+remarques qu'il corrige.** Non mesuré directement (on n'a pas voulu détruire un document réel pour
+l'établir), mais déduit de deux faits mesurés : `contentState` est le seul porteur des marques, et
+aucune mutation ne l'accepte en entrée.
+
+La conséquence est déjà intégrée par `D-045`, qui sort les remarques du document pour cette raison
+parmi d'autres. Mais la règle vaut au-delà du cycle de revue : **ne jamais réécrire par l'API un
+document qui porte des commentaires qu'on veut garder ancrés.** Éditer dans l'interface est sans
+danger — c'est le client qui tient l'état, et il déplace les marques avec le texte.
+
 ## 11. Ce que la sonde n'a pas couvert
 
 À sonder avant de s'y appuyer :
 
 - **les mutations** (`issueUpdate` pour déplacer, `issueAddLabel` pour étiqueter) — elles écrivent
   sur le vrai tableau, donc réservées à `2·2b`+ et à faire sur une issue de test ;
-- **les mutations de commentaire du §10** — leur *schéma* est sondé, leur *exécution* ne l'est pas.
-  Notamment : ce que Linear fait d'un `quotedText` qui ne correspond à aucun passage du document, et
-  si `createAsUser` est accepté d'une *Personal API key* ;
-- **l'idempotence** exigée au §7.10.3 : déplacer vers la colonne où la carte est déjà doit réussir —
-  à vérifier, pas à supposer ;
+- **`createAsUser` / `displayIconUrl`** (§10c) : le reste des mutations de commentaire est mesuré
+  depuis le 2026-07-28, mais pas ceux-là — reste à savoir si une *Personal API key* y a droit ;
+- **le solde sur un projet** : `commentResolve` est mesuré sur une **issue** (§10e), pas sur un
+  projet. Rien ne suggère une différence — le type `Comment` est le même — mais c'est le porteur des
+  remarques de Discovery et de Spec, donc à éprouver avant de bâtir le cycle dessus ;
+- **`documentUpdate` face aux marques** (§10g) : la destruction de l'ancrage est déduite, pas
+  exécutée. La mesurer demande un document jetable portant un commentaire ancré — à faire, parce que
+  c'est un piège qu'on préfère connaître par une sonde que par une revue perdue ;
+- **l'écriture de la marque** : aucune voie trouvée pour la poser depuis l'API. L'absence d'un chemin
+  se prouve mal ; ce qui est établi, c'est qu'aucun champ des inputs introspectés ne l'accepte ;
+- **l'idempotence** exigée au §7.10.3 : mesurée sur `commentResolve` seulement (§10b). Pour le
+  déplacement de colonne — déplacer vers la colonne où la carte est déjà — c'est toujours à
+  vérifier, pas à supposer ;
 - les **limites de débit** en pratique : les plafonds sont connus (§6), mais aucune fenêtre n'a
   été poussée jusqu'au 429 ;
 - la **stabilité du curseur** sous écriture concurrente : si une carte est créée entre deux pages,
