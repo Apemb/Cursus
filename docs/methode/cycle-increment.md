@@ -34,7 +34,7 @@ est encore diffus, le choix est inverse.
 ⚠️ **Conséquence directe : `Review Requested` ne sert pas à ce niveau.** Une carte qui arrive dans
 une colonne de revue **est** à relire — la colonne porte le signal que l'étiquette porte à la
 feature. Les étiquettes en usage ici sont donc : *aucune* (à relire), `Rework Needed`,
-`Rework Done`, `Done`, plus `Human Review` et `Escalated` sur escalade.
+`Rework Done`, `Done`, plus `Human Review Requested` et `Escalated` sur escalade.
 
 **L'humain n'intervient pas à ce niveau**, sauf sur `QA Review` et sur escalade. Régime *Boucle*
 (`tickets.md` §6.3) : agent ⇄ agent, parce qu'il existe ici quelque chose contre quoi trancher —
@@ -99,8 +99,8 @@ commence la preuve.
 |---|---|---|---|
 | `Plan Review` + *aucune* | [`revue-plan`](../../.claude/skills/revue-plan/SKILL.md) | Les remarques posées **sur l'issue**, chacune citant son référentiel et l'extrait visé | `Rework Needed` \| `Done` si aucune |
 | `Plan Review` + `Rework Needed` | `correction` **(à écrire)** | Le plan repris, **une réponse dans chaque fil** disant la reprise faite ou le refus motivé | `Rework Done` |
-| `Plan Review` + `Rework Done` | `verification` **(à écrire)** | Chaque remarque soldée, ou rouverte avec ce qui manque encore | `Rework Needed` \| `Done` si `open` vaut 0 \| `Human Review` + `Escalated` |
-| `Plan Review` + `Human Review` | — *(humain)* | Le litige tranché, et sa suite écrite dans le fil | `Rework Needed` \| `Done` |
+| `Plan Review` + `Rework Done` | `verification` **(à écrire)** | Chaque remarque soldée, ou rouverte avec ce qui manque encore | `Rework Needed` \| `Done` si `open` vaut 0 \| `Human Review Requested` + `Escalated` |
+| `Plan Review` + `Human Review Requested` | — *(humain)* | Le litige tranché, et sa suite écrite dans le fil | `Rework Needed` \| `Done` |
 | `Plan Review` + `Done` | — | — | qui prend le premier pas **tire** vers `In Progress` |
 
 ⚠️ **La remarque se pose sur l'issue, jamais sur le document.** `D-045` l'a établi par la mesure :
@@ -119,7 +119,7 @@ n'apporte rien. Le gain vient de relire **sur l'artefact seul, sans le fil qui l
 
 **L'escalade est un fait, pas une alarme.** Après deux passes correction/vérification sans
 convergence sur une remarque, elle cesse de circuler ; quand plus aucune ne peut avancer, la carte
-passe en `Human Review` + `Escalated`. Compter ces occurrences par colonne dit où la boucle
+passe en `Human Review Requested` + `Escalated`. Compter ces occurrences par colonne dit où la boucle
 agentique ne tient pas — et la conclusion peut être que le skill de revue est à refaire.
 
 ---
@@ -151,8 +151,8 @@ messages de WIP, et c'est ce commit-là qui reste dans l'histoire).
 |---|---|---|---|
 | `Code Review` + *aucune* | [`revue-code`](../../.claude/skills/revue-code/SKILL.md) | Les remarques posées sur l'issue, sur **les deux axes**, chacune citant référentiel et extrait | `Rework Needed` \| `Done` si aucune |
 | `Code Review` + `Rework Needed` | `correction` **(à écrire)** | Le code repris, une réponse dans chaque fil | `Rework Done` |
-| `Code Review` + `Rework Done` | `verification` **(à écrire)** | Chaque remarque soldée ou rouverte ; `dotnet build` **0 warning** et `dotnet test` vert **sur ce diff précisément** | `Rework Needed` \| `Done` si `open` vaut 0 \| `Human Review` + `Escalated` |
-| `Code Review` + `Human Review` | — *(humain)* | Le litige tranché, sa suite écrite | `Rework Needed` \| `Done` |
+| `Code Review` + `Rework Done` | `verification` **(à écrire)** | Chaque remarque soldée ou rouverte ; `dotnet build` **0 warning** et `dotnet test` vert **sur ce diff précisément** | `Rework Needed` \| `Done` si `open` vaut 0 \| `Human Review Requested` + `Escalated` |
+| `Code Review` + `Human Review Requested` | — *(humain)* | Le litige tranché, sa suite écrite | `Rework Needed` \| `Done` |
 | `Code Review` + `Done` | — | — | tiré vers `QA Review` **ou** `Done` — voir §8 |
 
 **On relit un comportement complet, jamais un commit isolé.** Le diff se relit **d'un bloc** contre

@@ -50,7 +50,7 @@ y attend qu'un humain la tire.
 
 ## 3. `Discovery` — établir le besoin sans le confondre avec une solution
 
-**Cycle court** : binôme → revue → binôme. Ni correcteur, ni vérificateur, ni `Human Review` — le
+**Cycle court** : binôme → revue → binôme. Ni correcteur, ni vérificateur, ni `Human Review Requested` — le
 motif est en [`cycle.md`](cycle.md) §6, et il tient en une phrase : ce qui manque à une remarque de
 Discovery n'est pas de la prose mais de la **matière**, et aucun agent ne va mener l'entretien qui
 manque.
@@ -58,7 +58,7 @@ manque.
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
 | `Discovery` + *aucune* | [`discovery`](../../.claude/skills/discovery/SKILL.md) | Le document `Discovery` publié sur le projet : besoin établi **sans sa solution**, pour qui, pourquoi maintenant, **plusieurs** pistes ouvertes | `Review Requested` |
-| `Discovery` + `Review Requested` | `revue-discovery` **(à écrire)** | Les remarques posées sur le projet, ou aucune | `Rework Needed` \| `Done` |
+| `Discovery` + `Review Requested` | [`revue-discovery`](../../.claude/skills/revue-discovery/SKILL.md) | Les remarques posées sur le projet, ou aucune | `Rework Needed` \| `Done` |
 | `Discovery` + `Rework Needed` | [`discovery`](../../.claude/skills/discovery/SKILL.md), **l'humain revient dans la boucle** | Le document repris, et **chaque remarque soldée** par la reprise faite ou le refus motivé | `Review Requested` |
 | `Discovery` + `Done` | — | — | l'humain **tire** vers `Spec`, ou vers `Canceled` |
 
@@ -67,10 +67,14 @@ tient ce rôle, en relisant l'artefact repris. Le binôme solde donc ses propres
 serait complaisant dans un cycle complet — ici c'est tenable parce qu'un tour de revue de plus
 suit toujours, et parce que le relecteur voit le fil entier.
 
-**Les deux axes de `revue-discovery` sont déjà écrits**, dans
-[`dod/feature/discovery.md`](dod/feature/discovery.md) : *l'artefact est complet* (§1) et *aucun
-arbitrage n'a été rendu* (§2). Le second est le moins intuitif et le plus utile — une piste
-présentée avec une raison de ne pas la prendre a déjà été écartée, et la Discovery a mangé la Spec.
+**Les axes de `revue-discovery` étaient déjà écrits** avant lui, dans
+[`dod/feature/discovery.md`](dod/feature/discovery.md) : *l'artefact est complet* (§1), *aucun
+arbitrage n'a été rendu* (§2) — et *l'artefact s'adresse à son lecteur* (§5), que ce paragraphe
+oubliait. Le skill en fait donc **trois**, le troisième séparé parce qu'il juge la forme : un
+défaut de forme rangé à côté d'un défaut de fond emprunte son poids ([`revue`](../../.claude/skills/revue/SKILL.md) §2).
+
+Le deuxième est le moins intuitif et le plus utile — une piste présentée avec une raison de ne pas
+la prendre a déjà été écartée, et la Discovery a mangé la Spec.
 
 **Sortie légitime vers `Canceled`** : *on ne fait pas*, ou *le besoin n'est pas celui-là*. Elle
 mérite une phrase disant pourquoi — un abandon non expliqué se re-proposera.
@@ -86,10 +90,10 @@ absente — et ça se reprend en relisant l'artefact contre son référentiel.
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
 | `Spec` + *aucune* | [`spec`](../../.claude/skills/spec/SKILL.md) | Le document `Spec` : options **arbitrées** (faisabilité, coût), **écarts écrits**, capacité énoncée à l'indicatif, **recette définie**, socle et pré-requis nommés, trois registres tenus | `Review Requested` |
-| `Spec` + `Review Requested` | [`revue-spec`](../../.claude/skills/revue-spec/SKILL.md) | Les remarques posées sur le projet | `Rework Needed` \| `Human Review` si aucune |
+| `Spec` + `Review Requested` | [`revue-spec`](../../.claude/skills/revue-spec/SKILL.md) | Les remarques posées sur le projet | `Rework Needed` \| `Human Review Requested` si aucune |
 | `Spec` + `Rework Needed` | `correction` **(à écrire)** | Le document repris, **une réponse dans chaque fil** disant la reprise faite ou le refus motivé | `Rework Done` |
-| `Spec` + `Rework Done` | `verification` **(à écrire)** | Chaque remarque soldée, ou rouverte avec ce qui manque encore | `Rework Needed` \| `Human Review` si `open` vaut 0 (+ `Escalated` si une remarque a atteint son 3ᵉ désaccord) |
-| `Spec` + `Human Review` | — *(humain)* | Ses propres remarques posées, ou l'accord | `Rework Needed` \| `Done` |
+| `Spec` + `Rework Done` | `verification` **(à écrire)** | Chaque remarque soldée, ou rouverte avec ce qui manque encore | `Rework Needed` \| `Human Review Requested` si `open` vaut 0 (+ `Escalated` si une remarque a atteint son 3ᵉ désaccord) |
+| `Spec` + `Human Review Requested` | — *(humain)* | Ses propres remarques posées, ou l'accord | `Rework Needed` \| `Done` |
 | `Spec` + `Done` | — | — | l'humain **tire** vers `In Progress` |
 
 ⚠️ **La session de revue doit être neuve.** `D-039` a mesuré que relire dans la même session
@@ -162,13 +166,21 @@ deux entrées portant le même numéro ne se corrigent pas proprement.
 
 ## 8. Registre
 
-**Construit** : rien de ce cycle n'a tourné. `Discovery` est occupée par une feature réelle — *Un
-agent pilote Cursus* — dont les remarques de revue ont été posées **sur le document**, donc
-invisibles (`D-045`) ; elles sont à reposer sur le projet avant que ce cycle puisse servir.
+**Construit** : le temps ① de `Discovery` a tourné une fois, le 2026-07-30, sur *Un agent pilote
+Cursus* — document repris en binôme, pistes rouvertes en paragraphes autonomes. Le skill
+[`revue-discovery`](../../.claude/skills/revue-discovery/SKILL.md) **existe** depuis le même jour,
+et attend sa première épreuve. Les sept remarques posées à tort sur le document ont été
+**supprimées**, pas reposées : le document réécrit avait fait disparaître les passages qu'elles
+visaient.
 
-**Tranché mais pas construit** : la totalité de ce fichier. Deux skills du chemin n'existent pas
-(`revue-discovery`, et les primitifs `correction` / `verification` que `Spec` réclame), et quatre
-étiquettes sur six sont à créer.
+**Le vocabulaire d'états existe enfin au niveau où ce fichier en dépend.** Linear sépare strictement
+étiquettes d'issue et étiquettes de projet ; les six avaient d'abord été créées côté **issue** seul,
+alors qu'une feature **est un projet** — les six étiquettes de projet ont été ajoutées le
+2026-07-30, groupées, exclusivité mesurée (`cycle.md` §8). `Review Requested` y a été posée dans la
+foulée : c'est la première pose réelle du vocabulaire.
+
+**Tranché mais pas construit** : le reste de ce fichier. Les primitifs `correction` /
+`verification` que `Spec` réclame n'existent pas.
 
 **Éprouvé ailleurs, pas ici** : le trio `Discovery` → `Spec` → revue a tourné sur quelques tickets
 hors de ce dépôt, sans les étiquettes et sans agent tiers.

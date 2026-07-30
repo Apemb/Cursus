@@ -3,6 +3,10 @@
 > Tenu selon `D-039` : on exécute la méthode **sans** skill, on note chaque friction au fil de
 > l'eau, et le journal écrit le skill — après deux ou trois passages, jamais après un seul.
 > Une ligne brute par occurrence. Ce fichier n'est pas de la méthode, c'est de la matière.
+>
+> **Ce fichier ne dit pas si ça progresse** — il n'a aucune structure qui permette de comparer deux
+> passages. C'est [`rex/`](rex/README.md) qui le fait : une fiche par exécution, rubriques fixes.
+> Une fiche renvoie ici par numéro d'entrée, et ne recopie jamais.
 
 ## 2026-07-26 — Discovery de « un agent pilote Cursus »
 
@@ -74,3 +78,80 @@
     couper. L'information avait de la valeur, elle était au mauvais endroit — et sans exutoire,
     la règle « ne pas arbitrer en Discovery » pousse à détruire ce qu'on vient de comprendre.
     — *étapes 1 et 2*
+
+## 2026-07-30 — Reprise de la Discovery, et **premier tour réel du cycle de revue**
+
+Le tour de revue a tourné en `claude -p` headless, sur le vrai Linear, avec le skill découvert par
+sa seule description. C'est la première exécution du dispositif de `D-047`.
+
+17. **La friction 9 s'est répétée à quatre jours d'écart, à l'identique.** J'ai conclu de l'absence
+    du champ `parent` dans `list_project_labels` que les étiquettes de projet n'étaient pas
+    groupées — exactement le motif déjà consigné, sur exactement le même sujet, corrigé par la même
+    personne. Ce qui l'a tranchée : **provoquer l'erreur** plutôt que lire une absence (poser deux
+    étiquettes du groupe rend un `400` qui nomme le conflit). **Une friction consignée ne protège
+    que ceux qui relisent le journal** — et rien, aujourd'hui, ne le recharge au bon moment. C'est
+    le mode d'échec de `task-master.md` qui se matérialise sur notre propre journal. — *transverse*
+18. **Le vocabulaire d'états existait à moitié, et du mauvais côté.** Linear sépare étiquettes
+    d'issue et de projet ; les six avaient été créées côté issue, alors qu'une feature **est** un
+    projet. Le seul niveau qui porte ses états uniquement par étiquette était le seul à ne pas les
+    avoir — et `D-047` les déclarait créées. Un « fait » déclaré sans avoir été vu. — *transverse*
+19. **Trois gestes d'administration hors de portée de l'API**, découverts en trois heures : créer
+    une étiquette de projet, renommer une étiquette, supprimer la racine d'un fil ancré. Le motif
+    se répète assez pour être nommé — **l'API Linear couvre le travail courant, pas
+    l'administration de l'espace**. Tout dispositif supposant un agent capable de préparer son
+    propre tableau se trompe. — *transverse*
+20. **Un skill de revue calqué sur son frère hérite de son geste mort.** `revue-discovery`, écrit
+    d'après `revue-spec`, prescrivait de poser les remarques *sur le document* — ce que `D-045` a
+    tué. Réinjecté à la main. Les quatre skills de revue restant à reprendre partiront du même faux
+    départ si on les calque : leur squelette est bon, leur geste central ne l'est plus. — *étape 3*
+21. **La revue a attrapé une faute que j'avais défendue à voix haute.** J'avais présenté « cette
+    direction atteint **donc** la composition et l'observation, mais pas le déclenchement » comme
+    un fait et non un verdict — en ayant écrit, quelques heures plus tôt et de ma main, que ce
+    débordement passe « déguisé en constat ». **Connaître la règle ne protège pas de l'enfreindre ;
+    un relecteur tiers, si.** Première mesure locale du gain d'une session neuve (`D-039`).
+    — *étape 1*
+22. **La CLI ne résout pas le `slugId` d'un document**, or c'est ce qu'une URL Linear donne.
+    `cursus linear comment list 0a6d59f7b60a` échoue ; il faut le titre exact. L'agent a contourné
+    seul, mais c'est le premier identifiant qu'il avait sous la main. — *outillage*
+23. **Aucun geste d'étiquette dans la CLI.** L'agent a dû poser `Rework Needed` par le MCP, faute
+    d'équivalent. Conséquence : **un agent sans MCP Linear ne peut pas fermer le cycle**, alors que
+    la CLI existe précisément pour ne pas en dépendre. — *outillage*
+24. **Une remarque de complétude n'a aucun passage à citer.** Le geste de `D-046` suppose un
+    passage existant ; signaler un **manque** a conduit à citer le titre de section. Le repère
+    fonctionne, l'ancrage est vide de contenu. Une absence ne se cite pas. — *outillage*
+25. **Les remarques d'un agent sont signées du porteur de la clé**, donc indiscernables de celles
+    de l'humain sur la carte. `createAsUser` reste non éprouvé, et le cycle suppose de savoir qui
+    parle. — *outillage*
+26. **Premier coût mesuré d'un tour de revue** : 8 min 06 s, 21 tours, 2,99 $, trois sous-agents en
+    parallèle, 7 remarques rendues. Aucune permission refusée, aucune erreur d'outil, aucune
+    tentative d'écrire dans l'artefact. — *transverse*
+27. **La `Spec` était attachée au projet avant la revue censée la gater** — signalé hors mandat par
+    le relecteur. C'est le déversoir de la friction 16, et il a raison de tiquer : un lecteur du
+    tracker n'a aucun moyen de distinguer un brouillon-déversoir d'une spec commencée. — *étape 2*
+
+### Tour 2 de la même revue — même jour
+
+28. **Interdire un outil n'est pas interdire un geste.** `Write` et `Edit` avaient été retirés de
+    l'allowlist pour tenir la clause *« ne rien réécrire »* par le harnais plutôt que par
+    l'obéissance (`revue` §6). Mais la clause visait **l'artefact**, et l'allowlist a bloqué **toute
+    écriture de fichier** — y compris six brouillons de corps de commentaire dans `/tmp`, hors
+    dépôt. Six refus de permission, contournés seuls par des heredocs. Le harnais a tenu la clause,
+    mais **plus large qu'elle**. Une interdiction se cible sur une cible, pas sur un verbe.
+    — *transverse*
+29. **Une reprise peut être complaisante de bonne foi.** Le binôme avait soldé sept remarques en
+    retirant des **mots**, croyant retirer une **orientation** : *« l'engagement est tenu en volume,
+    il ne l'est pas en direction »*. Les six remarques du tour suivant rouvrent toutes des points
+    déjà soldés. La complaisance ne s'est pas manifestée comme un renoncement — elle s'est
+    manifestée comme un travail réel, mais sur la mauvaise grandeur. **C'est ce qui la rend
+    invisible à celui qui la commet**, et c'est exactement le cas que le cycle court parie de
+    rattraper (`cycle-feature.md` §3). Le pari tient. — *étape 1*
+30. **Un coût nul est invisible comme coût.** *« Rien n'est à construire dans Cursus pour cette
+    voie »* est une estimation de coût — ce que `dod/feature/discovery.md` §2 interdit — mais elle
+    ne ressemble pas à un chiffre, donc elle passe là où « trois semaines » serait vu. Le zéro est
+    l'angle mort de la clause. — *étape 1*
+31. **Le dossier `rex/` ne pollue pas les tours suivants** — vérifié, pas supposé. La fiche du tour
+    1 et ce journal étaient dans le dépôt et racontaient ce que le tour 1 avait trouvé ; le
+    relecteur du tour 2 ne les a **pas ouverts**. Ses constats de récidive viennent du **fil
+    Linear**, la bonne source. ⚠️ Le doute était légitime et le restera : à revérifier à chaque
+    fiche, parce que le dossier grossit et qu'un relecteur qui explore finira par tomber dessus.
+    — *transverse*

@@ -1661,8 +1661,11 @@ tant que la lecture portait sur un document ; il est devenu réel avec la cible.
 citations **périmées** (un document édité après coup ne correspond plus à la citation) — connu, hors
 v1 ; et le cycle de revue à cinq temps que `D-045` définit, dont la CLI ne fournit que les gestes.
 Non éprouvé : `createAsUser`, qui permettrait de faire signer un commentaire par un relecteur nommé
-plutôt que par le porteur de la clé. **Dette de données** : les sept remarques déposées sur le
-document de Discovery avant le reciblage sont invisibles et doivent être reposées sur la carte.
+plutôt que par le porteur de la clé. **Dette de données, soldée le 2026-07-30** : les sept remarques déposées
+sur le document de Discovery avant le reciblage n'ont pas été reposées mais **supprimées** — le
+document ayant été réécrit entre-temps, elles visaient toutes des passages disparus. ⚠️ La
+suppression a dû se faire **à la main** : la racine d'un fil ancré ne se supprime par aucune API
+(`linear-api.md` §10h), seule l'interface le permet.
 
 ---
 

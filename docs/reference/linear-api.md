@@ -515,6 +515,46 @@ parmi d'autres. Mais la règle vaut au-delà du cycle de revue : **ne jamais ré
 document qui porte des commentaires qu'on veut garder ancrés.** Éditer dans l'interface est sans
 danger — c'est le client qui tient l'état, et il déplace les marques avec le texte.
 
+### 10h. Trois murs rencontrés en usage réel — 2026-07-30
+
+Non issus d'une sonde : payés en travaillant, sur la Discovery d'*Un agent pilote Cursus*.
+
+**La racine d'un fil ancré ne se supprime pas.** `delete_comment` la refuse, avec un message
+explicite : *« Cannot delete the root comment of an inline description thread. Delete its replies
+individually, or resolve the thread instead. »* La marque vit dans l'état de l'éditeur (§10d), et
+la détruire depuis l'API laisserait le document pointer vers rien. Restent deux voies : **résoudre**
+le fil, ou le supprimer **dans l'interface**. Conséquence pratique : un fil posé au mauvais endroit
+ne se rattrape pas par outil — il faut une main humaine, ou vivre avec.
+
+**Aucune création d'étiquette de projet — et `list_project_labels` masque le groupe.** L'outillage
+MCP porte `create_issue_label` et `list_project_labels`, mais **rien** qui crée une étiquette de
+projet. Or Linear sépare strictement les deux familles : une étiquette d'issue ne s'applique pas à
+un projet, même à nom identique — il faut donc créer chaque étiquette **deux fois**, et la seconde
+à la main. ⚠️ Mesuré sur le MCP seulement ; que la mutation GraphQL existe ou non n'a pas été
+introspecté.
+
+⚠️⚠️ **Piège dans le piège** : `list_issue_labels` rend `parent` (le groupe) sur chaque étiquette,
+`list_project_labels` **ne le rend pas**. Conclure de son absence que les étiquettes de projet sont
+hors groupe est faux — l'erreur a été commise, puis corrigée par la mesure. **L'appartenance au
+groupe ne se lit pas, elle se teste** : poser deux étiquettes du même groupe sur un projet rend
+
+```
+400 invalid_request — The label 'Done' is in the same group as 'Review Requested'.
+Only one label in a group can be applied to a project.
+```
+
+L'exclusivité de groupe tient donc côté projet comme côté issue. Règle générale : quand la sortie
+d'un outil est muette sur une propriété, **provoquer l'erreur** plutôt que lire l'absence.
+
+**Un `patch` ne désancre pas ce qu'il ne traverse pas** — et cela nuance §10g. Le contenu que rend
+`get_document` **contient les balises** `<linear-comment id="…" resolved="…">…</linear-comment>` en
+clair. Une écriture par `patch` dont aucune opération ne recouvre une balise l'a laissée intacte,
+commentaire toujours ancré (observé une fois, sur un commentaire résolu, pendant qu'un autre
+passage du même document était réécrit). L'inverse reste vrai et non mesuré : envoyer un `content`
+entier, ou patcher **par-dessus** une balise, la fait disparaître. La règle utile n'est donc pas
+« ne jamais écrire par l'API » mais **« patcher, jamais remplacer, et ne pas traverser une
+marque »**.
+
 ## 11. Ce que la sonde n'a pas couvert
 
 À sonder avant de s'y appuyer :

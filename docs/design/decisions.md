@@ -2791,3 +2791,83 @@ vérificateur complaisant n'a pas de garde-fou propre.
 (le flux tiré, les deux verdicts, `Advancement Labels`) · `D-039` (la ligne de base, la session
 neuve) · `D-046` (les gestes construits) · `D-036` (les trois niveaux) ·
 `docs/methode/cycle.md` et les trois documents de niveau.
+
+---
+
+## D-048 — Le vocabulaire d'états rencontre le vrai Linear : un nom change, une famille manquait (2026-07-30)
+
+`D-047` a posé six états et les a déclarés créés. Le premier temps ① réellement joué — la Discovery
+d'*Un agent pilote Cursus* — a montré qu'ils ne l'étaient qu'à moitié, et qu'un des six noms se
+lisait dans deux sens. Cette entrée corrige les deux points, et **supersède `D-047` §3** sur le seul
+nom.
+
+### 1. `Human Review` devient `Human Review Requested`
+
+Le renommage vient de l'utilisateur, et l'argument qui l'a emporté n'est pas celui qu'il avançait.
+La série des six mélangeait deux natures : `Review Requested` et `Rework Needed` nomment ce qui est
+**attendu**, `Rework Done` et `Done` nomment ce qui est **fait**. `Human Review` était l'intrus — il
+nommait une **activité**, donc se lisait *« la relecture humaine est demandée »* autant que *« elle
+a eu lieu »*. Sur un état, l'ambiguïté est fatale, et d'autant plus que `Done` le suit
+immédiatement.
+
+`Human Review Requested` régularise la série : ② et ⑤ deviennent deux demandes symétriques, ce
+qu'elles sont exactement — l'une appelle un relecteur agent, l'autre appelle l'humain quand la
+boucle agent est sèche.
+
+**Ce que le renommage coûte, et pourquoi il force cette entrée.** Treize occurrences amendées dans
+`cycle.md`, `cycle-feature.md`, `cycle-increment.md`. Côté Linear, l'étiquette de **projet** porte
+le nouveau nom dès sa création, et celle d'**issue** a été renommée **à la main** le même jour —
+aucune API ne renomme une étiquette. Mais `D-047` §3 porte l'ancien nom **pour toujours** — le journal est
+append-only. Sans
+cette entrée, les documents de méthode et le journal se contrediraient sans que rien ne les relie.
+⚠️ **Ne pas propager le renommage à `docs/research/` ni à `reference/symphony.md`** : `Human Review`
+y désigne l'état de *Symphony*, pas le nôtre.
+
+### 2. Le vocabulaire vit deux fois, parce que Linear a deux familles d'étiquettes
+
+`D-047` §3 supposait une création unique. Faux : **Linear sépare strictement les étiquettes d'issue
+et les étiquettes de projet**, et une étiquette d'issue ne s'applique pas à un projet, fût-ce à nom
+identique. Or une **feature est un projet** (`tickets.md` §8) — donc le niveau qui porte ses états
+*uniquement* par étiquette, faute de colonne de revue (`D-047` §2), était précisément le seul à ne
+pas les avoir. Les six ont été créées côté projet le 2026-07-30.
+
+**L'appartenance au groupe ne se lit pas, elle se mesure.** `list_issue_labels` rend le champ
+`parent`, `list_project_labels` **ne le rend pas** — et conclure de son absence que les étiquettes
+de projet sont hors groupe est une erreur, commise puis corrigée en provoquant l'échec : poser deux
+étiquettes du même groupe sur un projet rend un `400` qui nomme le conflit. L'exclusivité tient donc
+des deux côtés, et avec elle le mécanisme qui fait de cet axe un **état** plutôt qu'un sac.
+
+**Aucune API ne crée d'étiquette de projet**, ni ne renomme une étiquette d'issue : ce sont des
+gestes d'interface. Troisième mur de la même journée, après l'impossibilité d'ancrer un commentaire
+(`D-045`) et celle d'en supprimer la racine. Le motif se répète assez pour être nommé : **l'API
+Linear couvre le travail courant, pas l'administration de l'espace** — tout dispositif de méthode
+qui suppose un agent capable de préparer son propre tableau se trompe.
+
+### 3. `revue-discovery` existe, et il porte trois axes
+
+Le skill manquant du cycle feature est écrit. `cycle-feature.md` §3 lui annonçait **deux** axes —
+*l'artefact est complet* (§1 de sa DoD) et *aucun arbitrage n'a été rendu* (§2). Il en porte
+**trois** : le §5 de la même DoD, *l'artefact s'adresse à son lecteur, pas au dépôt*, est cochable
+et n'était couvert par aucun des deux. Le fondre dans la complétude aurait mélangé deux natures de
+jugement, ce que le primitif `revue` §2 interdit — un défaut de forme rangé à côté d'un défaut de
+fond emprunte son poids.
+
+**Le piège qu'il a fallu défaire en l'écrivant, et qui attend les quatre autres.** Écrit en calquant
+`revue-spec`, il a hérité du geste que `D-045` a tué : poser une remarque *sur le document*. Il a
+fallu réinjecter à la main le geste vivant — `cursus linear comment add` sur la **carte**. Les
+quatre skills de revue restant à reprendre partiront du même faux départ si on les calque : leur
+squelette est bon, leur geste central est mort.
+
+### 4. Registre
+
+**Construit** : les six étiquettes des deux côtés, groupées, exclusivité mesurée ·
+`revue-discovery` · `Review Requested` posée sur une vraie carte — **première pose réelle du
+vocabulaire**, à la main par le binôme, pas par un skill.
+
+**Ce que cette entrée n'établit pas** : `revue-discovery` n'a pas tourné. Aucune boucle complète non
+plus. Le renommage lui-même n'est pas éprouvé — il corrige une ambiguïté de lecture repérée à froid,
+pas une confusion observée en usage.
+
+**Renvoi** : `D-047` (les six états, superseded sur le nom de ⑤) · `D-045` (pourquoi la remarque
+quitte le document) · `D-046` (les gestes construits) · `D-041` (le flux tiré) ·
+`docs/reference/linear-api.md` §10h (les trois murs, mesurés) · `docs/methode/cycle.md` §8.

@@ -50,7 +50,7 @@ un sac. L'**absence** d'étiquette est le sixième état, et c'est l'état initi
 | ② | `Review Requested` | Écrit, à relire contre sa DoD | un relecteur tiers |
 | ③ | `Rework Needed` | Des remarques sont ouvertes, à reprendre | **variable selon le niveau — voir §5** |
 | ④ | `Rework Done` | Les reprises sont faites, à vérifier une par une | un vérificateur |
-| ⑤ | `Human Review` | La boucle agent est sèche, l'humain relit | l'humain |
+| ⑤ | `Human Review Requested` | La boucle agent est sèche, l'humain relit | l'humain |
 | ⑥ | `Done` | Zéro remarque ouverte, la carte est **tirable** | l'aval, qui tire |
 
 Et une étiquette **hors groupe**, donc cumulable avec l'état :
@@ -79,7 +79,7 @@ prononce en tirant.
    ⑥ Done  ◄─────────────────────────────────┘
        ▲
        │  l'humain a tranché
-   ⑤ Human Review  ◄── la boucle ne peut plus avancer
+   ⑤ Human Review Requested  ◄── la boucle ne peut plus avancer
 ```
 
 La porte de sortie est **mécanique et vérifiable** : zéro remarque ouverte. Elle se lit par
@@ -95,7 +95,7 @@ dont le champ `open` ne compte que les remarques **racines** — une réponse qu
 passes correction/vérification ; au troisième désaccord, le vérificateur écrit dans son fil la
 réponse qui nomme le litige — elle est un tour de plus, donc elle se compte — et cette remarque
 cesse de circuler. La boucle continue sur les autres. Quand plus aucune remarque ne peut avancer,
-la carte passe en `Human Review`, et porte en plus `Escalated` si au moins une remarque a atteint
+la carte passe en `Human Review Requested`, et porte en plus `Escalated` si au moins une remarque a atteint
 son troisième désaccord.
 
 **Ce que `Escalated` est vraiment.** Pas une alarme : un **fait mesurable**. Compter ses occurrences
@@ -182,19 +182,44 @@ c'est pour ça qu'il est explicite.
 
 ## 8. Registre
 
-**Construit** : le vocabulaire existe **en entier** dans Linear depuis le 2026-07-30 — `Rework
-Needed` et `Done` depuis `D-041`, `Review Requested`, `Rework Done` et `Human Review` créées dans
-`Advancement Labels`, `Escalated` créée hors groupe. La colonne d'issue `In Review`, orpheline, a été
-supprimée le même jour. Côté outillage, les gestes de la boucle sont construits et éprouvés contre le
+**Construit** : le vocabulaire existe **en entier, des deux côtés**, depuis le 2026-07-30 — côté
+issue, `Rework Needed` et `Done` depuis `D-041`, puis `Review Requested`, `Rework Done` et `Human
+Review` dans `Advancement Labels`, `Escalated` hors groupe ; côté **projet**, les six créées le
+même jour. La colonne d'issue `In Review`, orpheline, a été supprimée elle aussi.
+
+⚠️ **Linear sépare strictement les deux familles d'étiquettes** — issue et projet — et il a fallu
+créer les six **deux fois** : une étiquette d'issue ne s'applique pas à un projet, fût-ce à nom
+identique. Une **feature est un projet** (`cycle-feature.md`), donc c'est la famille projet qui
+porte les états de ce niveau-là. Aucune API ne crée d'étiquette de projet, et `list_project_labels`
+**masque le champ `parent`** : l'appartenance au groupe ne se lit pas dans sa sortie
+(`docs/reference/linear-api.md` §10h).
+
+**L'exclusivité du groupe est mesurée, pas supposée** : poser deux étiquettes du même groupe sur un
+projet rend un `400` qui nomme le conflit. C'est elle qui fait de l'étiquette un **état** et non un
+sac (§2), et elle tient côté projet comme côté issue. Côté outillage, les gestes de la boucle sont construits et éprouvés contre le
 vrai Linear : poser une remarque située, lister les ouvertes, en solder une en écrivant ce qui la
 solde (`D-046`).
 
-⚠️ **Aucune de ces étiquettes n'a encore été posée par un skill.** Exister n'est pas servir : le
-registre ci-dessous reste celui d'un dispositif non éprouvé.
+**Le cycle court a tourné le 2026-07-30**, sur *Un agent pilote Cursus* : ① → ② → ③ → ② → ③.
+`Review Requested` posée à la main par le binôme à la fin du temps ①, puis **`Rework Needed` posée
+par `revue-discovery`** — première étiquette posée par un skill —, sept remarques soldées, `Review
+Requested` reposée, **et un second tour qui repose `Rework Needed`**. La porte se lit à chaque fois
+sur un `open` rendu par la commande, jamais déclaré. Fiches :
+[tour 1](rex/2026-07-30-revue-discovery-tour-1.md) · [tour 2](rex/2026-07-30-revue-discovery-tour-2.md).
 
-**Tranché mais pas construit** : tout le reste de ce fichier. Aucun tour n'a tourné. Les deux
-primitifs que le cycle réclame — `correction` et `verification` — **n'existent pas**, et
-`revue-discovery` non plus.
+**Ce que le second tour a établi, et qui ne l'était pas** : le pari du cycle court — laisser le
+binôme solder ses propres remarques *« parce qu'un tour de revue de plus suit toujours »*
+(`cycle-feature.md` §3) — **tient**. La reprise du binôme était sincère et fausse : il avait retiré
+des mots en croyant retirer une orientation, et les six remarques du second tour rouvrent toutes des
+points qu'il avait cru solder. Le rattrapage a fonctionné dans le seul cas où il comptait.
+
+⚠️ **Aucune boucle n'est allée jusqu'à `Done`.** Personne n'a donc encore tiré, et les deux tours
+ont porté sur **le même artefact**, écrit par ceux-là mêmes qui éprouvaient le skill.
+
+**Tranché mais pas construit** : tout le reste de ce fichier. Aucune boucle complète n'a tourné
+jusqu'à `Done`. Les deux primitifs que le cycle réclame — `correction` et `verification` —
+**n'existent pas**, et ils n'ont pas manqué au tour du 2026-07-30 : en cycle court, les temps ③ et ④
+n'existent pas, c'est le binôme qui reprend (§6). Ils manqueront au premier tour de `Spec`.
 
 **Questions ouvertes** :
 
