@@ -2525,3 +2525,119 @@ mourir d'un fait, pas seulement d'un usage. `D-042` (la cascade de branches), lu
 vide), §10g (la réécriture qui détruit l'ancrage) · `cursus-cli/README.md` ·
 `docs/methode/tickets.md` §1 (les trois niveaux que le rattachement épouse) ·
 `D-041` (le partage conformité/justesse dans une revue) · `D-043` (les drafts, et sa clause datée).
+
+---
+
+## D-046 — La cible d'une remarque est un type, et le repère se calcule (2026-07-30)
+
+`D-045` a tranché *où* une remarque de revue se pose : sur la carte, jamais sur le document. Cette
+entrée consigne ce que la **construction** a appris, et deux décisions que `D-045` ne pouvait pas
+prendre parce qu'elles ne se voient qu'en écrivant le code.
+
+### 1. Ce que la mesure a ajouté à `D-045`
+
+Le solde n'avait été éprouvé que sur une **issue**, alors que le porteur nominal d'une Discovery est un
+**projet** — `D-045` §3 le signalait comme non mesuré. Mesuré depuis, et sans surprise : `commentCreate`
+avec `projectId` est accepté, `parentId` et `projectId` **ensemble** aussi (là où `parentId` seul est
+refusé sur un document), et `commentResolve` nommant la réponse du fil fonctionne à l'identique.
+
+Un fait a en revanche évité une découpe inutile : `comments(filter: { project: … })` et
+`comments(filter: { issue: … })` ont **la même forme**. Un seul chemin de lecture suffit, là où l'on
+pouvait croire devoir en écrire deux.
+
+⚠️ **Et une trouvaille qui change un comportement.** La réponse qui solde un fil a son propre
+`resolvedAt` **nul**. Un décompte naïf des remarques ouvertes d'une carte compterait donc les réponses
+de solde : la porte du cycle de revue — *zéro remarque ouverte* — ne se fermerait **jamais**, chaque
+solde en ajoutant une. Le piège existait déjà dans `commentList`, où il était inoffensif : sur un
+document, les fils étaient rares et le décompte décoratif. Il devient faux dès qu'il gouverne une porte.
+
+**La leçon de dispositif, qui est la même que celle de `D-045` d'un cran plus loin** : là, une mutation
+qui réussit ne disait pas ce que l'utilisateur voit ; ici, un décompte juste sur les données d'hier
+devient faux sur celles de demain, sans qu'aucune ligne ne change. **Mesurer le nominal, pas seulement
+le cas qu'on avait sous la main.**
+
+### 2. La variante est portée par le type — et l'écart de lettre est assumé
+
+`DocumentSummary` portait `projectName?` et `issueIdentifier?` : deux optionnels mutuellement
+exclusifs, exactement ce que `CLAUDE.md` proscrit. Ils étaient tolérables tant qu'ils **décoraient
+l'affichage** ; ils sont devenus porteurs du **routage d'écriture**, et l'état « les deux renseignés »
+a cessé d'être inoffensif. Remplacés par un `CommentTarget` :
+
+```ts
+export type CommentTarget =
+  | { readonly kind: "project"; readonly id: string; readonly label: string }
+  | { readonly kind: "issue"; readonly id: string; readonly label: string };
+```
+
+**L'écart de lettre, écrit plutôt que tu.** La convention dit que le discriminant « vit dans le
+document JSON seulement ». Ici, `kind` vit dans le modèle. En C#, le sous-typage discrimine sans
+champ ; en TypeScript sans classes, **l'étiquette *est* le mécanisme de sous-typage**, et l'union
+interdit les deux états illégaux — ce que la règle vise. L'esprit est tenu, la lettre non. Le
+discriminant *de Linear*, lui, reste bien confiné à l'adaptateur : `targetFrom` lit les deux champs
+nuls du JSON, `champDeCible` les reconstruit à l'écriture, et rien entre les deux ne les connaît.
+
+*Nuance conservée* : l'**absence** de cible est un optionnel légitime (`Option`), pas une troisième
+variante. Un document peut flotter, attaché à rien ; `requireTarget` refuse alors franchement, parce
+qu'il n'y a nulle part où poser la remarque.
+
+**Alternative écartée** : garder `documentContentId` comme troisième genre de cible, pour que
+`comment resolve` continue de solder les sept remarques déposées avant le reciblage. Écartée parce
+qu'elle aurait porté le geste périmé **dans le type même**, là où le type est justement ce qui doit
+rendre le geste périmé irreprésentable. Les sept remarques se **reposent** ; elles ne se maintiennent
+pas. C'est une dette de données, pas une dette de conception.
+
+### 3. Ce que `list` liste, et pourquoi la carte l'emporte sur le document
+
+`comment list <réf>` prend une référence de **document** mais liste les remarques de sa **carte**, qui
+est partagée : une Discovery et une Spec vivent sur le même projet, donc les remarques des deux
+apparaissent, chacune portant son repère `*Ref :*`.
+
+Le motif n'est pas la simplicité d'implémentation, c'est la **porte du cycle** : elle se ferme par
+carte et non par document — c'est le projet qu'on juge dégrossi, pas chacun de ses artefacts
+séparément. Un décompte par document aurait donné une porte que rien ne ferme jamais toute entière.
+
+**Alternative écartée** : filtrer sur le préfixe `*Ref : <titre du document>*`. Filtrer sur du corps de
+texte est fragile — une remarque écrite à la main sans le repère disparaîtrait du décompte —, et cela
+irait contre l'usage même du décompte.
+
+### 4. Le repère exclut les blocs de code, et ce n'est pas du zèle
+
+Le repère est le titre ATX le plus proche **au-dessus** du passage. ⚠️ Les documents de méthode sont
+pleins de blocs clôturés où un dièse en début de ligne est un **commentaire shell** : sans suivi des
+clôtures, le repère citait `dotnet build ne doit rendre aucun warning`. Le cas s'est présenté **dès la
+première épreuve réelle** — un passage cité à l'intérieur d'un bloc `mermaid`, dont le repère est
+resté, correctement, le titre qui surplombe le bloc.
+
+Ce n'est pas un détail de robustesse : le repère est calculé précisément pour qu'un agent **ne puisse
+pas le falsifier**. Un repère faux serait donc cru sans être vérifié — la garantie se retournerait
+contre son objet.
+
+**Alternative écartée** : chaîner les titres ancêtres (`§1 › §1.2`). Le titre le plus proche est le
+plus précis, et le **titre complet du document** — retenu plutôt qu'un raccourci — lève déjà
+l'ambiguïté que la chaîne visait, puisque c'est lui qui départage la Discovery de la Spec.
+
+### 5. Le registre, et ce qui reste
+
+**Construit et éprouvé** contre l'API réelle, sur les deux genres de cible : `comment add|list|resolve`.
+61 tests verts, typecheck propre. La garde d'`anchor.ts` a été exercée pour de vrai au premier essai —
+le passage que je citais avait été réécrit depuis, et elle l'a dit.
+
+**Ce qui reste ouvert**, et qu'il ne faut pas croire fait :
+
+- **Les sept remarques de la Discovery** sont toujours sur le document, donc invisibles. À reposer.
+- **Les quatre skills de revue** prescrivent encore le geste que `D-045` a supprimé.
+- **Le cycle à cinq temps** de `D-045` §5 n'existe pas : la CLI en fournit les gestes, pas
+  l'enchaînement.
+- **`D-042`** (la cascade de branches) reste **toujours** non éprouvé : ce travail est encore tombé
+  sous l'exception outillage. C'est la troisième fois qu'il passe à côté.
+
+**Une dérogation à noter, faute de quoi elle passerait pour un oubli.** Les commandes ne portent pas de
+tests unitaires : `openSession()` est appelé dans leur corps, il n'y a pas de couture, et en inventer
+une n'était pas dans le plan validé. La logique qui méritait des tests a donc été **extraite** —
+`headingAt`, `reviewBody`, `targetFrom`, `requireTarget`, `unresolvedRoots` — et les commandes réduites
+à du câblage, couvert par l'épreuve bout en bout. La frontière est celle que le module avait déjà ; elle
+n'a pas été choisie ici, elle a été suivie.
+
+**Renvoi** : `D-045` (où une remarque se pose, et le cycle) · `D-044` (la CLI) ·
+`docs/reference/linear-api.md` §10d–§10g · `cursus-cli/README.md` · `architecture.md` §7.14 ·
+`D-043` (les drafts, dont quatre restent à reprendre) · `D-042` (la cascade, encore non éprouvée).

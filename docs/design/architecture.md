@@ -45,7 +45,7 @@
 | Persistance | `src/Cursus.Persistence/` | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque avec **suiveur de tail** qui voit la sortie **en direct** (flush par écriture, jambe 1), et le préréglage SQLite de `ProjectHost`. **29 tests.** Un run survit au process ; le flux live d'un run et sa relecture donnent la **même** projection (preuve end-to-end, 6c·3c). |
 | Surface projet (run · éditeur) & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et la **surface d'un projet** à modules sans routeur (liste ⇄ run ⇄ **page du workflow**, `D-016`) : l'**écran de run** (6c·3c) — un workflow lancé, sa trajectoire se déroule, le log de la visite se suit en direct, un contrôle à trois positions l'arrête, un run passé se rouvre en relecture ; la **page du workflow** (`D-026`) — atteinte en cliquant une ligne, elle compose en onglets l'**historique** de ses runs (chacun rouvrable en relecture) et l'**éditeur** (·3b, onglet *Étapes*) — ajouter étapes et arêtes gardées, poser l'entrée, régler un script, valider en direct, enregistrer ; la liste, elle, sait **créer/renommer/supprimer** un workflow (·3b). Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
 
-| Outillage de méthode | `cursus-cli/` (TypeScript, hors solution) | La ligne de commande `cursus linear …` : `login`/`logout`, `whoami`, `doc list|show`, `comment add|list|resolve`. Elle donne aux revues le geste que le MCP Linear ne sait pas faire — poser une divergence **ancrée** sur un passage d'un document, et la solder en nommant ce qui la solde. **47 tests** (vitest), le gros portant sur `anchor.ts`, seule garde contre une ancre fausse : l'API Linear n'en vérifie aucune. Ne participe pas au produit ; partage le trousseau et le registre machine avec l'app. Voir §7.14 et `D-044`. |
+| Outillage de méthode | `cursus-cli/` (TypeScript, hors solution) | La ligne de commande `cursus linear …` : `login`/`logout`, `whoami`, `doc list|show`, `comment add|list|resolve`. Elle donne aux revues le geste que le MCP Linear ne sait pas faire — poser une divergence **située** sur un passage d'un document, et la solder en nommant ce qui la solde. Les remarques visent la **carte** qui porte le document, l'ancrage d'un commentaire de document étant impossible par l'API (`D-045`). **61 tests** (vitest), le gros portant sur `anchor.ts` et `reference.ts` : l'API Linear ne vérifie aucune citation, et le repère de section est calculé. Ne participe pas au produit ; partage le trousseau et le registre machine avec l'app. Voir §7.14 et `D-044`. |
 
 Le noyau et la persistance se connaissent (le second implémente les contrats du premier) ; **ni l'un ni l'autre n'est relié à la moitié sessions/PTY** (§2). Depuis 6c·3a, **`Cursus.App` référence `Cursus.Persistence`** ; depuis 6c·3c la jonction UI est **close** (§9.4) : l'app lit le passé d'un projet, **lance** ses workflows, **suit** le flux d'un run en direct, **tail** le log de ses visites, et en montre le **graphe** — vue sœur brute du non-parcouru (§4.18).
 
@@ -1592,18 +1592,31 @@ une écriture qui réussit toujours (forme des trois autres). Ils se posent au j
 
 ---
 
-### 7.14 `cursus-cli` : une seconde stack, et le trousseau devenu contrat — CONSTRUIT, un verbe périmé (`D-044`, `D-045`)
+### 7.14 `cursus-cli` : une seconde stack, et le trousseau devenu contrat — CONSTRUIT (`D-044`, `D-045`, `D-046`)
 
 Le dépôt porte désormais **un sous-projet TypeScript**, `cursus-cli/`, qui n'est pas une préfiguration
 du noyau : c'est de l'**outillage de méthode**. Il donne aux revues le geste qui leur manquait —
 poser une divergence qui **désigne** un passage d'un document Linear, et la solder en nommant ce qui
 la solde, là où le MCP Linear ne sait pas résoudre.
 
-⚠️ **Un verbe est périmé depuis le 2026-07-30, et le code n'a pas encore suivi.** `comment add` poste
-contre le `documentContentId` : mesuré, cela produit un commentaire **invisible** — l'ancre de Linear
-est une marque dans l'état de l'éditeur, qu'aucune API n'écrit (`linear-api.md` §10d). Le porteur
-correct est le **projet** ou l'**issue** qui porte le document, et il est **tranché non construit**
-(`D-045`). Tout le reste du module est indemne.
+**Les remarques visent la carte, pas le document, et c'est structurel.** L'ancre de Linear est une
+marque dans l'état de l'éditeur, qu'aucune API n'écrit (`linear-api.md` §10d) : un commentaire de
+document est donc **invisible**. Les trois verbes visent désormais la **cible** — le projet pour une
+Discovery ou une Spec, l'issue pour un plan d'archi —, déduite de `document.project` /
+`document.issue` et jamais choisie par l'appelant. Le mapping est vérifié sur les quatre documents de
+l'espace, sans cas particulier.
+
+Le type `CommentTarget` porte cette variante **par le type** : `{ kind: "project" | "issue", id,
+label }`, là où `DocumentSummary` portait deux optionnels mutuellement exclusifs. Ces deux champs
+étaient tolérables tant qu'ils décoraient l'affichage ; ils sont devenus porteurs de **routage
+d'écriture**, donc l'état « les deux renseignés » a cessé d'être inoffensif. L'écart de lettre avec la
+convention — l'étiquette `kind` vit dans le modèle, pas seulement dans le JSON — est assumé et motivé
+en `D-046` : sans héritage, l'étiquette *est* le mécanisme de sous-typage.
+
+Ce qui remplace l'ancrage perdu est un **repère calculé** : le titre du document, puis le titre ATX le
+plus proche au-dessus du passage, en tête du corps. L'appelant ne le fournit pas, donc un agent ne peut
+ni l'omettre ni le falsifier. ⚠️ Les dièses d'un **bloc de code clôturé** en sont exclus, sans quoi un
+`# dotnet build …` d'un bloc `bash` serait retenu comme section — rencontré dès la première épreuve.
 
 **Ce qui justifie une seconde stack.** `Cursus.Trackers/Linear` est en lecture seule : la couche de
 mutation était à écrire quelle que soit la stack, et l'argument de réutilisation ne tenait donc pas.
@@ -1638,14 +1651,18 @@ Linear, qui ne fait rien de la citation : il garantit qu'une citation **désigne
 pour l'humain et l'agent qui viendront corriger. Le refus de l'ambiguïté en devient *plus* important
 qu'avant — c'est le seul moyen qu'a le lecteur suivant de retrouver l'endroit.
 
-**Registre.** Construit et éprouvé contre l'API réelle : `login`/`logout`, `whoami`, `doc list|show`,
-`comment list|resolve`. **Périmé** : `comment add`, qui poste dans le vide (voir l'avertissement en
-tête). **Tranché non construit** (`D-045`) : le porteur projet/issue, le repère de section calculé, et
-`comment resolve` qui doit cesser de refuser un commentaire hors document. Non construit : le
-signalement des citations **périmées** (un document édité après coup ne correspond plus à la citation)
-— connu, hors v1. Non éprouvé : `createAsUser`, qui permettrait de faire signer un commentaire par un
-relecteur nommé plutôt que par le porteur de la clé ; et le **solde sur un projet**, mesuré sur une
-issue seulement alors que le projet est le porteur nominal d'une Discovery.
+⚠️ **Le décompte des remarques ouvertes ne compte que les racines.** Mesuré : la réponse qui solde un
+fil a son propre `resolvedAt` **nul**. La compter ferait que la porte du cycle de revue — *zéro
+remarque ouverte* — ne se fermerait jamais, chaque solde en ajoutant une. Le piège était inoffensif
+tant que la lecture portait sur un document ; il est devenu réel avec la cible.
+
+**Registre.** Construit et éprouvé contre l'API réelle, sur les **deux genres de cible** : `login`/
+`logout`, `whoami`, `doc list|show`, `comment add|list|resolve`. Non construit : le signalement des
+citations **périmées** (un document édité après coup ne correspond plus à la citation) — connu, hors
+v1 ; et le cycle de revue à cinq temps que `D-045` définit, dont la CLI ne fournit que les gestes.
+Non éprouvé : `createAsUser`, qui permettrait de faire signer un commentaire par un relecteur nommé
+plutôt que par le porteur de la clé. **Dette de données** : les sept remarques déposées sur le
+document de Discovery avant le reciblage sont invisibles et doivent être reposées sur la carte.
 
 ---
 

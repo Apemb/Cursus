@@ -1,12 +1,24 @@
 import type { LinearClient } from "./client.ts";
+import type { CommentTarget } from "./target.ts";
 
 export interface CreateCommentInput {
-  readonly documentContentId: string;
+  /** La carte qui reçoit la remarque — un projet ou une issue, jamais un document. */
+  readonly target: CommentTarget;
   readonly body: string;
   /** Le passage cité — absent pour une réponse, qui hérite du fil. */
   readonly quotedText?: string;
   /** Le commentaire auquel on répond. */
   readonly parentId?: string;
+}
+
+/**
+ * Le champ de `CommentCreateInput` qui désigne la cible.
+ *
+ * <p>C'est ici, et ici seulement, que l'étiquette du type redevient une forme de document
+ * JSON — l'adaptateur traduit, le modèle n'a jamais eu à porter le discriminant.</p>
+ */
+function champDeCible(target: CommentTarget): Record<string, string> {
+  return target.kind === "project" ? { projectId: target.id } : { issueId: target.id };
 }
 
 export interface CreatedComment {
@@ -20,11 +32,11 @@ mutation($input: CommentCreateInput!) {
 }`;
 
 /**
- * Pose un commentaire.
+ * Pose un commentaire sur la carte que désigne la cible.
  *
- * ⚠️ L'ancre (`documentContentId`) est exigée **même pour une réponse** : mesuré, un
- * `parentId` seul se fait refuser en `INVALID_INPUT` (« exactly one of … must be
- * defined »).
+ * ⚠️ La cible est exigée **même pour une réponse** : mesuré, un `parentId` seul se fait
+ * refuser en `INVALID_INPUT` (« exactly one of … must be defined »). Mesuré aussi, et c'est
+ * la bonne nouvelle : `parentId` accompagné de `projectId` ou d'`issueId` est accepté.
  */
 export async function createComment(
   client: LinearClient,
@@ -34,7 +46,7 @@ export async function createComment(
     commentCreate: { success: boolean; comment: CreatedComment };
   }>(CreateMutation, {
     input: {
-      documentContentId: input.documentContentId,
+      ...champDeCible(input.target),
       body: input.body,
       ...(input.quotedText === undefined ? {} : { quotedText: input.quotedText }),
       ...(input.parentId === undefined ? {} : { parentId: input.parentId }),
@@ -65,22 +77,32 @@ interface CommentNode {
 }
 
 /**
- * Les commentaires d'un document.
+ * Les remarques posées sur une cible, réponses comprises.
  *
- * ⚠️ On lit par l'**id du document**, alors qu'on écrit contre son `documentContentId` —
- * et `documentContent` n'existe pas à la racine du schéma.
+ * <p>⚠️ **La requête racine filtrée est obligatoire, ce n'est pas un choix de style.**
+ * Mesuré : `project.comments` rend une liste **vide sans lever d'erreur** — un décompte
+ * bâti dessus dirait « aucune remarque » sur un projet qui en porte dix.</p>
+ *
+ * <p>Le filtre a la même forme pour un projet et pour une issue, mesuré sur les deux : d'où
+ * un seul chemin de lecture, là où l'on aurait pu croire devoir en écrire deux.</p>
+ *
+ * <p>Les réponses arrivent **à plat**, au même niveau que les remarques qu'elles soldent,
+ * leur `parent` renseigné. C'est à l'appelant de ne compter que les racines.</p>
  */
-export async function listComments(client: LinearClient, documentId: string): Promise<CommentView[]> {
-  const { document } = await client.query<{ document: { comments: { nodes: readonly CommentNode[] } } }>(
-    `query($id: String!) {
-      document(id: $id) {
-        comments { nodes { id body quotedText resolvedAt parent { id } user { name } url } }
+export async function listTargetComments(
+  client: LinearClient,
+  target: CommentTarget,
+): Promise<CommentView[]> {
+  const { comments } = await client.query<{ comments: { nodes: readonly CommentNode[] } }>(
+    `query($target: ID!) {
+      comments(filter: { ${target.kind}: { id: { eq: $target } } }, first: 250) {
+        nodes { id body quotedText resolvedAt parent { id } user { name } url }
       }
     }`,
-    { id: documentId },
+    { target: target.id },
   );
 
-  return document.comments.nodes.map((node) => ({
+  return comments.nodes.map((node) => ({
     id: node.id,
     body: node.body,
     quotedText: node.quotedText,
@@ -91,9 +113,22 @@ export async function listComments(client: LinearClient, documentId: string): Pr
   }));
 }
 
+/**
+ * Les remarques encore ouvertes : les **racines** non soldées.
+ *
+ * <p>⚠️ **Une réponse n'est jamais une remarque ouverte, et le piège est mesuré** : la
+ * réponse qui solde un fil a son propre `resolvedAt` **nul**. La compter ferait que la porte
+ * du cycle de revue — *zéro remarque ouverte* — ne se fermerait jamais, chaque solde en
+ * ajoutant une.</p>
+ */
+export function unresolvedRoots(comments: readonly CommentView[]): CommentView[] {
+  return comments.filter((comment) => comment.parentId === null && !comment.resolved);
+}
+
 export interface SettleInput {
   readonly commentId: string;
-  readonly documentContentId: string;
+  /** La cible du fil — la réponse doit la porter, `parentId` seul étant refusé. */
+  readonly target: CommentTarget;
   /** Ce qui solde la divergence : reprise faite, ou refus motivé. */
   readonly reason: string;
 }
@@ -119,7 +154,7 @@ export interface Settlement {
  */
 export async function settleComment(client: LinearClient, input: SettleInput): Promise<Settlement> {
   const réponse = await createComment(client, {
-    documentContentId: input.documentContentId,
+    target: input.target,
     body: input.reason,
     parentId: input.commentId,
   });

@@ -70,8 +70,8 @@ Ce que le dépouillement des types coûte, et qu'il faut savoir avant d'écrire 
 | `linear whoami` | À qui l'on parle et de quel espace — éprouve toute la chaîne de résolution d'un coup |
 | `linear doc list` | Les documents de l'espace, avec ce qui situe chacun |
 | `linear doc show <réf>` | Le contenu d'un document. **Le préalable de `comment add`** : on ne cite pas un passage sans l'avoir sous les yeux |
-| `linear comment add <réf> -q <passage> -b <markdown>` | ⚠️ **à retravailler** — pose sur le document, donc produit un commentaire invisible (voir plus bas) |
-| `linear comment list <réf> [-u]` | Les commentaires, et lesquels restent ouverts (`-u` : les non soldés seulement) |
+| `linear comment add <réf> -q <passage> -b <markdown>` | Pose une remarque sur la **carte** qui porte le document, en situant le passage par un repère calculé |
+| `linear comment list <réf> [-u]` | Les remarques posées sur cette carte, et lesquelles restent ouvertes (`-u` : les non soldées seulement) |
 | `linear comment resolve <id> -w <raison>` | Solde une divergence en écrivant ce qui la solde |
 
 `<réf>` désigne un document par identifiant d'issue (`CUR-45`), nom de projet, titre ou fragment de
@@ -82,34 +82,54 @@ sur deux.
 `-q`, `-b` et `-w` acceptent `-` pour lire l'entrée standard — un corps Markdown multi-ligne n'a pas
 à être échappé pour le shell.
 
-## L'état de `comment add` — et pourquoi il est à refaire
+## Où une remarque se pose, et ce qui la situe
 
-`comment add` poste aujourd'hui contre le `documentContentId`. Mesuré le 2026-07-30, c'est un
-**cul-de-sac** : le commentaire est créé, `success: true`, il porte la bonne citation — et
-l'interface le range hors du texte avec les résolus, où personne ne le lit. C'est exactement le mode
-d'échec que la commande devait empêcher, et elle le produit.
+⚠️ **Une remarque ne se pose pas sur le document.** Mesuré le 2026-07-30 (`D-045`) : un commentaire de
+document est créé, `success: true`, il porte la bonne citation — et l'interface le range hors du texte
+avec les résolus, où personne ne le lit. L'ancre est une marque `inlineComment` dans l'état Yjs du
+document, que **seul le client écrit** : aucun chemin programmatique n'en produit.
 
-Ce qui est **tranché mais pas construit** (`D-045`) : poster sur le **projet** ou l'**issue** qui
-porte le document — déduit de `document.project` / `document.issue`, jamais choisi par l'appelant —
-avec la citation en `quotedText` et, dans le corps, un repère **calculé** au lieu d'être écrit :
+Une remarque se pose donc sur la **carte** qui porte le document, déduite de `document.project` /
+`document.issue` et jamais choisie par l'appelant : le **projet** pour une Discovery ou une Spec,
+l'**issue** pour un plan d'archi. Le mapping a été vérifié sur les quatre documents de l'espace, sans
+cas particulier. Un document attaché à rien fait échouer la commande franchement — il n'y a nulle part
+où poser la remarque.
+
+Ce qui remplace l'ancrage perdu est un repère **calculé**, en tête du corps :
 
 ```
-*Ref : Discovery › §1. Quel besoin, et pour qui ?*
+*Ref : Discovery — Un agent pilote Cursus › 3. Face à ce besoin, comment pourrait-on y répondre ?*
 
 <la remarque>
 ```
 
-Le repère se déduit du passage — le titre le plus proche au-dessus de lui — donc un agent ne peut ni
-l'oublier ni le fausser. Il va dans le corps et non dans la citation parce que l'interface **aplatit**
-`quotedText` sur une seule ligne : aucune mise en page n'y survit, alors que le corps est du Markdown
-rendu.
+Il se déduit du passage — le titre le plus proche au-dessus de lui — donc un agent ne peut ni l'oublier
+ni le fausser. Le **titre complet** du document y figure parce que c'est lui qui départage la Discovery
+de la Spec, qui vivent sur la même carte. Le repère va dans le corps et non dans la citation parce que
+l'interface **aplatit** `quotedText` sur une seule ligne : aucune mise en page n'y survit, alors que le
+corps est du Markdown rendu.
+
+⚠️ **Les dièses d'un bloc de code ne sont pas des titres**, et l'oublier coûte un repère faux : un
+`# dotnet build …` dans un bloc `bash` serait retenu comme section. `headingAt` suit les clôtures. Le
+cas a été rencontré pour de vrai à la première épreuve — un passage cité *à l'intérieur* d'un bloc
+mermaid, dont le repère est resté le titre qui surplombe le bloc.
+
+### Ce que `list` liste, et pourquoi ce n'est pas le document
+
+`<réf>` désigne un document, mais ce qui est listé est sa **carte** — partagée : une Discovery et une
+Spec vivent sur le même projet, donc les remarques des deux apparaissent, chacune portant son repère.
+C'est cohérent avec la porte du cycle de revue, qui se ferme par carte et non par document : c'est le
+projet qu'on juge dégrossi.
+
+⚠️ **Le décompte ne compte que les racines.** Mesuré : la réponse qui solde un fil a son propre
+`resolvedAt` **nul**. La compter ferait que *zéro remarque ouverte* ne serait jamais atteint, chaque
+solde en ajoutant une.
 
 ## Ce qu'elle protège, et que Linear ne protège pas
 
-⚠️ **Linear ne vérifie jamais une citation.** Mesuré le 2026-07-28 : une citation *absente du
-document* est acceptée, `success: true`, et le type `Comment` ne porte aucun champ de position. Une
-citation fausse produit donc un commentaire qui *paraît* situé sans l'être, ce qui est plus trompeur
-qu'un commentaire ouvertement flottant.
+⚠️ **Linear ne vérifie jamais une citation.** Mesuré : une citation *absente du document* est
+acceptée, `success: true`. La remarque cite alors un passage que personne ne peut retrouver dans le
+document — et rien à l'écran ne le signale.
 
 `anchor.ts` est la seule garde qui existe. Elle refuse une citation introuvable, refuse une citation
 **ambiguë** en disant combien de fois elle apparaît, tolère des blancs recopiés autrement — et envoie
@@ -118,7 +138,9 @@ le passage **du document**, jamais la frappe de l'appelant.
 ⚠️ **Son métier a changé le 2026-07-30, son code non.** Elle ne prépare plus une ancre pour Linear,
 qui ne fait rien de la citation. Elle garantit qu'une citation **désigne un seul passage**, pour
 l'humain et pour l'agent qui viendront corriger — ce qui rend le refus de l'ambiguïté *plus*
-important qu'avant, pas moins : c'est le seul moyen qu'a le lecteur suivant de retrouver l'endroit.
+important qu'avant, pas moins : privée de surlignage, une remarque mal située ne se remarque plus à
+l'œil, alors qu'un surlignage au mauvais endroit sautait aux yeux. C'est aussi de cet offset que le
+repère de section est calculé, donc une citation ambiguë produirait un repère faux en silence.
 
 Corollaire à connaître : une citation est une **empreinte**, pas une référence. Le document édité,
 elle se périme en silence. Le signalement des citations périmées n'est pas construit.

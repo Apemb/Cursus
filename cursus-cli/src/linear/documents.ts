@@ -1,6 +1,7 @@
 import type { LinearClient } from "./client.ts";
 import { unescapeName } from "./escaping.ts";
 import type { DocumentSummary } from "./identifier.ts";
+import { targetFrom } from "./target.ts";
 
 /** La borne d'une page, mesurée : 250 est le maximum, au-delà l'API rend 400. */
 const PageSize = 250;
@@ -9,8 +10,8 @@ interface DocumentNode {
   readonly id: string;
   readonly title: string;
   readonly documentContentId: string;
-  readonly project: { readonly name: string } | null;
-  readonly issue: { readonly identifier: string } | null;
+  readonly project: { readonly id: string; readonly name: string } | null;
+  readonly issue: { readonly id: string; readonly identifier: string } | null;
 }
 
 interface DocumentsResponse {
@@ -24,7 +25,7 @@ const DocumentsQuery = `
 query($first: Int!, $after: String) {
   documents(first: $first, after: $after) {
     pageInfo { hasNextPage endCursor }
-    nodes { id title documentContentId project { name } issue { identifier } }
+    nodes { id title documentContentId project { id name } issue { id identifier } }
   }
 }`;
 
@@ -47,14 +48,22 @@ export async function listDocuments(client: LinearClient): Promise<DocumentSumma
       after,
     });
 
-    for (const node of page.documents.nodes)
+    for (const node of page.documents.nodes) {
+      // Le nom de projet est dé-échappé comme un titre : il s'affiche, et il sert de
+      // référence de résolution — « visuel &amp; configuration » n'est saisissable par
+      // personne.
+      const cible = targetFrom({
+        project: node.project ? { id: node.project.id, name: unescapeName(node.project.name) } : null,
+        issue: node.issue,
+      });
+
       documents.push({
         id: node.id,
         title: unescapeName(node.title),
         documentContentId: node.documentContentId,
-        ...(node.project ? { projectName: unescapeName(node.project.name) } : {}),
-        ...(node.issue ? { issueIdentifier: node.issue.identifier } : {}),
+        ...(cible === undefined ? {} : { target: cible }),
       });
+    }
 
     if (!page.documents.pageInfo.hasNextPage) return documents;
     after = page.documents.pageInfo.endCursor;

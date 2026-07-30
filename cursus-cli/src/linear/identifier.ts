@@ -1,18 +1,22 @@
 import { CursusError } from "../errors.ts";
+import type { CommentTarget } from "./target.ts";
 
 /**
- * Un document tel qu'on a besoin de le désigner. Les deux identifiants y figurent
- * ensemble parce qu'ils ne servent pas à la même chose : on **lit** par {@link id}, on
- * **écrit** un commentaire contre {@link documentContentId}.
+ * Un document tel qu'on a besoin de le désigner.
+ *
+ * <p>{@link id} sert à **lire** le document, {@link documentContentId} à écrire *dedans* —
+ * plus à y poser un commentaire, depuis `D-045` : une remarque se pose sur
+ * {@link target}.</p>
  */
 export interface DocumentSummary {
   readonly id: string;
   readonly title: string;
   readonly documentContentId: string;
-  /** Renseigné pour un document de feature — la carte de projet le porte. */
-  readonly projectName?: string;
-  /** Renseigné pour un document d'incrément — l'issue le porte. */
-  readonly issueIdentifier?: string;
+  /**
+   * La carte qui porte ce document, et sur laquelle les remarques se posent. Absente
+   * seulement si le document flotte, attaché à rien.
+   */
+  readonly target?: CommentTarget;
 }
 
 /**
@@ -33,8 +37,8 @@ export function resolveDocument(documents: readonly DocumentSummary[], reference
 
   const rangs: readonly DocumentSummary[][] = [
     documents.filter((d) => d.title.toLocaleLowerCase() === cherché),
-    documents.filter((d) => d.issueIdentifier?.toLocaleLowerCase() === cherché),
-    documents.filter((d) => d.projectName?.toLocaleLowerCase() === cherché),
+    documents.filter((d) => étiqueté(d, "issue") === cherché),
+    documents.filter((d) => étiqueté(d, "project") === cherché),
     documents.filter((d) => d.title.toLocaleLowerCase().includes(cherché)),
   ];
 
@@ -55,8 +59,20 @@ export function resolveDocument(documents: readonly DocumentSummary[], reference
   return candidats[0] as DocumentSummary;
 }
 
+/**
+ * L'étiquette de la cible, si elle est du genre voulu — en minuscules, pour comparer.
+ *
+ * <p>Le genre est exigé plutôt que déduit de l'étiquette parce que les deux rangs de
+ * résolution doivent rester distincts : une issue s'emporte sur un projet, et confondre les
+ * deux rendrait cette priorité inobservable.</p>
+ */
+function étiqueté(document: DocumentSummary, kind: CommentTarget["kind"]): string | undefined {
+  return document.target?.kind === kind ? document.target.label.toLocaleLowerCase() : undefined;
+}
+
 function situation(document: DocumentSummary): string {
-  if (document.issueIdentifier) return ` (${document.issueIdentifier})`;
-  if (document.projectName) return ` (projet « ${document.projectName} »)`;
-  return "";
+  const cible = document.target;
+  if (!cible) return "";
+
+  return cible.kind === "issue" ? ` (${cible.label})` : ` (projet « ${cible.label} »)`;
 }

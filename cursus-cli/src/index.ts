@@ -48,21 +48,21 @@ export async function run(argv: string[]): Promise<Command> {
 
     const comment = linear
         .command("comment")
-        .description("Les commentaires ancrés sur les documents — poser, lister, solder.");
+        .description("Les remarques de revue, posées sur la carte qui porte le document — poser, lister, solder.");
 
     comment
         .command("add <référence>")
-        .description("Pose un commentaire ancré sur un passage exact du document.")
+        .description("Pose une remarque sur la carte du document, situant le passage par un repère calculé.")
         .requiredOption("-q, --quote <passage>", "le passage à citer, tel qu'il figure dans le document ; « - » pour l'entrée standard")
-        .requiredOption("-b, --body <markdown>", "le corps du commentaire ; « - » pour l'entrée standard")
+        .requiredOption("-b, --body <markdown>", "la remarque ; « - » pour l'entrée standard")
         .action((reference: string, options: { quote: string; body: string }) =>
             execute(() => commentAdd(reference, options)),
         );
 
     comment
         .command("list <référence>")
-        .description("Les commentaires d'un document, et lesquels restent ouverts.")
-        .option("-u, --unresolved", "ne rendre que les commentaires non soldés")
+        .description("Les remarques posées sur la carte d'un document, et lesquelles restent ouvertes.")
+        .option("-u, --unresolved", "ne rendre que les remarques non soldées")
         .action((reference: string, options: { unresolved?: boolean }) =>
             execute(() => commentList(reference, options)),
         );

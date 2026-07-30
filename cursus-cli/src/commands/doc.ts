@@ -13,8 +13,9 @@ export async function docList(): Promise<void> {
       title: document.title,
       id: document.id,
       documentContentId: document.documentContentId,
-      ...(document.issueIdentifier ? { issue: document.issueIdentifier } : {}),
-      ...(document.projectName ? { project: document.projectName } : {}),
+      // La cible est rendue à plat, sous le nom du genre : c'est ce qu'un appelant tape
+      // ensuite comme référence, et il n'a pas à connaître la forme du discriminant.
+      ...(document.target ? { [document.target.kind]: document.target.label } : {}),
     })),
   );
 }

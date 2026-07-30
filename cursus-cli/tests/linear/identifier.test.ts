@@ -7,25 +7,25 @@ const documents: DocumentSummary[] = [
     id: "doc-spec",
     title: "Spec — Un agent pilote Cursus",
     documentContentId: "content-spec",
-    projectName: "Un agent pilote Cursus",
+    target: { kind: "project", id: "p-1", label: "Un agent pilote Cursus" },
   },
   {
     id: "doc-discovery",
     title: "Discovery — Un agent pilote Cursus",
     documentContentId: "content-discovery",
-    projectName: "Un agent pilote Cursus",
+    target: { kind: "project", id: "p-1", label: "Un agent pilote Cursus" },
   },
   {
     id: "doc-plan-45",
     title: "Plan d'archi — Voir tout le tableau, pas sa première page",
     documentContentId: "content-plan-45",
-    issueIdentifier: "CUR-45",
+    target: { kind: "issue", id: "i-45", label: "CUR-45" },
   },
   {
     id: "doc-plan-5",
     title: "Plan d'archi — Un workflow déclare les cartes qu'il prend",
     documentContentId: "content-plan-5",
-    issueIdentifier: "CUR-5",
+    target: { kind: "issue", id: "i-5", label: "CUR-5" },
   },
 ];
 

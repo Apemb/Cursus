@@ -444,10 +444,22 @@ d'issue est visible sans marque. Mesuré le 2026-07-30 sur `CUR-20` (issue, éta
 projet `Un agent pilote Cursus`, les commentaires de sonde supprimés derrière :
 
 - `quotedText` est **accepté et affiché** sur les deux, alors qu'il n'y a aucun texte à citer ;
-- le fil (`parentId`) et le solde (`commentResolve` + `resolvingCommentId`) fonctionnent — mesurés
-  sur l'**issue**, et l'interface montre l'en-tête « Resolution » sur la réponse qui solde. **Non
-  mesuré sur un projet**, le solde n'y ayant pas été tenté ;
+- le fil (`parentId`) et le solde (`commentResolve` + `resolvingCommentId`) fonctionnent, et
+  l'interface montre l'en-tête « Resolution » sur la réponse qui solde ;
 - un commentaire de projet atterrit dans l'onglet **Activity** du projet.
+
+**Le solde sur un projet est mesuré depuis** (2026-07-30, seconde passe — il manquait, et c'était le
+porteur nominal d'une Discovery). Il se comporte comme sur une issue : `commentResolve` nommant la
+réponse du fil renseigne `resolvedAt`, `resolvingComment` et `resolvingUser`. Et un point qui n'allait
+pas de soi : **`parentId` et `projectId` sont acceptés ensemble** — là où, sur un document, `parentId`
+seul se fait refuser en « exactly one of … must be defined ». Une réponse doit donc porter la cible de
+son fil, jamais seulement son parent.
+
+⚠️ **La réponse qui solde a son propre `resolvedAt` nul.** Elle apparaît dans la liste des commentaires
+de la carte comme n'importe quel autre, `parent` renseigné et non soldée. Un décompte des « remarques
+ouvertes » qui ne filtre pas sur `parent === null` compte donc les soldes : la porte *zéro remarque
+ouverte* ne se ferme jamais, chaque solde en ajoutant une. Le piège est indolore tant que les fils sont
+rares, et il devient faux dès qu'il gouverne un gate.
 
 ⚠️ **`quotedText` est aplati à l'affichage.** Les sauts de ligne sont conservés par l'API — relus,
 ils sont bien là — mais l'interface rend la citation **sur une seule ligne**. Aucune mise en page
@@ -468,6 +480,13 @@ Pour un projet, il faut la racine filtrée :
 ```graphql
 { comments(filter: { project: { id: { eq: "…" } } }, first: 50) { nodes { id body quotedText resolvedAt } } }
 ```
+
+**Le même filtre marche sur une issue** — mesuré en 2026-07-30 avec un commentaire vivant, pour ne pas
+confondre « filtre inopérant » et « carte sans commentaire » : `filter: { issue: { id: { eq: … } } }`
+rend la même forme. Un client n'a donc **qu'un seul chemin de lecture à écrire** pour les deux porteurs,
+et il vaut mieux l'écrire ainsi que d'emprunter `issue.comments` : c'est le chemin dont on sait qu'il ne
+mentira pas si le porteur change de genre. Dans les deux cas, les réponses arrivent **à plat**, au même
+niveau que les remarques qu'elles soldent, leur `parent` renseigné.
 
 Le champ `comments` **existe** sur `Project` et ne rend aucune erreur — il rend `[]`. Mesuré avec
 quatre commentaires bel et bien présents sur le projet, visibles dans l'interface. C'est le mode
@@ -504,9 +523,6 @@ danger — c'est le client qui tient l'état, et il déplace les marques avec le
   sur le vrai tableau, donc réservées à `2·2b`+ et à faire sur une issue de test ;
 - **`createAsUser` / `displayIconUrl`** (§10c) : le reste des mutations de commentaire est mesuré
   depuis le 2026-07-28, mais pas ceux-là — reste à savoir si une *Personal API key* y a droit ;
-- **le solde sur un projet** : `commentResolve` est mesuré sur une **issue** (§10e), pas sur un
-  projet. Rien ne suggère une différence — le type `Comment` est le même — mais c'est le porteur des
-  remarques de Discovery et de Spec, donc à éprouver avant de bâtir le cycle dessus ;
 - **`documentUpdate` face aux marques** (§10g) : la destruction de l'ancrage est déduite, pas
   exécutée. La mesurer demande un document jetable portant un commentaire ancré — à faire, parce que
   c'est un piège qu'on préfère connaître par une sonde que par une revue perdue ;

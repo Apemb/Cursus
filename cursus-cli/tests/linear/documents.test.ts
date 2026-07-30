@@ -22,11 +22,11 @@ describe("listDocuments", () => {
         nodes: [
           {
             id: "d1", title: "Spec", documentContentId: "c1",
-            project: { name: "Un agent pilote Cursus" }, issue: null,
+            project: { id: "p-1", name: "Un agent pilote Cursus" }, issue: null,
           },
           {
             id: "d2", title: "Plan d'archi", documentContentId: "c2",
-            project: null, issue: { identifier: "CUR-45" },
+            project: null, issue: { id: "i-1", identifier: "CUR-45" },
           },
         ],
       },
@@ -35,9 +35,10 @@ describe("listDocuments", () => {
     // act
     const documents = await listDocuments(client);
 
-    // assert
-    expect(documents[0]?.projectName).toBe("Un agent pilote Cursus");
-    expect(documents[1]?.issueIdentifier).toBe("CUR-45");
+    // assert — l'identifiant de la cible est exigé, pas seulement son nom : c'est lui qui
+    // route l'écriture d'une remarque depuis `D-045`.
+    expect(documents[0]?.target).toEqual({ kind: "project", id: "p-1", label: "Un agent pilote Cursus" });
+    expect(documents[1]?.target).toEqual({ kind: "issue", id: "i-1", label: "CUR-45" });
   });
 
   it("étant donné un titre porteur d'une entité HTML, quand on le liste, alors le titre est traduit", async () => {
