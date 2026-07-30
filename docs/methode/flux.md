@@ -3,7 +3,10 @@
 > **À quoi sert ce fichier.** Il donne la vue **étape → skill** : le chemin complet d'un besoin
 > jusqu'à son code, qui agit à chaque étape, et quel skill porte la méthode de cette étape.
 > Il ne dit pas *ce que contient* un ticket — ça, c'est `tickets.md` — ni *ce qu'on construit* —
-> ça, c'est `trajectoire.md`.
+> ça, c'est `trajectoire.md`. Il ne dit pas non plus **comment on parcourt** une étape — l'état
+> observé, le skill invoqué, l'étiquette posée en sortie : ça, c'est [`cycle.md`](cycle.md) et les
+> trois documents de niveau qu'il sert ([feature](cycle-feature.md), [incrément](cycle-increment.md),
+> [pas](cycle-pas.md)), depuis `D-047`.
 >
 > **Pourquoi il existe.** Les skills sont auto-découvrables, et un agent n'a pas besoin de cette
 > table pour trouver le sien. Le lecteur **humain**, lui, en a besoin : sans elle, le flux

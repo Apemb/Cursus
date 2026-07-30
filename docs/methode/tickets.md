@@ -287,6 +287,13 @@ ci-dessous ; le **détail opposable** vit dans un fichier par niveau et par stat
 ne doit pas coûter de charger le fonctionnement des pas. Une case sans lien est une étape dont les
 critères n'ont pas encore été écrits — état légitime, et lisible.
 
+**Et le déroulé, lui, vit ailleurs.** Les matrices ci-dessous disent ce qu'un statut **exige** ;
+elles ne disent pas comment on va d'un état au suivant — quel skill est invoqué, quelle étiquette
+est posée en sortie, ce que le vérificateur cherche. Ça, c'est [`cycle.md`](cycle.md) et les trois
+documents de niveau ([feature](cycle-feature.md), [incrément](cycle-increment.md),
+[pas](cycle-pas.md)), depuis `D-047`. ⚠️ Ces documents introduisent un vocabulaire d'étiquettes qui
+**amende le §6.4 ci-dessous** : l'escalade n'est plus portée par la seule assignation.
+
 **Les trois chemins n'ont pas la même longueur**, et c'est voulu :
 
 ```

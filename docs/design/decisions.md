@@ -2641,3 +2641,153 @@ n'a pas été choisie ici, elle a été suivie.
 **Renvoi** : `D-045` (où une remarque se pose, et le cycle) · `D-044` (la CLI) ·
 `docs/reference/linear-api.md` §10d–§10g · `cursus-cli/README.md` · `architecture.md` §7.14 ·
 `D-043` (les drafts, dont quatre restent à reprendre) · `D-042` (la cascade, encore non éprouvée).
+
+---
+
+## D-047 — Le cycle de revue prend un vocabulaire d'états, et les documents de cycle deviennent le référentiel qui manquait (2026-07-30)
+
+`D-045` §5 a tranché un cycle de revue à cinq temps sans dire par quoi une carte passe d'un temps au
+suivant. Le vocabulaire disponible — `Done` et `Rework Needed`, hérités de `D-041` — en couvre deux
+sur cinq. Cette entrée comble le trou, et acte trois documents qui n'existaient pas.
+
+### 1. Le motif : rendre un échec attribuable
+
+Le dispositif entier — dix skills en draft, douze DoD, un flux à dix étapes — n'a **jamais tourné**.
+La question qui bloquait n'était pas *comment l'exécuter* mais *comment savoir ce qui a raté* :
+faute de référentiel écrit, un mauvais résultat ne se range ni dans « le cycle est mauvais », ni
+dans « le skill est mauvais », ni dans « la méthode est mauvaise ».
+
+`D-039` semblait interdire d'écrire ces documents d'avance — *on n'écrit pas un skill puis on
+l'éprouve*. La distinction qui lève l'objection : `D-039` interdit d'écrire d'avance **l'exécutant**,
+pas le **référentiel contre lequel sa sortie est jugée**. C'est exactement l'argument de `D-041`
+§6.3 — sans référentiel écrit, le tiers n'a rien contre quoi trancher. Les documents de cycle sont à
+la boucle ce que les DoD sont à la revue.
+
+### 2. Deux axes, et le choix se fait par niveau
+
+| Axe | Ce qu'il porte | Ce qu'il permet |
+|---|---|---|
+| **Colonne** | quel travail se fait | Linear calcule ses temps de cycle sur les **transitions de statut** — seul axe qui produise une métrique comparable hors du projet |
+| **Étiquette** | où en est le cycle de ce travail | Se déplace sans migrer le tableau — reste remodelable tant qu'un processus n'est pas stabilisé |
+
+Le critère qui départage : **ce processus est-il stabilisé au point de mériter d'être mesuré, ou
+encore assez diffus pour qu'on veuille le déplacer ?** D'où une asymétrie assumée entre niveaux — à
+l'**incrément**, une frontière de colonne sépare écriture et revue (`Planning` › `Plan Review`,
+`In Progress` › `Code Review`) ; à la **feature**, non.
+
+**Conséquence non évidente** : `Review Requested` ne sert qu'au niveau feature. À l'incrément, la
+colonne de revue porte déjà le signal — une carte qui y arrive *est* à relire.
+
+**Écarté : porter les temps sur l'axe colonne partout.** Le tableau devient littéralement lisible,
+mais il faut ~3 colonnes par étape de travail, soit six créations. **Écarté aussi : tout sur
+l'étiquette**, qui prive de la seule mesure transposable à une autre équipe.
+
+### 3. Six états, plus un qualificatif
+
+Cinq étiquettes **mutuellement exclusives** dans `Advancement Labels` — Linear impose l'exclusivité
+au sein d'un groupe, et c'est ce qui fait de cet axe un état et non un sac. L'absence d'étiquette
+est le sixième état, et l'état initial.
+
+| Temps | Étiquette | Sens |
+|---|---|---|
+| ① | *aucune* | l'artefact s'écrit |
+| ② | `Review Requested` | écrit, à relire contre sa DoD |
+| ③ | `Rework Needed` | des remarques sont ouvertes, à reprendre |
+| ④ | `Rework Done` | les reprises sont faites, à vérifier une par une |
+| ⑤ | `Human Review` | la boucle agent est sèche, l'humain relit |
+| ⑥ | `Done` | zéro remarque ouverte, la carte est tirable |
+
+Et **hors groupe**, donc cumulable : `Escalated` — la boucle agentique n'est pas arrivée au bout
+seule. Elle ne remplace pas l'état, elle le qualifie.
+
+**Écarté : `Arbitration Needed` comme état alternatif.** Nommer l'acte attendu dans une étiquette
+exclusive obligeait à choisir entre *dire ce qu'il faut faire* et *dire que la boucle a échoué*.
+Les séparer sur deux axes garde les deux, et rend le second **comptable** : le nombre d'`Escalated`
+par colonne dit où la boucle ne tient pas — et la conclusion peut être que le skill de revue est à
+refaire, pas que l'artefact était mauvais.
+
+**Écarté : l'assignation comme signal d'escalade** (`tickets.md` §6.4, *« ni colonne, ni
+étiquette »*). Un signal qu'un humain doit poser à la main est un signal qu'il oubliera — même motif
+que le retrait du compteur de tours en `D-045` §7. L'assignation survit comme **routage** (*qui*),
+jamais comme état (*quoi*). `tickets.md` §6.4 est à amender.
+
+### 4. Un agent correcteur ne se justifie que là où la correction est textuelle
+
+En `Spec`, `Plan Review`, `Code Review`, une remarque désigne un manque **dans l'artefact** : ça se
+reprend en relisant l'artefact et son référentiel. En `Discovery`, ce qui manque est de la
+**matière** — un entretien qui n'a pas eu lieu, une hypothèse non testée. L'état de l'art de la
+discovery continue le dit sans détour : l'alignement s'y fait par la preuve et non par le document,
+et la production est portée par un binôme ou un trio, jamais par une chaîne producteur → correcteur.
+
+D'où **deux formes de cycle** :
+
+| Forme | Où | Temps |
+|---|---|---|
+| **Court** | `Discovery` | ① binôme → ② revue → ① binôme → … → ⑥ |
+| **Complet** | `Spec`, `Plan Review`, `Code Review` | ① → ② → ③ → ④ → (② …) → ⑤ → ⑥ |
+
+Le cycle court échange le vérificateur contre le **tour de revue suivant** : le binôme solde ses
+propres remarques, ce qui serait complaisant ailleurs, mais reste tenable parce qu'une relecture
+suit toujours et que le relecteur voit le fil entier.
+
+**Conséquence à ne pas rater** : `Rework Needed` convoque *celui qui a écrit* — donc **l'humain** en
+`Discovery`, où il est dans le binôme. La même étiquette n'appelle pas le même acteur selon le
+niveau.
+
+### 5. La table de transition ne nomme pas son exécutant
+
+Chaque document de cycle porte, par colonne, une table `état observé → skill invoqué → livrable →
+état posé`. Elle ne dit jamais **qui** la parcourt : un humain aujourd'hui, Cursus demain, texte
+identique. La table **est** le workflow, écrite d'avance dans une forme qui n'aura pas à être
+traduite — c'est le seul choix de forme irréversible de ces documents.
+
+L'étiquette est posée par **l'agent qui finit son temps**, faute d'autorité centrale — seul régime
+qui fonctionne sans moteur, donc seul qui marche aujourd'hui. Un skill ne déplace **jamais** la
+carte (`revue` §8) : déplacer est l'acte de celui qui tire, et c'est ce qui rend le flux tiré
+observable plutôt que déclaratif.
+
+**Écarté : un skill `aiguiller` dès maintenant.** Un moteur écrit en prompt, donc non déterministe —
+exactement ce que le noyau de Cursus existe pour ne pas être — et à jeter le jour où Cursus fait le
+travail. **Écarté aussi : écrire les documents à la deuxième personne**, en mode d'emploi ; les
+trois seraient à réécrire au moment où on en aura le moins envie.
+
+### 6. Trois skills de plus, et quatre étiquettes à créer
+
+Le cycle réclame quatre mandats distincts, et deux n'avaient **aucun** skill. Ils deviennent des
+**primitifs** — même patron que `revue`, pour le même motif : le geste est invariant, seul le
+référentiel change.
+
+| Skill | Rôle | État |
+|---|---|---|
+| `correction` | ③ — lire les remarques ouvertes, reprendre, répondre dans chaque fil | à écrire |
+| `verification` | ④ — pour chaque remarque, la solder ou la rouvrir | à écrire |
+| `revue-discovery` | ② en `Discovery` — ses deux axes sont déjà rédigés dans sa DoD | à écrire |
+
+Portant le total à **treize**. Étiquettes à créer : `Review Requested`, `Rework Done`,
+`Human Review`, `Escalated`. La colonne d'issue `In Review` est orpheline — elle n'apparaît dans
+aucun document et le devient définitivement, les temps vivant sur l'étiquette.
+
+**Écarté : loger ③ dans les skills de production** (`spec`, `plan-archi` réinvoqués avec les
+remarques). Charger un skill de production pour une reprise de trois lignes, et lui ajouter à chacun
+une section « reprise sur remarques » qui divergerait des autres.
+
+### 7. Ce que cette décision coûte, et le registre où elle est
+
+Elle écrit **quatre fichiers de méthode décrivant un dispositif dont aucun tour n'a tourné** — le
+reproche exact que `D-043` s'est fait à lui-même. La différence assumée : ces documents ne
+*produisent* rien, ils servent de mètre. Un mètre faux se corrige au premier écart mesuré ; un
+exécutant faux produit du travail faux en silence.
+
+Le vocabulaire est **commun aux trois niveaux**, d'où un quatrième fichier `cycle.md` qui le porte
+seul — le tripler aurait garanti sa divergence.
+
+**Registre** : tout est *tranché non construit*, sauf les gestes de remarque (`D-046`, éprouvés
+contre le vrai Linear sur un projet comme sur une issue) et le régime TDD du niveau pas, tenu depuis
+le premier jalon. **Reste ouvert** : les deux passes avant escalade sont un chiffre repris de
+`D-045`, jamais mesuré ; distinguer trois tours sur le même litige de trois tours qui dérivent ; le
+vérificateur complaisant n'a pas de garde-fou propre.
+
+**Renvoi** : `D-045` (le cycle à cinq temps, et pourquoi la remarque quitte le document) · `D-041`
+(le flux tiré, les deux verdicts, `Advancement Labels`) · `D-039` (la ligne de base, la session
+neuve) · `D-046` (les gestes construits) · `D-036` (les trois niveaux) ·
+`docs/methode/cycle.md` et les trois documents de niveau.
