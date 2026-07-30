@@ -44,3 +44,8 @@ build/out/
 
 # En revanche `.claude/skills/` est **versionné** : la méthode se relit en revue et suit le
 # dépôt (D-038, docs/methode/flux.md §3).
+
+# La CLI TypeScript : ses dépendances ne suivent pas le dépôt. Elle n'a pas de build —
+# Node exécute la source en dépouillant les types — donc rien d'autre à ignorer ici.
+cursus-cli/node_modules/
+!cursus-cli/bin

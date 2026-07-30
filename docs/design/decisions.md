@@ -2264,3 +2264,264 @@ qu'il faudra superséder.
 mesure du primitif extrait) · `docs/reference/task-master.md` (le risque inverse, chiffré) ·
 `D-039` (la récolte, non réfutée) · `D-041` (les DoD, et le test appliqué sans être nommé) ·
 `D-042` (les préfixes de branche que les DoD épousent).
+
+---
+
+## D-044 — Une CLI TypeScript pour les commentaires de revue, et le trousseau devient un contrat entre deux langages
+
+> ⚠️ **`D-045` corrige une inférence de cette entrée**, écrite le surlendemain et avant que celle-ci
+> soit commitée : l'ancrage d'un commentaire de document est **impossible** par l'API. Le §1 ci-dessous
+> a été redressé en conséquence ; le reste — l'arbitrage de stack, la couture du trousseau, la forme de
+> `--with` — tient sans changement.
+
+**Contexte.** La méthode veut qu'une revue rende ses divergences **sur la carte**, ancrées au
+passage qu'elles visent (`dod/feature/spec.md` §2). Deux voies existaient. Le **MCP Linear** ne sait
+pas résoudre un commentaire — son input n'a pas de champ de résolution. **GraphQL** le sait. Rien ne
+l'exploitait, et les revues empilaient donc des `## Tour N` dans un document, faute d'outil.
+
+### 1. La sonde d'abord, et elle a renversé l'hypothèse — deux fois
+
+Le §10 de `linear-api.md` décrivait `quotedText` comme une **ancre**. Mesuré le 2026-07-28, sur le
+document du plan de `CUR-45` : **c'est faux**. Quatre citations envoyées — une exacte, une
+**inventée de toutes pièces**, une ambiguë, une à cheval sur deux blocs — **quatre acceptées**,
+`success: true`. Et le type `Comment` ne porte **aucun** champ positionnel : ni offset, ni
+intervalle. `quotedText` est un `String`.
+
+On en avait conclu que l'ancrage était « une recherche de texte faite à l'affichage ». **Cette
+conclusion était fausse**, et la seconde campagne du 2026-07-30 l'a établie : l'ancre est une marque
+`inlineComment` dans l'état Yjs du document, qu'aucune API n'écrit. Le récit de ce second renversement
+et ce qu'il coûte sont en `D-045` ; ce qui compte ici, c'est la **leçon de dispositif** : une mutation
+qui réussit ne dit pas ce que l'utilisateur voit, et une inférence tirée d'une mesure juste reste une
+inférence. Deux jours ont passé avant qu'elle soit confrontée à l'interface — parce que rien dans le
+protocole de sonde n'exigeait d'y regarder.
+
+Conséquence qui décide toute la conception, et qui **survit** au renversement : **la validation de la
+citation est le travail**, et les mutations n'en sont pas. Personne d'autre que le client ne peut
+empêcher un commentaire qui *paraît* situé sans l'être. Ce qui a changé, c'est le bénéficiaire de
+cette garde — non plus Linear, qui ne fait rien de la citation, mais l'humain et l'agent qui liront.
+Corollaire à vivre : une citation est une **empreinte**, pas une référence ; le document édité, elle
+se périme en silence.
+
+Deux autres mesures ont plié la forme des commandes. `resolvingCommentId` doit désigner une
+**réponse du fil** : un commentaire frère fait rendre un `INTERNAL_SERVER_ERROR` — un 500 nu, qui
+ressemble à une panne alors que c'est une faute d'usage. Et `parentId` **n'exempte pas** de l'ancre.
+Un solde s'écrit donc forcément en deux temps.
+
+### 2. TypeScript, et ce que l'arbitrage a réellement pesé
+
+L'argument attendu pour un `Cursus.Cli` en .NET était la réutilisation. Il ne tenait pas :
+`Cursus.Trackers/Linear` est en **lecture seule**, la couche de mutation était à écrire quelle que
+soit la stack. Restait `ISecretStore` — or son implémentation shelle `/usr/bin/security`, donc son
+contrat est **observable de l'extérieur** et atteignable depuis n'importe quel langage.
+
+D'où le choix de TypeScript, et le prix payé, qui est réel : une seconde stack au dépôt, un second
+cycle build/test à tenir vert, et surtout **le format du trousseau devient une couture entre deux
+langages** — service `cursus`, compte `tracker:{id}`, valeur en **base64 d'UTF-8**. Ce dernier point
+n'est pas cosmétique : `security -w` rend la valeur en hexadécimal dès qu'un octet sort de l'ASCII
+imprimable, sans le signaler. Un client qui « simplifierait » en rangeant en clair casserait l'autre
+en silence, et seulement sur les jetons contenant un accent.
+
+Écarté également : **un jeton propre à la CLI**. Un seul `login` sert l'app et la ligne de commande ;
+le prix est que la CLI dépend de la forme du registre machine, qu'elle doit donc réécrire à
+l'identique — y compris en **préservant les connexions d'un genre qu'elle ignore**.
+
+### 3. `--with` prend la raison, pas un identifiant
+
+Le plan prévoyait `resolve --with <commentId>`. La sonde l'a rendu impraticable : l'identifiant
+devrait déjà désigner une réponse du fil. La commande prend donc **le texte** de la raison, crée la
+réponse ancrée, puis résout en la nommant.
+
+Ce n'est pas un repli. La clause de `dod/feature/spec.md` §2 — *« reprise, ou refusée avec sa raison
+écrite ; une divergence sans suite écrite n'est pas soldée »* — cesse d'être une règle qu'on rappelle
+pour devenir une **contrainte qu'on ne peut pas contourner** : on ne solde pas sans écrire, puisque
+l'écrit *est* l'argument. Le garde-fou porte sur ce qu'on écrit, jamais sur qui appelle — un
+garde-fou d'appelant a été écarté pour cela : un agent lit le message d'erreur et passe le flag.
+
+### 4. Le régime, et l'occasion manquée
+
+Ce travail est tombé sous l'**exception outillage** de `CLAUDE.md` : aucune carte, `main` en direct.
+Le plan d'archi a donc été un fichier, gaté avant la première ligne de code, conformément à la règle
+qui ne dépend pas du niveau de ticket.
+
+⚠️ **Conséquence à assumer** : `D-043` désignait « le premier travail de code réel » comme l'épreuve
+des dix skills en draft **et** l'inauguration de la cascade de branches de `D-042`. Ce chantier était
+un candidat, et il ne les a éprouvés ni l'un ni l'autre. Les deux restent donc **non éprouvés**, et
+la clause datée de `D-043` reste ouverte. Si l'outillage continue d'absorber les occasions
+d'éprouver la méthode, c'est l'exception elle-même qu'il faudra rejuger — `CLAUDE.md` prévoit déjà
+ce moment (*« si ce cas devenait fréquent au point de mériter sa propre règle »*).
+
+**Renvoi** : `D-045` (le second renversement, et le porteur des remarques) ·
+`docs/reference/linear-api.md` §10 (les mesures, et le §10d qui porte le renversement) ·
+`cursus-cli/README.md` (les verbes) · `architecture.md` §7.14 (la couture du trousseau) ·
+`D-033` (le trousseau, et le refus d'un repli en clair) · `D-042` et `D-043` (les deux épreuves
+laissées en attente).
+
+## D-045 — Les remarques de revue quittent le document : un agent ne peut pas ancrer, donc il commente la carte
+
+**Contexte.** `D-044` a doté le dépôt d'une CLI dont le geste central était de poser une divergence
+**ancrée** sur un passage d'un document Linear. Le lendemain de son écriture, l'utilisateur a posé un
+commentaire avec elle et l'a vu apparaître **« resolved »** dans l'application desktop, alors que
+l'API le donnait ouvert. Ce petit écart a ouvert une seconde campagne de sonde, et elle a renversé le
+mécanisme entier.
+
+### 1. Ce que la mesure a établi
+
+`Comment.resolvedAt`, `resolvingUser`, `resolvingCommentId`, `hideInLinear` : tous nuls ou faux. Le
+commentaire n'était **pas** résolu. La citation existait dans le document au caractère près —
+vérifiée dans le Markdown, puis dans l'état de l'éditeur décodé. Rien ne justifiait l'affichage.
+
+L'utilisateur a alors posé un second commentaire **depuis l'interface, sur le même passage**. Contrôle
+expérimental parfait : les deux objets `Comment` sont ressortis **indiscernables** — même
+`quotedText`, même `documentContentId`, même auteur, mêmes nuls. La différence n'était donc pas dans
+le commentaire. Elle était dans le **document** :
+
+- `documentContent.contentState` porte l'état [Yjs](https://github.com/yjs/yjs) de l'éditeur, et il
+  avait grossi de 448 caractères **175 ms avant** la création du commentaire d'interface ;
+- ce qui s'y était ajouté est une marque `inlineComment` portant `{"commentId":…,"resolved":false}` ;
+- sur les neuf commentaires du document, **deux** portaient une marque — exactement les **deux** que
+  l'interface affichait. Les sept autres étaient rangés avec les résolus.
+
+**Le cas qui isole la cause** est celui posé par la CLI : son passage était intact, et il ne
+s'affichait pas. Ce n'est donc pas la disparition du texte qui décide, c'est la marque. Et les six
+autres avaient bien eu la leur : l'utilisateur avait **réécrit** ces passages, et Yjs supprime les
+marques **avec** le texte qui les porte.
+
+Trois faits complètent le tableau. La marque est écrite par le **client**, jamais par le serveur —
+`commentResolve` ne l'a pas touchée, et l'application l'a rattrapée 18 s plus tard. L'interface
+décide l'affichage résolu sur `Comment.resolvedAt`, pas sur la marque — mesuré, un solde par l'API se
+voit **en temps réel**. Et `DocumentUpdateInput` n'accepte que du Markdown : réécrire un document par
+l'API reconstruit l'état, donc **détruit toutes les marques** — ce que fait `save_document` du MCP,
+l'outil qu'un agent prend pour appliquer des corrections.
+
+### 2. La conséquence, et elle est structurelle
+
+**Aucun chemin programmatique ne pose la marque** : ni `commentCreate`, dont les 18 champs d'input
+n'ont rien de positionnel, ni `documentUpdate`, ni donc le MCP, qui passe par la même API. Un agent ne
+peut pas rendre une divergence **visible** sur un document Linear. Ce n'est pas une lacune de la CLI,
+c'est une limite de l'API — et elle disqualifie le geste que `D-044` avait mis au centre.
+
+⚠️ Pire que l'échec : `comment add` **réussit**. Le commentaire existe, porte la bonne citation, et
+personne ne le voit. Un agent qui l'appelle croit avoir parlé.
+
+Un second argument, indépendant, condamne l'ancrage pour l'usage visé : le cycle de revue voulu
+comporte une étape de **correction**, qui par construction réécrit les passages que la revue a visés.
+Elle détruirait donc les ancres avant que l'étape de vérification n'arrive. **Même si un agent savait
+ancrer, l'ancre ne survivrait pas au tour suivant.**
+
+### 3. Le porteur : le projet, ou l'issue
+
+Les remarques se posent désormais sur ce qui **porte** le document. Mesuré : le rattachement épouse
+exactement les trois niveaux de `tickets.md`.
+
+| Document | Champ | Ancre du commentaire |
+|---|---|---|
+| Discovery, Spec | `document.project` | `projectId` |
+| Plan d'archi | `document.issue` | `issueId` |
+
+Le porteur est donc **déduit**, jamais choisi : c'est une lecture. Ces deux ancres n'ont rien à
+ancrer, donc rien qui puisse échouer — un commentaire de projet ou d'issue est visible sans marque,
+accepte `quotedText`, se répond en fil et se solde. Vérifié de bout en bout sur une issue, l'interface
+affichant l'en-tête « Resolution » sur la réponse qui solde.
+
+⚠️ **Le solde n'a pas été mesuré sur un projet**, seulement sur une issue. Or le projet est le porteur
+de Discovery et de Spec, donc le cas nominal. Rien ne suggère une différence — `Comment` est le même
+type — mais c'est à éprouver avant de bâtir le cycle dessus.
+
+### 4. La forme d'une remarque
+
+```
+*Ref : Discovery › §1. Quel besoin, et pour qui ?*
+
+<la remarque>
+```
+avec le passage visé dans `quotedText`.
+
+Trois désignateurs, et **l'agent n'en écrit aucun** : le titre du document se déduit du document
+visé ; le repère de section est **calculé** — le titre le plus proche au-dessus du passage ; la
+citation est recopiée du document et refusée si elle y apparaît plus d'une fois. Ce dernier point
+répond à l'objection de l'utilisateur, qui voyait qu'une citation générique ne dit pas de quoi elle
+parle : l'ambiguïté est **refusée à l'écriture**, avec le nombre d'occurrences, ce qui force à élargir
+jusqu'à ce que la citation désigne. L'agent-correcteur retrouve alors le passage par simple recherche
+de texte, sans ancre et sans deviner.
+
+**Écarté après mesure : le repère dans `quotedText`.** C'était la proposition de l'utilisateur, et elle
+était meilleure — elle gardait le corps pur et collait le repère au passage. Quatre variantes ont été
+posées et regardées dans l'interface ; elle tombe sur un fait : **l'interface aplatit `quotedText` sur
+une seule ligne**. Les sauts de ligne sont bien stockés, l'API les rend intacts, mais rien ne se met en
+page dedans. Le repère va donc là où le Markdown est rendu — le corps. Ce qui préserve au passage une
+propriété utile : `quotedText` **est** exactement le passage du document, donc aucun découpage à faire,
+ni par la CLI ni par un client qui lirait l'API directement.
+
+La forme du repère — italique discret, préfixé `Ref :` — est **de l'utilisateur**, contre un en-tête en
+gras que l'agent proposait. Le motif est celui de quelqu'un qui lira ces remarques tous les jours : le
+repère est une métadonnée, il ne doit pas concurrencer la remarque.
+
+### 5. Le cycle : quatre agents en boucle fermée, l'humain en cinquième
+
+```
+① écriture  ② revue  ③ correction  ④ vérification     ⑤ l'humain
+   agent A     agent B    agent C       agent D            relit du dégrossi
+   └──────── boucle fermée, tourne jusqu'à ────────┘        │
+              zéro remarque ouverte                          └─ ses remarques → ③ puis ④
+```
+
+Un agent **différent** à chaque temps — exigence de l'utilisateur, et elle rejoint la privation
+d'ancrage déjà tranchée pour `revue-code` : celui qui juge n'a pas eu la conversation de celui qui a
+écrit.
+
+**Écarté : l'humain au temps ②**, en parallèle du relecteur. Il verrait le document plus tôt, donc
+pourrait redresser une trajectoire avant qu'elle ne coûte cher — mais il lirait du brut et
+signalerait ce que l'agent allait attraper. **Écarté aussi : l'humain en simple gate final**, qui
+approuve ou renvoie sans commenter — le moins coûteux en attention, mais il perd le geste de pointer
+une phrase précise, celui que l'utilisateur a passé la matinée à faire.
+
+### 6. La terminaison : deux tours, puis escalade
+
+Une remarque a droit à **deux** passes correction/vérification. Au troisième désaccord elle est
+**escaladée** : elle reste ouverte, marquée comme telle, et l'humain tranche au temps ⑤.
+
+**Écarté : le dernier mot au vérificateur**, sans plafond. Le plus simple à écrire, et rien ne remonte
+— mais rien ne garantit l'arrêt, et un vérificateur mal calibré fait tourner le correcteur
+indéfiniment sur une exigence qu'il ne sait pas satisfaire. Le coût resterait invisible jusqu'à ce
+qu'il explose. **Écarté aussi : l'escalade au premier désaccord** — prévisible, mais elle remonte du
+bruit qu'un second tour absorberait sans l'humain.
+
+Le second mode d'échec — le vérificateur **complaisant**, qui solde tout et referme la boucle sans
+rien avoir obtenu — n'a pas de garde-fou neuf : il est couvert par le régime déjà tranché
+(*le relecteur chicanier est le régime nominal*, `skills.md` §5.5) et par la DoD, qui donne deux issues
+à une divergence — reprise, **ou** refus motivé.
+
+### 7. Le compteur de tours n'a plus besoin d'être écrit
+
+Les drafts de `D-043` prévoyaient un **second document attaché** à la carte, portant des en-têtes
+`## Tour N`, faute de champ Linear pour compter. Il devient inutile : chaque réponse dans le fil d'une
+remarque **est** un tour. Le compteur se **compte** au lieu de se déclarer — donc aucun agent ne peut
+le fausser, et il n'y a plus d'artefact à créer puis à nettoyer.
+
+### 8. Ce que cette décision coûte, et le registre où elle est
+
+**Tranché, non construit.** Rien de ce qui précède n'existe en code.
+
+- **`comment add` est à refaire** : il poste contre le `documentContentId`, donc dans le vide. Il doit
+  résoudre le porteur, calculer le repère, et poster sur le projet ou l'issue.
+- **`comment resolve` refuse aujourd'hui** un commentaire qui n'est pas sur un document — un garde qui
+  visait la justesse et qui interdit maintenant le cas nominal.
+- **`anchor.ts` change de métier sans changer de code** : il ne prépare plus une ancre, il garantit
+  qu'une citation désigne. Le refus de l'ambiguïté en devient *plus* important.
+- **Quatre des dix skills en draft** — `revue`, `revue-spec`, `revue-plan`, `revue-code` — reposent sur
+  un geste qui n'existe pas, et sur le compteur textuel que le §7 supprime.
+- **La revue en cours de la Discovery « Un agent pilote Cursus » est désancrée** : ses sept remarques
+  existent et se lisent, mais hors du texte. Elles ne sont pas perdues, elles sont déplacées.
+
+⚠️ **`D-043` trouve ici sa première épreuve, et par la négative.** Sa clause datée nommait trois
+issues par skill à la première mise à l'épreuve — promu, corrigé par le journal, retiré. Aucun des
+quatre skills de revue n'a été *exécuté* ; c'est le **terrain** qui a invalidé leur geste central avant
+qu'ils ne servent. Ce n'est aucune des trois issues prévues, et cela vaut d'être noté : un draft peut
+mourir d'un fait, pas seulement d'un usage. `D-042` (la cascade de branches), lui, reste toujours non
+éprouvé — ce travail est encore tombé sous l'exception outillage.
+
+**Renvoi** : `D-044` (la CLI, et l'inférence que cette entrée corrige) ·
+`docs/reference/linear-api.md` §10d (la marque), §10e (le porteur), §10f (`project.comments` qui rend
+vide), §10g (la réécriture qui détruit l'ancrage) · `cursus-cli/README.md` ·
+`docs/methode/tickets.md` §1 (les trois niveaux que le rattachement épouse) ·
+`D-041` (le partage conformité/justesse dans une revue) · `D-043` (les drafts, et sa clause datée).

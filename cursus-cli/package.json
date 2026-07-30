@@ -1,0 +1,26 @@
+{
+  "name": "cursus-cli",
+  "version": "0.1.0",
+  "description": "La ligne de commande de Cursus — les commentaires ancrés de Linear, depuis le terminal.",
+  "type": "module",
+  "bin": {
+    "cursus": "./bin/cursus.ts"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "commander": "^14.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "license": "Apache-2.0"
+}

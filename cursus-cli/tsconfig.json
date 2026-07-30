@@ -1,0 +1,38 @@
+// Ce projet ne produit rien : Node exécute la source TypeScript en dépouillant les types à
+// la volée. TypeScript n'est donc plus un compilateur ici, seulement un vérificateur — d'où
+// `noEmit`, et d'où le fichier unique (il n'y a plus de « périmètre du build » à distinguer
+// du périmètre du typecheck).
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "lib": ["ES2023"],
+    "noEmit": true,
+
+    // Les imports portent l'extension `.ts` parce que c'est le fichier que Node ouvre
+    // réellement. Un `.js` y désignerait un fichier qui n'existe pas.
+    "allowImportingTsExtensions": true,
+
+    // La garde qui rend le pari tenable : refuse toute syntaxe que Node ne sait pas
+    // effacer (enum, namespace, propriétés de paramètre de constructeur). Sans elle,
+    // la faute ne se découvre qu'à l'exécution, et seulement sur le chemin fautif.
+    "erasableSyntaxOnly": true,
+
+    // Le standard du dépôt est « zéro warning ». Côté TypeScript, cela se traduit par
+    // les vérifications les plus strictes disponibles : ce qui passe ici passe pour de bon.
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["bin/**/*.ts", "src/**/*.ts", "tests/**/*.ts", "vitest.config.ts"],
+  "exclude": ["node_modules"]
+}

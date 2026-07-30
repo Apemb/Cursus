@@ -1,0 +1,14 @@
+# Ce fichier n'a qu'un but : rendre `cursus` tapable **dans ce dépôt et nulle part ailleurs**.
+# `mise` ajoute le dossier au PATH à l'entrée dans le répertoire, et le retire à la sortie —
+# c'est ce qu'aucun lien global ne sait faire, et ce qui évitait jusqu'ici de toucher au PATH.
+#
+# Le dossier contient `cursus`, un lien sans extension vers `cursus.ts`. L'extension compte :
+# Node ne dépouille les types que sur un `.ts`, et il résout le lien avant d'en décider.
+
+[env]
+_.path = ["{{config_root}}/cursus-cli/bin"]
+
+# La CLI exige Node 24 : c'est la version où le dépouillement des types est actif sans
+# drapeau. Épinglée ici, la contrainte du `package.json` cesse d'être déclarative.
+[tools]
+node = "24"
