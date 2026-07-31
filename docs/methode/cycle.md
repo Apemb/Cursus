@@ -223,8 +223,20 @@ binôme solder ses propres remarques *« parce qu'un tour de revue de plus suit 
 des mots en croyant retirer une orientation, et les six remarques du second tour rouvrent toutes des
 points qu'il avait cru solder. Le rattrapage a fonctionné dans le seul cas où il comptait.
 
-⚠️ **Aucune boucle n'est allée jusqu'à `Done`.** Personne n'a donc encore tiré, et les deux tours
-ont porté sur **le même artefact**, écrit par ceux-là mêmes qui éprouvaient le skill.
+**Un troisième tour a rendu `Done` le même jour**, et la carte a été tirée vers `Spec` : la boucle
+de `Discovery` est donc allée **jusqu'au bout**, une fois. Le tour 3 est le plus rapide et le moins
+cher des trois, et c'est celui qui a le plus vérifié — il a contrôlé les onze engagements de reprise
+ligne à ligne avant de conclure qu'aucun solde n'était de complaisance.
+
+⚠️ **Sa fiche `rex/` n'est pas écrite**, et elle porte un constat qui n'existe nulle part ailleurs :
+la clause *« ce qu'on en sait factuellement »* vit dans le skill `discovery` §3, alors que les trois
+axes de sa revue sont adossés à la **DoD**. Aucun axe ne la porte — donc **aucune revue ne peut
+détecter une section vidée de sa substance**, et le dispositif reste aveugle à la **sur-correction**,
+qui est le mode d'échec que produit mécaniquement une revue ne sachant chicaner que dans un sens. Le
+trou est dans le référentiel, pas dans le relecteur.
+
+⚠️ Les trois tours ont porté sur **le même artefact**, écrit par ceux-là mêmes qui éprouvaient le
+skill. Un accord unanime reste ce qu'on distingue le plus mal d'une revue qui ne cherche pas.
 
 **Le cycle de `Spec` a tourné deux fois le 2026-07-31**, sur la même feature : ① → ② → ① → ② → ①,
 onze puis douze remarques, **vingt-trois retenues sur vingt-trois**. C'est ce tour double qui a fait
