@@ -82,6 +82,14 @@ Ne pas toucher à l'artefact — ni correction, ni reformulation à la place de 
 régime *Vérification* (`CLAUDE.md`) : relire contre une source de vérité et rapporter l'écart, pas
 réécrire.
 
+**Un constat a deux issues, jamais trois** (`D-051`) : ou bien il vaut d'être opposé — c'est une
+remarque, elle ouvre `open`, elle se solde —, ou bien il ne le vaut pas, et **il ne s'écrit nulle
+part**. Il n'existe pas d'observation non bloquante, et le geste pour en poser une n'existe pas non
+plus. Le motif tient en une phrase : un artefact déclaré complet et auto-portant ne peut pas être
+accompagné d'une note qui dit qu'il ne suffit pas. Le test, quand on hésite : **est-ce que
+quelqu'un doit répondre ?** Si oui, c'est une remarque, quel que soit son axe — y compris un
+constat de justesse, qui appelle l'arbitrage de l'humain. Si non, se taire.
+
 Chaque constat retenu se pose **sur la carte**, une remarque par constat :
 
 ```bash

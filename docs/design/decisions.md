@@ -3054,3 +3054,66 @@ est celui d'une reprise complaisante que la revue suivante laisserait passer.
 **Construit** : rien — c'est une décision de méthode, et son effet est un retrait.
 **Tranché non construit** : `correction` et `verification` pour l'incrément.
 **Question ouverte** : le seuil qui dirait qu'un tour de revue ne vaut plus son prix.
+
+## D-051 — Un relecteur n'a pas d'observation non bloquante : il oppose, ou il se tait (2026-07-31)
+
+Friction 38 du journal, relevée au tour 3 de `revue-discovery` : le relecteur avait **quatre
+observations non bloquantes** qu'il n'a déposées nulle part, parce que les poser aurait fait monter
+`open` et interdit le `Done` qu'il s'apprêtait à rendre. Le geste *« poser une observation sans
+rouvrir la porte »* n'existait ni dans la CLI ni dans le cycle. La question était : faut-il le
+créer ?
+
+### 1. Ce qui est tranché : non, et le motif n'est pas le coût
+
+**Un constat de revue a deux issues, jamais trois** : ou bien il vaut d'être opposé — c'est une
+remarque, elle ouvre `open`, elle se solde —, ou bien il ne le vaut pas, et il n'existe pas.
+
+L'argument décisif est de l'utilisateur, et il déplace le problème : **si un document est validé
+comme complet et auto-portant, une remarque posée à côté ne peut qu'ajouter du bruit.** Elle dit
+implicitement *« le document ne suffit pas »* au moment même où le verdict dit qu'il suffit. Les
+deux ne peuvent pas être vrais ensemble — et c'est le verdict qui est opposable, pas la note en
+marge.
+
+Ce que ça préserve, et qui vaut plus qu'une observation : **le `Done` reste un contrat lisible.**
+Qui prend une carte marquée `Done` sait qu'il n'a rien d'autre à lire que l'artefact. Autoriser un
+canal parallèle transformerait cette garantie en *« l'artefact, plus ce qui traîne dans les fils »*,
+et le suivant devrait trier — ce qui est exactement le travail qu'un `Done` promet de lui épargner.
+
+### 2. Ce qui a été écarté
+
+**Un geste `observation`** — poser puis solder dans le même appel, avec un marqueur en tête du
+corps, pour que `open` ne bouge pas. Techniquement presque gratuit, et c'était la recommandation de
+l'agent. Écartée par le motif ci-dessus : le problème n'était pas la faisabilité du geste mais sa
+compatibilité avec ce que `Done` affirme.
+
+**La variante restreinte** — une observation légitime seulement si elle est **adressée à quelqu'un
+de nommé** (le découpeur, l'auteur du plan d'archi, la validation), une observation « en général »
+étant du bruit. Écartée avec la précédente : le test est bon, mais il ne répond pas à l'objection —
+une observation adressée reste une chose à lire en plus de l'artefact.
+
+**Corollaire assumé** : ce que le relecteur voit sans vouloir l'opposer est **perdu**, et c'est le
+prix consenti. Si un tour montre un jour qu'on perd quelque chose de cher, c'est le seuil de
+l'opposition qui est mal réglé — pas le canal qui manque.
+
+### 3. Ce qu'il ne faut pas y confondre
+
+**Le constat de justesse n'est pas une observation.** *« Est-ce la bonne chose à construire »* n'a
+pas de référentiel dans une DoD et revient à l'humain (`tickets.md` §6.3), mais il **appelle une
+réponse** — donc il se pose sur la carte, il compte dans `open`, et il se solde par l'arbitrage
+rendu. C'est ce qui s'est passé au second tour de la spec d'*Un agent pilote Cursus*, et c'était le
+bon geste. La différence tient en une question : **est-ce que quelqu'un doit répondre ?** Si oui,
+c'est une remarque, quel que soit son axe. Si non, ça n'existe pas.
+
+### 4. Ce qu'on ne sait pas
+
+**Les quatre observations du tour 3 sont perdues** — on a donc tranché sans jamais voir ce qu'elles
+contenaient, ni si le découpage en aurait eu besoin. La décision se prend sur le principe, pas sur
+la mesure, et c'est une faiblesse qu'il faut écrire : le cas qui la renverserait est celui d'un
+découpage qui bute sur quelque chose qu'un relecteur avait vu et tu.
+
+### 5. Registre
+
+**Construit** : la règle est écrite dans `revue` §6 ; elle ne demande aucun outillage — c'est une
+décision qui **retire** une option, pas qui en ajoute une.
+**Question ouverte** : le seuil de l'opposition. Rien ne dit aujourd'hui ce qui mérite d'ouvrir
+`open`, sinon le jugement du relecteur et les référentiels de son axe.
