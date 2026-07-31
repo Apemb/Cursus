@@ -291,3 +291,14 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     par l'utilisateur, à la lecture, après trois revues qui ne l'avaient pas vu. La règle qui en
     sort est dans `spec` §5 : **n'écrire que ce qui est décidé, le reste est ouvert par défaut.**
     — *étape 2*
+47. **Rien ne tient la forme d'un artefact d'un tour à l'autre, et l'utilisateur l'a nommé avant que
+    ça coûte.** Six fiches `rex/` se tiennent parce que leur `README.md` fixe sept rubriques ; en
+    face, une spec n'a que **des questions** (`tickets.md` §2.2) et **des cases** (`dod/`) — rien qui
+    dise à quoi ressemble le document. D'où trois dérives observées le même jour sur le même
+    artefact : une section « ce que je ne décide pas » qui gonfle jusqu'à contredire son titre (46),
+    un registre en double entre §6 et §8.6 qui se contredisaient, et un décompte corrigé en une
+    erreur plus précise que le flou d'origine. ⚠️ Ce n'est **pas** un appel à normaliser tout de
+    suite : un gabarit écrit avant d'avoir vu diverger fige la mauvaise forme, et `D-039` interdit
+    précisément d'écrire l'exécutant d'avance. Ce qu'il faut, c'est **attendre le second artefact de
+    chaque espèce** et écrire le gabarit sur ce que les deux ont en commun. Piste ouverte, pas
+    tâche. — *transverse*

@@ -238,11 +238,18 @@ trou est dans le référentiel, pas dans le relecteur.
 ⚠️ Les trois tours ont porté sur **le même artefact**, écrit par ceux-là mêmes qui éprouvaient le
 skill. Un accord unanime reste ce qu'on distingue le plus mal d'une revue qui ne cherche pas.
 
-**Le cycle de `Spec` a tourné deux fois le 2026-07-31**, sur la même feature : ① → ② → ① → ② → ①,
-onze puis douze remarques, **vingt-trois retenues sur vingt-trois**. C'est ce tour double qui a fait
-basculer `Spec` en cycle court (`D-050`) — les temps ③ et ④ n'ont jamais servi, et le second passage
-de revue a rendu davantage qu'une vérification n'aurait rendu. Fiches :
-[tour 1](rex/2026-07-31-revue-spec-tour-1.md) · [tour 2](rex/2026-07-31-revue-spec-tour-2.md).
+**Le cycle de `Spec` a tourné trois fois le 2026-07-31**, sur la même feature : ① → ② → ① → ② → ①
+→ ② → ①, onze puis douze puis seize remarques, **trente-neuf retenues sur trente-neuf, aucun refus
+motivé**. Ce sont ces tours qui ont fait basculer `Spec` en cycle court (`D-050`) — les temps ③ et ④
+n'ont jamais servi, et le second passage de revue a rendu davantage qu'une vérification n'aurait
+rendu. Fiches : [tour 1](rex/2026-07-31-revue-spec-tour-1.md) ·
+[tour 2](rex/2026-07-31-revue-spec-tour-2.md) · [tour 3](rex/2026-07-31-revue-spec-tour-3.md).
+
+⚠️ **La série ne converge pas — 11, 12, 16 — et c'est le fait le plus instructif du dispositif.**
+Chaque reprise dépose sa part de défauts neufs : deux des seize du tour 3 visent des reprises du
+tour 2. Le signal d'arrêt ne viendra donc pas de la boucle agent, qui a montré trois fois qu'elle
+sait toujours produire ; il vient de l'humain, au temps ⑤. Corollaire pour `D-051` : le **seuil de
+l'opposition** — ce qui mérite d'ouvrir `open` — reste la question ouverte du dispositif.
 
 ⚠️ **Un défaut a échappé aux deux tours** : une contradiction entre un paragraphe et le schéma
 `mermaid` situé deux paragraphes plus bas, que l'humain a vue à l'œil nu — et que le relecteur avait

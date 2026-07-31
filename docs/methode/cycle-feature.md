@@ -189,14 +189,16 @@ alors qu'une feature **est un projet** — les six étiquettes de projet ont ét
 2026-07-30, groupées, exclusivité mesurée (`cycle.md` §8). `Review Requested` y a été posée dans la
 foulée : c'est la première pose réelle du vocabulaire.
 
-**Le cycle de `Spec` a tourné deux fois le 2026-07-31**, sur *Un agent pilote Cursus* : ① → ② → ①
-→ ② → ①, onze puis douze remarques, **vingt-trois retenues sur vingt-trois**, aucun refus motivé.
-`revue-spec` y a posé `Rework Needed` deux fois, sans jamais déplacer la carte. C'est ce tour double
-qui a fait basculer cette colonne en cycle court (`D-050`) : les primitifs `correction` et
-`verification` **n'y ont jamais servi**, et ils ne sont plus réclamés ici.
+**Le cycle de `Spec` a tourné trois fois le 2026-07-31**, sur *Un agent pilote Cursus* : ① → ② → ①
+→ ② → ① → ② → ①, onze puis douze puis seize remarques, **trente-neuf retenues sur trente-neuf**,
+aucun refus motivé. `revue-spec` y a posé `Rework Needed` trois fois, sans jamais déplacer la carte.
+Ce sont ces tours qui ont fait basculer cette colonne en cycle court (`D-050`) : les primitifs
+`correction` et `verification` **n'y ont jamais servi**, et ils ne sont plus réclamés ici.
 
-⚠️ **Ce que le double tour n'a pas attrapé** : une contradiction entre le texte et son schéma
-`mermaid`, vue par l'humain seul. Voir `cycle.md` §8.
+⚠️ **Deux défauts ont échappé aux relecteurs et ont été vus par l'humain seul** : une contradiction
+entre le texte et son schéma `mermaid` — d'où la clause de `revue` §3 —, puis une section intitulée
+*« ce que je ne décide pas »* qui contenait surtout des décisions, gonflée par les reprises
+successives (journal 46). Aucun axe ne juge la cohérence d'une section avec son propre titre.
 
 **Tranché mais pas construit** : le reste de ce fichier — `Validation` et `Completed` n'ont jamais
 été joués, et aucune boucle n'est allée jusqu'à `Done`.
