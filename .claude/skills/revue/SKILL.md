@@ -42,7 +42,20 @@ Ne consigner une divergence que si elle porte **le référentiel** (fichier et c
 une impression — le garde-fou contre le constat plausible mais faux, préféré ici à la vérification
 empirique.
 
-Complet quand : aucune ligne du rapport n'affirme un écart sans ses deux citations.
+**Les deux pièces peuvent être deux passages du même artefact.** Quand la contradiction est
+**interne** — un schéma qui dit autre chose que la prose qu'il illustre, une table qui contredit le
+paragraphe qui l'annonce, un exemple qui n'obéit pas à la règle donnée — l'artefact est son propre
+référentiel, et l'écart est une **violation dure** : il n'a pas besoin d'une clause externe pour
+être opposable, puisque les deux passages ne peuvent pas être vrais ensemble.
+
+⚠️ **Confronter chaque figure à la prose qui l'entoure, sans exception.** C'est le geste que ce
+protocole a manqué deux fois de suite : un bloc `mermaid` se lit comme une **conclusion**, donc il
+échappe à la lecture chicanière — le relecteur l'absorbe au lieu de le confronter, et finit par
+**résoudre en sa faveur** une contradiction qu'il n'a pas vue. Une figure n'illustre pas, elle
+**affirme**, et ce qu'elle affirme se relit comme le reste.
+
+Complet quand : aucune ligne du rapport n'affirme un écart sans ses deux citations, et chaque figure
+de l'artefact a été confrontée au texte qui l'annonce.
 
 ## 4. S'abstenir plutôt qu'inventer
 

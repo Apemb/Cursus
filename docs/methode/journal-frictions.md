@@ -204,3 +204,32 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     avait lui aussi été écrit dans `revue` §6 avant le tour, et les douze remarques sont posées sur
     la carte avec leur repère. ⚠️ Ce dernier point n'est pas une mesure : on ne saura pas s'il l'a
     lu là ou retrouvé ailleurs, faute d'avoir rejoué le tour à l'identique. — *outillage*
+
+## 2026-07-30 — troisième tour de `revue-discovery` (consigné en retard, le 2026-07-31)
+
+38. **Un verdict `Done` avale ses jugements.** Le tour 3 a énoncé quatre observations non bloquantes
+    qui n'existent **nulle part** sur la carte : les déposer aurait rouvert `open`, et un `open` non
+    nul interdit le `Done`. Le relecteur a donc arbitré entre *dire ce qu'il a vu* et *laisser passer
+    la carte* — et il a choisi de laisser passer, ce qui est le bon choix au regard de la porte
+    mécanique, et une perte sèche au regard de ce qu'on cherche. Le geste **« poser une observation
+    sans rouvrir la porte »** n'existe ni dans la CLI ni dans le cycle. ⚠️ Le motif est structurel,
+    pas anecdotique : toute porte binaire calculée sur un compteur pousse à ne pas écrire ce qui
+    ferait monter le compteur. — *outillage*
+39. **Une clause qui vit dans le skill au lieu de la DoD n'est opposable par personne.** *« Ce qu'on
+    en sait factuellement »* est prescrit par `discovery` §3 ; les trois axes de `revue-discovery`
+    sont adossés à `dod/feature/discovery.md` §1/§2/§5. **Aucun axe ne porte la clause**, donc
+    aucune revue ne peut voir une section vidée de sa substance — et c'est ce qui s'est produit : les
+    cinq pistes ont été réduites à des définitions nues pour satisfaire l'axe *« aucun arbitrage n'a
+    été rendu »*, et trois tours ont validé sans pouvoir voir le risque inverse. ⚠️ **Une revue qui
+    ne sait chicaner que dans un sens produit mécaniquement la dérive opposée, et elle la certifie.**
+    Le remède est dans le référentiel, pas dans le relecteur. — *étape 1*
+
+## 2026-07-31 — écriture d'une fiche `rex/` en retard
+
+40. **Une fiche non écrite le jour même perd ce qu'aucune trace ne rattrape.** La fiche du tour 3
+    a été écrite le lendemain : la commande verbatim, le nombre de tours d'outils, les tokens et les
+    sous-agents sont **définitivement perdus** — le `README.md` du dossier dit pourtant que sans la
+    commande, deux tours ne se comparent pas. Ce qui a survécu est ce qui vivait ailleurs : les
+    chiffres de coût et de durée (mémoire de séance), les fils Linear, l'étiquette posée. ⚠️ Le
+    corollaire vaut pour toutes les fiches à venir : **ce qui n'est pas dans le dépôt ou dans Linear
+    à la fin de la séance n'existera plus le lendemain.** — *transverse*

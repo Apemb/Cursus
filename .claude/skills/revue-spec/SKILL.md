@@ -35,6 +35,11 @@ d'implémentation**, `D-049`). Une case sans réponse **et** sans « sans objet 
 est une **violation dure** ; l'omission silencieuse est le seul cas que la DoD interdit
 (`tickets.md` §5). Une case répondue par un « sans objet » n'est pas une divergence.
 
+⚠️ **Une case y exige un schéma, donc cet axe porte une contradiction de plus à chercher :** celle
+entre le schéma et la prose qui l'annonce (`revue` §3, dernier paragraphe). C'est le défaut que deux
+tours réels ont laissé passer, et il ne se voit pas en cochant des cases — la case « au moins un
+schéma » était tenue **pendant que le schéma contredisait le paragraphe d'au-dessus**.
+
 **Axe Découpabilité** (référentiel : `docs/methode/dod/feature/spec.md` §3 — *« une spec est finie
 quand le découpage peut avoir lieu sans revenir poser de question »*). Ce n'est pas cochable :
 tenter mentalement le découpage de la spec en incréments, et signaler chaque endroit où il
