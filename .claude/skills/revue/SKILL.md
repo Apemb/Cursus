@@ -63,14 +63,29 @@ emprunte une autorité qu'il n'a pas.
 
 Complet quand : chaque ligne du rapport porte l'une des deux étiquettes, sans exception.
 
-## 6. Lister, sans réécrire
+## 6. Lister sur la carte, sans réécrire l'artefact
 
 Ne pas toucher à l'artefact — ni correction, ni reformulation à la place de l'auteur. Posture du
 régime *Vérification* (`CLAUDE.md`) : relire contre une source de vérité et rapporter l'écart, pas
 réécrire.
 
-Complet quand : le rapport ne contient aucun texte destiné à remplacer un passage de l'artefact —
-seulement des constats.
+Chaque constat retenu se pose **sur la carte**, une remarque par constat :
+
+```bash
+cursus linear comment add "<titre du document>" --quote "<le passage visé>" --body -
+```
+
+Le passage cité doit figurer dans le document, **et une seule fois** — la commande en calcule le
+repère, et refuse une citation qui n'y figure pas comme une citation qui y figure plusieurs fois.
+Les blancs, eux, sont tolérés : recopier un passage écrase ses retours à la ligne, et c'est prévu.
+`--body -` lit la remarque sur l'entrée standard, ce qui évite d'échapper le markdown.
+
+⚠️ **Jamais sur le document, toujours sur la carte** (`D-045`) : l'API Linear ne sait pas ancrer un
+commentaire de document, et réécrire un document désancre tous les siens. Une remarque posée là où
+l'auteur va écrire sa reprise est une remarque qui disparaît au moment de servir.
+
+Complet quand : le rapport ne contient aucun texte destiné à remplacer un passage de l'artefact,
+et chaque constat retenu existe comme remarque sur la carte.
 
 ## 7. Rendre un verdict structuré
 
