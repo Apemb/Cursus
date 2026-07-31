@@ -32,17 +32,27 @@ soit elle s'arrête ici et le dit.
 
 Fournir l'artefact — le document `Discovery` attaché à la feature — et exactement trois axes.
 
-**Axe Complétude** (référentiel : `docs/methode/dod/feature/discovery.md` §1, les cinq cases). Une
+**Axe Complétude** (référentiel : `docs/methode/dod/feature/discovery.md` §1, les **six** cases). Une
 case sans réponse **et** sans « sans objet » explicite est une **violation dure**. Attention à la
-cinquième, *ce que la discovery a fait apparaître* : elle n'est due que **s'il y a lieu**, et son
+dernière, *ce que la discovery a fait apparaître* : elle n'est due que **s'il y a lieu**, et son
 absence n'est une violation que si le document laisse voir un cadrage défait ou deux besoins
 séparés en route sans que rien ne l'accueille.
+
+⚠️ **La case de la matière factuelle est neuve, et elle existe contre l'axe suivant.** Le
+2026-07-30, trois tours ont validé une Discovery dont les cinq pistes avaient été **vidées de leur
+matière pour satisfaire le non-arbitrage** — et aucun axe ne pouvait le voir. Une piste qui n'apprend
+rien est aussi défaillante qu'une piste déjà jugée : la tester est le geste que ce skill a manqué
+trois fois de suite.
 
 **Axe Non-arbitrage** (référentiel : `docs/methode/dod/feature/discovery.md` §2). L'axe le plus
 subtil des treize DoD, et *« le premier candidat à produire un faux succès »* (`cycle-feature.md`
 §8). Il ne se coche pas, il se **teste piste par piste** :
 
 > Cette piste est-elle présentée avec une raison de ne pas la retenir ?
+
+Et **la question symétrique, dans le même passage**, sans quoi cet axe fabrique la dérive inverse :
+
+> Cette piste apprend-elle quelque chose, ou se contente-t-elle de se nommer ?
 
 La frontière est fine et se franchit sans qu'on s'en aperçoive. *Énoncer un fait connu* sur une
 piste est légitime — « ce transport suppose le service résident » ; *en tirer une conséquence* ne

@@ -19,6 +19,11 @@
       coûte l'inaction**
 - [ ] **Plusieurs pistes** sont ouvertes — une piste unique n'est pas une ouverture, c'est un
       choix déguisé en constat
+- [ ] **Chaque piste porte ce qu'on en sait factuellement** — pas seulement ce qu'elle est. Une
+      piste réduite à sa définition (*« un serveur MCP local : Cursus expose ses gestes comme les
+      outils d'un protocole »*) n'apprend rien à qui devra l'arbitrer : elle nomme sans informer.
+      Ce qui compte est le **fait connu** — un protocole existe et son SDK est stable, le dépôt
+      n'en porte aucune brique, une contrainte technique est déjà documentée ailleurs
 - [ ] Ce que la Discovery a **fait apparaître** est écrit, s'il y a lieu : un cadrage à défaire,
       deux besoins sous un même titre, un besoin qui n'était pas celui qu'on croyait. Ce
       résultat-là ne rentre dans aucune des questions de §2.1 et se perd si rien ne l'accueille
@@ -37,6 +42,14 @@ piste est légitime (« ce transport est incompatible avec la résidence ») ; *
 conséquence* ne l'est pas (« donc cette piste ne convient pas »). Le second est déjà de
 l'arbitrage, même déguisé en constat. Se méfier des formats qui invitent à commenter chaque
 piste : la colonne de commentaire appelle l'argument, et l'argument appelle la conclusion.
+
+⚠️ **Cette clause et la matière factuelle de §1 tirent en sens contraire, et c'est voulu.** Une
+relecture qui ne chicane que dans un sens produit **mécaniquement** la dérive opposée, et elle la
+certifie : c'est arrivé le 2026-07-30, où trois tours ont validé une Discovery dont les cinq pistes
+avaient été vidées de leur matière **pour satisfaire cette clause-ci**. Le relecteur doit donc
+tester les deux : *cette piste est-elle déjà écartée ?* **et** *cette piste apprend-elle quelque
+chose ?* Une piste qui n'apprend rien est aussi défaillante qu'une piste déjà jugée — la première
+défaillance est simplement plus silencieuse, parce qu'elle ressemble à de la rigueur.
 
 ## 3. Le critère opposable
 
