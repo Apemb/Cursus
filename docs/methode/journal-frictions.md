@@ -155,3 +155,24 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     Linear**, la bonne source. ⚠️ Le doute était légitime et le restera : à revérifier à chaque
     fiche, parce que le dossier grossit et qu'un relecteur qui explore finira par tomber dessus.
     — *transverse*
+
+## 2026-07-31 — Spec de « un agent pilote Cursus », premier tour de `revue-spec`
+
+32. **Le cycle complet de `Spec` prescrit deux skills qui n'existent pas.** `cycle-feature.md` §4
+    renvoie à `correction` (temps ③) et `verification` (temps ④), tous deux marqués *à écrire*. Le
+    tour a donc joué `correction` **à la main** — onze soldes rédigés sans protocole, sans clause
+    disant ce qui distingue une reprise d'un refus motivé. Ça a marché parce que l'auteur avait le
+    fil ; un agent sans la conversation n'aurait pas su quoi écrire dans les fils. — *étape 2*
+33. **Le geste central de `revue-spec` est *absent*, pas *mort*** — et la nuance change le remède.
+    `D-045` a tué le geste des quatre skills de revue (poser sur le document, impossible par l'API) ;
+    ici, ni `revue-spec` ni le primitif `revue` §8 ne disent **comment** poser une remarque. Le
+    relecteur a trouvé `cursus linear comment add` **seul**, en lisant `cycle-feature.md`. Le tour a
+    donc réussi **par exploration, pas par conception** : le même skill lancé dans un dépôt où cette
+    commande n'est pas documentée à côté échouerait sans rien signaler. Un geste absent est plus
+    silencieux qu'un geste mort — le mort lève une erreur, l'absent produit un agent débrouillard.
+    — *outillage*
+34. **La durée d'un sous-agent n'est pas celle qu'on lit.** La notification de fin a été émise deux
+    fois pour la même exécution, la seconde portant 3 807 s là où le travail réel en avait pris 727 —
+    l'écart étant la boucle d'attente, pas de la revue. Une fiche `rex/` qui prend le mauvais chiffre
+    rend deux tours incomparables, ce qui est sa seule raison d'être. **Prendre la durée de la
+    première notification.** — *outillage*
