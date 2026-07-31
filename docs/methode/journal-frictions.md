@@ -233,3 +233,13 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     chiffres de coût et de durée (mémoire de séance), les fils Linear, l'étiquette posée. ⚠️ Le
     corollaire vaut pour toutes les fiches à venir : **ce qui n'est pas dans le dépôt ou dans Linear
     à la fin de la séance n'existera plus le lendemain.** — *transverse*
+41. **Changer un cycle laisse les cartes en cours dans un état qui n'existe plus.** `D-050` a
+    supprimé les temps ③ et ④ de `Spec` — donc l'étiquette `Rework Done` du vocabulaire de cette
+    colonne. Or une carte la portait **au moment même où la décision était prise** : elle venait
+    d'être posée une heure plus tôt, à la fin d'une reprise. Personne ne l'a vue jusqu'à ce que
+    l'utilisateur demande *« on ne vient pas de passer une revue à zéro ? »* — question dont la
+    réponse était non, et qui a fait apparaître au passage que l'état affiché était devenu
+    illégal. ⚠️ Aucun mécanisme ne rattrape ça : les étiquettes sont posées à la main par l'agent
+    qui finit son temps, et une décision de méthode ne repasse pas sur les cartes en vol. À vérifier
+    **par principe** après toute décision qui touche un vocabulaire d'états — la question n'est pas
+    « le document est-il à jour » mais « que portent les cartes en cours ». — *transverse*
