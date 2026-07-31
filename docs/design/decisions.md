@@ -2963,3 +2963,94 @@ tient à l'écriture ou reste un vœu.
 **Renvoi** : `D-036` (les trois registres, amendé ici) · `D-041` (un artefact, un document —
 et pourquoi on n'a pas ouvert un troisième) · `D-039` (la session neuve, qui a produit la revue
 révélatrice) · `docs/methode/tickets.md` §2.2 q.8 · `docs/design/schemas.md` (la convention visuelle).
+
+## D-050 — `Spec` bascule en cycle court : le critère n'était pas la nature de la correction, mais la présence de l'humain (2026-07-31)
+
+`D-047` a doté le cycle de revue d'un vocabulaire à six états, et `cycle.md` §6 a réparti les
+colonnes entre **cycle court** (① → ② → ① → … → ⑥) et **cycle complet** (① → ② → ③ → ④ → …), en
+rangeant `Spec` du côté complet. Cette entrée **renverse ce placement**, et remplace le critère qui
+l'avait produit. `cycle-increment.md` n'est pas touché.
+
+### 1. Ce que le critère prédisait, et ce que deux exécutions ont donné
+
+Le critère écrit était : *« un agent correcteur ne se justifie que là où la correction est
+textuelle »*. Il rangeait `Discovery` à part — ce qui y manque est de la **matière**, pas de la
+prose — et mettait `Spec` avec `Plan Review` et `Code Review`.
+
+`Spec` d'*Un agent pilote Cursus* a tourné **deux fois** le 2026-07-31, et **ni `correction` ni
+`verification` n'ont jamais servi** — non par manque de temps, mais parce que rien ne les appelait :
+
+- le temps ③ a été joué **à la main par le binôme**, deux fois, c'est-à-dire exactement le geste
+  du cycle court ;
+- le temps ④ n'a **jamais eu lieu**. Au tour 2, un second passage de revue l'a remplacé, et il a
+  rendu **davantage** qu'une vérification : aucune des onze remarques du tour 1 rouverte — donc la
+  reprise tenait — et douze défauts neufs, dont deux violations dures sur des passages que le
+  tour 1 avait lus sans rien y trouver.
+
+**Le chiffre qui tranche** : sur les douze remarques du tour 2, **cinq portent littéralement la
+ligne « La question à reposer »**, et une sixième est un constat de justesse. La moitié des
+remarques d'une revue de spec ne demandent donc **aucune correction textuelle** — elles demandent
+un arbitrage : ce que « mutant » désigne, quelle branche pour le cycle de vie des hosts, quelle
+maille pour trente gestes, comment se répartit une clause de recette. Un agent `correction` lancé
+seul là-dessus aurait produit de la prose lisse sur des questions ouvertes — le **faux succès** que
+`docs/reference/skills.md` désigne comme le mode de défaillance dominant.
+
+La Spec est donc, sur ce point, **bien plus près de la Discovery que du code**.
+
+### 2. Ce qui est tranché
+
+**`Spec` passe en cycle court.** Les temps ③ et ④ y disparaissent : `Rework Needed` convoque le
+binôme, qui reprend et repose `Review Requested`. La porte de sortie reste mécanique — `open` vaut
+zéro — et `Human Review Requested` reste ce qui ferme la boucle quand elle n'avance plus.
+
+**Le critère de `cycle.md` §6 est remplacé** :
+
+| Ancien critère | Nouveau critère |
+|---|---|
+| *La correction est-elle textuelle ?* | ***L'humain est-il dans la production ?*** |
+
+Là où il l'est — `Discovery` et `Spec`, régime *Trio* (`tickets.md` §6.3) — le binôme reprend,
+parce qu'il est le seul à pouvoir trancher, et **la revue suivante tient le rôle du vérificateur**.
+Là où il ne l'est pas — `Plan Review` et `Code Review`, où un agent écrit seul — ③ et ④ gardent
+leur sens : il n'y a personne pour arbitrer, et personne pour rattraper.
+
+⚠️ **`correction` et `verification` restent à écrire.** Ils cessent d'être réclamés par `Spec`, pas
+par l'incrément. Ce qui change est leur ordre de priorité, pas leur existence.
+
+**Le rattrapage par la revue suivante n'est pas une hypothèse.** `cycle.md` §8 l'avait déjà mesuré
+en `Discovery`, dans le sens qui compte : la reprise du binôme y était *sincère et fausse*, et les
+six remarques du tour 2 rouvraient toutes des points qu'il croyait soldés. En `Spec`, il a joué
+dans l'autre sens, et c'est aussi informatif.
+
+### 3. Ce qui a été écarté
+
+**Garder ④ en le rendant étroit** — un vérificateur qui ne relit que les fils. Écarté parce que
+c'est précisément ce que le tour 2 a fait **en mieux** : une revue relit l'artefact, donc elle voit
+ce qu'une reprise a cassé ailleurs, ce qu'un vérificateur de fils ne regarde pas.
+
+**Garder ③ pour décharger l'humain.** Écarté par le chiffre du §1 : la moitié des remarques ne sont
+pas déchargeables, et un correcteur qui traite les six autres laisse un artefact à moitié repris
+qu'il faut de toute façon reprendre en binôme.
+
+**Aligner aussi l'incrément.** Écarté : le motif de ce renversement est la présence de l'humain, et
+elle n'y est pas. Y appliquer la même conclusion serait reproduire l'erreur qu'on corrige —
+généraliser un critère au-delà de ce qui l'a établi.
+
+### 4. Ce que ça coûte, et ce qui n'est pas mesuré
+
+**Un tour de revue complet coûte ~620 s et ~82 000 jetons** là où une vérification ciblée coûterait
+une fraction. Le pari n'est rentable que tant qu'un tour trouve beaucoup ; **le jour où un tour
+rendra deux remarques cosmétiques, c'est le signal qu'il fallait la vérification étroite**.
+
+**Il manque un critère d'arrêt mesuré.** En cycle court la porte est « une revue ne trouve rien »,
+et aucune boucle n'y est arrivée — ni en `Discovery`, ni en `Spec`. C'est `Human Review Requested`
+qui doit la fermer, par un jugement humain, pas l'épuisement du relecteur.
+
+**Deux exécutions ne sont pas une loi.** Les deux reprises étaient bonnes ; le cas qu'on n'a pas vu
+est celui d'une reprise complaisante que la revue suivante laisserait passer.
+
+### 5. Registre
+
+**Construit** : rien — c'est une décision de méthode, et son effet est un retrait.
+**Tranché non construit** : `correction` et `verification` pour l'incrément.
+**Question ouverte** : le seuil qui dirait qu'un tour de revue ne vaut plus son prix.

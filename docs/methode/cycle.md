@@ -133,27 +133,37 @@ c'est ce qui rend le flux tiré observable plutôt que déclaratif.
 
 ## 6. Quand les temps ③ et ④ existent — et quand ils n'existent pas
 
-**Un agent correcteur ne se justifie que là où la correction est textuelle.**
+**Le critère est : l'humain est-il dans la production ?** (`D-050`)
 
-En `Spec`, en `Plan Review`, en `Code Review`, une remarque désigne un manque **dans l'artefact** :
-un écart non écrit, une capacité formulée en liste de tâches, un test dont le titre ne dit pas ce
-qu'il vérifie. Tout cela se reprend en relisant l'artefact et son référentiel — donc un agent le
-fait, et un autre agent vérifie qu'il l'a fait.
+Là où il l'est — `Discovery` et `Spec`, régime *Trio* (`tickets.md` §6.3) —, le binôme reprend
+lui-même, **parce qu'il est le seul à pouvoir trancher**, et c'est la **revue suivante** qui tient
+le rôle du vérificateur. Là où il ne l'est pas — `Plan Review`, `Code Review`, où un agent écrit
+seul —, les temps ③ et ④ gardent leur sens : il n'y a personne pour arbitrer, et personne pour
+rattraper.
 
-En `Discovery`, ce qui manque à une remarque n'est presque jamais de la prose : c'est de la
-**matière** — un entretien qui n'a pas eu lieu, une piste qu'on n'a pas explorée, une hypothèse
-non testée. C'est ce que dit l'état de l'art de la discovery continue, où l'alignement se fait par
-la preuve et non par le document, et où la production est portée par un binôme ou un trio plutôt
-que par une chaîne producteur → correcteur. Un agent correcteur y produirait de la prose plus
-lisse sur un besoin toujours aussi mal établi — un faux succès, qui est le mode de défaillance
+Ce que ces remarques réclament n'est pas de la prose. En `Discovery`, c'est de la **matière** — un
+entretien qui n'a pas eu lieu, une piste non explorée, une hypothèse non testée. En `Spec`, c'est
+un **arbitrage** : sur les douze remarques du second tour du 2026-07-31, **cinq portaient
+littéralement « la question à reposer »** et une sixième un constat de justesse. La moitié d'une
+revue de spec ne se corrige pas, elle se décide. Un agent correcteur y produirait de la prose plus
+lisse sur une question toujours aussi ouverte — un faux succès, qui est le mode de défaillance
 dominant (`docs/reference/skills.md`).
 
-D'où deux formes de cycle, et le critère qui les départage :
+D'où deux formes de cycle :
 
 | Forme | Où | Temps |
 |---|---|---|
-| **Cycle court** | `Discovery` | ① binôme → ② revue → ① binôme → … → ⑥ |
-| **Cycle complet** | `Spec`, `Plan Review`, `Code Review` | ① → ② → ③ → ④ → (② …) → ⑤ → ⑥ |
+| **Cycle court** | `Discovery`, `Spec` | ① binôme → ② revue → ① binôme → … → ⑥ |
+| **Cycle complet** | `Plan Review`, `Code Review` | ① → ② → ③ → ④ → (② …) → ⑤ → ⑥ |
+
+⚠️ **Les deux cycles courts ne finissent pas pareil.** `Spec` passe par ⑤ `Human Review Requested`
+quand la boucle n'avance plus — c'est là que l'humain prononce et ferme ; `Discovery` ne l'a pas,
+son binôme portant déjà l'humain à chaque tour (`cycle-feature.md` §3).
+
+⚠️ **`Spec` a changé de forme le 2026-07-31**, après deux tours où ni `correction` ni
+`verification` n'ont jamais servi — le temps ③ joué à la main par le binôme, le temps ④ remplacé
+par un second passage de revue **qui a rendu davantage** qu'une vérification. Le critère précédent
+— *la correction est-elle textuelle ?* — prédisait l'inverse, et c'est lui qui est tombé (`D-050`).
 
 ---
 
@@ -216,10 +226,23 @@ points qu'il avait cru solder. Le rattrapage a fonctionné dans le seul cas où 
 ⚠️ **Aucune boucle n'est allée jusqu'à `Done`.** Personne n'a donc encore tiré, et les deux tours
 ont porté sur **le même artefact**, écrit par ceux-là mêmes qui éprouvaient le skill.
 
-**Tranché mais pas construit** : tout le reste de ce fichier. Aucune boucle complète n'a tourné
-jusqu'à `Done`. Les deux primitifs que le cycle réclame — `correction` et `verification` —
-**n'existent pas**, et ils n'ont pas manqué au tour du 2026-07-30 : en cycle court, les temps ③ et ④
-n'existent pas, c'est le binôme qui reprend (§6). Ils manqueront au premier tour de `Spec`.
+**Le cycle de `Spec` a tourné deux fois le 2026-07-31**, sur la même feature : ① → ② → ① → ② → ①,
+onze puis douze remarques, **vingt-trois retenues sur vingt-trois**. C'est ce tour double qui a fait
+basculer `Spec` en cycle court (`D-050`) — les temps ③ et ④ n'ont jamais servi, et le second passage
+de revue a rendu davantage qu'une vérification n'aurait rendu. Fiches :
+[tour 1](rex/2026-07-31-revue-spec-tour-1.md) · [tour 2](rex/2026-07-31-revue-spec-tour-2.md).
+
+⚠️ **Un défaut a échappé aux deux tours** : une contradiction entre un paragraphe et le schéma
+`mermaid` situé deux paragraphes plus bas, que l'humain a vue à l'œil nu — et que le relecteur avait
+non seulement manquée mais **résolue en faveur du schéma**. Un bloc `mermaid` se lit comme une
+conclusion, pas comme une affirmation à confronter au texte, et `D-049` vient d'en rendre un
+obligatoire dans chaque spec. Le primitif `revue` n'a aucune clause qui oblige à croiser les deux
+(journal des frictions 35).
+
+**Tranché mais pas construit** : tout le reste de ce fichier. Aucune boucle n'est allée jusqu'à
+`Done`. Les deux primitifs `correction` et `verification` **n'existent pas** — ils ne manquent plus
+ni à `Discovery` ni à `Spec`, tous deux en cycle court, et ne sont plus réclamés que par les deux
+revues de l'**incrément** (§6, `D-050`).
 
 **Questions ouvertes** :
 

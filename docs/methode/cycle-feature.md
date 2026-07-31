@@ -83,9 +83,14 @@ mérite une phrase disant pourquoi — un abandon non expliqué se re-proposera.
 
 ## 4. `Spec` — arbitrer, et écrire ce qu'on écarte
 
-**Cycle complet.** C'est ici que les temps ③ et ④ existent : une remarque de spec désigne un manque
-**dans l'artefact** — un écart non écrit, une capacité formulée en liste de tâches, une recette
-absente — et ça se reprend en relisant l'artefact contre son référentiel.
+**Cycle court**, comme `Discovery` — et ce n'est plus une exception mais la règle des deux colonnes
+où l'humain est dans la production (`cycle.md` §6, `D-050`). Ni correcteur ni vérificateur : le
+binôme reprend et repose `Review Requested`, la revue suivante rattrape.
+
+⚠️ **Ce fichier prescrivait l'inverse jusqu'au 2026-07-31.** Deux tours réels ont montré que la
+moitié des remarques d'une revue de spec ne se corrigent pas mais **se décident** — cinq des douze
+du second tour portaient littéralement « la question à reposer ». Un agent correcteur n'a rien à y
+faire, et le second passage de revue a rendu davantage qu'une vérification n'aurait rendu.
 
 ⚠️ **La spec est fonctionnelle *et* technique** (`D-049`). Elle se termine par un **plan
 d'implémentation** — solutions envisageables, celle qu'on priorise, comment on compte la concevoir,
@@ -97,8 +102,7 @@ technique, et chaque plan d'incrément ne voit que le sien. Le trou s'est vu à 
 |---|---|---|---|
 | `Spec` + *aucune* | [`spec`](../../.claude/skills/spec/SKILL.md) | Le document `Spec` : options **arbitrées** (faisabilité, coût), **écarts écrits**, capacité énoncée à l'indicatif, **recette définie**, socle et pré-requis nommés, trois registres tenus, et le **plan d'implémentation** avec son ou ses schémas (`D-049`) | `Review Requested` |
 | `Spec` + `Review Requested` | [`revue-spec`](../../.claude/skills/revue-spec/SKILL.md) | Les remarques posées sur le projet | `Rework Needed` \| `Human Review Requested` si aucune |
-| `Spec` + `Rework Needed` | `correction` **(à écrire)** | Le document repris, **une réponse dans chaque fil** disant la reprise faite ou le refus motivé | `Rework Done` |
-| `Spec` + `Rework Done` | `verification` **(à écrire)** | Chaque remarque soldée, ou rouverte avec ce qui manque encore | `Rework Needed` \| `Human Review Requested` si `open` vaut 0 (+ `Escalated` si une remarque a atteint son 3ᵉ désaccord) |
+| `Spec` + `Rework Needed` | [`spec`](../../.claude/skills/spec/SKILL.md), **l'humain revient dans la boucle** | Le document repris, et **chaque remarque soldée** par la reprise faite ou le refus motivé | `Review Requested` |
 | `Spec` + `Human Review Requested` | — *(humain)* | Ses propres remarques posées, ou l'accord | `Rework Needed` \| `Done` |
 | `Spec` + `Done` | — | — | l'humain **tire** vers `In Progress` |
 
@@ -185,8 +189,17 @@ alors qu'une feature **est un projet** — les six étiquettes de projet ont ét
 2026-07-30, groupées, exclusivité mesurée (`cycle.md` §8). `Review Requested` y a été posée dans la
 foulée : c'est la première pose réelle du vocabulaire.
 
-**Tranché mais pas construit** : le reste de ce fichier. Les primitifs `correction` /
-`verification` que `Spec` réclame n'existent pas.
+**Le cycle de `Spec` a tourné deux fois le 2026-07-31**, sur *Un agent pilote Cursus* : ① → ② → ①
+→ ② → ①, onze puis douze remarques, **vingt-trois retenues sur vingt-trois**, aucun refus motivé.
+`revue-spec` y a posé `Rework Needed` deux fois, sans jamais déplacer la carte. C'est ce tour double
+qui a fait basculer cette colonne en cycle court (`D-050`) : les primitifs `correction` et
+`verification` **n'y ont jamais servi**, et ils ne sont plus réclamés ici.
+
+⚠️ **Ce que le double tour n'a pas attrapé** : une contradiction entre le texte et son schéma
+`mermaid`, vue par l'humain seul. Voir `cycle.md` §8.
+
+**Tranché mais pas construit** : le reste de ce fichier — `Validation` et `Completed` n'ont jamais
+été joués, et aucune boucle n'est allée jusqu'à `Done`.
 
 **Éprouvé ailleurs, pas ici** : le trio `Discovery` → `Spec` → revue a tourné sur quelques tickets
 hors de ce dépôt, sans les étiquettes et sans agent tiers.
