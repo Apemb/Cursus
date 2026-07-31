@@ -137,6 +137,38 @@ Clause par clause, avec ce qui l'atteste.
 
 ## 4. Qualité de la sortie
 
+> **Complété après la reprise**, par le binôme auteur. La mesure est objective — combien de
+> remarques il retient, combien il refuse — mais l'appréciation ne l'est pas : celui qui juge ici est
+> celui que la revue visait. À lire avec cette réserve.
+
+**Seize remarques sur seize retenues, aucun refus motivé.** Troisième tour d'affilée à ce score
+(11/11, 12/12, 16/16). Cinq exigeaient un arbitrage qui n'appartenait pas au relecteur et qui a été
+rendu par l'humain ; les onze autres se corrigeaient sur pièces.
+
+**Trois affirmations ont été vérifiées dans le code avant reprise, et les trois tenaient** : le WAL
+qui ne protège rien faute d'une seconde connexion, les douze types de `Tasks/` là où la spec en
+comptait huit, et le `ProjectWorkspace` — et non le host — que résout réellement `App.axaml.cs`.
+
+**Le résultat le plus fort de ce tour n'est pas un chiffre mais une provenance.** Cinq remarques
+naissent des blocs `mermaid`, que deux tours avaient traversés sans rien y voir. La clause ajoutée à
+`revue` §3 le matin même — *une figure n'illustre pas, elle affirme* — a produit exactement ce pour
+quoi elle a été écrite, sur l'artefact qui l'avait rendue nécessaire. Parmi ces cinq : une figure qui
+tranchait par un trait deux questions que le §8.6 déclarait ouvertes.
+
+**Deux remarques visent des reprises du tour 2, pas le texte d'origine**, et elles désignent un mode
+de défaillance qu'aucune fiche n'avait relevé : corriger « plus `Tasks/` » en « huit types publics »
+a remplacé un flou par une erreur, et solder une remarque sur l'annexe a laissé le §6 porter le même
+défaut. **Une remarque ancrée sur un passage se solde sur ce passage, alors que le défaut peut vivre
+ailleurs.**
+
+⚠️ **Ce que ce tour ne permet pas de conclure.** Douze violations dures contre deux au tour
+précédent, avec l'axe Conformité entièrement en dur. Deux lectures restent ouvertes — les reprises du
+tour 2 ont réellement cassé six cases sur douze, ou ce relecteur calibre plus sévèrement la frontière
+entre *violation dure* et *jugement*. Les deux échantillons vérifiés étaient bien des violations ;
+deux ne font pas douze, et rien dans le dispositif ne mesure le calibrage d'un relecteur à l'autre.
+
+### Les faits bruts relevés par le relecteur
+
 **À compléter par un tiers.** Le relecteur ne juge pas ce qu'il vient de produire ; c'est le motif de
 `D-039`, et un verdict auto-décerné vaudrait exactement ce que vaut le faux accord du binôme
 (`tickets.md` §6.3). Ce qui suit est la matière brute, sans appréciation.
@@ -213,7 +245,34 @@ passage, sans règle), **45** (la pièce la plus contestable est la moins citabl
 
 ## 7. Verdict pour `revue-spec`
 
-**À compléter par un tiers.** Les quatre issues de `D-043` amendé — *promu*, *corrigé par le
+> **Complété après la reprise**, avec la même réserve qu'au §4.
+
+**Promu, et confirmé une seconde fois** — mais le verdict le plus utile porte sur autre chose que le
+skill.
+
+Trois tours, **39 remarques posées, 39 retenues, aucun refus motivé.** Le skill tient ses clauses
+sans les béquilles du tour 1, et le remède écrit après le tour 2 a produit dès son premier usage.
+C'est le critère de `D-043`, atteint trois fois.
+
+**Ce que la série dit et que le skill ne contrôle pas : la boucle ne converge pas.** 11, puis 12,
+puis 16. Chaque reprise crée sa part de défauts neufs — deux des seize en viennent directement — et
+un quatrième tour trouverait probablement encore quelque chose. Ce n'est pas un échec du relecteur :
+c'est la limite d'un artefact de cette taille relu contre une DoD de douze cases. **Le signal
+d'arrêt ne viendra pas de la boucle agent**, qui a montré trois fois qu'elle sait toujours produire ;
+il viendra de l'humain, au temps ⑤.
+
+**Trois réserves, aucune sur le geste de relecture** :
+
+- `revue-spec` §4 prescrivait `Done` là où `D-050` réserve ce verdict à l'humain — **corrigé le jour
+  même** (journal 42) ;
+- la clause de session neuve est démentie par la mémoire de projet, qui se charge avant toute lecture
+  et résume l'artefact par ses conclusions (journal 43). **Aucune clause de skill ne peut fermer ce
+  canal** — c'est la façon dont la session est construite qui devra changer, et cela vaut
+  rétroactivement pour les trois tours ;
+- `revue` §2 et §6 se contredisent quand deux axes trouvent le même passage (journal 44), et le motif
+  est structurel : plus les axes sont bons, plus ils se recouvrent.
+
+**Les faits bruts relevés par le relecteur.** Les quatre issues de `D-043` amendé — *promu*, *corrigé par le
 journal*, *retiré*, *tué par un fait* — supposent un juge qui n'est pas l'exécutant.
 
 **Les faits bruts qu'un tiers utilisera.**

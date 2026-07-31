@@ -62,9 +62,15 @@ elle est conforme et découpable.
 
 ## 4. Poser le verdict, sans escalade
 
-Poser `Done` si aucune violation dure ne reste sans réponse et si l'axe Découpabilité ne relève
-aucun achoppement ; sinon `Rework Needed`, avec le point en litige de chaque axe qui motive le
-refus. Ne jamais déplacer la carte.
+Poser **`Human Review Requested`** si aucune violation dure ne reste sans réponse et si l'axe
+Découpabilité ne relève aucun achoppement ; sinon `Rework Needed`, avec le point en litige de chaque
+axe qui motive le refus. Ne jamais déplacer la carte.
+
+⚠️ **Ce n'est pas `Done`, et l'écart compte.** `Done` est le verdict qui rend la carte tirable, et à
+ce niveau **seul l'humain le prononce** (`cycle-feature.md` §4, `D-050`) : il est dans la production,
+c'est lui qui engage en tirant. Un relecteur qui poserait `Done` ferait sauter le passage humain que
+le cycle place après lui — et le ferait silencieusement, puisque le cas ne se présente que lorsqu'il
+n'a **rien** trouvé.
 
 Le régime `Spec` est *Trio*, pas *Boucle* (`tickets.md` §6.3, dernière ligne) : pas de compteur de
 tours, pas d'assignation à relire ici — l'humain est déjà à la table ; c'est lui qui prononce
