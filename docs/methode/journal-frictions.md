@@ -243,3 +243,39 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     qui finit son temps, et une décision de méthode ne repasse pas sur les cartes en vol. À vérifier
     **par principe** après toute décision qui touche un vocabulaire d'états — la question n'est pas
     « le document est-il à jour » mais « que portent les cartes en cours ». — *transverse*
+
+## 2026-07-31 — troisième tour de `revue-spec`
+
+42. **Le skill prescrit une étiquette que le cycle ne lui autorise plus.** `revue-spec` §4 dit
+    « Poser `Done` si aucune violation dure ne reste sans réponse […] sinon `Rework Needed` ».
+    `cycle-feature.md` §4, depuis `D-050`, donne au relecteur de `Spec` deux sorties et pas
+    celles-là : `Rework Needed`, ou **`Human Review Requested` si aucune remarque** — `Done` n'est
+    posable que par l'humain, une ligne plus bas. Le tour ne l'a pas départagé, puisque seize
+    remarques imposaient `Rework Needed` des deux côtés. ⚠️ C'est précisément le cas *sans remarque*
+    qui diverge, et c'est le seul où l'écart compte : le skill ferait sauter le passage humain que
+    le cycle vient d'y placer. Deuxième occurrence du motif de l'entrée 41 — une décision de méthode
+    ne repasse pas sur les fichiers qui en dépendent. — *outillage*
+43. **La mémoire automatique de la session dément la clause de session neuve.** `revue-spec` §1
+    exige un contexte qui n'a « vu ni le prompt ni la conversation » qui a produit la spec, et
+    `D-039` en fait la condition de valeur de la relecture. Or la mémoire de projet est chargée
+    **avant** toute lecture, et elle résume l'artefact par ses conclusions : le motif JetBrains qui a
+    fait basculer l'hébergement, les arbitrages du second tour, et l'avertissement que deux croyances
+    y sont démenties par le code. Le relecteur a pu s'abstenir d'ouvrir les fiches détaillées ; il ne
+    pouvait pas ne pas lire l'index. ⚠️ La neutralité que `D-039` cherche ne s'obtient pas par une
+    clause dans un skill, mais par **la façon dont la session est construite** — une clause ne peut
+    rien contre un canal qu'elle ne connaît pas. — *outillage*
+44. **Deux axes qui butent sur le même passage n'ont pas de règle.** `revue` §2 interdit de fondre
+    les axes ; §6 demande une remarque par constat retenu. Quand les deux axes citent le **même**
+    extrait — deux fois sur vingt constats ici, sur le renvoi mort du §1 et sur la clause de recette
+    sans incrément — les deux clauses tirent en sens contraire : poser deux remarques dédouble la
+    solde d'un même défaut, n'en poser qu'une fusionne ce que §2 sépare. Arbitré à la main, en
+    fusionnant, sans que rien l'autorise. Le motif est structurel : plus les axes sont bons, plus ils
+    se recouvrent. — *outillage*
+45. **La pièce la plus contestable est la moins citable.** Cinq des seize remarques naissent des
+    blocs `mermaid`, et **aucune n'est ancrée dessus** : `cursus linear comment add --quote` exige un
+    passage présent une fois et une seule, et une ligne de nœud (`SER --> CAT`, un `style`, un
+    libellé coupé par un `\n`) est un mauvais candidat. Toutes ont été ancrées sur la prose voisine,
+    ce qui déplace le repère d'un ou deux paragraphes. ⚠️ Ce n'est pas une mesure — l'ancrage sur le
+    bloc n'a pas été tenté, il a été évité par précaution. Mais depuis `D-049` le schéma est une
+    pièce **obligatoire** de toute spec, et l'entrée 35 en a fait la pièce la plus dangereuse :
+    l'outil de revue ne sait pas viser ce que la revue doit le plus regarder. — *outillage*
