@@ -18,6 +18,28 @@
 
 ---
 
+> ## ⚠️ Ce fichier est en retard sur les documents de cycle, et le réalignement est **différé**
+>
+> Depuis `D-047`, les quatre documents de cycle sont la source de vérité sur *comment on parcourt
+> une étape*. Ce fichier a été écrit avant eux et n'a pas suivi. Trois écarts connus, au
+> 2026-07-31 :
+>
+> - **la table maîtresse §2 ignore `revue-discovery`**, qui existe et a tourné trois fois ;
+> - **elle range `Discovery` et `Spec` en régime *Binôme***, alors que `tickets.md` §6.3 les met
+>   tous deux en ***Trio*** — le binôme rédige, un agent tiers prononce la conformité, l'humain
+>   engage en tirant. La nuance n'est pas cosmétique : elle dit qui relit ;
+> - **le diagramme ne montre pas la revue de discovery**, là où il annote bien celle de la spec.
+>
+> **Le réalignement est volontairement remis à après le premier cycle complet** feature → incrément
+> → pas. Le motif est qu'on ne sait pas encore *jusqu'où* ce fichier doit aller : s'il redit ce que
+> les quatre documents de cycle disent, il divergera d'eux avant un mois — et c'est précisément ce
+> que `cycle.md` évite en existant. Ce qu'il doit garder est la vue **étape → skill** pour un
+> lecteur humain ; ce qu'il doit abandonner à `cycle.md` n'est pas tranché.
+>
+> **En attendant, en cas de désaccord, les documents de cycle priment sur celui-ci.**
+
+---
+
 ## 1. Trois lieux, parce que trois choses varient indépendamment
 
 | Ce qui varie | Où ça vit | Pourquoi là |
