@@ -2871,3 +2871,95 @@ pas une confusion observée en usage.
 **Renvoi** : `D-047` (les six états, superseded sur le nom de ⑤) · `D-045` (pourquoi la remarque
 quitte le document) · `D-046` (les gestes construits) · `D-041` (le flux tiré) ·
 `docs/reference/linear-api.md` §10h (les trois murs, mesurés) · `docs/methode/cycle.md` §8.
+
+---
+
+## D-049 — La spec est fonctionnelle *et* technique : elle porte un plan d'implémentation (2026-07-31)
+
+`D-036` a posé « un artefact par niveau » : la feature arbitre dans sa **spec**, l'incrément conçoit
+dans son **plan d'archi**, le pas prouve dans sa **test list**. Le découpage en trois tient toujours.
+Ce qui ne tenait pas, c'est la conséquence qu'on en avait tirée — que la feature ne conçoive **rien**.
+Cette entrée **amende `D-036`** sur ce seul point.
+
+### 1. Le trou : personne ne conçoit ni ne valide la structure d'ensemble
+
+Relevé par l'utilisateur, en Spec d'*Un agent pilote Cursus*. Sa formulation initiale — « le
+découpage est automatisé, donc il n'y a pas de validation » — est **inexacte** : `decoupage` §6
+impose un accord explicite de l'humain **avant toute création de carte**, et `cycle-feature.md` §5
+le revendique (*« le jugement a lieu dans le geste, pas après »*).
+
+Mais la conclusion tenait, pour une raison plus précise : ce sur quoi l'humain tranche à ce
+moment-là, ce sont **trois questions de découpe** — granularité, arêtes de blocage, fusionner ou
+scinder. **Aucune ne porte sur la structure technique.** Et chaque plan d'archi ne voit que son
+propre incrément, relu contre `architecture.md` mais jamais contre ses frères. Donc entre la spec et
+le premier plan, **aucune instance ne regarde l'ensemble** — et rien ne l'écrit.
+
+**La preuve est arrivée le jour même, par la revue.** Sa remarque la plus lourde — *piloter deux
+projets de front suppose N `ProjectHost` vivants, que `architecture.md` §7.13 range en TRANCHÉ NON
+CONSTRUIT* — ne naît d'aucun incrément en particulier : elle naît de leur **conjonction**. Ni la
+spec ni un plan local ne l'attrapent naturellement. Second symptôme, dans le même document : les
+décisions structurantes de la séance (l'application porte le serveur, N clients, le projet en
+paramètre, la sérialisation des mutations) traversent **tous** les incréments, et s'étaient logées à
+moitié dans la spec faute d'un endroit où aller.
+
+### 2. Ce qui est tranché
+
+**La spec gagne une huitième question** — *comment ça va marcher ?* — et son **plan
+d'implémentation** : les solutions techniques envisageables, celle qu'on priorise et pourquoi,
+comment on compte la concevoir, les **grandes dépendances** à ajouter ou modifier, le tout porté par
+**au moins un schéma**. Il vient en dernier parce qu'il se nourrit des sept réponses précédentes.
+
+**La frontière avec le plan d'archi ne bouge pas, elle se nomme.** Les deux ne se recouvrent pas :
+
+| | Plan d'implémentation (feature) | Plan d'archi (incrément) |
+|---|---|---|
+| Portée | L'**ensemble** | **Ce** changement-ci |
+| Ce qu'il montre | Que ça **peut** marcher, et comment c'est **censé** marcher | Comment c'est **structuré** |
+| Autorité | **Indicative** | **Engageante** |
+| Quand | En `Spec` | À la prise, en `Planning` |
+
+⚠️ **Sa profondeur est celle qui valide, pas celle qui prescrit.** Un plan d'archi qui s'en écarte au
+contact du réel est **dans son droit** — il le dit, c'est tout. C'est la clause qui empêche cette
+entrée de réintroduire un *waterfall* par la porte de la feature, et elle est de l'utilisateur :
+*« ce n'est pas forcément à appliquer à la lettre plus tard, parce qu'au contact du réel on peut
+penser à de meilleures façons de faire »*.
+
+**Corollaire sur les faits.** Un plan qui affirme la faisabilité doit la **mesurer** quand elle est
+mesurable. La spec MCP a établi ainsi que Kestrel et Avalonia cohabitent dans un `WinExe` .NET 10,
+qu'un bind sur le port 0 résout la découverte d'endpoint, et que deux connexions SQLite
+concurrentes attendent 30 s puis échouent **sans corrompre**. Trois affirmations qui, citées de
+mémoire, auraient été fausses ou approximatives.
+
+### 3. Ce qui a été écarté
+
+- **Un artefact séparé entre la spec et le découpage**, avec son propre cycle de revue. Écarté par
+  l'utilisateur : *« la spec est fonctionnelle ET technique, l'un ne peut pas aller sans l'autre »*.
+  Un second document aurait rejoué la séparation que `D-041` a payée entre discovery et spec, sans
+  le motif qui la justifiait là-bas.
+- **Élargir le gate du découpage** à la cohérence technique. Moins cher, mais le jugement serait
+  resté **oral** — sans trace écrite ni relecture tierce, donc sans rien à opposer en `Validation`.
+- **Laisser le premier incrément porter la structure d'ensemble.** L'ordre de prise aurait décidé
+  qui porte la charge, et le premier plan serait devenu illisible.
+- **Supprimer le plan d'archi d'incrément**, la spec portant déjà la conception. Écarté : `Planning`
+  et `Plan Review` se seraient vidés, et la seule strate qui **s'engage** aurait disparu.
+
+### 4. Ce que ça coûte
+
+Amendés le même jour : `tickets.md` (§1 le tableau des artefacts et la règle « aucun plan
+d'avance », §2.2 la question 8, « ce qu'une feature ne contient pas »), `dod/feature/spec.md` (§1
+trois cases, §4 la levée d'ambiguïté), `cycle-feature.md` (§4 le livrable et le motif), le skill
+`spec` (une étape de plus), et `CLAUDE.md` aux deux endroits qui énoncent les registres.
+
+### 5. Registre
+
+**Construit** : les six documents amendés.
+
+**Ce que cette entrée n'établit pas** : aucun plan d'implémentation n'a encore été écrit. La spec
+d'*Un agent pilote Cursus* est la première à en devoir un — elle a été rédigée **avant** cette
+décision, et en manque donc par construction. ⚠️ C'est une douzième remarque à solder, plus lourde
+que les onze de sa revue, et le premier usage dira si la profondeur « valide sans prescrire » se
+tient à l'écriture ou reste un vœu.
+
+**Renvoi** : `D-036` (les trois registres, amendé ici) · `D-041` (un artefact, un document —
+et pourquoi on n'a pas ouvert un troisième) · `D-039` (la session neuve, qui a produit la revue
+révélatrice) · `docs/methode/tickets.md` §2.2 q.8 · `docs/design/schemas.md` (la convention visuelle).

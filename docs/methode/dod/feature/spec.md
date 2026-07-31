@@ -23,7 +23,7 @@
 
 ## 1. L'artefact est complet
 
-Les **sept questions** de `tickets.md` §2.2 ont chacune une réponse — ou un **« sans objet »
+Les **huit questions** de `tickets.md` §2.2 ont chacune une réponse — ou un **« sans objet »
 explicite**. L'omission silencieuse est le seul cas interdit : une spec a le droit de ne pas
 trancher, pas de laisser croire que c'est tranché (`tickets.md` §5).
 
@@ -38,6 +38,14 @@ trancher, pas de laisser croire que c'est tranché (`tickets.md` §5).
 - [ ] Les **trois registres** sont tenus : construit / tranché non construit / question ouverte
 - [ ] Les **vertus qui doivent survivre** sont nommées — les invariants que l'implémentation ne
       doit pas casser en chemin
+- [ ] Le **plan d'implémentation** existe (`D-049`) — il porte les **solutions envisageables**,
+      **celle qu'on priorise** et pourquoi, **comment on compte la concevoir**, et les **grandes
+      dépendances** à ajouter ou modifier, nommées
+- [ ] Il est porté par **au moins un schéma**. Un plan d'implémentation en prose seule ne se
+      relit pas — c'est le seul endroit de la spec où le visuel n'est pas un agrément
+- [ ] Sa **profondeur valide sans prescrire** : assez pour qu'on sache que ça peut fonctionner,
+      pas assez pour tenir lieu de conception. ⚠️ Une spec qui prescrit l'implémentation ligne à
+      ligne a mangé le plan d'archi, et elle périmera avant d'être prise
 
 ## 2. La revue a eu lieu et ses divergences sont soldées
 
@@ -68,7 +76,9 @@ Si le découpage bute, le manque est dans la spec — pas dans le découpage.
   fait clore l'étape aux trois quarts.
 - **Les incréments nommés et ordonnés.** Le découpage a lieu **au passage** en `In Progress`,
   pas avant (`tickets.md` §2). Une spec peut porter une *intention* de maille, pas des cartes.
-- **Le plan d'archi.** Il appartient à l'incrément et s'écrit à sa prise, en `Planning`.
+- **Le plan d'archi d'un incrément.** Il appartient à l'incrément et s'écrit à sa prise, en
+  `Planning`. ⚠️ Ne pas le confondre avec le **plan d'implémentation**, qui est exigé ci-dessus
+  (§1) : celui-là est d'ensemble et indicatif, celui-ci est local et engageant (`D-049`).
 
 ## 5. Sortie latérale
 

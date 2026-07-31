@@ -30,7 +30,8 @@ elle s'arrête ici et le dit.
 Fournir l'artefact — le document `Spec` attaché à la feature — et exactement deux axes.
 
 **Axe Conformité** (référentiel : `docs/methode/dod/feature/spec.md` §1 et §2, clause par clause —
-les neuf cases de §1, les trois de §2). Une case sans réponse **et** sans « sans objet » explicite
+les **douze** cases de §1, les trois de §2 ; les trois dernières de §1 portent le **plan
+d'implémentation**, `D-049`). Une case sans réponse **et** sans « sans objet » explicite
 est une **violation dure** ; l'omission silencieuse est le seul cas que la DoD interdit
 (`tickets.md` §5). Une case répondue par un « sans objet » n'est pas une divergence.
 

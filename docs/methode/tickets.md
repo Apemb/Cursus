@@ -55,7 +55,7 @@ au mauvais endroit :
 | Niveau | Artefact | Quand il s'écrit | Sa fraîcheur |
 |---|---|---|---|
 | Feature | Une **discovery** | En `Discovery` | Datée — un instantané du besoin, figé dès que la spec existe |
-| Feature | Une **spec** | En `Spec` | Datée — c'est un contrat, il ne bouge pas sous les pieds |
+| Feature | Une **spec** — fonctionnelle **et** technique, son **plan d'implémentation** compris | En `Spec` | Datée — c'est un contrat, il ne bouge pas sous les pieds |
 | Incrément | Un **plan d'archi** | **À la prise de l'incrément**, en `Planning` | Datée |
 | Pas | Une **test list** | **À la prise du pas** | **Vivante** — un cas découvert au rouge s'y ajoute |
 
@@ -65,10 +65,18 @@ jusqu'à `Validation` — et surtout, les réunir invite à **arbitrer en rédig
 `Discovery` s'interdit précisément (§2.1). Une feature tuée en discovery se lit alors à la structure :
 un document, pas l'autre.
 
-**Aucun des deux plans ne s'écrit d'avance**, et pour la même raison : ce qu'on apprend en
-faisant le premier incrément change ce qu'on sait au quatrième, comme ce qu'on apprend au pas 1
-change ce qu'on sait au pas 4. Planifier tout au découpage serait un *waterfall* à petite
+**Ni le plan d'archi ni la test list ne s'écrivent d'avance**, et pour la même raison : ce qu'on
+apprend en faisant le premier incrément change ce qu'on sait au quatrième, comme ce qu'on apprend
+au pas 1 change ce qu'on sait au pas 4. Planifier tout au découpage serait un *waterfall* à petite
 échelle.
+
+⚠️ **Le plan d'implémentation de la spec échappe à cette règle, parce qu'il n'est pas de la même
+nature** (`D-049`). Il ne dit pas comment *ce* changement-ci est structuré — il montre que
+l'ensemble **peut fonctionner** et comment il est **censé** fonctionner : les solutions techniques
+envisagées, celle qu'on priorise, les grandes dépendances à ajouter ou modifier, et un ou plusieurs
+schémas. Il n'a **aucune autorité littérale** sur l'implémentation : au contact du réel, un plan
+d'archi a le droit de s'en écarter, à condition de le dire. Les deux ne se recouvrent donc pas —
+l'un est d'ensemble et indicatif, l'autre est local et engageant.
 
 Ce que le découpage capture, en revanche, ne se rattrape pas : **les frontières** — ce qui est
 dans cet incrément, ce qui n'y est pas, l'ordre, les dépendances. C'est la vue d'ensemble de
@@ -133,15 +141,29 @@ n'arbitre pas une faisabilité sans la tech, et on ne définit pas une recette s
    ticket que dans un document.
 7. **Quelles vertus doivent survivre ?** Les invariants que l'implémentation ne doit pas
    casser en chemin — souvent la partie la plus facile à perdre.
+8. **Comment ça va marcher ?** Le **plan d'implémentation** — la moitié technique de la spec,
+   sans laquelle la moitié fonctionnelle ne s'engage sur rien (`D-049`). Il vient en dernier
+   parce qu'il se nourrit des sept réponses précédentes. Quatre choses, et pas davantage :
+   les **solutions techniques envisageables**, **laquelle on priorise** et pourquoi, **comment
+   on compte la concevoir** — assez pour qu'on voie que ça tient debout —, et les **grandes
+   dépendances** à ajouter ou modifier, nommées (un paquet, un framework, un service). Le tout
+   porté par **un ou plusieurs schémas**, que Linear rend nativement.
+
+   **Sa profondeur est celle qui valide, pas celle qui prescrit.** Il doit aller assez loin
+   pour qu'on sache que ça peut fonctionner, et s'arrêter là. ⚠️ Il n'a **aucune autorité
+   littérale** : au contact du réel, on trouve des surprises et parfois mieux. Un plan d'archi
+   d'incrément qui s'en écarte est dans son droit — il le dit, c'est tout.
 
 ### Ce qu'une feature **ne** contient pas
 
 - **Ses incréments, nommés et ordonnés.** Le découpage a lieu au **passage en
   `In Progress`**, pas à l'écriture de la spec. Ce qu'elle peut porter, c'est une *intention*
   de découpage — une idée de la maille. Les cartes naissent à l'ouverture, pas au backlog.
-- **Le plan d'archi.** Il appartient à l'incrément. La feature décide *quelle solution et si
-  elle vaut le coup* ; l'incrément décide *comment c'est structuré*. Le premier est un
-  arbitrage, le second une conception.
+- **Le plan d'archi d'un incrément.** Il appartient à l'incrément, qui décide *comment **ce**
+  changement-ci est structuré* — schéma-delta, objets impactés, découpage en pas. ⚠️ **À ne pas
+  confondre avec le plan d'implémentation** de la question 8, qui est d'ensemble et indicatif là
+  où celui-ci est local et engageant (`D-049`). La feature montre que **ça peut marcher** ;
+  l'incrément s'engage sur **comment il le fait**.
 
 ---
 

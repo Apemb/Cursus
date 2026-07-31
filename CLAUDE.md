@@ -89,6 +89,13 @@ backlog porte le travail :
 Le plan d'archi est l'artefact de l'**incrément** — un pas n'en a pas, il porte une **test list** ; une
 feature n'en a pas, elle porte une **spec**. Voir `docs/methode/tickets.md` §1 et `D-036`.
 
+⚠️ **Mais la spec porte, elle, un *plan d'implémentation*** (`D-049`), et les deux ne se recouvrent
+pas. Celui de la feature est **d'ensemble et indicatif** : il montre que ça **peut** fonctionner et
+comment c'est **censé** fonctionner — solutions envisageables, celle qu'on priorise, grandes
+dépendances, schémas. Celui de l'incrément est **local et engageant** : comment **ce** changement-ci
+est structuré. Un plan d'archi a le droit de s'écarter du plan d'implémentation au contact du réel,
+à condition de le dire.
+
 ## Écrire un ticket
 
 Le backlog vit dans Linear (espace `cursus-app`, équipe `CUR`) ; ce que doit **contenir** un ticket vit
@@ -100,10 +107,10 @@ plan dit *comment*.** Un ticket qui prescrit l'implémentation a mangé le plan,
 d'être pris. L'enjeu n'est pas cosmétique : la trajectoire mène à ce que Cursus **consomme ces tickets**,
 et un ticket devient alors l'unique brief d'un agent qui n'a pas eu la conversation.
 
-Trois registres, un par niveau, qu'il ne faut pas confondre (`D-036`) : la **feature** arbitre *quelle
-solution et si elle vaut le coup* et le consigne dans sa **spec** ; l'**incrément** conçoit *comment
-c'est structuré* dans son **plan d'archi** ; le **pas** prouve, et sa **test list** s'écrit à sa prise,
-jamais d'avance. Le juge de ce qui mérite d'être un incrément plutôt qu'un pas est le **rôle produit** :
+Trois registres, un par niveau, qu'il ne faut pas confondre (`D-036`, amendé par `D-049`) : la
+**feature** arbitre *quelle solution et si elle vaut le coup*, **et montre que ça peut marcher**, le
+tout dans sa **spec** ; l'**incrément** conçoit *comment c'est structuré* dans son **plan d'archi** ;
+le **pas** prouve, et sa **test list** s'écrit à sa prise, jamais d'avance. Le juge de ce qui mérite d'être un incrément plutôt qu'un pas est le **rôle produit** :
 est-ce recettable par quelqu'un qui ne lit pas le code ?
 
 ## Entretenir la carte visuelle

@@ -87,9 +87,15 @@ mérite une phrase disant pourquoi — un abandon non expliqué se re-proposera.
 **dans l'artefact** — un écart non écrit, une capacité formulée en liste de tâches, une recette
 absente — et ça se reprend en relisant l'artefact contre son référentiel.
 
+⚠️ **La spec est fonctionnelle *et* technique** (`D-049`). Elle se termine par un **plan
+d'implémentation** — solutions envisageables, celle qu'on priorise, comment on compte la concevoir,
+les grandes dépendances, et au moins un schéma. Sans lui, rien à aucun niveau ne conçoit ni ne fait
+valider la **structure d'ensemble** : le découpage tranche la granularité et les arêtes, jamais la
+technique, et chaque plan d'incrément ne voit que le sien. Le trou s'est vu à l'usage — voir `D-049`.
+
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
-| `Spec` + *aucune* | [`spec`](../../.claude/skills/spec/SKILL.md) | Le document `Spec` : options **arbitrées** (faisabilité, coût), **écarts écrits**, capacité énoncée à l'indicatif, **recette définie**, socle et pré-requis nommés, trois registres tenus | `Review Requested` |
+| `Spec` + *aucune* | [`spec`](../../.claude/skills/spec/SKILL.md) | Le document `Spec` : options **arbitrées** (faisabilité, coût), **écarts écrits**, capacité énoncée à l'indicatif, **recette définie**, socle et pré-requis nommés, trois registres tenus, et le **plan d'implémentation** avec son ou ses schémas (`D-049`) | `Review Requested` |
 | `Spec` + `Review Requested` | [`revue-spec`](../../.claude/skills/revue-spec/SKILL.md) | Les remarques posées sur le projet | `Rework Needed` \| `Human Review Requested` si aucune |
 | `Spec` + `Rework Needed` | `correction` **(à écrire)** | Le document repris, **une réponse dans chaque fil** disant la reprise faite ou le refus motivé | `Rework Done` |
 | `Spec` + `Rework Done` | `verification` **(à écrire)** | Chaque remarque soldée, ou rouverte avec ce qui manque encore | `Rework Needed` \| `Human Review Requested` si `open` vaut 0 (+ `Escalated` si une remarque a atteint son 3ᵉ désaccord) |

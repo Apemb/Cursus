@@ -60,7 +60,32 @@ Pour chacun, une réponse ou un **« sans objet » explicite** — jamais un sil
 Complet quand : les quatre champs portent chacun une réponse écrite, aucun n'est simplement
 absent.
 
-## 5. Publier le document
+## 5. Écrire le plan d'implémentation
+
+La spec est **fonctionnelle et technique** : la moitié fonctionnelle ne s'engage sur rien sans
+l'autre (`D-049`). Écrire, en dernier — il se nourrit de tout ce qui précède :
+
+- les **solutions techniques envisageables** ;
+- **laquelle on priorise**, et pourquoi ;
+- **comment on compte la concevoir** — assez pour qu'on voie que ça tient debout ;
+- les **grandes dépendances** à ajouter ou modifier, nommées (un paquet, un framework, un service) ;
+- **au moins un schéma**, en bloc `mermaid` : Linear le rend nativement. La convention visuelle
+  vit dans `docs/design/schemas.md`.
+
+**Établir les faits, ne pas les supposer.** Ce plan affirme que ça peut fonctionner — donc ce
+qui est mesurable se mesure : une cohabitation de frameworks, une contrainte de packaging, un
+comportement de bibliothèque sous concurrence. Une faisabilité citée de mémoire est ce que la
+revue suivante démontera.
+
+⚠️ **La profondeur est celle qui valide, pas celle qui prescrit.** Aller assez loin pour lever le
+doute, s'arrêter là. Ce plan n'a **aucune autorité littérale** : un plan d'archi d'incrément qui
+s'en écarte au contact du réel est dans son droit, il le dit et c'est tout. Prescrire ligne à
+ligne, c'est manger le plan d'archi — et périmer avant d'être pris.
+
+Complet quand : les quatre points portent chacun une réponse, au moins un schéma existe, et
+chaque affirmation de faisabilité est soit mesurée, soit annoncée comme non vérifiée.
+
+## 6. Publier le document
 
 Un document Linear **distinct** de la Discovery, qui lui succède sans la fondre — renvoyer au
 besoin, ne pas le rédiger une seconde fois. Ne pas y nommer les incréments : le découpage a lieu
