@@ -279,3 +279,15 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     bloc n'a pas été tenté, il a été évité par précaution. Mais depuis `D-049` le schéma est une
     pièce **obligatoire** de toute spec, et l'entrée 35 en a fait la pièce la plus dangereuse :
     l'outil de revue ne sait pas viser ce que la revue doit le plus regarder. — *outillage*
+46. **Une section « ce que je ne décide pas » gonfle à chaque reprise, jusqu'à contredire son
+    titre.** Le §8.6 de la spec s'appelait *« Ce que ce plan laisse aux plans d'archi »* et
+    contenait, au bout de deux cycles de reprise, l'intention de maille, son critère de coupe et
+    l'arbitrage sur le fondateur — c'est-à-dire surtout des **décisions**. Le mécanisme est
+    mécanique et sans malveillance : chaque remarque soldée dépose sa réserve dans la section
+    prévue pour les réserves, et personne ne recule d'un pas pour relire le titre. ⚠️ Le défaut de
+    conception est en amont : **la liste de ce qu'on n'a pas tranché est infinie**, donc toute
+    tentative de l'écrire est arbitraire — et elle faisait doublon avec le registre *question
+    ouverte* du §6, au point que l'un disait « aucune » pendant que l'autre en listait six. Relevé
+    par l'utilisateur, à la lecture, après trois revues qui ne l'avaient pas vu. La règle qui en
+    sort est dans `spec` §5 : **n'écrire que ce qui est décidé, le reste est ouvert par défaut.**
+    — *étape 2*

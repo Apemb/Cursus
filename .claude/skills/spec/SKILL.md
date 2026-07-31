@@ -82,6 +82,15 @@ doute, s'arrêter là. Ce plan n'a **aucune autorité littérale** : un plan d'a
 s'en écarte au contact du réel est dans son droit, il le dit et c'est tout. Prescrire ligne à
 ligne, c'est manger le plan d'archi — et périmer avant d'être pris.
 
+⚠️ **N'écrire que ce qui est décidé. Ce dont le plan ne parle pas est ouvert par défaut.** Ne pas
+lui ajouter une section « ce que je laisse au plan d'archi » : la liste de ce qu'on n'a pas tranché
+est infinie, donc toute tentative de l'écrire est arbitraire — et elle **gonfle à chaque reprise**,
+puisqu'une remarque soldée y dépose sa réserve. Elle finit par contenir plus de décisions que la
+prose, et par contredire son propre titre. Les questions ouvertes qu'on sait déjà nommer ont leur
+place, et elle est unique : le **registre du §4** — construit / tranché non construit / question
+ouverte. Deux endroits pour la même chose divergent ; ici l'un des deux disait « aucune » pendant
+que l'autre en listait six.
+
 Complet quand : les quatre points portent chacun une réponse, au moins un schéma existe, et
 chaque affirmation de faisabilité est soit mesurée, soit annoncée comme non vérifiée.
 
