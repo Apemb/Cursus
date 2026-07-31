@@ -167,15 +167,14 @@ tour 2 ont réellement cassé six cases sur douze, ou ce relecteur calibre plus 
 entre *violation dure* et *jugement*. Les deux échantillons vérifiés étaient bien des violations ;
 deux ne font pas douze, et rien dans le dispositif ne mesure le calibrage d'un relecteur à l'autre.
 
-### Les faits bruts relevés par le relecteur
+### Les faits bruts, tels que le relecteur les a déposés
 
-**À compléter par un tiers.** Le relecteur ne juge pas ce qu'il vient de produire ; c'est le motif de
-`D-039`, et un verdict auto-décerné vaudrait exactement ce que vaut le faux accord du binôme
-(`tickets.md` §6.3). Ce qui suit est la matière brute, sans appréciation.
+> Écrits **avant** la reprise, sans appréciation — le relecteur ne juge pas ce qu'il vient de
+> produire (`D-039`, et le faux accord du binôme de `tickets.md` §6.3). Conservés tels quels : ils
+> sont la pièce qui permet de vérifier le jugement porté ci-dessus.
 
-**Ce qu'il y a à mesurer**, quand la reprise aura eu lieu : combien des **16** remarques sont
-retenues, combien refusées avec leur raison écrite. Les deux tours précédents affichent 11/11 et
-12/12.
+**Ce qu'il y avait à mesurer**, et qui l'est maintenant : les **16** remarques sont retenues, aucune
+refusée. Les deux tours précédents affichaient 11/11 et 12/12.
 
 **Les faits bruts, par catégorie.**
 
