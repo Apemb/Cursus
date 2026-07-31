@@ -176,3 +176,31 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     l'écart étant la boucle d'attente, pas de la revue. Une fiche `rex/` qui prend le mauvais chiffre
     rend deux tours incomparables, ce qui est sa seule raison d'être. **Prendre la durée de la
     première notification.** — *outillage*
+
+## 2026-07-31 — Spec de « un agent pilote Cursus », second tour de `revue-spec`
+
+35. **Un schéma faux est moins détectable qu'une prose fausse — et `D-049` vient d'en rendre un
+    obligatoire.** Le §8.1 de la spec tranchait « on priorise le projet dédié » ; le schéma §8.3,
+    deux paragraphes plus bas, logeait l'hôte et l'adaptateur dans `Cursus.App`. Contradiction
+    interne, dans le même artefact, à deux paragraphes d'écart. **Aucun des deux axes ne l'a
+    relevée** — et le relecteur a fait pire que la manquer : sa remarque hors mandat écrit
+    « l'hébergement dans `Cursus.App` est instruit et mesuré », c'est-à-dire qu'il a **adopté la
+    version du schéma** contre le texte qui la contredit. C'est l'humain qui l'a vue, à l'œil nu,
+    en relisant. Un bloc `mermaid` se lit comme une conclusion, pas comme une affirmation à
+    confronter au texte : il *illustre*, donc il échappe à la lecture chicanière. Le mode de
+    défaillance qu'introduit `D-049` n'a aujourd'hui **aucun garde-fou** dans `revue`. — *outillage*
+36. **Le tour ② a subsumé le temps ④, et ça a tenu.** La table prescrivait `verification` (skill
+    inexistant) sur `Rework Done` ; on a rejoué une revue complète, parce que le §8 était du contenu
+    neuf jamais relu et que la DoD avait gagné trois cases dans l'intervalle. Résultat : **aucune
+    des onze remarques du tour 1 n'a été rouverte** — la reprise tenait — et douze remarques neuves
+    sont sorties, dont deux violations dures sur des passages **que le tour 1 avait lus sans rien y
+    trouver**. ⚠️ Ce que ça n'établit pas : que la vérification est inutile. Une revue relit
+    l'artefact, elle ne relit pas les fils ; les deux ont coïncidé ici parce que la reprise avait
+    réécrit tout ce que les remarques visaient. — *étape 2*
+37. **Le prompt allégé de ses deux béquilles n'a rien coûté.** Le tour 1 rappelait à la main la
+    session neuve et l'interdit de déplacer la carte, ce qui rendait toute comparaison impossible
+    (fiche du tour 1, §1). Retirées : le relecteur n'a pas reçu le fil de rédaction, et la colonne
+    `Spec` est inchangée après coup — les deux clauses tiennent **sans rappel**. Le geste de pose
+    avait lui aussi été écrit dans `revue` §6 avant le tour, et les douze remarques sont posées sur
+    la carte avec leur repère. ⚠️ Ce dernier point n'est pas une mesure : on ne saura pas s'il l'a
+    lu là ou retrouvé ailleurs, faute d'avoir rejoué le tour à l'identique. — *outillage*
