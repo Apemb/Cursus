@@ -238,25 +238,44 @@ trou est dans le référentiel, pas dans le relecteur.
 ⚠️ Les trois tours ont porté sur **le même artefact**, écrit par ceux-là mêmes qui éprouvaient le
 skill. Un accord unanime reste ce qu'on distingue le plus mal d'une revue qui ne cherche pas.
 
-**Le cycle de `Spec` a tourné trois fois le 2026-07-31**, sur la même feature : ① → ② → ① → ② → ①
-→ ② → ①, onze puis douze puis seize remarques, **trente-neuf retenues sur trente-neuf, aucun refus
-motivé**. Ce sont ces tours qui ont fait basculer `Spec` en cycle court (`D-050`) — les temps ③ et ④
-n'ont jamais servi, et le second passage de revue a rendu davantage qu'une vérification n'aurait
-rendu. Fiches : [tour 1](rex/2026-07-31-revue-spec-tour-1.md) ·
-[tour 2](rex/2026-07-31-revue-spec-tour-2.md) · [tour 3](rex/2026-07-31-revue-spec-tour-3.md).
+**Le cycle de `Spec` a tourné quatre fois le 2026-07-31**, sur la même feature : ① → ② → ① → ② → ①
+→ ② → ① → ②, onze puis douze puis seize puis seize remarques — **cinquante-cinq posées**, dont
+trente-neuf retenues sur trente-neuf aux trois premiers tours, aucun refus motivé ; **les seize du
+quatrième sont ouvertes**. Ce sont ces tours qui ont fait basculer `Spec` en cycle court (`D-050`) —
+les temps ③ et ④ n'ont jamais servi, et le second passage de revue a rendu davantage qu'une
+vérification n'aurait rendu. Fiches : [tour 1](rex/2026-07-31-revue-spec-tour-1.md) ·
+[tour 2](rex/2026-07-31-revue-spec-tour-2.md) · [tour 3](rex/2026-07-31-revue-spec-tour-3.md) ·
+[tour 4](rex/2026-07-31-revue-spec-tour-4.md).
 
-⚠️ **La série ne converge pas — 11, 12, 16 — et c'est le fait le plus instructif du dispositif.**
-Chaque reprise dépose sa part de défauts neufs : deux des seize du tour 3 visent des reprises du
-tour 2. Le signal d'arrêt ne viendra donc pas de la boucle agent, qui a montré trois fois qu'elle
-sait toujours produire ; il vient de l'humain, au temps ⑤. Corollaire pour `D-051` : le **seuil de
-l'opposition** — ce qui mérite d'ouvrir `open` — reste la question ouverte du dispositif.
+⚠️ **La série ne converge pas — 11, 12, 16, 16 — et c'est le fait le plus instructif du dispositif.**
+Chaque reprise dépose sa part de défauts neufs, **et la part grossit** : deux des seize du tour 3
+visaient des reprises du tour 2 ; elles sont **quatre** au tour 4, dont trois sur du texte écrit en
+solde d'une remarque du tour précédent. Le signal d'arrêt ne viendra donc pas de la boucle agent, qui
+a montré quatre fois qu'elle sait toujours produire ; il vient de l'humain, au temps ⑤. Corollaire
+pour `D-051` : le **seuil de l'opposition** — ce qui mérite d'ouvrir `open` — reste la question
+ouverte du dispositif. La quatrième valeur est la première à ne pas monter ; une seule stagnation ne
+fait pas un plateau, et rien ne dit encore si la série butera ou oscillera.
 
-⚠️ **Un défaut a échappé aux deux tours** : une contradiction entre un paragraphe et le schéma
-`mermaid` situé deux paragraphes plus bas, que l'humain a vue à l'œil nu — et que le relecteur avait
-non seulement manquée mais **résolue en faveur du schéma**. Un bloc `mermaid` se lit comme une
+⚠️ **Ce que le tour 4 déplace sans le trancher** : ses sept violations dures sont **toutes des
+contradictions internes**, opposables sans ouvrir le dépôt — alors qu'au tour 3, trois assertions de
+la spec sur trois étaient démenties par le code. Une douzaine ont pourtant été confrontées ce tour-ci,
+et aucune n'a été prise en défaut. Que l'artefact ait cessé de mentir sur le code ou que ce relecteur
+ait moins cherché de ce côté, **rien dans le dispositif ne permet de le dire** — c'est la même
+lacune que le calibrage d'un relecteur à l'autre.
+
+⚠️ **Un défaut a échappé aux deux premiers tours** : une contradiction entre un paragraphe et le
+schéma `mermaid` situé deux paragraphes plus bas, que l'humain a vue à l'œil nu — et que le relecteur
+avait non seulement manquée mais **résolue en faveur du schéma**. Un bloc `mermaid` se lit comme une
 conclusion, pas comme une affirmation à confronter au texte, et `D-049` vient d'en rendre un
-obligatoire dans chaque spec. Le primitif `revue` n'a aucune clause qui oblige à croiser les deux
-(journal des frictions 35).
+obligatoire dans chaque spec (journal des frictions 35).
+
+**Le trou est refermé, et le remède a produit deux fois.** `revue` §3 oblige désormais à confronter
+chaque figure à la prose qui l'entoure, et `revue-spec` §2 en fait un avertissement propre à l'axe
+Conformité : cinq des seize remarques du tour 3 en sont nées, puis quatre des seize du tour 4 — ce
+dernier ayant étendu la clause **aux deux axes et aux tableaux**, là où le tour 3 ne l'avait donnée
+qu'à Conformité et pour les seuls blocs `mermaid`. ⚠️ Reste entier le défaut d'outillage qui
+l'accompagne : une remarque née d'une figure ne peut pas s'ancrer dessus, faute de passage citable
+une fois et une seule, et se pose donc sur la prose voisine (journal 45, deux occurrences).
 
 **Tranché mais pas construit** : tout le reste de ce fichier. Aucune boucle n'est allée jusqu'à
 `Done`. Les deux primitifs `correction` et `verification` **n'existent pas** — ils ne manquent plus

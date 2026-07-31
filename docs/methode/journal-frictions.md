@@ -302,3 +302,35 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     précisément d'écrire l'exécutant d'avance. Ce qu'il faut, c'est **attendre le second artefact de
     chaque espèce** et écrire le gabarit sur ce que les deux ont en commun. Piste ouverte, pas
     tâche. — *transverse*
+
+## 2026-07-31 — quatrième tour de `revue-spec`
+
+48. **Corriger une instance de revue laisse le primitif porter l'ancienne clause, et les deux se
+    lisent dans la même exécution.** L'entrée 42 a été soldée sur `revue-spec` §4, qui prescrit
+    désormais `Human Review Requested` ; mais `revue` §8 dit toujours « `Done` ou `Rework Needed` ».
+    Le relecteur charge les deux fichiers dans le même tour et n'a rien pour les départager. Sans
+    effet ici — seize remarques imposaient `Rework Needed` des deux côtés —, donc l'écart est
+    **intact, simplement déplacé d'un fichier à l'autre**, et il mordra toujours dans le seul cas où
+    il compte : un tour sans aucune remarque. ⚠️ Le motif est celui des entrées 41 et 42 à sa
+    troisième occurrence, mais avec une aggravation propre : la correction *a eu lieu*, elle a même
+    été écrite en connaissance du cycle, et elle n'a pas suivi la **relation instance → primitif**
+    que l'architecture des skills de revue institue. Ce n'est plus « une décision ne repasse pas sur
+    ses dépendants », c'est « une correction ne repasse pas sur ce dont elle hérite ». — *transverse*
+49. **L'attente d'un sous-agent coûte des appels d'outils, et ne produit rien.** Douze des
+    quarante-six appels du relecteur n'ont servi qu'à laisser passer le temps pendant que ses deux
+    axes travaillaient, dont **dix rendus sans effet** parce qu'ils s'exécutaient en arrière-plan et
+    rendaient la main aussitôt. Le coût est proportionnel à la durée de l'axe le plus lent — ici
+    553 s — et il croîtra avec le nombre d'axes. ⚠️ Ce n'est pas qu'une dépense : les appels
+    d'outils sont l'une des trois mesures que `rex/` compare d'un tour à l'autre, et douze appels
+    d'attente pure y entrent au même titre que trente-quatre appels de travail. La ligne du tableau
+    ne mesure plus ce qu'elle prétend mesurer tant qu'on ne les sépare pas. — *outillage*
+50. **La clause de session neuve n'a pas de doctrine sur les faits d'état.** `revue-spec` §1 exige
+    une session qui ne porte que l'artefact ; mais les trois cases de §2 de la DoD portent sur
+    l'**issue des tours précédents** — les remarques posées, leur solde — et le tour 3 avait constaté
+    qu'aucune n'est opposable depuis l'artefact seul. Le tour 4 les a instruites en fournissant aux
+    axes trois faits chiffrés (39 remarques, toutes soldées, accord humain en aval), et **deux cases
+    sur trois sont passées de « non opposable » à « tenue »**. ⚠️ Le geste a donc marché, et c'est ce
+    qui le rend gênant : c'est un **résumé de l'issue des tours précédents** injecté dans une session
+    que la clause veut vierge, l'orchestrateur l'a choisi seul, et rien ne règle ni sa forme ni sa
+    dose. Entre « trois faits chiffrés » et « voici ce que les relecteurs précédents ont trouvé », il
+    n'y a pour l'instant que le jugement de celui qui rédige le mandat. — *étape 3*
