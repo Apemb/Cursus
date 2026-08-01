@@ -3559,3 +3559,66 @@ dans les invariants.
 **Question ouverte** : ce que « même fonctionnalité » recouvre quand un écran compose plusieurs
 gestes du noyau en un seul mouvement. Le cas ne s'est pas encore présenté autrement que sur des
 doublons de nommage.
+
+## D-057 — Les hosts sont gardés, et l'agent ne les ouvre pas (2026-08-01)
+
+Tranché par l'utilisateur en reprise du cinquième tour de `revue-spec` sur *Un agent pilote Cursus*.
+La remarque opposait la ligne d'inventaire *ouvrir un projet — faire construire son host, ce sans quoi
+aucun autre geste du projet n'est adressable* au schéma de composition de la même spec, où chaque
+commande et chaque requête résolvent seules par la racine.
+
+### 1. Les faits, établis dans le code et non supposés
+
+`SqliteProjectHost.Open` construit un `SqliteRunJournal` dont le **constructeur** crée le répertoire,
+**ouvre une connexion SQLite et crée le schéma**. Le host est `IDisposable`, et le disposer ferme la
+connexion. Cette connexion est **unique et non thread-safe** ; elle est sérialisée par un `Lock` en
+processus.
+
+Conséquence directe : résoudre à la demande **sans garder** signifierait une connexion neuve par
+appel — donc plusieurs écrivains concurrents sur le même fichier, c'est-à-dire le cas mesuré où
+SQLite attend puis remonte un `SQLITE_BUSY` visible après le délai par défaut de la bibliothèque.
+
+### 2. Ce qui est tranché
+
+**Les hosts sont gardés.** La racine construit à la première résolution et conserve ; ce n'est pas un
+choix de confort, c'est la recette qui l'impose — le scénario de concurrence de la spec interdit
+nommément qu'un `SQLITE_BUSY` remonte à l'agent.
+
+**L'agent n'ouvre pas.** *Ouvrir un projet* quitte l'inventaire : c'est une mécanique, pas une
+fonctionnalité, et `D-056` rend la distinction opposable. Le geste rejoint la navigation pure au titre
+hors périmètre, avec sa raison propre inscrite — il *change* bien quelque chose, mais l'agent n'a pas
+à le demander.
+
+**Aucune arête de blocage n'en naît.** Le découpage n'a pas à faire dépendre les incréments de projet
+d'un incrément « ouverture », et aucune clause d'acceptation ne porte sur l'ordre des appels.
+
+### 3. Le motif, et il vaut au-delà de ce cas
+
+**Exiger un « ouvrir » préalable porterait un ordre d'appels, donc de l'état entre deux appels.** La
+spec pose ailleurs que rien ne vit entre deux appels — c'est ce qui rend la surface compatible avec un
+protocole sans état. Un ordre imposé est de l'état conversationnel sous un autre nom.
+
+Le même raisonnement avait déjà servi, sans être nommé : *ouvrir la page d'un workflow* a été retiré
+au motif qu'un agent adresse par identifiant à chaque appel. Le présent cas est le même, sur un autre
+objet.
+
+### 4. Ce qui a été écarté
+
+**Le geste explicite.** L'agent ouvre avant d'adresser. Écarté pour l'état conversationnel qu'il
+introduit, et pour l'arête de blocage qu'il ferait naître de tout incrément de projet vers celui-ci.
+
+**Les deux — résolution implicite plus ouverture explicite**, cette dernière servant à vérifier qu'un
+projet est ouvrable ou à préchauffer. Écarté : plus de surface à construire et à recetter pour un
+usage qu'aucun scénario ne demande aujourd'hui. À rouvrir le jour où un agent aura besoin de savoir
+*avant* d'agir si un projet est utilisable.
+
+### 5. Registres
+
+**Construit** : la garde n'existe pas — la fenêtre possède aujourd'hui son host, un seul, et la racine
+n'est pas descendue hors de la présentation.
+
+**Tranché, non construit** : la garde et le retrait de la ligne d'inventaire sont inscrits dans la
+spec.
+
+**Question ouverte** : **où** vivent les hosts gardés, qui les possède, et si un host inactif se
+ferme. C'est ce qui reste de la question du cycle de vie, et cela relève d'un plan de design.
