@@ -13,8 +13,10 @@
 > fois **relevés par la session appelante**, et les deux cellules concernées portent la mention
 > d'attente plutôt qu'un « non mesurable ».
 >
-> ⚠️ **Les rubriques 4 et 7 sont laissées à un tiers.** Le relecteur ne juge pas sa propre sortie —
-> c'est le motif même de `D-039`. Elles portent les faits bruts, pas leur appréciation.
+> ⚠️ **Les rubriques 4 et 7 ont été laissées à un tiers**, le relecteur ne jugeant pas sa propre
+> sortie (`D-039`). **Elles ont été complétées le 2026-08-01, après la reprise, par le binôme** —
+> donc pas par le tiers qu'appelait le protocole. La réserve est écrite dans chacune, et les faits
+> bruts qu'elles portaient sont conservés sous le jugement : ils se relisent sans lui.
 
 ## 1. Ce qui a tourné
 
@@ -201,11 +203,51 @@ Clause par clause, avec ce qui l'atteste.
 
 ## 4. Qualité de la sortie
 
-> **À compléter par un tiers.** Le relecteur ne juge pas ce qu'il vient de produire — c'est le motif
-> de `D-039`, et le faux accord du binôme de `tickets.md` §6.3. Ce qui suit est **factuel et
-> antérieur à toute reprise** : aucune des seize remarques n'a encore reçu de réponse.
+> **Complété après la reprise, le 2026-08-01, par le binôme** — avec la réserve que le tour 3 avait
+> déjà écrite pour lui-même : **celui qui juge ici est celui que la revue visait**. Ce n'est pas le
+> tiers que `D-039` appelle, et le lecteur suivant doit lire ce jugement en le sachant. Les faits
+> bruts qui le fondent sont en dessous, antérieurs à toute reprise, et ils se relisent sans lui.
 
-**Les faits bruts qu'un tiers utilisera.**
+**Le jugement, contre quoi il se prononce.** Le référentiel disponible est double : le **sort** des
+seize remarques, et ce que la reprise a **dû faire** pour les solder.
+
+**Seize retenues sur seize, aucun refus motivé** — ce qui porte la série à **55 sur 55 en quatre
+tours**. ⚠️ **Ce chiffre est le plus faible des indices, et il faut le dire avant de s'en servir** :
+c'est le binôme qui décide de retenir, retenir coûte moins cher que réfuter, et un accord unanime
+est le résultat qu'on distingue le plus mal d'une revue qui ne cherche pas. Il ne prouve rien seul.
+
+**Ce qui vaut, c'est l'ampleur de ce que la reprise a dû faire.** Deux remarques n'ont pas pu se
+solder par une correction de prose :
+
+- la contradiction du §8.3 a fait **changer l'architecture** — une couche applicative remplace le
+  point de passage, et `D-052` en sort. Le §8.2 argumentait l'inverse ; l'argument a été retourné,
+  pas raccommodé ;
+- les quatre remarques visant §8.6 ont fait **retirer la section entière**.
+
+Une revue qui déplace la structure de l'artefact, et pas seulement ses phrases, a fait davantage que
+cocher des cases. C'est le contre-indice sérieux au chiffre de 16/16, et il ne pouvait pas être
+produit par un relecteur qui ne cherchait pas.
+
+**Le défaut de la sortie, et il est du même ordre qu'au tour 3.** *Aucune des seize remarques n'a vu
+que le §8.6 était retirable.* Elles le corrigeaient une par une — le critère qui se contredit, les
+lots qui se recouvrent, le fondateur trop gros — sans jamais reculer d'un pas pour demander si la
+section devait exister. C'est l'utilisateur qui l'a vu, et l'argument qui a emporté le retrait était
+disponible au relecteur : `dod/feature/spec.md` §4 ne rend l'intention de maille obligatoire dans
+aucune spec. **Le mode d'échec est stable et mesuré deux fois** : la revue chicane dans le cadre de
+l'artefact, elle ne demande pas si le cadre est le bon. Au tour 3, c'était une section qui
+contredisait son titre ; ici, une section facultative qui produisait un quart des remarques.
+
+**Ce que ce défaut coûte, chiffré** : 4 remarques sur 16 — un quart du tour — ont été soldées par un
+retrait qu'elles n'avaient pas proposé. Le travail de les formuler n'est pas perdu (c'est lui qui
+démontre que la section ne tenait pas), mais il aurait été plus court de poser la question du cadre.
+
+**Une ironie mesurable, et elle mérite d'être notée pour le dispositif** : la pièce la plus lourde
+produite par ce tour — le découpage complet écrit par l'axe Découpabilité, quatre lots, leurs
+`blockedBy`, deux tables d'atterrissage — a servi à établir que **la spec ne devait pas porter de
+lots**. L'axe a fait son travail exactement comme prescrit, et son résultat a invalidé l'objet qu'il
+examinait. Rien dans le protocole ne prévoit ce cas, et rien n'a besoin d'être changé pour lui.
+
+**Les faits bruts qui fondent ce qui précède.**
 
 *Le sort des seize remarques n'est pas connu.* Les trois tours précédents affichent 11/11, 12/12 et
 16/16 retenues, aucun refus motivé. Ce tour n'a pas encore été repris ; c'est le chiffre manquant.
@@ -307,11 +349,39 @@ instruire §2 — le geste a marché, et c'est ce qui le rend gênant).
 
 ## 7. Verdict pour `revue-spec`
 
-> **À compléter par un tiers**, avec la même réserve qu'au §4 : les quatre issues de `D-043` amendé —
-> *promu*, *corrigé par le journal*, *retiré*, *tué par un fait* — supposent un juge qui n'est pas
-> l'exécutant.
+> **Complété le 2026-08-01 par le binôme**, avec la même réserve qu'au §4 : les quatre issues de
+> `D-043` amendé — *promu*, *corrigé par le journal*, *retiré*, *tué par un fait* — supposent un juge
+> qui n'est pas l'exécutant, et ce n'est pas le cas ici.
 
-**Les faits bruts qu'un tiers utilisera.**
+**Verdict : promu, et il l'était déjà — ce tour ne le confirme pas, il déplace la charge ailleurs.**
+
+`revue-spec` était promu après les tours 1 à 3. Rien de ce quatrième passage ne le remet en cause :
+les douze clauses du §3 ont chacune leur pièce, la clause neuve sur les figures a produit quatre
+remarques, et la sortie a déplacé la structure de l'artefact. **Mais aucune des trois frictions
+neuves ne le vise** — et c'est le fait qui compte pour le dispositif :
+
+- **48 vise le primitif `revue` §8**, qui prescrit encore `Done` là où l'instance a été corrigée. La
+  correction à porter n'est pas dans `revue-spec` ;
+- **49 vise l'outillage** — l'attente d'un sous-agent coûte douze appels et fausse la ligne qui les
+  compte ;
+- **50 vise une clause qui n'existe dans aucun des deux fichiers** : quels faits d'état
+  l'orchestrateur a le droit de fournir aux axes pour instruire §2, et sous quelle forme. Le geste a
+  marché — deux cases sur trois sont passées de « non opposable » à « tenue » — et c'est bien ce qui
+  le rend gênant : il a été inventé en séance.
+
+**Ce que ça dit du dossier `rex/` lui-même** : quatre tours d'un skill promu produisent désormais des
+frictions **au-dessus et au-dessous de lui**, plus dans son geste propre. C'est le signe qu'il faut
+chercher ailleurs — le primitif, l'outillage, la construction de la session — et non un cinquième
+tour de plus sur la même instance.
+
+**La réserve qui ne se lève pas, et qui s'aggrave avec le succès.** 55 remarques retenues sur 55 en
+quatre tours, aucun refus motivé, sur **le même artefact**, écrit par le binôme, avec un skill de la
+même main, jugé ici par ce même binôme. Chacune de ces conditions affaiblit la précédente. Le seul
+contre-indice sérieux reste celui du §4 : une revue complaisante ne fait pas retirer une section ni
+changer une architecture. **Le tour utile suivant n'est pas un cinquième passage ici** — c'est un
+premier passage de `revue-spec` sur une spec que le binôme n'aura pas rédigée.
+
+**Les faits bruts qui fondent ce qui précède.**
 
 - **Quatre tours, 55 remarques posées** (11 + 12 + 16 + 16). Les trois premiers affichent 39 retenues
   sur 39, aucun refus motivé. **Le sort des 16 de ce tour n'est pas connu** au moment d'écrire.
