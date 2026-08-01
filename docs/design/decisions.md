@@ -3800,3 +3800,50 @@ un premier passage sur une spec que le binôme n'aura pas rédigée.
 
 **Question ouverte** : le même écart existe-t-il aux deux autres niveaux ? `revue-plan` ne cite
 aucune DoD, alors que `dod/story/plan-review.md` existe — mesuré, non instruit.
+
+---
+
+## D-061 — Le registre des runs en vol est unique, et il vit dans le socle partagé (2026-08-01)
+
+Tranché par l'utilisateur en reprise du sixième tour de `revue-spec` sur *Un agent pilote Cursus*. La
+revue opposait que la spec rangeait l'état des runs en vol **dans trois endroits à la fois** : tranché
+au §3.1 (« le serveur le détient, seule entorse au sans-état »), dessiné dans le socle partagé par la
+figure et par le tableau des dépendances, et déclaré **question ouverte** douze lignes plus bas. Les
+deux lectures ne livrent pas la même feature.
+
+**Le code a réduit la question avant qu'elle soit posée**, et c'est ce qui l'a rendue tranchable en un
+seul arbitrage :
+
+- `ProjectHost.LaunchAsync` reçoit son `CancellationToken` en paramètre — le host ne retient rien ;
+- le `CancellationTokenSource` vit dans le ViewModel de l'écran de run, **seul endroit du dépôt qui
+  détienne de quoi arrêter** ;
+- **la lecture en vol ne dépend pas de cet état** : elle passe par la révision du partage de connexion
+  du journal, donc par le disque. Les deux portes lisent tout run en vol dans les deux options.
+
+La question ne portait donc pas sur *qui voit les runs* — les deux les voient dans tous les cas —
+mais sur *l'agent peut-il arrêter un run lancé depuis la fenêtre*. C'est ce que le nœud du schéma
+disait déjà de l'état : « un run, **de quoi l'arrêter** ».
+
+**Tranché : un registre unique, dans le socle partagé.** Les deux portes arrêtent n'importe quel run,
+quelle que soit celle qui l'a lancé. Deux motifs, et le premier est un invariant déjà écrit :
+
+- **« Aucune seconde porte, sur aucun agrégat »** (§2.3, l'invariant qui porte la parité). Deux
+  registres d'arrêt étanches sont deux portes sur le même concept ;
+- **le besoin de la Discovery** — *toute observation passe par quelqu'un qui regarde l'écran et
+  rapporte*. En dogfooding, un run lancé à la main serait inarrêtable par l'agent.
+
+**Écarté : chaque porte arrête les siens.** Coût de construction nul, et la recette le permettait
+telle qu'écrite — le scénario 7 posait « un run en vol, **lancé par un agent** ». La parité de
+capacité (`D-056`) était même tenue : chaque porte sait arrêter. C'est l'usage qui a tranché contre,
+pas la conformité.
+
+**Ce que la décision coûte, et le découpage doit le savoir** : le ViewModel de l'écran de run cesse de
+posséder son jeton d'annulation et le prend au registre. C'est le recablage que porte l'incrément qui
+apporte l'arrêt — inscrit au §2.2 comme orientation technique.
+
+**Le balayage a fait tomber un passage de plus**, et c'est le premier essai du geste que `D-060`
+institue : le scénario 7 posait « lancé par un agent », ce qui suggérait que seuls les siens sont
+arrêtables. Il pose désormais le cas qui prouve la règle — « lancé depuis la fenêtre ».
+
+**Question ouverte** : aucune sur la règle. *Dans quel projet* le socle atterrit reste ouvert, et
+relève d'un plan de design — c'est une question déjà listée, que celle-ci ne déplace pas.
