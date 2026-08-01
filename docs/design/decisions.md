@@ -3117,3 +3117,81 @@ découpage qui bute sur quelque chose qu'un relecteur avait vu et tu.
 décision qui **retire** une option, pas qui en ajoute une.
 **Question ouverte** : le seuil de l'opposition. Rien ne dit aujourd'hui ce qui mérite d'ouvrir
 `open`, sinon le jugement du relecteur et les référentiels de son axe.
+
+## D-052 — Une couche applicative naît de la parité : commandes et requêtes, et le verrou avec elles (2026-08-01)
+
+Tranché par l'utilisateur en reprise du **quatrième tour** de `revue-spec` sur *Un agent pilote
+Cursus*. La remarque qui l'a déclenché opposait le schéma §8.3 de la spec — où toutes les arêtes vers
+le noyau partaient du « point de passage » — à sa prose, qui affirmait deux fois l'inverse : *« il
+donne son tour, il ne sait pas ce qui se fait pendant »*. Le relecteur demandait laquelle des deux
+pièces avait tort. **Aucune des deux** : ce qui manquait était un niveau.
+
+### 1. Ce qui est tranché
+
+**Entre les deux portes — la fenêtre et le serveur MCP — et le noyau, une couche applicative porte
+les gestes.** Elle se divise en **commandes** (ce qui écrit) et en **requêtes** (ce qui lit), et
+**c'est la commande qui détient le verrou**. Le « point de passage » disparaît en tant que tel.
+
+Trois raisons, et la première est celle qui a emporté la décision :
+
+- **un geste s'écrit une fois.** *Ajouter une étape* est une commande, appelée par l'outil MCP comme
+  par l'éditeur. Sans elle, une seconde porte réécrit ce que la première portait déjà — et deux
+  implémentations d'un même geste divergent, ce que la parité existe précisément pour empêcher ;
+- **le verrou devient non contournable par construction.** La protection actuelle est
+  *accidentelle* : elle tient au seul fait que tous les appelants d'édition sont des commandes de
+  ViewModel, donc sur le thread UI. Un verrou qu'il faut *penser à prendre* reproduit cette
+  fragilité en explicite ; une écriture qui n'est pas une commande, elle, n'existe pas ;
+- **les requêtes ne verrouillent rien**, ce qui rend la lecture d'un run en vol possible sans faire
+  attendre le run.
+
+**La couche entre au périmètre de la feature**, elle n'en est pas un pré-requis — au même titre que
+la construction des N hosts, et pour le même motif : en faire une carte externe aurait bloqué la
+feature sur une priorisation. Elle descend hors de la présentation avec la racine de composition.
+
+### 2. Le fait mesuré qui borne la décision
+
+**Les deux portes n'ont pas la même granularité de geste**, et c'est vérifié dans le code, pas
+supposé. `WorkflowEditorViewModel` est *stateful* : il ouvre son brouillon au montage, le mute en
+mémoire, et **n'écrit qu'à son `Save`**. L'outil MCP, lui, est atomique — *ouvrir → muter → sauver* à
+chaque appel.
+
+D'où la borne : **la couche ne porte que le geste atomique**, et l'éditeur ne la traverse qu'en son
+`Save`, seul moment où il touche le disque. Rien ne change pour qui se sert de la fenêtre.
+
+### 3. Ce qui a été écarté
+
+**Le point de passage nu** — un verrou que chaque appelant consulte avant d'écrire, la composition
+du geste restant dans l'outil. C'est ce que la spec portait jusqu'ici, avec cet argument : *« si le
+socle partagé ouvrait le brouillon, le mutait et rendait l'identifiant, il porterait la logique
+d'authoring — et il faudrait l'y écrire une fois par outil »*. **L'argument est retourné** : une
+commande par geste, écrite une fois et appelée par les deux portes, est le but et non le coût.
+
+**Rendre l'éditeur atomique lui aussi** — un seul chemin d'écriture, aucune divergence possible.
+Écarté parce que ce serait **changer le produit pour servir l'architecture** : plus de bouton
+*Enregistrer*, plus d'état « brouillon non enregistré », et chaque frappe touchant le disque.
+
+**Deux formes dans la couche** — des commandes atomiques pour le serveur, une session d'édition
+ouverte pour la fenêtre. Écarté : deux chemins d'écriture à tenir cohérents, donc le risque même que
+la parité existe pour éviter.
+
+**La couche en feature séparée**, dont celle-ci dépendrait. Écarté par le §5 de la spec : cela
+renverse son « aucun pré-requis » et bloque la feature sur une carte à créer et à prioriser.
+
+### 4. Registres
+
+**Construit** : rien. Il n'existe **aucune couche applicative** dans le dépôt — les gestes vivent
+dans les ViewModels.
+**Tranché, non construit** : la couche elle-même, sa division commandes / requêtes, et le verrou
+porté par la commande. ⚠️ **La spec qui l'inscrit est en `Review Requested` et n'a pas passé le
+temps ⑤** — `architecture.md` ne l'enregistre donc pas encore ; l'y écrire avant que l'humain
+prononce ferait passer un projet pour un fait.
+**Question ouverte** : dans quel projet la couche atterrit — avec le reste du socle partagé, la
+question est commune ; sa maille de sérialisation — par projet, par workflow, globale ; et jusqu'où
+les ViewModels passent par les requêtes, la décision ne les y obligeant que pour leurs écritures.
+
+### 5. À ne pas confondre avec `CUR-28`
+
+Le repackage `Core` / `Infra` / `Host` / `UI` déplace des **assemblies** le long d'une hexagonale ;
+cette décision ajoute un **niveau** qui n'existe nulle part. Les deux se touchent — la couche vivra
+quelque part que le repackage nommerait — sans se recouvrir, et `CUR-28` reste hors périmètre, à
+rediscuter en Discovery de la résidence.
