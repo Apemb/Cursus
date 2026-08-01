@@ -210,6 +210,7 @@ des titres que seul son auteur comprend. Le gabarit (`D-054`) :
 3. État des décisions et dépendances
    3.1 Les trois registres
    3.2 Le pré-requis
+   3.3 Comment la recette se répartit   (si elle porte des règles d'atterrissage)
 
 Annexes
    A. L'arbitrage technico-fonctionnel
