@@ -3847,3 +3847,66 @@ arrêtables. Il pose désormais le cas qui prouve la règle — « lancé depuis
 
 **Question ouverte** : aucune sur la règle. *Dans quel projet* le socle atterrit reste ouvert, et
 relève d'un plan de design — c'est une question déjà listée, que celle-ci ne déplace pas.
+
+---
+
+## D-062 — La base d'un projet naît d'un geste explicite, jamais d'une lecture (2026-08-01)
+
+Tranché avec l'utilisateur en reprise du sixième tour de `revue-spec` sur *Un agent pilote Cursus*.
+La revue opposait trois passages inconciliables : *les requêtes ne verrouillent rien* (§2.2), *chaque
+commande et chaque requête résolvent seules* (§1.3), et *est mutant tout geste écrivant… jusqu'à
+l'ouverture d'un projet, fût-elle implicite, qui crée sa base et son schéma si elle manque* (§2.3).
+Une requête sur un projet jamais résolu écrivait donc hors de toute commande.
+
+**La question posée par l'utilisateur a déplacé le remède** : *est-il légitime qu'un `SELECT` crée un
+fichier SQLite, alors que créer un projet est plus qu'une base — il y a au moins un JSON en plus ?*
+Non, et le dépôt le dit déjà de deux façons :
+
+- `ProjectStore.Create` pose `workflows/`, `project.json` et un `.gitignore` qui ignore `cursus.db*`
+  avec ses compagnons WAL. **La création connaît la base par son nom et ne la crée pas** ;
+- le commentaire de ce même `.gitignore` énonce la coupe qui tranche : *l'intention est versionnée,
+  l'observation est locale*. Une base est de l'observation.
+
+**Corollaire qui rend la règle non triviale** : `cursus.db*` étant gitignoré, **le cas courant est un
+projet sans base**. Un dépôt cloné porte son `project.json` et ses workflows, jamais sa base ;
+`ProjectStore.Create` n'a tourné qu'une fois, sur le poste du créateur. Le geste qui adopte un projet
+sur *ce* poste est l'inscription au registre machine — c'est là que la base locale doit naître.
+
+**Tranché** : la base est matérialisée par un geste explicite, et il y en a deux — *créer un projet*,
+et *inscrire au registre de ce poste un projet déjà versionné*. Les deux sont des écritures, donc des
+commandes, donc déjà sous le verrou global (`D-058`) : **aucun mécanisme neuf, pas de second verrou**.
+Le journal s'ouvre en `ReadWrite` ; un fichier manquant devient une erreur nommée — *ce projet n'est
+pas initialisé sur ce poste* — là où `ReadWriteCreate` rendait une base vide en silence, qui se lit
+comme un projet sans historique.
+
+**La course est dissoute, pas protégée.** Plus rien n'est écrit à la première résolution, donc il n'y
+a plus à décider quel verrou la couvre.
+
+**Ce qui reste, et c'est plus étroit** : la racine garantit **au plus un host par projet**. Le verrou
+du journal protège une **connexion**, pas un fichier — deux instances vivantes pour la même base sont
+deux verrous qui ne se voient pas. C'est de l'unicité de cache, pas de la sérialisation. ⚠️ Cette
+garantie existe **déjà** aujourd'hui, mais par accident : la coquille de la fenêtre n'ouvre qu'un
+projet à la fois, et aucun type ne l'exprime. La feature la rend explicite parce qu'elle l'ôte.
+
+**Deux erreurs relevées en chemin, et toutes deux par le balayage de `D-060`.**
+
+1. L'inscription d'un projet existant **manquait à l'inventaire du §1.2**, alors que la fenêtre
+   l'expose — `OpenOrCreateProject` inscrit, et bifurque vers la création si le dossier ne porte pas
+   de `.cursus/`. Un trou de la parité que six tours de revue n'avaient pas relevé, trouvé en
+   instruisant une autre remarque.
+2. La session appelante a tenu, à plusieurs reprises, que l'absence de `busy_timeout` rendrait un
+   `SQLITE_BUSY` immédiat. **L'annexe C de la spec mesurait l'inverse** — la bibliothèque réessaie
+   une trentaine de secondes. Deux créations concurrentes aboutissent donc toutes deux, et le danger
+   n'est pas l'échec visible mais la dégradation différée que laissent deux instances. La conclusion
+   tenait, l'argument non — le motif exact de la case *les faits allégués sont vrais* que `D-060`
+   venait d'inscrire dans la DoD.
+
+**Écarté.** *Faire prendre le verrou global aux requêtes* : cela marchait, au prix de sérialiser
+toute lecture avec toute écriture pour un cas qui ne survient qu'une fois par projet et par
+démarrage. *Un verrou interne à la racine* : recevable — la revue l'écartait au motif qu'il serait
+« un verrou que chaque appelant devrait penser à prendre », ce qui est faux, un tel verrou étant pris
+par la racine et non par l'appelant ; il devient simplement sans objet une fois la course dissoute.
+
+**Question ouverte** : que fait l'inscription d'un projet dont la base existe déjà — rien, ou une
+vérification de schéma ? Il n'existe aucun mécanisme de migration dans le dépôt, et cette décision
+n'en crée pas. Relève d'un plan de design.
