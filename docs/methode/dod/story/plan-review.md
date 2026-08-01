@@ -7,6 +7,12 @@
 > **La question** : cet incrément peut-il être **tiré** en `In Progress`, c'est-à-dire ses cycles
 > TDD peuvent-ils commencer ?
 >
+> **L'artefact relu ici est le plan de design** — l'échelle des **objets** : lesquels naissent,
+> changent ou meurent, et quelles responsabilités ils portent (`D-053`). Au-dessus, le plan
+> d'architecture de la spec a tenu l'échelle du système ; en dessous, la test list de chaque pas
+> tiendra celle du code. Une case ci-dessous qui semble manquer est peut-être une case d'une autre
+> échelle.
+>
 > **Le flux est tiré.** Une DoD n'est pas une condition de sortie que l'amont s'applique à
 > lui-même : c'est **ce que l'aval vérifie avant de tirer**. Qui prend le premier pas et bute sur
 > un plan insuffisant repose la carte.

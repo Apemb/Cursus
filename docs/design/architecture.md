@@ -1602,7 +1602,7 @@ la solde, là où le MCP Linear ne sait pas résoudre.
 **Les remarques visent la carte, pas le document, et c'est structurel.** L'ancre de Linear est une
 marque dans l'état de l'éditeur, qu'aucune API n'écrit (`linear-api.md` §10d) : un commentaire de
 document est donc **invisible**. Les trois verbes visent désormais la **cible** — le projet pour une
-Discovery ou une Spec, l'issue pour un plan d'archi —, déduite de `document.project` /
+Discovery ou une Spec, l'issue pour un plan de design —, déduite de `document.project` /
 `document.issue` et jamais choisie par l'appelant. Le mapping est vérifié sur les quatre documents de
 l'espace, sans cas particulier.
 

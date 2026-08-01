@@ -42,4 +42,4 @@ un manque en amont, pas une question légitime du pas — reposer la carte, `Rew
   la porte déjà a mangé l'étape suivante.
 - **Une acceptation formelle.** Le pas n'en a pas ; la suite verte et le zéro warning valent pour
   tous les pas, ça n'a pas à être répété carte par carte.
-- **Le plan d'archi.** Il appartient à l'incrément et s'écrit à sa prise, en `Planning`.
+- **Le plan de design.** Il appartient à l'incrément et s'écrit à sa prise, en `Planning`.

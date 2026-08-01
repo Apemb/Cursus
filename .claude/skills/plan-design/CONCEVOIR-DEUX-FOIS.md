@@ -4,7 +4,7 @@
 
 # Concevoir deux fois
 
-Annexe de `plan-archi`, appelée uniquement quand son étape 5 le juge nécessaire — une découpe où
+Annexe de `plan-design`, appelée uniquement quand son étape 5 le juge nécessaire — une découpe où
 plusieurs formes radicalement différentes sont défendables, pas seulement leur ordre.
 
 D'après Ousterhout : la première idée n'est presque jamais la meilleure. Le remède n'est pas d'y

@@ -6,7 +6,7 @@ import { CursusError } from "../errors.ts";
  * <p>`D-045` a établi qu'un commentaire de document ne peut pas être ancré par l'API — la
  * marque `inlineComment` vit dans l'état Yjs et seul le client l'écrit. Une remarque posée
  * sur un document est donc invisible. Les remarques visent la carte qui porte le document :
- * le **projet** pour une Discovery ou une Spec, l'**issue** pour un plan d'archi.</p>
+ * le **projet** pour une Discovery ou une Spec, l'**issue** pour un plan de design.</p>
  *
  * <p>La variante est portée par le **type**, pas par deux champs optionnels exclusifs : un
  * état « les deux renseignés » n'a aucun sens et ne doit pas être représentable

@@ -22,7 +22,7 @@ les résolus. Le détail mesuré est en `docs/reference/linear-api.md` §10d, la
 en `D-045`.
 
 Ce que la CLI vise donc désormais : les remarques se posent sur le **projet** (pour une Discovery ou
-une Spec) ou sur l'**issue** (pour un plan d'archi), où elles sont visibles sans marque, et le
+une Spec) ou sur l'**issue** (pour un plan de design), où elles sont visibles sans marque, et le
 passage visé est **désigné** par la citation plus un repère calculé.
 
 ## Installer
@@ -91,7 +91,7 @@ document, que **seul le client écrit** : aucun chemin programmatique n'en produ
 
 Une remarque se pose donc sur la **carte** qui porte le document, déduite de `document.project` /
 `document.issue` et jamais choisie par l'appelant : le **projet** pour une Discovery ou une Spec,
-l'**issue** pour un plan d'archi. Le mapping a été vérifié sur les quatre documents de l'espace, sans
+l'**issue** pour un plan de design. Le mapping a été vérifié sur les quatre documents de l'espace, sans
 cas particulier. Un document attaché à rien fait échouer la commande franchement — il n'y a nulle part
 où poser la remarque.
 

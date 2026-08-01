@@ -78,7 +78,7 @@ vaut mieux que traverser la colonne pour la forme.
 
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
-| `Planning` + *aucune* | [`plan-archi`](../../.claude/skills/plan-archi/SKILL.md) | Le plan d'archi, avec son **schéma-delta** `mermaid` en tête, la table « Objets impactés », et le **découpage en pas** | `Done` |
+| `Planning` + *aucune* | [`plan-design`](../../.claude/skills/plan-design/SKILL.md) | Le plan de design, avec son **schéma-delta** `mermaid` en tête, la table « Objets impactés », et le **découpage en pas** | `Done` |
 
 **Où vit le plan** : dans le **document attaché** à la carte, écrit en `Planning`. Linear rend le
 `mermaid` nativement, donc le schéma se lit sur la carte — sans fichier intermédiaire à créer puis

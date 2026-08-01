@@ -30,7 +30,7 @@ on relit un **comportement** ; or un pas est par construction plus petit qu'un c
 observable. La revue existe donc, elle a simplement lieu **là où son effet devient observable** :
 en `Code Review`, au niveau de l'incrément.
 
-**Aucun plan d'archi non plus.** Un pas qui exigerait son plan d'archi aurait la taille d'un
+**Aucun plan de design non plus.** Un pas qui exigerait son plan de design aurait la taille d'un
 incrément — c'est le signe qu'il a été mal découpé, pas qu'il lui manque un document.
 
 Ce que le pas porte à la place, et qui lui est propre : une **test list**, écrite à sa prise.
@@ -40,7 +40,7 @@ Ce que le pas porte à la place, et qui lui est propre : une **test list**, écr
 ## 2. `Backlog` — créé au découpage, son tour n'est pas venu
 
 Rien ne s'y fait. Les pas naissent au **découpage de leur incrément**, en `Planning` — jamais
-avant, puisque c'est le plan d'archi qui les produit.
+avant, puisque c'est le plan de design qui les produit.
 
 ---
 

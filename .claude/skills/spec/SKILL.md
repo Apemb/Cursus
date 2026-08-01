@@ -12,6 +12,12 @@ Discovery a établi le besoin, nommé pour qui il compte et pourquoi il compte m
 **Ne pas ré-interroger l'humain sur le besoin, le public ou l'urgence** — les redemander est le
 signal qu'il faut reposer la carte en `Discovery`, pas continuer ici.
 
+⚠️ **C'est le binôme qui arbitre ; le document en porte la trace** (`D-053`). L'acte appartient à
+l'humain et à l'agent qui rédigent ensemble — la spec ne tranche rien, elle **enregistre**. Deux
+conséquences pratiques : ne jamais écrire un arbitrage que l'humain n'a pas prononcé, fût-il
+évident ; et si une option reste non tranchée, ce n'est pas la rédaction qu'il faut reprendre mais
+l'interrogatoire qu'il faut rouvrir.
+
 ## 1. Charger le socle
 
 Lire le document `Discovery` lié à la feature. En retenir le besoin, le pour-qui, le
@@ -60,7 +66,7 @@ Pour chacun, une réponse ou un **« sans objet » explicite** — jamais un sil
 Complet quand : les quatre champs portent chacun une réponse écrite, aucun n'est simplement
 absent.
 
-## 5. Écrire le plan d'implémentation
+## 5. Écrire le plan d'architecture
 
 La spec est **fonctionnelle et technique** : la moitié fonctionnelle ne s'engage sur rien sans
 l'autre (`D-049`). Écrire, en dernier — il se nourrit de tout ce qui précède :
@@ -77,13 +83,20 @@ qui est mesurable se mesure : une cohabitation de frameworks, une contrainte de 
 comportement de bibliothèque sous concurrence. Une faisabilité citée de mémoire est ce que la
 revue suivante démontera.
 
-⚠️ **La profondeur est celle qui valide, pas celle qui prescrit.** Aller assez loin pour lever le
-doute, s'arrêter là. Ce plan n'a **aucune autorité littérale** : un plan d'archi d'incrément qui
-s'en écarte au contact du réel est dans son droit, il le dit et c'est tout. Prescrire ligne à
-ligne, c'est manger le plan d'archi — et périmer avant d'être pris.
+**L'échelle est celle du système et du module** (`D-053`) : quels composants, quelles frontières
+entre eux, quelles dépendances externes. **Pas la forme des objets** — descendre aux classes ici est
+le débordement le plus courant, et il est doublement coûteux : il fait le travail de `Planning`, qui
+n'en sait pas encore assez pour le faire bien, et il périme avant d'être lu.
+
+⚠️ **La profondeur est celle dont le découpage a besoin.** Le consommateur désigné de la spec est le
+découpage : le plan doit porter assez de vue d'ensemble pour qu'on puisse tracer les **frontières**
+entre incréments et donner à chacun son **orientation technique** — pas une ligne de plus. Le test
+est concret : tenter le découpage. S'il bute, le plan est trop court ; s'il n'a rien à faire de ce
+qu'on a écrit, le plan est trop long. Ce plan n'a **aucune autorité littérale** : un plan de design
+d'incrément qui s'en écarte au contact du réel est dans son droit, il le dit et c'est tout.
 
 ⚠️ **N'écrire que ce qui est décidé. Ce dont le plan ne parle pas est ouvert par défaut.** Ne pas
-lui ajouter une section « ce que je laisse au plan d'archi » : la liste de ce qu'on n'a pas tranché
+lui ajouter une section « ce que je laisse au plan de design » : la liste de ce qu'on n'a pas tranché
 est infinie, donc toute tentative de l'écrire est arbitraire — et elle **gonfle à chaque reprise**,
 puisqu'une remarque soldée y dépose sa réserve. Elle finit par contenir plus de décisions que la
 prose, et par contredire son propre titre. Les questions ouvertes qu'on sait déjà nommer ont leur
@@ -98,8 +111,8 @@ chaque affirmation de faisabilité est soit mesurée, soit annoncée comme non v
 
 Un document Linear **distinct** de la Discovery, qui lui succède sans la fondre — renvoyer au
 besoin, ne pas le rédiger une seconde fois. Ne pas y nommer les incréments : le découpage a lieu
-au passage en `In Progress`, pas ici. Ne pas y écrire le plan d'archi : il appartient à
+au passage en `In Progress`, pas ici. Ne pas y écrire le plan de design : il appartient à
 l'incrément, à sa prise.
 
 Complet quand : le document est publié, lié à la Discovery, et ne contient ni incréments ordonnés
-ni plan d'archi.
+ni plan de design.

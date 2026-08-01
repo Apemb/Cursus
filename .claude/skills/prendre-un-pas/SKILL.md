@@ -9,7 +9,7 @@ description: Prendre un pas (sous-tâche Linear) de `Todo` à `Done` — écrire
 > `D-039` demande l'inverse. À confronter au premier usage ; en cas de désaccord,
 > `docs/methode/journal-frictions.md` prime sur ce fichier.
 
-La conception a déjà eu lieu : le plan d'archi de l'incrément a posé les frontières, la carte du
+La conception a déjà eu lieu : le plan de design de l'incrément a posé les frontières, la carte du
 pas dit où il s'arrête. Ici, les mains, pas la tête — ce skill n'invente rien, il **exécute**. Le
 standard non négociable, le régime TDD, la frontière testé/non-testé et les conventions de
 modélisation sont déjà dans `CLAUDE.md`, chargé par ailleurs : ne pas les répéter, seulement les

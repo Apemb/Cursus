@@ -55,9 +55,30 @@ au mauvais endroit :
 | Niveau | Artefact | Quand il s'écrit | Sa fraîcheur |
 |---|---|---|---|
 | Feature | Une **discovery** | En `Discovery` | Datée — un instantané du besoin, figé dès que la spec existe |
-| Feature | Une **spec** — fonctionnelle **et** technique, son **plan d'implémentation** compris | En `Spec` | Datée — c'est un contrat, il ne bouge pas sous les pieds |
-| Incrément | Un **plan d'archi** | **À la prise de l'incrément**, en `Planning` | Datée |
+| Feature | Une **spec** — fonctionnelle **et** technique, son **plan d'architecture** compris | En `Spec` | Datée — c'est un contrat, il ne bouge pas sous les pieds |
+| Incrément | Un **plan de design** | **À la prise de l'incrément**, en `Planning` | Datée |
 | Pas | Une **test list** | **À la prise du pas** | **Vivante** — un cas découvert au rouge s'y ajoute |
+
+### Les trois échelles de conception, et le moment qui n'en est pas une
+
+Ces artefacts ne sont pas trois tailles du même objet : ils conçoivent à **trois échelles
+distinctes**, de plus en plus fine (`D-053`). Entre les deux premières s'intercale un moment qui
+ressemble à de la conception sans en être — le **découpage**.
+
+| Échelle | Quand | Artefact | Décide | Ne décide pas |
+|---|---|---|---|---|
+| **Architecture** — système / module | Feature, en `Spec` | la spec, moitié technique | Composants, frontières entre eux, dépendances externes | La forme des objets |
+| *(ordonnancement)* | Feature → `In Progress` | les **cartes** d'incrément | Vers où chaque incrément va, son acceptation, l'ordre, les blocages | **Rien de structurel** |
+| **Design** — objets / classes | Incrément, en `Planning` | le **plan de design** | Objets qui naissent, changent, meurent ; leurs responsabilités ; le schéma-delta ; l'ordre des pas | La test list, le code |
+| **Implémentation** — code | Pas, à sa prise | la **test list** | Les cas à prouver, fichier par fichier | — |
+
+**Le découpage ne livre que direction et acceptation.** Un incrément qui sort du découpage sait
+*vers où il va* et *ce qu'on vérifiera à la fin* — jamais quels objets il touchera, encore moins en
+combien de pas. La structure attend `Planning`, le détail attend la prise du pas.
+
+**Ordonner des pas n'est pas les concevoir**, et c'est pourquoi le plan de design porte l'ordre des
+pas sans contredire ce qui précède : il donne à chacun son titre, sa raison d'être *à cette place* et
+son piège local — pas ses cas de test.
 
 **Un artefact, un document** (`D-041`). La discovery et la spec sont **deux** documents Linear, pas
 deux moitiés d'un même. Leurs fraîcheurs diffèrent — l'une meurt, l'autre est un contrat vivant
@@ -65,18 +86,20 @@ jusqu'à `Validation` — et surtout, les réunir invite à **arbitrer en rédig
 `Discovery` s'interdit précisément (§2.1). Une feature tuée en discovery se lit alors à la structure :
 un document, pas l'autre.
 
-**Ni le plan d'archi ni la test list ne s'écrivent d'avance**, et pour la même raison : ce qu'on
+**Ni le plan de design ni la test list ne s'écrivent d'avance**, et pour la même raison : ce qu'on
 apprend en faisant le premier incrément change ce qu'on sait au quatrième, comme ce qu'on apprend
 au pas 1 change ce qu'on sait au pas 4. Planifier tout au découpage serait un *waterfall* à petite
 échelle.
 
-⚠️ **Le plan d'implémentation de la spec échappe à cette règle, parce qu'il n'est pas de la même
-nature** (`D-049`). Il ne dit pas comment *ce* changement-ci est structuré — il montre que
-l'ensemble **peut fonctionner** et comment il est **censé** fonctionner : les solutions techniques
-envisagées, celle qu'on priorise, les grandes dépendances à ajouter ou modifier, et un ou plusieurs
-schémas. Il n'a **aucune autorité littérale** sur l'implémentation : au contact du réel, un plan
-d'archi a le droit de s'en écarter, à condition de le dire. Les deux ne se recouvrent donc pas —
-l'un est d'ensemble et indicatif, l'autre est local et engageant.
+**Le plan d'architecture de la spec, lui, s'écrit d'avance — parce qu'il ne parle pas de la même
+chose** (`D-049`). Il ne dit pas comment *ce* changement-ci est structuré : il montre que l'ensemble
+**peut fonctionner** et comment il est **censé** fonctionner. Il n'a **aucune autorité littérale**
+sur ce qui suit — au contact du réel, un plan de design a le droit de s'en écarter, à condition de le
+dire.
+
+L'écart d'autorité ne suit donc pas l'écart d'échelle, et c'est contre-intuitif : **le plan le plus
+haut est le moins engageant**. Rien de mystérieux — une vue d'ensemble est plus loin du contact,
+donc plus exposée à ce que le terrain dément.
 
 Ce que le découpage capture, en revanche, ne se rattrape pas : **les frontières** — ce qui est
 dans cet incrément, ce qui n'y est pas, l'ordre, les dépendances. C'est la vue d'ensemble de
@@ -121,6 +144,12 @@ sorties légitimes et bon marché.
 La **tech** et la **QA** rejoignent la table. C'est ce qui rend l'arbitrage possible : on
 n'arbitre pas une faisabilité sans la tech, et on ne définit pas une recette sans la QA.
 
+⚠️ **C'est le binôme qui arbitre, pas la spec** (`D-053`). Le document n'exerce aucun arbitrage : il
+en porte la **trace**. L'acte appartient à l'humain et à l'agent qui rédigent ensemble, et c'est
+pourquoi l'humain est ici du côté de la **production** (§6.3) — pas par commodité de composition,
+mais parce que trancher lui revient. Conséquence pour qui relit : une option non arbitrée n'est pas
+une spec mal écrite, c'est un binôme qui n'a pas tranché — et on ne le répare pas en réécrivant.
+
 1. **Quelles options, à quel coût ?** L'étude de faisabilité et l'estimation — légère, elle
    sert à *arbitrer*, pas à s'engager. **L'écart mérite d'être écrit autant que le choix** :
    ce qui a été envisagé puis écarté, et pourquoi. Un arbitrage structurant se déverse
@@ -141,7 +170,7 @@ n'arbitre pas une faisabilité sans la tech, et on ne définit pas une recette s
    ticket que dans un document.
 7. **Quelles vertus doivent survivre ?** Les invariants que l'implémentation ne doit pas
    casser en chemin — souvent la partie la plus facile à perdre.
-8. **Comment ça va marcher ?** Le **plan d'implémentation** — la moitié technique de la spec,
+8. **Comment ça va marcher ?** Le **plan d'architecture** — la moitié technique de la spec,
    sans laquelle la moitié fonctionnelle ne s'engage sur rien (`D-049`). Il vient en dernier
    parce qu'il se nourrit des sept réponses précédentes. Quatre choses, et pas davantage :
    les **solutions techniques envisageables**, **laquelle on priorise** et pourquoi, **comment
@@ -149,34 +178,41 @@ n'arbitre pas une faisabilité sans la tech, et on ne définit pas une recette s
    dépendances** à ajouter ou modifier, nommées (un paquet, un framework, un service). Le tout
    porté par **un ou plusieurs schémas**, que Linear rend nativement.
 
-   **Sa profondeur est celle qui valide, pas celle qui prescrit.** Il doit aller assez loin
-   pour qu'on sache que ça peut fonctionner, et s'arrêter là. ⚠️ Il n'a **aucune autorité
-   littérale** : au contact du réel, on trouve des surprises et parfois mieux. Un plan d'archi
-   d'incrément qui s'en écarte est dans son droit — il le dit, c'est tout.
+   **Il conçoit à l'échelle du système et du module** (`D-053`) : quels composants, quelles
+   frontières entre eux, quelles dépendances externes. Pas la forme des objets — celle-là
+   appartient au plan de design de chaque incrément.
+
+   **Sa profondeur est celle dont le découpage a besoin.** Le consommateur désigné de la spec
+   est le découpage, et c'est lui qui mesure : le plan doit porter assez de vue d'ensemble pour
+   qu'on puisse tracer les frontières des incréments et leur donner leur orientation technique
+   — pas une ligne de plus. C'est un critère plus testable que « assez pour qu'on sache que ça
+   peut fonctionner » : il se **teste**, en tentant le découpage (voir la DoD `Spec` §3).
+   ⚠️ Il n'a **aucune autorité littérale** : au contact du réel, on trouve des surprises et
+   parfois mieux. Un plan de design qui s'en écarte est dans son droit — il le dit, c'est tout.
 
 ### Ce qu'une feature **ne** contient pas
 
 - **Ses incréments, nommés et ordonnés.** Le découpage a lieu au **passage en
   `In Progress`**, pas à l'écriture de la spec. Ce qu'elle peut porter, c'est une *intention*
   de découpage — une idée de la maille. Les cartes naissent à l'ouverture, pas au backlog.
-- **Le plan d'archi d'un incrément.** Il appartient à l'incrément, qui décide *comment **ce**
-  changement-ci est structuré* — schéma-delta, objets impactés, découpage en pas. ⚠️ **À ne pas
-  confondre avec le plan d'implémentation** de la question 8, qui est d'ensemble et indicatif là
-  où celui-ci est local et engageant (`D-049`). La feature montre que **ça peut marcher** ;
-  l'incrément s'engage sur **comment il le fait**.
+- **Le plan de design d'un incrément.** Il appartient à l'incrément, qui décide *comment **ce**
+  changement-ci est structuré* — schéma-delta, objets impactés, ordre des pas. La feature montre
+  que **ça peut marcher** ; l'incrément s'engage sur **comment il le fait**.
 
 ---
 
 ## 3. Ce que contient un **incrément** (issue Linear)
 
-C'est le niveau qui porte la charge, et son artefact est le **plan d'archi** — celui que
+C'est le niveau qui porte la charge, et son artefact est le **plan de design** — celui que
 `CLAUDE.md` exige dès qu'un changement crée une classe, traverse des modules ou implique une
-découpe non évidente, schéma-delta compris. Il s'écrit **à la prise de l'incrément**, en
-`Planning` — pas au découpage, qui n'en sait pas encore assez.
+découpe non évidente, schéma-delta compris. Il conçoit à l'**échelle des objets** : lesquels
+naissent, changent ou meurent, et quelles responsabilités ils portent (`D-053`). Il s'écrit **à la
+prise de l'incrément**, en `Planning` — pas au découpage, qui n'en sait pas encore assez.
 
-Ce que l'incrément reçoit du découpage, c'est autre chose : **ses frontières**, vues d'en haut,
-au seul moment où quelqu'un les voyait toutes ensemble. Elles vivent dans sa description
-(question 6), et rien ne les recalcule.
+Ce que l'incrément reçoit du découpage, c'est autre chose : **sa direction et son acceptation** —
+vers où il va, ce qu'on vérifiera à la fin — plus **ses frontières**, vues d'en haut, au seul moment
+où quelqu'un les voyait toutes ensemble. Elles vivent dans sa description (question 6), et rien ne
+les recalcule. Ce qu'il ne reçoit **pas** : sa structure, et encore moins ses pas.
 
 ### Les six questions
 
@@ -213,7 +249,7 @@ au seul moment où quelqu'un les voyait toutes ensemble. Elles vivent dans sa de
   ticket dit *quoi* et *pourquoi* ; le plan dit *comment*. Un ticket qui prescrit
   l'implémentation ligne à ligne a mangé le plan — et il sera périmé avant d'être pris.
 
-  Que l'incrément **porte** son plan d'archi ne contredit pas cette frontière : le plan vit
+  Que l'incrément **porte** son plan de design ne contredit pas cette frontière : le plan vit
   dans le **document attaché** à la carte, écrit en `Planning`, pas dans la description qui
   sert de brief. Les deux se lisent séparément et ne vieillissent pas au même rythme.
 - **La liste des tests.** Un incrément qui énumère ses cas a mangé le plan ; il peut nommer
@@ -228,8 +264,9 @@ au seul moment où quelqu'un les voyait toutes ensemble. Elles vivent dans sa de
 ## 4. Ce que contient un **pas** (sous-tâche Linear)
 
 Le pas est **entièrement technique** — et c'est le niveau destiné à être **entièrement
-automatisé** : test list, développement, revue. Il n'a pas de plan d'archi à lui ; celui de son
-incrément a déjà placé ses frontières. Son artefact est la **test list**, et elle
+automatisé** : test list, développement, revue. Il n'a pas de plan de design à lui ; celui de son
+incrément a déjà placé ses frontières. C'est ici, et seulement ici, que la conception descend à
+l'**échelle du code** — le détail fichier par fichier (`D-053`). Son artefact est la **test list**, et elle
 s'écrit à la prise du pas, pas au découpage : ce qu'on apprend au pas 1 change ce qu'on sait
 au pas 4, et une test list planifiée d'avance serait un petit *waterfall* qui périmerait. Elle
 reste vivante pendant le cycle — un cas découvert au rouge s'y ajoute.
@@ -363,8 +400,8 @@ spec un contrat plutôt qu'un document d'intention.
 |---|---|---|
 | **Backlog** | Une **salle d'attente à deux populations** : ce qui est né du découpage mais **pas encore éligible** (un `blockedBy` ouvert), et ce qui **n'a pas de parent** — voir ci-dessous → [`dod/story/backlog.md`](dod/story/backlog.md) | Créé au découpage, son tour n'est pas venu |
 | **Todo** | **La colonne d'éligibilité** : plus aucun `blockedBy` ouvert, le contexte tient dans la carte → [`dod/story/todo.md`](dod/story/todo.md) | Son incrément est `In Progress` et ce pas est le suivant → [`dod/pas/todo.md`](dod/pas/todo.md) |
-| **Planning** | C'est **ici que le plan d'archi s'écrit**, et qu'il découpe l'incrément en pas. **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon **on saute** directement à `In Progress` | — *(un pas qui exigerait son plan d'archi aurait la taille d'un incrément)* |
-| **Plan Review** | Le plan d'archi est écrit, avec son **schéma-delta**, et il est **en cours de revue** — voir §6.3 → [`dod/story/plan-review.md`](dod/story/plan-review.md) | — |
+| **Planning** | C'est **ici que le plan de design s'écrit**, et qu'il découpe l'incrément en pas. **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon **on saute** directement à `In Progress` | — *(un pas qui exigerait son plan de design aurait la taille d'un incrément)* |
+| **Plan Review** | Le plan de design est écrit, avec son **schéma-delta**, et il est **en cours de revue** — voir §6.3 → [`dod/story/plan-review.md`](dod/story/plan-review.md) | — |
 | **In Progress** | La série de cycles TDD tourne ; la documentation se met à jour **au fil**, pas à la fin | Un cycle : rouge observé *pour la bonne raison*, vert, refactor. La test list s'écrit ici et vit ici |
 | **Code Review** | Le comportement est **complet** ; le diff se relit d'un bloc, les commits sont argumentés, `architecture.md` / `decisions.md` sont à jour. La test list et la **formulation des comportements** se raffinent ici → [`dod/story/code-review.md`](dod/story/code-review.md) | — *(on ne relit pas un commit isolé, on relit un comportement)* |
 | **QA Review** | **Conditionnel** : obligatoire dès que l'incrément touche la présentation (§7.12, non testée) — l'app est lancée, le parcours refait à la main. **Sautée** pour un incrément purement Core, et le dire vaut mieux que traverser la colonne pour la forme → [`dod/story/qa-review.md`](dod/story/qa-review.md) | — |
@@ -505,7 +542,7 @@ qu'on n'a pas encore écrite. **Question ouverte, à trancher au premier round-t
 | Pas | Sous-tâche (`parentId`) | Rattachée aussi au projet, pour rester visible |
 | Ordre | `blockedBy` | Ce qui empêche de prendre une carte trop tôt |
 | Escalade | Assignation | Une carte en revue assignée attend un humain ; non assignée, elle boucle |
-| Discovery, spec, plan d'archi | Document attaché — **un artefact, un document** | Linear **rend le mermaid nativement** (`/diagram`, ou un bloc ` ```mermaid ` collé) — le schéma-delta se lit sur la carte, sans fichier intermédiaire dans le dépôt |
+| Discovery, spec, plan de design | Document attaché — **un artefact, un document** | Linear **rend le mermaid nativement** (`/diagram`, ou un bloc ` ```mermaid ` collé) — le schéma-delta se lit sur la carte, sans fichier intermédiaire dans le dépôt |
 | Le code du niveau | Branche + PR portant l'identifiant | `feature/` · `story/` · `pas/`, fusionnées en cascade — voir `flux.md` §6 et `D-042`. L'identifiant dans le nom suffit à Linear pour rattacher branche et PR à leur carte |
 
 **Le niveau d'une carte se déduit de sa structure**, il n'a pas à être encodé : projet =

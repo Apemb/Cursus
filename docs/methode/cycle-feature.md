@@ -100,7 +100,7 @@ technique, et chaque plan d'incrément ne voit que le sien. Le trou s'est vu à 
 
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
-| `Spec` + *aucune* | [`spec`](../../.claude/skills/spec/SKILL.md) | Le document `Spec` : options **arbitrées** (faisabilité, coût), **écarts écrits**, capacité énoncée à l'indicatif, **recette définie**, socle et pré-requis nommés, trois registres tenus, et le **plan d'implémentation** avec son ou ses schémas (`D-049`) | `Review Requested` |
+| `Spec` + *aucune* | [`spec`](../../.claude/skills/spec/SKILL.md) | Le document `Spec` : options **arbitrées** (faisabilité, coût), **écarts écrits**, capacité énoncée à l'indicatif, **recette définie**, socle et pré-requis nommés, trois registres tenus, et le **plan d'architecture** avec son ou ses schémas (`D-049`) | `Review Requested` |
 | `Spec` + `Review Requested` | [`revue-spec`](../../.claude/skills/revue-spec/SKILL.md) | Les remarques posées sur le projet | `Rework Needed` \| `Human Review Requested` si aucune |
 | `Spec` + `Rework Needed` | [`spec`](../../.claude/skills/spec/SKILL.md), **l'humain revient dans la boucle** | Le document repris, et **chaque remarque soldée** par la reprise faite ou le refus motivé | `Review Requested` |
 | `Spec` + `Human Review Requested` | — *(humain)* | Ses propres remarques posées, ou l'accord | `Rework Needed` \| `Done` |

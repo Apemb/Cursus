@@ -1,6 +1,6 @@
 ---
 name: decoupage
-description: Découper une spec de feature validée en incréments, avec leurs frontières et leur ordre. À invoquer à l'étape Découpage du flux — juste après l'accord sur une spec, pour produire les issues de niveau incrément avant qu'un plan d'archi ne démarre. Ne pas l'utiliser pour concevoir un incrément (c'est `plan-archi`) ni pour écrire une test list de pas (c'est `prendre-un-pas`).
+description: Découper une spec de feature validée en incréments, avec leurs frontières et leur ordre. À invoquer à l'étape Découpage du flux — juste après l'accord sur une spec, pour produire les issues de niveau incrément avant qu'un plan de design ne démarre. Ne pas l'utiliser pour concevoir un incrément (c'est `plan-design`) ni pour écrire une test list de pas (c'est `prendre-un-pas`).
 ---
 
 > **Draft non éprouvé.** Écrit d'après l'état de l'art, pas récolté sur une exécution réelle —
@@ -83,7 +83,7 @@ Une fois l'accord obtenu : chaque incrément devient une issue rattachée au pro
 
 ## 8. Ce que le découpage ne fait pas
 
-Le découpage capture des frontières, il ne conçoit pas. Le **plan d'archi** attend l'étape
+Le découpage capture des frontières, il ne conçoit pas. Le **plan de design** attend l'étape
 `Planning`, à la prise de chaque incrément — pas ici, faute d'en savoir assez : ce qu'on apprend en
 faisant le premier incrément change ce qu'on sait au quatrième. La **test list**, elle, attend la
 prise du pas. Un découpage qui prescrit le comment a mangé le plan de l'incrément.

@@ -1,17 +1,27 @@
 ---
-name: plan-archi
-description: Produit le plan d'archi d'un incrément — schéma-delta, table des objets impactés, découpage en pas — et gate la première ligne de code derrière sa validation. Use when un incrément entre en Planning, quand un changement va créer ou supprimer une classe, traverser plusieurs modules, ou impliquer une découpe non évidente, ou quand on demande explicitement de planifier ou d'écrire le plan d'archi d'un incrément.
+name: plan-design
+description: Produit le plan de design d'un incrément — schéma-delta, table des objets impactés, découpage en pas — et gate la première ligne de code derrière sa validation. Use when un incrément entre en Planning, quand un changement va créer ou supprimer une classe, traverser plusieurs modules, ou impliquer une découpe non évidente, ou quand on demande explicitement de planifier ou d'écrire le plan de design d'un incrément.
 ---
 
 > **Draft non éprouvé.** Écrit d'après l'état de l'art, pas récolté sur une exécution réelle —
 > `D-039` demande l'inverse. À confronter au premier usage ; en cas de désaccord,
 > `docs/methode/journal-frictions.md` prime sur ce fichier.
 
-# plan-archi
+# plan-design
 
 Ce skill **gate** : tant que son plan n'est pas écrit, aucun test rouge sur cet incrément n'a de
 raison d'exister. `CLAUDE.md` l'exige dès qu'un changement crée ou supprime une classe, traverse
 plusieurs modules, ou implique une découpe non évidente.
+
+**L'échelle est celle des objets** (`D-053`) : lesquels naissent, changent ou meurent, et quelles
+responsabilités ils portent. Les deux échelles voisines ne sont pas la tienne, et empiéter coûte
+dans les deux sens :
+
+- **au-dessus**, le **plan d'architecture** de la spec a tenu le système et le module. Il est
+  d'ensemble et **indicatif** : tu as le droit de t'en écarter au contact du réel, à condition de le
+  dire — ne le rejoue pas, ne le contredis pas en silence ;
+- **en dessous**, la **test list** de chaque pas tiendra le code, fichier par fichier. Elle s'écrit
+  à la prise du pas, jamais ici.
 
 ## 1. Décider si l'étape a lieu
 

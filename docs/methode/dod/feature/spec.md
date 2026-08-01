@@ -27,6 +27,13 @@ Les **huit questions** de `tickets.md` §2.2 ont chacune une réponse — ou un 
 explicite**. L'omission silencieuse est le seul cas interdit : une spec a le droit de ne pas
 trancher, pas de laisser croire que c'est tranché (`tickets.md` §5).
 
+⚠️ **Ce qui se coche ici est une trace, pas un jugement** (`D-053`). L'arbitrage est l'acte du
+**binôme** humain ↔ agent, pas du document — la spec l'enregistre. Le relecteur ne prononce donc
+jamais que l'arbitrage est *bon* : il vérifie qu'il est **écrit et argumenté**. C'est le partage
+conformité / justesse de `D-041`, appliqué au contenu de la spec. Une case qui ne se coche pas
+signale un binôme qui n'a pas tranché, pas une rédaction à reprendre — et le remède est de
+retourner interroger, pas de réécrire.
+
 - [ ] Les options sont **arbitrées**, avec faisabilité et coût
 - [ ] **Les écarts sont écrits** — ce qui a été envisagé puis écarté, et pourquoi
 - [ ] La **capacité** est énoncée : une phrase à l'indicatif, pas une liste de tâches
@@ -38,14 +45,18 @@ trancher, pas de laisser croire que c'est tranché (`tickets.md` §5).
 - [ ] Les **trois registres** sont tenus : construit / tranché non construit / question ouverte
 - [ ] Les **vertus qui doivent survivre** sont nommées — les invariants que l'implémentation ne
       doit pas casser en chemin
-- [ ] Le **plan d'implémentation** existe (`D-049`) — il porte les **solutions envisageables**,
+- [ ] Le **plan d'architecture** existe (`D-049`) — il porte les **solutions envisageables**,
       **celle qu'on priorise** et pourquoi, **comment on compte la concevoir**, et les **grandes
       dépendances** à ajouter ou modifier, nommées
-- [ ] Il est porté par **au moins un schéma**. Un plan d'implémentation en prose seule ne se
+- [ ] Il conçoit **à l'échelle du système et du module** (`D-053`) : composants, frontières entre
+      eux, dépendances externes. **Pas la forme des objets** — elle appartient au plan de design de
+      chaque incrément, et l'anticiper ici est le symptôme le plus courant de la spec qui déborde
+- [ ] Il est porté par **au moins un schéma**. Un plan d'architecture en prose seule ne se
       relit pas — c'est le seul endroit de la spec où le visuel n'est pas un agrément
-- [ ] Sa **profondeur valide sans prescrire** : assez pour qu'on sache que ça peut fonctionner,
-      pas assez pour tenir lieu de conception. ⚠️ Une spec qui prescrit l'implémentation ligne à
-      ligne a mangé le plan d'archi, et elle périmera avant d'être prise
+- [ ] Sa **profondeur est celle dont le découpage a besoin** : assez de vue d'ensemble pour qu'on
+      puisse tracer les frontières des incréments et leur donner leur orientation technique, pas
+      une ligne de plus. ⚠️ Une spec qui prescrit l'implémentation ligne à ligne a mangé le plan
+      de design, et elle périmera avant d'être prise
 
 ## 2. La revue a eu lieu et ses divergences sont soldées
 
@@ -67,6 +78,12 @@ l'équivalent, au niveau feature, du test de départage de `tickets.md` §1. Le 
 consommateur désigné de la spec : §3 q.5 en fait déjà foi (*si une part de la recette
 n'atterrit dans aucun incrément, le découpage a un trou*).
 
+C'est aussi ce qui **mesure la profondeur** du plan d'architecture (§1). Le découpage a besoin de
+deux choses, et de rien d'autre : de quoi tracer les **frontières** entre incréments, et de quoi
+donner à chacun son **orientation technique**. Un plan qui ne les porte pas est trop court ; un plan
+qui descend aux objets est trop long — il fait le travail de `Planning`, qui n'en sait pas encore
+assez pour le faire bien (`D-053`).
+
 Si le découpage bute, le manque est dans la spec — pas dans le découpage.
 
 ## 4. Ce qui n'est *pas* un critère de sortie
@@ -76,9 +93,9 @@ Si le découpage bute, le manque est dans la spec — pas dans le découpage.
   fait clore l'étape aux trois quarts.
 - **Les incréments nommés et ordonnés.** Le découpage a lieu **au passage** en `In Progress`,
   pas avant (`tickets.md` §2). Une spec peut porter une *intention* de maille, pas des cartes.
-- **Le plan d'archi d'un incrément.** Il appartient à l'incrément et s'écrit à sa prise, en
-  `Planning`. ⚠️ Ne pas le confondre avec le **plan d'implémentation**, qui est exigé ci-dessus
-  (§1) : celui-là est d'ensemble et indicatif, celui-ci est local et engageant (`D-049`).
+- **Le plan de design d'un incrément.** Il appartient à l'incrément et s'écrit à sa prise, en
+  `Planning`, à l'échelle des objets. Le **plan d'architecture** exigé ci-dessus (§1) est d'ensemble
+  et indicatif là où celui-ci est local et engageant (`D-049`, `D-053`).
 
 ## 5. Sortie latérale
 

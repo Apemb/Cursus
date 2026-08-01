@@ -3195,3 +3195,123 @@ Le repackage `Core` / `Infra` / `Host` / `UI` déplace des **assemblies** le lon
 cette décision ajoute un **niveau** qui n'existe nulle part. Les deux se touchent — la couche vivra
 quelque part que le repackage nommerait — sans se recouvrir, et `CUR-28` reste hors périmètre, à
 rediscuter en Discovery de la résidence.
+
+---
+
+## D-053 — Trois échelles de conception, et leurs noms remis à l'endroit ; la spec enregistre l'arbitrage, elle ne l'exerce pas (2026-08-01)
+
+Tranché par l'utilisateur, en reprise de la spec d'*Un agent pilote Cursus*. Deux corrections
+distinctes, faites dans la même séance : l'une porte sur **qui arbitre**, l'autre sur **combien
+d'échelles de conception existent et comment elles se nomment**. Cette entrée **amende `D-036` et
+`D-049`** sur le vocabulaire, sans rien retirer de leur substance.
+
+⚠️ **Clé de lecture des entrées antérieures.** `decisions.md` est append-only : `D-036` et `D-049`
+gardent l'ancien vocabulaire, qui désigne **l'inverse** du nouveau. Table de correspondance, à
+appliquer en lisant toute entrée antérieure au 2026-08-01 :
+
+| Avant (`D-036`, `D-049`) | Après | Niveau |
+|---|---|---|
+| « plan d'implémentation » (de la spec) | **plan d'architecture** | Feature, en `Spec` |
+| « plan d'archi » (de l'incrément) | **plan de design** | Incrément, en `Planning` |
+| skill `plan-archi` | skill `plan-design` | — |
+
+### 1. La spec n'arbitre pas : le binôme arbitre, la spec en porte la trace
+
+`tickets.md` §1 écrivait « la **feature** arbitre *quelle solution et si elle vaut le coup*, dans sa
+**spec** » — formulation qui fait du document l'agent de l'action. C'est faux, et pas seulement
+grammaticalement : **l'arbitrage est un acte du binôme humain ↔ agent**, posé en colonne `Spec`. Le
+document en est l'**enregistrement**.
+
+Trois conséquences, dont la deuxième est la seule qui change un geste :
+
+**Elle fonde §6.3, qui posait sans motiver.** « La spec n'est pas délégable, aucun agent ne juge que
+c'est *ça* qu'on veut construire » : on sait désormais pourquoi. L'humain est du côté de la
+**production** (`D-050`) parce que l'arbitrage lui appartient — ce n'est pas une commodité de
+composition, c'est la nature de l'acte.
+
+**Elle borne ce que le relecteur tiers peut cocher.** La DoD disait « les options sont
+**arbitrées** », ce qui laisse croire à un jugement sur le fond. Le relecteur ne prononce jamais que
+l'arbitrage est *bon* : il vérifie qu'il est **écrit, argumenté, et que les écarts le sont aussi**.
+C'est une case de **traçabilité**, pas de justesse — exactement le partage conformité / justesse
+posé par `D-041`, appliqué ici au contenu même de la spec.
+
+**Elle change le diagnostic quand la case ne se coche pas.** Lire « la spec est mal écrite » mène à
+réécrire ; lire « le binôme n'a pas tranché » mène à retourner interroger. Ce ne sont pas les mêmes
+remèdes, et le second est le bon.
+
+### 2. Trois échelles, pas deux — et le découpage n'en est pas une
+
+La conception se fait à **trois** échelles, et une quatrième étape s'y glissait sans en être une :
+
+| Échelle | Quand | Artefact | Décide | Ne décide pas |
+|---|---|---|---|---|
+| **Architecture** — système / module | Feature, en `Spec` | la spec, moitié technique | Composants, frontières entre eux, dépendances externes | La forme des objets |
+| *(ordonnancement)* | Feature → `In Progress` | les **cartes** d'incrément | Vers où chaque incrément va, son acceptation, l'ordre, les blocages | **Rien de structurel** |
+| **Design** — objets / classes | Incrément, en `Planning` | le **plan de design** | Objets qui naissent, changent, meurent ; leurs responsabilités ; le schéma-delta ; l'ordre des pas | La test list, le code |
+| **Implémentation** — code | Pas, à sa prise | la **test list** | Les cas à prouver, fichier par fichier | — |
+
+**Le découpage n'est pas une échelle de conception, c'est un ordonnancement.** Il livre à chaque
+incrément sa **direction** et son **acceptation** — jamais sa structure, et surtout pas ses pas. Le
+dépôt tenait déjà la règle (`plan-archi` §4 : *« n'écris ni test list ni comment coder chaque pas »*
+; `cycle-increment.md` : *« le plan s'écrit ici, pas au découpage »*), mais nulle part elle n'était
+énoncée **positivement** : on la déduisait d'une liste de « ce que la feature ne contient pas ». Une
+règle qui ne s'obtient que par soustraction ne survit pas à un lecteur pressé.
+
+**Ordonner des pas n'est pas les concevoir**, et c'est pourquoi le découpage en pas reste au plan de
+design sans contredire ce qui précède : il donne à chaque pas son titre, sa raison d'être *à cette
+place* et son piège local — pas ses cas de test.
+
+### 3. Les noms étaient à l'envers
+
+`D-049` a nommé « plan d'implémentation » l'artefact de la **feature** (le plus haut) et laissé
+« plan d'archi » à l'**incrément** (le plus bas). C'est l'inverse de l'usage : *architecture* désigne
+le niveau système, *design* le niveau objets, *implémentation* le code.
+
+Le symptôme était visible dans le document lui-même : `tickets.md` portait **trois ⚠️** dont le seul
+travail était de prévenir « ne confondez pas ces deux plans ». Un nommage qui exige trois
+avertissements est un nommage qui travaille contre son lecteur.
+
+**Ce qui a emporté la décision n'est pas l'esthétique, c'est la destination du projet.** Cursus vise
+à ce qu'un **agent consomme ces tickets** (`tickets.md` §Pourquoi il existe). Un agent arrive avec
+le vocabulaire du corpus mondial déjà appris — où *architecture* est toujours la couche haute et
+*design patterns* vit au niveau classe. Un dépôt qui inverse ces deux mots paie l'inversion **à
+chaque brief, indéfiniment**. Le renommage se paie une fois.
+
+L'ordre obtenu a en outre la vertu d'être **monotone en portée** — système → objets → code — donc
+retenable sans exception à mémoriser.
+
+### 4. Ce qui a été écarté
+
+**Garder les noms et se contenter d'écrire l'échelle.** Coût quasi nul, et c'était l'option
+raisonnable si le dépôt n'était lu que par ses auteurs. Écartée pour la raison du §3 : elle conserve
+les trois ⚠️ **à perpétuité** et laisse chaque agent futur buter sur la même inversion.
+
+**Mettre le design au-dessus de l'architecture** (« design, archi, implémentation »), lecture
+défendable dans le vocabulaire produit. Écartée : elle nous met à contre-courant du corpus dont les
+agents héritent, et casse la monotonie de portée qui rend l'ordre mémorisable.
+
+**« Plan de conception »** pour le niveau intermédiaire, plus français que « design ». Écarté parce
+que *conception* est le terme **générique** qui englobe les trois échelles ; l'employer pour une
+seule fabrique sa propre ambiguïté, à la place de celle qu'on retire.
+
+**N'inverser que deux noms** — architecture pour la spec, implémentation pour l'incrément. Écarté
+parce que le §2 vient précisément d'établir qu'il y a **trois** échelles : appeler « implémentation »
+le niveau des objets laisserait le niveau du code sans nom.
+
+⚠️ **Friction assumée** : le répertoire `docs/design/` emploie « design » au sens générique et
+contient `architecture.md` — l'architecture s'y trouve donc rangée sous le design. Renommer le
+répertoire coûterait plus que la gêne qu'il cause ; on l'assume et on ne le renomme pas.
+
+### 5. Registres
+
+**Construit** : le renommage est propagé dans la documentation de méthode (`tickets.md`, les DoD,
+les documents de cycle, `flux.md`, `CLAUDE.md`) et dans les skills, `plan-archi` devenant
+`plan-design`.
+
+**Tranché, non construit** : rien de neuf — les deux corrections sont documentaires, aucun code ne
+les porte.
+
+**Volontairement laissé en l'état** : les fiches de `docs/methode/rex/` et les entrées antérieures de
+ce journal. Ce sont des **archives datées** — elles décrivent des exécutions passées avec le
+vocabulaire de leur jour, et les réécrire falsifierait ce qu'on lisait alors. La table du préambule
+est la clé qui les rend lisibles.

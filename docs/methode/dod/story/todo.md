@@ -5,7 +5,7 @@
 > `docs/methode/journal-frictions.md` prime sur ce fichier.
 
 > **La question** : cet incrément peut-il être **tiré** en `Planning` (ou directement en
-> `In Progress`, si aucun plan d'archi n'est requis) ?
+> `In Progress`, si aucun plan de design n'est requis) ?
 >
 > **Le flux est tiré.** Une DoD n'est pas une condition de sortie que l'amont s'applique à
 > lui-même : c'est **ce que l'aval vérifie avant de tirer**. Ici, l'aval est celui qui prend
@@ -51,7 +51,7 @@ Deux règles de durabilité, transverses aux six questions (`AGENT-BRIEF`, trans
 - [ ] **Aucun chemin de fichier, aucun numéro de ligne.** Un renvoi au code se fait par nom de type
       ou de module — la structure aura bougé avant que la carte soit prise
 - [ ] **Comportemental, jamais procédural.** La carte dit ce que le système doit faire, jamais
-      quelle méthode ouvrir ni quelle ligne éditer — ça, c'est le plan d'archi, écrit à la prise
+      quelle méthode ouvrir ni quelle ligne éditer — ça, c'est le plan de design, écrit à la prise
 
 ## 3. Le critère opposable
 
@@ -62,7 +62,7 @@ Il se teste en le tentant : prendre l'incrément à froid, et voir où ça bute.
 
 ## 4. Ce qui n'est *pas* un critère
 
-- **Avoir un plan d'archi.** Il s'écrit à la prise, en `Planning` — pas avant (`tickets.md` §3).
+- **Avoir un plan de design.** Il s'écrit à la prise, en `Planning` — pas avant (`tickets.md` §3).
 - **Avoir une test list.** Elle s'écrit au pas, jamais en amont.
 - **Une acceptation exhaustive.** L'acceptation est la part de la recette de la feature qui revient
   à *cet* incrément, pas une couverture de tous les cas imaginables.

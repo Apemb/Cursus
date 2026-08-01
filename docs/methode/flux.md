@@ -90,7 +90,7 @@ PAS                                              Backlog ──► Todo ──�
 | 2 | **Spec** | Feature | Humain + agent | Binôme | `spec` |
 | 3 | **Revue de spec** | Feature | Agent tiers | Validation | `revue-spec` |
 | 4 | **Découpage** | Feature → incréments | Agent | Production | `decoupage` |
-| 5 | **Planning** | Incrément | Agent | Production | `plan-archi` |
+| 5 | **Planning** | Incrément | Agent | Production | `plan-design` |
 | 6 | **Plan Review** | Incrément | Agent ⇄ agent | Boucle + escalade | `revue-plan` |
 | 7 | **In Progress** | Pas | Agent | Production | `prendre-un-pas` |
 | 8 | **Code Review** | Incrément | Agent ⇄ agent | Boucle + escalade | `revue-code` |
@@ -109,14 +109,14 @@ rendrait un verdict qu'il n'a pas les moyens de fonder.
 | 2 | Un besoin | Une **spec** : options arbitrées, capacité énoncée, **recette définie** | `Discovery → Spec` |
 | 3 | Une spec | Un verdict, ou des divergences à reprendre en 2 | reste en `Spec` jusqu'à l'accord |
 | 4 | Une spec validée | N **incréments** avec leurs **frontières** et leur ordre | `Spec → In Progress` ; les incréments naissent en `Todo` ou `Backlog` |
-| 5 | Un incrément éligible | Un **plan d'archi** avec son schéma-delta, et le **découpage en pas** | `Todo → Planning → Plan Review` |
+| 5 | Un incrément éligible | Un **plan de design** avec son schéma-delta, et le **découpage en pas** | `Todo → Planning → Plan Review` |
 | 6 | Un plan | Un accord, ou un litige | `Plan Review → In Progress`, ou **assignation à l'humain** |
 | 7 | Un pas | Une **test list**, des cycles TDD, un commit | `Todo → In Progress → Done` |
 | 8 | Un comportement complet | Un accord, ou un litige | `Code Review → QA Review`/`Done`, ou **assignation** |
 | 9 | L'app lancée | Le parcours refait à la main | `QA Review → Done` |
 | 10 | La feature entière | Recettée **contre sa spec** | `In Progress → Validation → Completed` |
 
-**Le plan d'archi s'écrit à l'étape 5, pas à l'étape 4.** Le découpage capture ce que lui seul
+**Le plan de design s'écrit à l'étape 5, pas à l'étape 4.** Le découpage capture ce que lui seul
 peut savoir — les frontières entre incréments, vues d'en haut, et qui disparaîtraient avec la
 session qui les a produites. La conception de chacun attend sa prise : ce qu'on apprend en
 faisant le premier change ce qu'on sait au quatrième. Même raison que pour la test list, qui
@@ -156,7 +156,7 @@ personnel écrase silencieusement son homonyme du dépôt.
 | `spec` | 2 | Arbitrer les options avec faisabilité et coût, **écrire les écarts**, énoncer la capacité, définir la recette | [**draft**](../../.claude/skills/spec/SKILL.md) |
 | `revue-spec` | 3 | Valider une spec qu'on n'a pas co-écrite. Lister les divergences, **ne pas réécrire** | [**draft**](../../.claude/skills/revue-spec/SKILL.md) |
 | `decoupage` | 4 | Produire les incréments et leurs **frontières** ; déposer dans chacun le hors-périmètre **en nommant les frères** | [**draft**](../../.claude/skills/decoupage/SKILL.md) |
-| `plan-archi` | 5 | Le plan gaté de `CLAUDE.md` : schéma-delta, blocs touchés, découpage en pas | [**draft**](../../.claude/skills/plan-archi/SKILL.md) |
+| `plan-design` | 5 | Le plan gaté de `CLAUDE.md` : schéma-delta, blocs touchés, découpage en pas | [**draft**](../../.claude/skills/plan-design/SKILL.md) |
 | `revue-plan` | 6 | La boucle : verdict structuré, compteur de tours, escalade par assignation | [**draft**](../../.claude/skills/revue-plan/SKILL.md) |
 | `prendre-un-pas` | 7 | Test list, cycles TDD (rouge observé *pour la bonne raison*), commit argumenté | [**draft**](../../.claude/skills/prendre-un-pas/SKILL.md) |
 | `revue-code` | 8 | Relire un **comportement**, pas un commit ; raffiner la test list et la formulation des comportements | [**draft**](../../.claude/skills/revue-code/SKILL.md) |

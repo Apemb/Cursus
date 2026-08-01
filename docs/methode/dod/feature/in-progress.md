@@ -46,5 +46,5 @@ propre DoD.
 - **Tous les incréments démarrés, ou même terminés.** Un seul suffit ; les autres attendent leur
   tour en `Todo` ou en `Backlog`, normalement.
 - **Un ordre total entre incréments.** Seules les arêtes de blocage (`blockedBy`) sont exigées.
-- **Le plan d'archi de l'incrément démarré.** Il vit dans sa propre DoD (`Planning` /
+- **Le plan de design de l'incrément démarré.** Il vit dans sa propre DoD (`Planning` /
   `Plan Review`), pas ici.

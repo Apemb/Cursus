@@ -1,6 +1,6 @@
 ---
 name: revue-plan
-description: Boucle la relecture d'un plan d'archi entre agent de plan et agent de revue jusqu'à accord, et escalade le litige — en s'assignant la carte — après deux ou trois tours sans convergence. Use when un incrément est en Plan Review, quand on relance une revue de plan après une correction, ou quand une carte de Plan Review porte déjà un tour précédent à reprendre.
+description: Boucle la relecture d'un plan de design entre agent de plan et agent de revue jusqu'à accord, et escalade le litige — en s'assignant la carte — après deux ou trois tours sans convergence. Use when un incrément est en Plan Review, quand on relance une revue de plan après une correction, ou quand une carte de Plan Review porte déjà un tour précédent à reprendre.
 ---
 
 > **Draft non éprouvé.** Écrit d'après l'état de l'art, pas récolté sur une exécution réelle —
@@ -22,7 +22,7 @@ Deux ou trois, pas plus — au-delà, aucun ne reçoit assez d'attention :
   (construit / tranché non construit / question ouverte). Un plan qui rouvre une question déjà
   tranchée, ou ignore un invariant listé, est une divergence ici.
 - **Le découpage en pas contre la maille** — chaque pas tient-il dans une fenêtre de contexte
-  fraîche (`plan-archi` §4), répond-il à « pourquoi celui-là, à cette place » sans renvoyer à une
+  fraîche (`plan-design` §4), répond-il à « pourquoi celui-là, à cette place » sans renvoyer à une
   conversation absente ?
 - **Le schéma-delta contre `schemas.md` §6** — couleurs correctes, anatomie du nœud respectée, la
   ligne `+` présente sur chaque bloc modifié.
