@@ -369,3 +369,27 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     43 mots. ⚠️ **L'objectif annoncé — diviser par trois — n'est pas atteint**, et l'écart est à
     consigner plutôt qu'arrondi : 141 gras subsistent, dont beaucoup de chapeaux légitimes.
     — *transverse*
+
+## 2026-08-01 — cinquième tour de `revue-spec`
+
+54. **Un référentiel qui bouge périme silencieusement le skill qui le cite.** `revue-spec` §2
+    prescrit d'instruire « les **douze** cases de §1 » ; `D-054` en a porté le nombre à **dix-sept**,
+    et `D-053` a renommé « plan d'implémentation » en *plan d'architecture*, nom que la même clause
+    emploie encore. Un relecteur qui suivrait le skill à la lettre s'arrêterait à douze et manquerait
+    les cinq neuves — **c'est le mandat de la session appelante qui a rattrapé l'écart**, pas le
+    protocole, et il ne le fera pas toujours. ⚠️ Le motif ressemble aux entrées 41, 42 et 48 mais il
+    est **inverse**, et c'est ce qui le rend neuf : là, une correction ne redescendait pas sur ses
+    dépendants ; ici, un **référentiel** change sans que ce qui le **cite** l'apprenne. Le lien n'est
+    porté par rien — ni renvoi calculé, ni test, ni case de DoD. Un skill qui compte les cases d'un
+    document extérieur porte une copie de ce document, et une copie diverge. — *transverse*
+55. **La citation d'ancrage bute sur les marques d'emphase, et la règle écrite ne le dit pas.**
+    `revue` §6 documente une seule tolérance — « recopier un passage écrase ses retours à la ligne,
+    et c'est prévu ». Rien sur le gras. Sur douze poses, un passage recopié **sans** ses astérisques
+    a été **refusé** une fois et **accepté** une autre, selon que la citation commençait ou non sur
+    la marque ouvrante. Résolu en raccourcissant la citation, donc sans coût mesurable — mais le
+    comportement n'est ni documenté ni **prévisible depuis le texte rendu**, qui est tout ce que le
+    relecteur voit. ⚠️ À rapprocher de l'entrée 45, qui reçoit au même tour son premier
+    contre-exemple : une remarque a pu être ancrée sur `UI --> QRY`, une ligne interne d'un bloc
+    `mermaid`. La contrainte réelle n'est donc pas « une figure ne se cite pas » mais « une citation
+    doit être **unique** dans le document », ce que les identifiants de nœud satisfont souvent.
+    — *outillage*
