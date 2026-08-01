@@ -3500,3 +3500,62 @@ dans l'avertissement de granularité.
 **Question ouverte** : combien de gestes partagent réellement leur commande entre les deux portes.
 Quatre sont nommés ; l'inventaire n'a pas été parcouru ligne à ligne pour le vérifier, et ce compte
 décide de ce que la première raison de `D-052` couvre en pratique.
+
+## D-056 — La parité est de capacité, pas de forme : même modèle, mêmes règles, chemins libres (2026-08-01)
+
+Énoncé par l'utilisateur pendant la reprise du cinquième tour de `revue-spec`, en marge de `D-055`
+et en le généralisant : *« ce n'est pas forcément à prendre au pied de la lettre le fait que tous les
+gestes faits par l'humain au travers de l'UI doivent être possibles par le MCP »*.
+
+### 1. Ce qui est tranché
+
+La clause de parité de la feature *Un agent pilote Cursus* — *tout ce qu'un humain fait dans la
+fenêtre pour piloter des workflows, un agent le fait aussi* — s'entend **par fonctionnalité, jamais
+par geste**.
+
+Les deux portes n'ont ni le même mode de consommation ni les mêmes moyens : la fenêtre est un client
+lourd, avec un état qui persiste entre deux gestes, des flux qu'elle suit en continu et des choses
+qu'elle montre ; le serveur répond en HTTP, sans état, un appel à la fois. **Il est donc attendu que
+le même résultat s'obtienne par des chemins différents, et parfois en plus d'étapes.**
+
+Ce qui ne dévie pas, et ce sont les deux seules choses opposables :
+
+- **toute fonctionnalité reste atteignable des deux côtés** — *modifier un workflow* en est une ;
+- **les deux chemins passent par le même modèle**, donc valident les mêmes règles métier.
+
+### 2. Ce que ça change à ce qui était écrit
+
+**L'invariant de la spec change de portée.** Il disait *aucune seconde porte d'authoring* et ne
+couvrait donc que la couche d'édition ; il dit désormais **aucune seconde porte, sur aucun agrégat**.
+La raison est la même que pour l'authoring — un chemin qui n'entre pas par le modèle ne valide pas
+ses règles — mais elle ne se limitait pas à lui.
+
+**Ça déplace ce qui garantit la parité**, et cela referme le point laissé ouvert par `D-055` : la
+protection ne tient pas à ce que les deux portes appellent la même commande — elles ne le peuvent pas
+partout —, elle tient à ce qu'aucune n'ait d'autre entrée que le modèle.
+
+**Ça change enfin la nature de l'inventaire de la spec.** Il liste des **fonctionnalités
+atteignables**, pas des gestes d'écran ; deux entrées qui nomment le même résultat obtenu depuis deux
+écrans sont une fonctionnalité, pas deux. C'est le critère qui manquait pour opposer cet inventaire.
+
+### 3. Ce qui a été écarté
+
+**Lire la clause au pied de la lettre**, geste par geste. Écarté par le fait : la fenêtre compose
+plusieurs lectures dans un même écran et s'appuie sur un état que le protocole n'a pas. Une parité de
+geste serait soit invérifiable, soit satisfaite par des outils qui singent l'écran au lieu de servir
+l'agent.
+
+**Assouplir jusqu'à « l'essentiel est couvert ».** Écarté : sans référentiel clos, la clause
+redevient invérifiable — ce que la spec constate déjà en écrivant qu'une phrase de parité ne se
+recette pas telle quelle.
+
+### 4. Registres
+
+**Construit** : rien de neuf — l'invariant vise du code à écrire.
+
+**Tranché, non construit** : la formulation est inscrite dans la spec, sous la clause de parité et
+dans les invariants.
+
+**Question ouverte** : ce que « même fonctionnalité » recouvre quand un écran compose plusieurs
+gestes du noyau en un seul mouvement. Le cas ne s'est pas encore présenté autrement que sur des
+doublons de nommage.
