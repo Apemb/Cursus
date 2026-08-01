@@ -426,3 +426,24 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     demander ce qu'elle porte **qui ne relève pas du motif du retrait** — et le déverser en `D-NNN`
     plutôt que dans la section voisine, puisque c'est précisément ce que le journal ADR existe pour
     garder. — *transverse*
+
+## 2026-08-01 — sixième tour de `revue-spec`
+
+58. **Un constat faux passe le garde-fou des deux citations, parce que la contradiction interne
+    n'est pas un fait citable mais une inférence.** `revue` §3 exige référentiel **et** extrait
+    côte à côte, et le dit explicitement « préféré ici à la vérification empirique » — c'est un
+    arbitrage assumé, pas un oubli. Ce tour en mesure le prix pour la première fois : **2 constats
+    sur 21 écartés pour fausseté factuelle**, et dans les deux cas **les deux citations étaient
+    exactes**. L'un opposait « trois manques du noyau » à « deux des trois manques » ; l'autre
+    opposait la clause « deux worktrees » à la mesure d'annexe C, alors qu'`architecture.md`
+    enregistre le provisionnement en HEAD détaché, avec son test, précisément pour ce cas.
+    ⚠️ **Le motif est structurel, et il tient au §3 lui-même** : quand l'artefact est son propre
+    référentiel — le cas que la clause autorise explicitement —, les deux pièces attestent chacune
+    l'existence d'un passage, jamais leur **incompatibilité**, qui reste une lecture. Deux citations
+    exactes ne font pas une contradiction vraie. Le garde-fou attrape l'impression sans source ; il
+    ne peut rien contre l'inférence bien sourcée. ⚠️ **Ce qui a rattrapé, c'est six confrontations au
+    dépôt faites hors protocole**, par initiative de l'orchestrateur — quatre assertions ont tenu,
+    deux sont tombées. Aucune clause ne les prescrit, et le tour suivant peut ne pas les faire.
+    Piste sans être une décision : demander la vérification empirique **pour les seules
+    contradictions internes**, là où la clause l'écarte aujourd'hui pour toutes.
+    — *transverse*
