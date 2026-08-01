@@ -27,6 +27,20 @@ Les **huit questions** de `tickets.md` §2.2 ont chacune une réponse — ou un 
 explicite**. L'omission silencieuse est le seul cas interdit : une spec a le droit de ne pas
 trancher, pas de laisser croire que c'est tranché (`tickets.md` §5).
 
+⚠️ **Les questions se cochent, le plan se constate.** Le gabarit de `D-054` dit *où* chaque réponse
+atterrit par défaut ; ce sont les **questions** qui restent le référentiel de complétude. Une spec
+qui répond aux huit dans un ordre différent n'est pas incomplète — mais elle doit dire pourquoi, et
+l'écart doit servir le lecteur, pas l'auteur.
+
+- [ ] Le document **suit le plan** de `tickets.md` §2.2 : fonctionnel, technique, état des
+      décisions, annexes. Un écart est motivé dans le document lui-même
+- [ ] Les **titres sont ceux du gabarit** — pas des titres maison. Un titre que seul l'auteur
+      comprend est un coût payé à chaque lecture, et l'agent qui consommera le document n'a personne
+      à qui demander
+- [ ] Le document **ne porte pas de table « où j'ai répondu à quoi »** : cette vérification est
+      celle du relecteur contre cette DoD, et une table logée dans l'artefact finit par diverger de
+      lui
+
 ⚠️ **Ce qui se coche ici est une trace, pas un jugement** (`D-053`). L'arbitrage est l'acte du
 **binôme** humain ↔ agent, pas du document — la spec l'enregistre. Le relecteur ne prononce donc
 jamais que l'arbitrage est *bon* : il vérifie qu'il est **écrit et argumenté**. C'est le partage
@@ -37,14 +51,18 @@ retourner interroger, pas de réécrire.
 - [ ] Les options sont **arbitrées**, avec faisabilité et coût
 - [ ] **Les écarts sont écrits** — ce qui a été envisagé puis écarté, et pourquoi
 - [ ] La **capacité** est énoncée : une phrase à l'indicatif, pas une liste de tâches
-- [ ] La **recette** de la feature est définie
+- [ ] La **recette** de la feature est définie, en **Gherkin**, en annexe B (`D-054`)
+- [ ] Les **règles d'atterrissage**, si la recette en porte — une clause exemptée de tomber dans un
+      incrément, une clause qui se répartit en charge sans se répartir en référentiel — sont **dans
+      le corps**, pas en annexe : ce sont des instructions au découpage, pas des scénarios
 - [ ] La spec **renvoie** au document `Discovery` — elle ne recopie ni le besoin ni les pistes,
       et une spec sans ce lien est orpheline de sa raison d'être
 - [ ] Le **socle** est nommé (ce qui est déjà construit, par renvoi)
 - [ ] Le **pré-requis** est nommé, ou déclaré inexistant
 - [ ] Les **trois registres** sont tenus : construit / tranché non construit / question ouverte
-- [ ] Les **vertus qui doivent survivre** sont nommées — les invariants que l'implémentation ne
-      doit pas casser en chemin
+- [ ] Les **invariants à ne pas casser** sont nommés (§2.3) — et **seulement les non-dérivables** :
+      ce que `CLAUDE.md` ou `architecture.md` portent déjà se renvoie, ne se recopie pas. Y restent
+      les invariants **de cette feature-ci**, que rien d'autre n'écrit
 - [ ] Le **plan d'architecture** existe (`D-049`) — il porte les **solutions envisageables**,
       **celle qu'on priorise** et pourquoi, **comment on compte la concevoir**, et les **grandes
       dépendances** à ajouter ou modifier, nommées

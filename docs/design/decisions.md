@@ -3315,3 +3315,124 @@ les porte.
 ce journal. Ce sont des **archives datées** — elles décrivent des exécutions passées avec le
 vocabulaire de leur jour, et les réécrire falsifierait ce qu'on lisait alors. La table du préambule
 est la clé qui les rend lisibles.
+
+---
+
+## D-054 — La spec reçoit un plan standard : fonctionnel, puis technique, et l'arbitrage en annexe (2026-08-01)
+
+Tranché par l'utilisateur, en reprise de la spec d'*Un agent pilote Cursus*. Son constat : les titres
+du document étaient **maison** — « L'inventaire », « Les vertus qui doivent survivre », « Comment ça
+va marcher » — et *« surprenants pour tout le monde »*. Un lecteur qui arrive ne sait pas ce qu'il va
+trouver sous eux, et un agent qui les consomme encore moins.
+
+### 1. Le plan
+
+```
+1. Spécification fonctionnelle — comment ça va fonctionner
+   1.1 La solution retenue
+   1.2 Spécifications fonctionnelles détaillées
+   1.3 Hors périmètre fonctionnel
+
+2. Spécification technique — comment on va le construire
+   2.1 Les choix, en bref
+   2.2 Le plan d'architecture
+   2.3 Les invariants à ne pas casser
+
+3. État des décisions et dépendances
+   3.1 Les trois registres
+   3.2 Le pré-requis
+
+Annexes
+   A. L'arbitrage technico-fonctionnel
+   B. Les scénarios de recette, en Gherkin
+   C. Les mesures de faisabilité
+```
+
+### 2. Ce que le plan ne remplace pas : les huit questions
+
+**Les huit questions de `tickets.md` §2.2 restent le référentiel de complétude ; le plan n'est que la
+forme.** La distinction est ce qui rend le changement compatible avec l'existant, et elle a été
+établie avant lui : les huit questions sont des **angles**, pas des compartiments — rien ne dit où un
+fait s'établit plutôt que d'être mentionné, et c'est ce qui produit la redite constatée en passe
+globale sur cette même spec.
+
+Un plan par-dessus ne les contredit donc pas : il dit **où** chaque réponse atterrit par défaut, là
+où les questions disent **ce qui** doit avoir été répondu. La DoD continue de se cocher sur les
+questions.
+
+| Question (`tickets.md` §2.2) | Sa section par défaut |
+|---|---|
+| 1. Quelles options, à quel coût ? | Annexe A |
+| 2. Qu'est-ce qu'on construit ? | §1.1 |
+| 3. Comment le recettera-t-on ? | Annexe B |
+| 4. Où en est-on déjà ? | §2.2 |
+| 5. Quel est le pré-requis ? | §3.2 |
+| 6. Qu'est-ce qui est tranché ? | §3.1 |
+| 7. Quelles vertus doivent survivre ? | §2.3 |
+| 8. Comment ça va marcher ? | §2.1 et §2.2 |
+
+⚠️ **Cette table vit ici, pas dans les specs.** L'ancienne spec en portait une en tête, à titre
+d'auto-vérification : c'est une checklist de conformité, donc le travail du **relecteur** contre la
+DoD, pas celui du document. Une table de correspondance logée dans l'artefact qu'elle décrit finit
+par diverger de lui, et elle ment alors avec l'autorité d'un sommaire.
+
+### 3. Trois arbitrages de contenu, tranchés en même temps
+
+**La recette part en annexe, en Gherkin.** Le format est conventionnel — *étant donné / quand /
+alors* se lit sans qu'on explique comment le lire, y compris par qui ne connaît pas le dépôt. Il
+double la convention de titre de test déjà en vigueur (`CLAUDE.md`). La recette reste le référentiel
+de `Validation` ; seule sa place et sa forme changent.
+
+⚠️ **Les règles d'atterrissage ne partent pas en Gherkin et restent dans le corps.** Qu'une clause
+soit exemptée de tomber dans un incrément, ou qu'elle se réparte en charge sans se répartir en
+référentiel, sont des **instructions au découpage** — pas des scénarios. Les convertir les rendrait
+illisibles et les ferait disparaître de là où le découpeur les lit.
+
+**L'inventaire n'est pas converti en Gherkin : il devient la §1.2.** C'était la proposition initiale,
+et elle a été écartée sur un motif précis : un inventaire de parité est un **ensemble de
+comparaison** — clos, daté, cochable ligne à ligne — et non une suite de scénarios. Trente-cinq
+Gherkins de la forme *« quand l'agent liste les workflows, alors il obtient la liste »* seraient
+répétitifs au point d'être illisibles, et perdraient l'exhaustivité qui fait toute la valeur de la
+liste. S'y ajoute que plusieurs de ses lignes ne sont pas des comportements — l'exception barrée, ou
+l'écart d'un geste qui existe au noyau sans être exposé. La bonne lecture est plus simple : **un
+inventaire de ce que le produit doit permettre *est* une spécification fonctionnelle détaillée.** Il
+ne changeait pas de nature, il était mal rangé — placé après tout le technique alors qu'il est du
+fonctionnel pur.
+
+**Les vertus sont purgées, pas supprimées.** La proposition initiale était de retirer la section, les
+vertus vivant déjà dans le dépôt. Vrai pour la plupart — *zéro warning, suite verte, TDD* sont dans
+`CLAUDE.md`, *le noyau sans dépendance sortante* dans `architecture.md` —, et les y recopier est du
+bruit. Mais certaines sont des invariants **de la feature** et ne sont écrits nulle part ailleurs :
+sur cette spec, *aucune seconde porte d'authoring* (la raison d'être même de la feature) et *aucun
+geste d'écriture ne peut en corrompre un autre* (qui porte la définition d'un incrément *mutant*,
+donc une instruction directe au découpage). La règle retenue : **n'y écrire que ce qui n'est pas
+dérivable du dépôt**, et renvoyer pour le reste.
+
+### 4. Ce qui a été écarté
+
+**Garder les titres maison.** Ils portaient une intention réelle et des formulations affinées par
+quatre tours de revue. Écarté : la destination du projet est qu'un **agent** consomme ces documents,
+et un titre que seul l'auteur comprend est un coût payé à chaque lecture — le même raisonnement qu'en
+`D-053` sur le vocabulaire des plans.
+
+**Convertir aussi l'inventaire en Gherkin**, pour n'avoir qu'un format de recette. Écarté au §3.
+
+**Supprimer la section des vertus.** Écarté au §3 : deux des six n'existent nulle part ailleurs, et
+`tickets.md` q.7 comme la DoD les exigent nommément.
+
+**Laisser le plan à ce seul document, et voir à l'usage** — ce qu'aurait recommandé `D-039` (le
+journal écrit le skill, après deux ou trois passages). Écarté par l'utilisateur : sans inscription
+dans la méthode, la prochaine spec réinvente sa structure, et surtout le **skill** `spec` continue de
+produire l'ancienne — or c'est lui qui pilotera l'agent.
+
+### 5. Registres
+
+**Construit** : le plan est inscrit dans `tickets.md` §2.2, dans `dod/feature/spec.md` et dans le
+skill `spec` ; la spec d'*Un agent pilote Cursus* y est portée.
+
+**Tranché, non construit** : rien.
+
+**Question ouverte** : le format Gherkin n'a **jamais été exercé** ici — aucune `Validation` n'a
+tourné sur ce dépôt. On ne sait donc pas si six scénarios suffisent à recetter une feature de cette
+taille, ni où passe la frontière entre un scénario et une règle d'atterrissage quand le cas est moins
+net que sur cette spec-ci. À confronter à la première `Validation` réelle.

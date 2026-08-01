@@ -190,6 +190,62 @@ une spec mal écrite, c'est un binôme qui n'a pas tranché — et on ne le rép
    ⚠️ Il n'a **aucune autorité littérale** : au contact du réel, on trouve des surprises et
    parfois mieux. Un plan de design qui s'en écarte est dans son droit — il le dit, c'est tout.
 
+### Le plan du document
+
+Les huit questions ci-dessus disent **ce qui** doit avoir été répondu ; elles ne disent pas **où**.
+Ce sont des *angles*, pas des compartiments — et sans plan, chaque spec réinvente sa structure, avec
+des titres que seul son auteur comprend. Le gabarit (`D-054`) :
+
+```
+1. Spécification fonctionnelle — comment ça va fonctionner
+   1.1 La solution retenue
+   1.2 Spécifications fonctionnelles détaillées
+   1.3 Hors périmètre fonctionnel
+
+2. Spécification technique — comment on va le construire
+   2.1 Les choix, en bref
+   2.2 Le plan d'architecture
+   2.3 Les invariants à ne pas casser
+
+3. État des décisions et dépendances
+   3.1 Les trois registres
+   3.2 Le pré-requis
+
+Annexes
+   A. L'arbitrage technico-fonctionnel
+   B. Les scénarios de recette, en Gherkin
+   C. Les mesures de faisabilité
+```
+
+| Question | Sa section par défaut |
+|---|---|
+| 1. Quelles options, à quel coût ? | Annexe A |
+| 2. Qu'est-ce qu'on construit ? | §1.1 |
+| 3. Comment le recettera-t-on ? | Annexe B |
+| 4. Où en est-on déjà ? | §2.2 |
+| 5. Quel est le pré-requis ? | §3.2 |
+| 6. Qu'est-ce qui est tranché ? | §3.1 |
+| 7. Quelles vertus doivent survivre ? | §2.3 |
+| 8. Comment ça va marcher ? | §2.1 et §2.2 |
+
+**Les sous-parties de §2.2 sont libres** : le plan d'architecture d'une feature simple tient en un
+paragraphe, celui d'une feature qui déplace des couches se découpe autant qu'il le faut.
+
+**La recette part en annexe, en Gherkin** — *étant donné / quand / alors*, la même convention que les
+titres de test. Le format se lit sans qu'on explique comment le lire, y compris par qui ne connaît
+pas le dépôt. ⚠️ **Ce qui ne part pas en Gherkin** : les **règles d'atterrissage** — une clause
+exemptée de tomber dans un incrément, une clause qui se répartit en charge mais pas en référentiel.
+Ce sont des instructions au découpage, pas des scénarios ; elles restent dans le corps, là où le
+découpeur les lit.
+
+⚠️ **Ne pas mettre dans la spec une table « où j'ai répondu à quoi ».** C'est une checklist de
+conformité, donc le travail du **relecteur** contre la DoD. Logée dans l'artefact qu'elle décrit, elle
+finit par diverger de lui — et elle ment alors avec l'autorité d'un sommaire.
+
+**§2.3 n'accueille que le non-dérivable.** Une vertu déjà écrite dans `CLAUDE.md` ou
+`architecture.md` s'y renvoie, elle ne s'y recopie pas. N'y restent que les invariants **de cette
+feature-ci**, que rien d'autre ne porte.
+
 ### Ce qu'une feature **ne** contient pas
 
 - **Ses incréments, nommés et ordonnés.** Le découpage a lieu au **passage en

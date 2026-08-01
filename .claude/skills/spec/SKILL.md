@@ -45,26 +45,43 @@ l'écarte — aucune ne reste muette.
 ## 3. Énoncer la capacité et la recette
 
 Écrire la **capacité** gagnée en une phrase à l'indicatif — « le jeton vit dans le trousseau »,
-pas « gérer les secrets » ni une liste de tâches.
+pas « gérer les secrets » ni une liste de tâches. Elle ouvre le §1.1.
 
 Définir la **recette** : comment on recettera la feature entière, à l'étape `Validation`. C'est la
 clause dont dépend toute l'acceptation finale — si elle reste vague, `Validation` improvisera son
-propre jugement, et le découpage n'aura rien à répartir entre les incréments. Voir
-[`recette.md`](recette.md) pour des patrons de recette si le premier jet reste flou.
+propre jugement, et le découpage n'aura rien à répartir entre les incréments.
 
-Complet quand : la capacité est une phrase, pas une liste, et la recette énonce des cas
-observables plutôt qu'un critère du type « ça marche ».
+**Elle s'écrit en Gherkin, en annexe B** (`D-054`) — *Étant donné / Quand / Alors*, la même
+convention que les titres de test. Voir [`recette.md`](recette.md) pour la forme et des patrons.
+
+⚠️ **Deux choses ne partent pas en annexe, et les confondre coûte cher :**
+
+- **les règles d'atterrissage** — qu'une clause soit exemptée de tomber dans un incrément, ou
+  qu'elle se réparte en charge sans se répartir en référentiel. Ce sont des **instructions au
+  découpage**, pas des scénarios : elles restent dans le corps, là où le découpeur les lit ;
+- **un inventaire**, si la feature en produit un — une liste close de ce que le produit doit
+  permettre. Ce n'est pas de la recette mais une **spécification fonctionnelle détaillée** : sa
+  place est le §1.2, et le convertir en scénarios détruirait l'exhaustivité qui en fait la valeur.
+
+Complet quand : la capacité est une phrase, pas une liste, et chaque clause de recette est un
+scénario Gherkin dont le *Alors* est observable par qui ne lit pas le code.
 
 ## 4. Compléter les champs structurels
 
 Pour chacun, une réponse ou un **« sans objet » explicite** — jamais un silence :
-- le **socle**, ce qui est déjà construit, par renvoi ;
-- le **pré-requis**, nommé ou déclaré inexistant ;
-- les **trois registres** — construit / tranché non construit / question ouverte ;
-- les **vertus qui doivent survivre**, les invariants que l'implémentation ne doit pas casser.
+- le **socle**, ce qui est déjà construit, par renvoi (§2.2) ;
+- le **pré-requis**, nommé ou déclaré inexistant (§3.2) ;
+- les **trois registres** — construit / tranché non construit / question ouverte (§3.1) ;
+- les **invariants à ne pas casser** (§2.3).
+
+⚠️ **Les invariants n'accueillent que le non-dérivable.** Une vertu déjà écrite dans `CLAUDE.md`
+(zéro warning, suite verte, TDD) ou dans `architecture.md` (le noyau sans dépendance sortante) s'y
+**renvoie**, elle ne s'y recopie pas — la recopier la fera diverger de sa source. N'y restent que
+les invariants **de cette feature-ci**, que rien d'autre n'écrit : ce que trahir viderait la feature
+de son motif. En général deux ou trois, pas dix.
 
 Complet quand : les quatre champs portent chacun une réponse écrite, aucun n'est simplement
-absent.
+absent, et aucun invariant listé n'est déjà écrit ailleurs dans le dépôt.
 
 ## 5. Écrire le plan d'architecture
 
@@ -114,5 +131,30 @@ besoin, ne pas le rédiger une seconde fois. Ne pas y nommer les incréments : l
 au passage en `In Progress`, pas ici. Ne pas y écrire le plan de design : il appartient à
 l'incrément, à sa prise.
 
-Complet quand : le document est publié, lié à la Discovery, et ne contient ni incréments ordonnés
-ni plan de design.
+**Le document suit le plan de `tickets.md` §2.2** (`D-054`) :
+
+```
+1. Spécification fonctionnelle      1.1 La solution retenue
+                                    1.2 Spécifications fonctionnelles détaillées
+                                    1.3 Hors périmètre fonctionnel
+2. Spécification technique          2.1 Les choix, en bref
+                                    2.2 Le plan d'architecture   (sous-parties libres)
+                                    2.3 Les invariants à ne pas casser
+3. État des décisions               3.1 Les trois registres
+                                    3.2 Le pré-requis
+Annexes                             A. L'arbitrage technico-fonctionnel
+                                    B. Les scénarios de recette, en Gherkin
+                                    C. Les mesures de faisabilité
+```
+
+⚠️ **Écrire le contenu, pas la méthode.** Un document qui explique ce qu'est une spec, comment il
+se lit ou pourquoi il a deux registres est un document qui se commente au lieu de dire. La
+définition vit dans `tickets.md` ; ici, on énonce. En particulier, **aucune table « où j'ai répondu
+à quoi »** : cette vérification appartient au relecteur, et une table logée dans l'artefact
+qu'elle décrit finit par diverger de lui.
+
+⚠️ **Pas de titre maison.** Ceux du gabarit sont explicites pour qui arrive sans contexte — ce qui
+est exactement la situation de l'agent qui consommera le document.
+
+Complet quand : le document est publié, lié à la Discovery, suit le plan, et ne contient ni
+incréments ordonnés, ni plan de design, ni commentaire sur sa propre nature.
