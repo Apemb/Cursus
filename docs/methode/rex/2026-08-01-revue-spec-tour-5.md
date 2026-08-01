@@ -239,8 +239,38 @@ fois, du côté Conformité.
 
 **Les faits bruts.**
 
-*Le sort des douze remarques n'est pas connu* au moment d'écrire. Les quatre tours précédents
-affichent 11/11, 12/12, 16/16 et 16/16 retenues, aucun refus motivé — soit **55 sur 55**.
+*Le sort des douze remarques n'était pas connu au moment d'écrire.* Les quatre tours précédents
+affichaient 11/11, 12/12, 16/16 et 16/16 retenues, aucun refus motivé — soit **55 sur 55**.
+
+> **Complété par la session appelante après la reprise, le même jour.** **12 retenues sur 12, aucun
+> refus motivé** — la série passe à **67 sur 67 en cinq tours**. La réserve que le tour 4 écrivait
+> sur ce chiffre vaut telle quelle et s'aggrave d'un tour : c'est le binôme qui décide de retenir,
+> retenir coûte moins cher que réfuter, et un accord unanime est le résultat qu'on distingue le plus
+> mal d'une revue qui ne cherche pas.
+>
+> **Ce qui vaut davantage, c'est ce que la reprise a dû produire pour solder** : **quatre décisions
+> structurantes** — `D-055` (le partage d'une commande ne vaut qu'entre gestes de même granularité,
+> qui borne `D-052`), `D-057` (les hosts sont gardés, l'agent n'ouvre pas), `D-058` (verrou global) et
+> `D-059` (la descente du socle se paie une fois). Une cinquième, `D-056`, est née en marge sans
+> qu'aucune remarque ne la demande. Une revue qui fait écrire cinq entrées d'ADR en une reprise n'a
+> pas coché des cases.
+>
+> **Trois soldes n'ont coûté aucun arbitrage**, et c'est aussi une mesure : deux remarques ont été
+> tranchées par le **code** (`SqliteProjectHost.Open` ouvre une connexion dans son constructeur, donc
+> les hosts sont gardés ; `ProjectRegistry` et `TrackerRegistry` sont globaux, donc deux des trois
+> mailles proposées étaient mortes), et deux autres par une **précision de l'utilisateur** énoncée
+> hors de toute remarque — la parité est de capacité, pas de forme.
+>
+> ⚠️ **Une remarque a rattrapé un arbitrage perdu, ce qu'elle ne pouvait pas savoir.** La règle
+> d'atterrissage du socle avait été tranchée en reprise du tour 3, puis emportée par le retrait de la
+> section qui la contenait au tour 4. Elle ne vivait plus nulle part. C'est le contre-indice le plus
+> sérieux à l'unanimité : une revue complaisante ne retrouve pas ce qui a disparu. Journal **57**.
+>
+> ⚠️ **Deux remarques ont été soldées autrement que ce qu'elles demandaient**, et il faut le dire :
+> la remarque sur le diagramme de séquence supposait que `D-052` §3 était violé — il ne l'était pas,
+> la commande d'enregistrement étant atomique elle aussi ; et la remarque sur la maille visait la
+> clause `SQLITE_BUSY`, alors que le défaut réel était plus large — les registres globaux qu'aucune
+> maille fine ne protège.
 
 *Six violations dures, toutes sur l'axe Conformité, et leur nature a basculé par rapport au tour 4* :
 **trois sont des renvois qui ne résolvent pas**, là où le tour 4 n'en portait aucun et n'avait produit
