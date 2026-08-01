@@ -158,3 +158,28 @@ est exactement la situation de l'agent qui consommera le document.
 
 Complet quand : le document est publié, lié à la Discovery, suit le plan, et ne contient ni
 incréments ordonnés, ni plan de design, ni commentaire sur sa propre nature.
+
+## 7. Relire contre ce qui sera opposé
+
+Avant de reposer la carte en `Review Requested`, ouvrir **`docs/methode/dod/feature/spec.md`** et
+passer le document contre ses cases. C'est le référentiel que le relecteur applique, clause par
+clause ; l'écrire ici ne le duplique pas — **ne jamais recopier ses cases dans ce skill**, une copie
+d'un référentiel diverge de lui en silence (journal 54).
+
+⚠️ **Trois cases ne se vérifient pas là où la réponse atterrit**, et ce sont celles que les tours
+réels attrapent le plus : le document **ne se contredit pas** (figure ⇄ prose, section ⇄ section, un
+fait dans deux registres), les **faits allégués sont vrais** (ce qui est donné pour vérifié au code
+l'est, chaque renvoi résout), et **toute règle issue d'une décision la cite**. Elles se vérifient en
+confrontant deux endroits, jamais en relisant une section — donc elles se manquent en écrivant.
+
+⚠️ **Ce passage ne se fait pas en écrivant.** Viser une grille pendant qu'on rédige produit un
+document qui coche ; la lire une fois le document fini attrape ce que l'écriture a laissé. Les cases
+sont une trace, pas un jugement — ce qu'elles ne cochent pas signale un arbitrage que le binôme n'a
+pas rendu, et le remède est alors de retourner interroger, pas de réécrire.
+
+**En reprise après `Rework Needed`, ce passage porte une charge de plus** : chaque décision produite
+par la reprise **périme des phrases écrites avant elle**, ailleurs dans le document. Les balayer,
+une décision à la fois — voir `cycle-feature.md` §4.
+
+Complet quand : les cases ont été passées sur le document fini, et en reprise, chaque décision neuve
+a été balayée contre le reste du document.

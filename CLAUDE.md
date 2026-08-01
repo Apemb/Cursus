@@ -37,6 +37,15 @@ est prise ou renversée ; y renvoyer depuis le message de commit quand c'est uti
 Y maintenir la distinction en trois registres : **construit** / **tranché mais pas encore construit** /
 **question ouverte**. Un « prévu » présenté comme un « fait » désoriente le lecteur suivant.
 
+**Un renvoi `D-NNN` ne doit jamais être nécessaire pour comprendre la phrase qui le porte** (`D-060`).
+Il donne la généalogie, pas l'autorité : une règle doit se tenir seule, et s'il faut ouvrir l'entrée
+pour savoir ce qu'elle dit, c'est la règle qui est mal écrite. Le motif est la contrepartie de
+l'append-only — une entrée superséedée reste citée telle quelle par ses dépendants, qui ne
+l'apprennent jamais. À ce compte-là, un renvoi périmé coûte une lecture inutile, jamais un
+contresens. **Et l'inverse est proscrit** : ne jamais citer, depuis `decisions.md`, la **section**
+d'un document vivant — un `§5` meurt à la première restructuration, et l'append-only rend la mort
+définitive (journal 56). Citer un document par ce qu'il **décide**, jamais par où il le décide.
+
 ### Avec quel dispositif
 
 Trois régimes, selon l'ampleur. Le critère qui les départage : **une relecture adversariale ne paie que

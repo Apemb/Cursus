@@ -92,9 +92,10 @@ moitié des remarques d'une revue de spec ne se corrigent pas mais **se déciden
 du second tour portaient littéralement « la question à reposer ». Un agent correcteur n'a rien à y
 faire, et le second passage de revue a rendu davantage qu'une vérification n'aurait rendu.
 
-⚠️ **La spec est fonctionnelle *et* technique** (`D-049`). Elle se termine par un **plan
-d'implémentation** — solutions envisageables, celle qu'on priorise, comment on compte la concevoir,
-les grandes dépendances, et au moins un schéma. Sans lui, rien à aucun niveau ne conçoit ni ne fait
+⚠️ **La spec est fonctionnelle *et* technique** (`D-049`). Elle porte un **plan d'architecture** —
+solutions envisageables, celle qu'on priorise, comment on compte la concevoir, les grandes
+dépendances, et au moins un schéma. ⚠️ Ce fichier l'appelait *plan d'implémentation* jusqu'au
+2026-08-01 : `D-053` a inversé les deux noms, et le second désigne aujourd'hui une autre échelle. Sans lui, rien à aucun niveau ne conçoit ni ne fait
 valider la **structure d'ensemble** : le découpage tranche la granularité et les arêtes, jamais la
 technique, et chaque plan d'incrément ne voit que le sien. Le trou s'est vu à l'usage — voir `D-049`.
 
@@ -102,9 +103,25 @@ technique, et chaque plan d'incrément ne voit que le sien. Le trou s'est vu à 
 |---|---|---|---|
 | `Spec` + *aucune* | [`spec`](../../.claude/skills/spec/SKILL.md) | Le document `Spec` : options **arbitrées** (faisabilité, coût), **écarts écrits**, capacité énoncée à l'indicatif, **recette définie**, socle et pré-requis nommés, trois registres tenus, et le **plan d'architecture** avec son ou ses schémas (`D-049`) | `Review Requested` |
 | `Spec` + `Review Requested` | [`revue-spec`](../../.claude/skills/revue-spec/SKILL.md) | Les remarques posées sur le projet | `Rework Needed` \| `Human Review Requested` si aucune |
-| `Spec` + `Rework Needed` | [`spec`](../../.claude/skills/spec/SKILL.md), **l'humain revient dans la boucle** | Le document repris, et **chaque remarque soldée** par la reprise faite ou le refus motivé | `Review Requested` |
+| `Spec` + `Rework Needed` | [`spec`](../../.claude/skills/spec/SKILL.md), **l'humain revient dans la boucle** | Le document repris, **chaque remarque soldée** par la reprise faite ou le refus motivé, et **chaque décision produite balayée** contre le reste du document | `Review Requested` |
 | `Spec` + `Human Review Requested` | — *(humain)* | Ses propres remarques posées, ou l'accord | `Rework Needed` \| `Done` |
 | `Spec` + `Done` | — | — | l'humain **tire** vers `In Progress` |
+
+⚠️ **Une reprise ne solde pas des remarques, elle produit des décisions — et une décision périme
+des phrases écrites avant elle.** C'est le geste que la ligne `Rework Needed` ajoute, et il est né
+d'une mesure : au sixième tour de la spec MCP, **six remarques sur dix-neuf** visaient une phrase
+qu'une décision de la veille avait rendue fausse — un verrou devenu global pendant qu'une note
+parlait encore de « son » verrou, une ligne d'inventaire démentie par le chapeau qu'on venait de
+lui poser, une règle écrite sans le `D-NNN` qui l'avait tranchée.
+
+Le balayage se fait **une décision à la fois, sur le document entier** : *qu'est-ce que celle-ci
+rend faux ailleurs ?* Il coûte quelques minutes ; sans lui, la reprise **fabrique** la récolte du
+tour suivant, et la boucle n'a aucune raison de descendre à zéro.
+
+⚠️ **Le même motif vaut au retrait.** Retirer une section emporte ce qu'elle portait d'une autre
+nature — un arbitrage rendu par l'humain a ainsi disparu avec la section qui le logeait, et il a
+fallu un tour de revue pour s'en apercevoir (journal 57). Avant de retirer, demander ce que la
+section porte **qui ne relève pas du motif du retrait**.
 
 ⚠️ **La session de revue doit être neuve.** `D-039` a mesuré que relire dans la même session
 n'apporte rien : le gain vient de relire **sur l'artefact seul, sans le fil qui l'a produit**, et

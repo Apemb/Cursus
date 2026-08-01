@@ -3738,3 +3738,65 @@ sérialisation.
 
 **Question ouverte** : aucune sur la règle. **Où** le socle atterrit — dans quel projet — reste
 ouvert et relève d'un plan de design.
+
+---
+
+## D-060 — La sortie de `Spec` reste à zéro remarque ; c'est le référentiel qui monte (2026-08-01)
+
+Tranché par l'utilisateur après le sixième tour de `revue-spec` sur *Un agent pilote Cursus*, devant
+une série qui ne descend pas : 11, 12, 16, 16, 12, 19 remarques. `cycle-feature.md` ne fait passer
+`Spec` en `Human Review Requested` **que si un tour ne rend aucune remarque** ; en six tours, le zéro
+n'est jamais arrivé, et la sixième valeur est la plus haute.
+
+**L'issue proposée était d'assouplir la sortie** — sortir quand aucune remarque ne bloque le
+découpage, la conformité rédactionnelle se soldant sans redemander un tour. Elle est **écartée**, et
+la question retournée : *si zéro remarque est plus dur que la DoD, c'est peut-être la DoD qu'il faut
+adapter*.
+
+**Le relevé lui donne raison, et le chiffre est net.** Sur les dix-neuf remarques du sixième tour,
+**deux** opposent une case de la DoD. Sept opposent une **contradiction interne**, opposable par
+`revue` §3 — *quand la contradiction est interne, l'artefact est son propre référentiel* — et que la
+DoD ne mentionne nulle part. Sept relèvent de la découpabilité, qui n'est pas cochable. Trois citent
+`tickets.md` ou `architecture.md`. **Les dix-sept cases n'ont donc produit qu'un dixième de ce qui
+a été opposé.**
+
+**Le défaut n'est pas la sévérité de la revue, c'est que l'auteur et le relecteur ne lisent pas le
+même document.** Mesuré sur les skills : `spec`, `discovery` et `plan-design` citent leur DoD
+**zéro** fois ; `revue-spec` et `revue-discovery` la citent quatre et cinq fois. Aucun skill de
+production ne connaît le référentiel qui le jugera — le symptôme le plus net vivant dans
+`revue-spec` §2, où l'exigence de cohérence figure ⇄ prose est écrite pour le juge et pour lui seul.
+
+**Ce que la décision fait**, dans l'ordre où cela mord :
+
+1. **`dod/feature/spec.md` §1 gagne les trois exigences qui étaient opposées sans être écrites** —
+   le document ne se contredit pas ; les faits allégués sont vrais ; toute règle issue d'une décision
+   la cite. Elles ne se cochent pas en lisant une section : elles se vérifient en **confrontant deux
+   endroits**, ou le dépôt. C'est pourquoi elles manquaient, et pourquoi elles se manquent en
+   écrivant ;
+2. **chaque skill de production renvoie à sa DoD**, en dernière étape, sur le document **fini** —
+   jamais en rédigeant. Un renvoi, jamais une recopie : recopier un référentiel est ce qui a produit
+   la friction 54 ;
+3. **`cycle-feature.md` §4 inscrit le balayage après reprise** — une reprise produit des décisions,
+   et une décision périme des phrases écrites avant elle. Six des dix-neuf remarques du sixième tour
+   étaient de cette nature.
+
+**Ce que la décision n'accepte pas.** L'objection est réelle : donner la grille à celui qui écrit
+produit parfois un document qui coche plutôt qu'un bon document. Elle est traitée par le **moment** —
+la DoD se lit une fois le document fini — et par ce que la DoD dit déjà d'elle-même : ce qui s'y
+coche est une trace, pas un jugement, et une case qui ne se coche pas signale un binôme qui n'a pas
+tranché, pas une rédaction à reprendre.
+
+**Écarté, et pourquoi.** *Assouplir la sortie* : cela aurait rendu le cycle vert sans rien apprendre
+à celui qui écrit — la même spec aurait produit les mêmes défauts au tour suivant, avec l'accord en
+plus. *Supprimer les renvois `D-NNN` des documents de méthode*, envisagé au même moment : un renvoi
+ADR ne meurt jamais, `decisions.md` étant append-only. La règle retenue à la place est plus étroite
+et vaut partout — **un renvoi ADR ne doit jamais être nécessaire pour comprendre la phrase qui le
+porte**. S'il faut ouvrir l'entrée pour savoir ce que la règle dit, c'est la règle qui est mal
+écrite ; à ce compte-là, un renvoi périmé coûte une lecture inutile, jamais un contresens.
+
+**Ce que la décision ne prétend pas.** Qu'elle fera converger la série. Elle rend le zéro **visé**,
+là où il n'était pas visible ; rien ne dit qu'il sera atteint, et le seul tour qui trancherait est
+un premier passage sur une spec que le binôme n'aura pas rédigée.
+
+**Question ouverte** : le même écart existe-t-il aux deux autres niveaux ? `revue-plan` ne cite
+aucune DoD, alors que `dod/story/plan-review.md` existe — mesuré, non instruit.

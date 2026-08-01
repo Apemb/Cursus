@@ -21,7 +21,7 @@
 > invitent à arbitrer en rédigeant le besoin, ce que `Discovery` s'interdit précisément
 > (`tickets.md` §2.1).
 
-## 1. L'artefact est complet
+## 1. L'artefact est complet, et il tient debout
 
 Les **huit questions** de `tickets.md` §2.2 ont chacune une réponse — ou un **« sans objet »
 explicite**. L'omission silencieuse est le seul cas interdit : une spec a le droit de ne pas
@@ -51,7 +51,7 @@ retourner interroger, pas de réécrire.
 - [ ] Les options sont **arbitrées**, avec faisabilité et coût
 - [ ] **Les écarts sont écrits** — ce qui a été envisagé puis écarté, et pourquoi
 - [ ] La **capacité** est énoncée : une phrase à l'indicatif, pas une liste de tâches
-- [ ] La **recette** de la feature est définie, en **Gherkin**, en annexe B (`D-054`)
+- [ ] La **recette** de la feature est définie, en **Gherkin**, en annexe B
 - [ ] Les **règles d'atterrissage**, si la recette en porte — une clause exemptée de tomber dans un
       incrément, une clause qui se répartit en charge sans se répartir en référentiel — sont **dans
       le corps**, pas en annexe : ce sont des instructions au découpage, pas des scénarios
@@ -75,6 +75,26 @@ retourner interroger, pas de réécrire.
       puisse tracer les frontières des incréments et leur donner leur orientation technique, pas
       une ligne de plus. ⚠️ Une spec qui prescrit l'implémentation ligne à ligne a mangé le plan
       de design, et elle périmera avant d'être prise
+
+⚠️ **Les trois dernières ne se cochent pas en lisant une section, et c'est pour ça qu'elles étaient
+absentes.** Toutes celles d'au-dessus se vérifient là où la réponse atterrit ; celles-ci se
+vérifient en **confrontant deux endroits** — une figure et sa prose, deux sections, une affirmation
+et le dépôt. Elles étaient pourtant opposées depuis le début, par le primitif de relecture : *quand
+la contradiction est interne, l'artefact est son propre référentiel, et l'écart est une violation
+dure* (`revue` §3). Les écrire ici ne change donc pas ce que le relecteur oppose — cela change ce
+que **l'auteur peut viser**, ce qu'il ne pouvait pas faire tant que l'exigence ne vivait que dans
+le skill du juge.
+
+- [ ] **Le document ne se contredit pas** — aucune figure ne dit autre chose que la prose qu'elle
+      illustre, aucune section n'en contredit une autre, et aucun fait n'est rangé dans deux
+      registres à la fois. ⚠️ Le cas le plus coûteux est celui de la figure : elle **affirme**, y
+      compris quand la prose se tait, et un lecteur la prend au mot sans la relire contre le texte
+- [ ] **Les faits allégués sont vrais** — ce que le document donne pour *vérifié au code* l'est, et
+      chaque renvoi résout vers ce qu'il prétend désigner. Un fait faux se propage : la spec est
+      lue par le découpage, puis par chaque plan de design, et aucun des deux ne rouvre le dépôt
+- [ ] **Toute règle issue d'une décision la cite.** Non pour l'autorité — une règle doit se tenir
+      seule — mais parce qu'une règle sans généalogie disparaît au premier remaniement de la
+      section qui la porte, et personne ne s'en aperçoit
 
 ## 2. La revue a eu lieu et ses divergences sont soldées
 
@@ -100,7 +120,7 @@ C'est aussi ce qui **mesure la profondeur** du plan d'architecture (§1). Le dé
 deux choses, et de rien d'autre : de quoi tracer les **frontières** entre incréments, et de quoi
 donner à chacun son **orientation technique**. Un plan qui ne les porte pas est trop court ; un plan
 qui descend aux objets est trop long — il fait le travail de `Planning`, qui n'en sait pas encore
-assez pour le faire bien (`D-053`).
+assez pour le faire bien.
 
 Si le découpage bute, le manque est dans la spec — pas dans le découpage.
 
@@ -113,7 +133,7 @@ Si le découpage bute, le manque est dans la spec — pas dans le découpage.
   pas avant (`tickets.md` §2). Une spec peut porter une *intention* de maille, pas des cartes.
 - **Le plan de design d'un incrément.** Il appartient à l'incrément et s'écrit à sa prise, en
   `Planning`, à l'échelle des objets. Le **plan d'architecture** exigé ci-dessus (§1) est d'ensemble
-  et indicatif là où celui-ci est local et engageant (`D-049`, `D-053`).
+  et indicatif là où celui-ci est local et engageant (`D-049`).
 
 ## 5. Sortie latérale
 

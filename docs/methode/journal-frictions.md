@@ -447,3 +447,19 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     Piste sans être une décision : demander la vérification empirique **pour les seules
     contradictions internes**, là où la clause l'écarte aujourd'hui pour toutes.
     — *transverse*
+
+## 2026-08-01 — relevé des référentiels, hors tour de revue
+
+59. **Aucun skill de production ne cite la DoD contre laquelle son artefact sera jugé.** Mesuré sur
+    les six skills concernés : `spec` **0**, `discovery` **0**, `plan-design` **0** ; `revue-spec`
+    **4**, `revue-discovery` **5**. Le producteur reçoit `tickets.md` — *ce qu'il faut mettre
+    dedans* — et jamais `dod/` — *ce qui sera opposé*. Les deux ne coïncident pas : les huit
+    questions d'une spec ne disent rien des titres du gabarit, ni du coût par écart, ni des trois
+    registres. ⚠️ **Le symptôme le plus net vit dans `revue-spec` §2** : l'exigence de cohérence
+    figure ⇄ prose y est écrite pour le juge, et pour lui seul. On demande à l'auteur de passer un
+    examen dont il n'a pas le programme. ⚠️ **Et l'écart n'est pas seulement d'accès mais de
+    contenu** : sur les dix-neuf remarques du sixième tour, deux opposent une case de la DoD et sept
+    une contradiction interne que la DoD ne mentionne nulle part — c'est `revue` §3 qui les rend
+    opposables. Deux référentiels se partageaient l'exigence, et celui que l'auteur lit n'en portait
+    qu'un dixième. Soldé le jour même par `D-060`, qui écarte l'issue inverse — assouplir la sortie
+    du cycle. — *transverse*

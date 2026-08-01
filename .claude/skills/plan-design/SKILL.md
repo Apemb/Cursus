@@ -88,7 +88,13 @@ Le cas courant (frontières déjà lisibles) n'y va pas.
 
 ## 6. Terminer l'étape
 
-Écris le plan (schéma-delta + table + pas), place la carte en `Plan Review`. C'est `revue-plan`
-qui prend le relais — ce skill ne juge pas son propre plan.
+Écris le plan (schéma-delta + table + pas), puis **passe-le contre
+`docs/methode/dod/story/plan-review.md`** — c'est le référentiel que `revue-plan` appliquera, clause
+par clause, et il n'existe aucune raison de le découvrir après coup. **Ne jamais recopier ses cases
+ici** : une copie d'un référentiel diverge de lui en silence (journal 54). Le faire sur le plan
+**fini**, pas en le rédigeant — viser une grille en écrivant produit un plan qui coche.
 
-**Fait quand** : la carte porte le plan complet et sa colonne dit `Plan Review`.
+Place ensuite la carte en `Plan Review`. C'est `revue-plan` qui prend le relais — ce skill ne juge
+pas son propre plan.
+
+**Fait quand** : le plan est complet, il a été passé contre la DoD, et la colonne dit `Plan Review`.

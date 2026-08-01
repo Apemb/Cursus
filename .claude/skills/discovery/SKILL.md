@@ -72,3 +72,15 @@ cadrage à défaire, deux besoins sous un même titre — l'écrire aussi : ça 
 
 Complet quand : le document est publié, attaché à la feature, et ne contient aucune trace
 d'arbitrage — pas de piste écartée, pas de coût, pas de faisabilité tranchée.
+
+## 6. Relire contre ce qui sera opposé
+
+Avant de reposer la carte en `Review Requested`, ouvrir **`docs/methode/dod/feature/discovery.md`**
+et passer le document contre ses cases : c'est le référentiel que `revue-discovery` applique, clause
+par clause. **Ne jamais recopier ses cases ici** — une copie d'un référentiel diverge de lui en
+silence (journal 54).
+
+⚠️ **Le faire une fois le document fini, pas en l'écrivant.** Viser une grille en rédigeant produit
+un document qui coche ; la lire après attrape ce que l'écriture a laissé.
+
+Complet quand : les cases ont été passées sur le document fini.
