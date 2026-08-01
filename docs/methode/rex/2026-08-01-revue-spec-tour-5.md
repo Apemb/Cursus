@@ -479,3 +479,22 @@ les marques d'emphase, et `revue` §6 ne documente que la tolérance aux blancs)
 - **La réserve qui ne se lève pas** : cinq tours sur **le même artefact**, écrit par le binôme, avec
   un skill de la même main. Le tour utile suivant reste celui que le tour 4 nommait — un premier
   passage de `revue-spec` sur une spec que le binôme n'aura pas rédigée.
+
+> **Complété par la session appelante après la reprise — la lecture que l'utilisateur fait de la
+> série, et elle n'est dérivable d'aucun chiffre de cette fiche.** Interrogé sur l'absence de
+> convergence, il a opposé **trois conditions du terrain** qu'aucune fiche ne portait :
+>
+> - **c'est la première spec** que ce dépôt produise — il n'existe aucun tour de comparaison sur un
+>   autre artefact du même niveau ;
+> - **son format a changé en cours de série** : `D-054` a institué le gabarit entre les tours 4 et 5,
+>   et l'artefact a été refondu puis restructuré dessus ;
+> - **l'objet est un gros morceau d'ingénierie** — deux portes, une couche applicative neuve, trois
+>   manques du noyau à combler.
+>
+> Sa conclusion : *« pas choquant pour moi que ça soit long là »*.
+>
+> ⚠️ **Ce que cela demande à un tiers**, avant de lire 11, 12, 16, 16, 12 comme un défaut du
+> dispositif : **aucune des cinq valeurs n'a été produite dans des conditions stables.** La série
+> mesure une méthode qui se construisait pendant qu'elle tournait ; elle ne mesure pas encore un
+> régime. La question « la boucle agent peut-elle converger » reste posée — elle n'a simplement pas
+> encore reçu de terrain pour y répondre.
