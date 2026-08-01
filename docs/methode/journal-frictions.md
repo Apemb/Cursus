@@ -393,3 +393,21 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     `mermaid`. La contrainte réelle n'est donc pas « une figure ne se cite pas » mais « une citation
     doit être **unique** dans le document », ce que les identifiants de nœud satisfont souvent.
     — *outillage*
+
+## 2026-08-01 — reprise du tour 5
+
+56. **Un ADR append-only qui cite une section d'un document périssable produit un renvoi mort
+    incorrigible.** En soldant la remarque 12 — l'annexe C renvoyait à un « §5 » que la
+    renumérotation avait supprimé —, le même résidu est apparu **dans `D-052`**, qui cite « le §5 de
+    la spec » et « le schéma §8.3 de la spec ». Côté spec, un `patch` suffit ; côté `decisions.md`,
+    **rien ne peut être fait** : le fichier est append-only, et une entrée périmée ne se réécrit
+    jamais. ⚠️ C'est **exactement le motif de la règle « ne jamais citer un hash de commit »**
+    (`CLAUDE.md`, branches), transposé d'un identifiant volatil à une **section d'un document que la
+    méthode déclare périssable** (journal 52). Le hash meurt au rebase, la section meurt à la
+    restructuration ; dans les deux cas, l'append-only rend la mort définitive. Ce que la règle
+    existante ne couvre pas : elle vise les hashes, elle ne dit rien des renvois de section — et le
+    seul document que `decisions.md` cite ainsi est justement celui qu'on restructure le plus.
+    ⚠️ **Deux occurrences dans la même entrée `D-052`**, donc le seuil de `D-039` est atteint d'un
+    coup, mais sur un seul artefact : ce n'est pas encore une tendance. Piste sans être une décision :
+    citer une spec **par ce qu'elle décide**, jamais par le numéro de la section qui le décide.
+    — *transverse*
