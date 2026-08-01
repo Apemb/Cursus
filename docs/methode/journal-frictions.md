@@ -334,3 +334,38 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     que la clause veut vierge, l'orchestrateur l'a choisi seul, et rien ne règle ni sa forme ni sa
     dose. Entre « trois faits chiffrés » et « voici ce que les relecteurs précédents ont trouvé », il
     n'y a pour l'instant que le jugement de celui qui rédige le mandat. — *étape 3*
+
+## 2026-08-01 — passe globale sur la spec, hors tour de revue
+
+51. **Un plan de document calqué sur une grille de complétude produit mécaniquement la redite.** La
+    spec suivait les huit questions de `tickets.md` §2.2, section par section, et mesurait
+    **47 000 caractères** pour 7 356 mots. Le trou du partage de connexion y apparaissait **dix-huit
+    fois**, *arrêter un run* **quatorze**, le projet dédié **quatorze**. ⚠️ **Chacune de ces
+    occurrences est défendable prise isolément** : le même fait est légitimement pertinent sous la
+    recette, sous le socle, sous les registres et sous la conception. Les huit questions sont des
+    **angles**, pas des compartiments — et rien dans le référentiel ne dit **où un fait s'établit** et
+    où il se contente d'être mentionné. Quatre reprises ont amplifié le phénomène ; elles ne l'ont pas
+    créé. Remède appliqué : plan délié de la grille (une table de correspondance en tête la préserve
+    pour la revue), ordre *décider → construire → vérifier*, et ce qui a servi à établir les décisions
+    — options comparées, écarts, mesures — relégué en annexe. −19 % de caractères. — *étape 2*
+52. **Une spec est périssable, et ce n'est pas un ADR — le principe manquait, et il change l'écriture.**
+    Énoncé par l'utilisateur pendant la passe : *« un document de spec est par définition périssable,
+    il est valable quand on construit ce qu'il décrit et après il périme ; on travaille en flux tendu
+    en mode kanban »*. Ce que ça autorise et qui n'était écrit nulle part : **la spec cesse de se
+    prémunir contre son propre vieillissement**. Elle n'a pas à recopier le dépôt pour survivre à ses
+    changements — l'état du code se lit dans le dépôt, et ce qui doit durer se déverse en `D-NNN`,
+    comme `tickets.md` §2.2 q.1 le prévoyait déjà sans en tirer la conséquence. ⚠️ **Le gain est
+    mesurable en défauts évités** : le tour 3 avait démenti **trois assertions sur trois** par le
+    code, dont « huit types publics » là où le dossier en porte douze. Une spec qui n'énumère pas le
+    dépôt n'a plus de faits à maintenir contre lui, et cette classe entière de remarque disparaît.
+    — *transverse*
+53. **Le gras et le ⚠️ cessent de signaler quand ils saturent, et rien ne les budgète.** Mesuré avant
+    la passe : **268 passages en gras**, soit un tous les 25 mots, et **28 ⚠️**, un tous les 260 mots
+    — avec une densité de gras **identique dans les neuf sections** (entre 1/21 et 1/31). Un signal
+    uniformément réparti ne hiérarchise plus rien. ⚠️ **Deux usages étaient confondus** : le
+    *gras-chapeau*, qui ouvre un paragraphe et forme le squelette lisible du document, et le
+    *gras-emphase* sur des mots isolés — « parité », « annexe », « arbitre » —, qui est du
+    soulignement. Seul le second sature. Après retrait de **89** emphases courtes : un gras tous les
+    43 mots. ⚠️ **L'objectif annoncé — diviser par trois — n'est pas atteint**, et l'écart est à
+    consigner plutôt qu'arrondi : 141 gras subsistent, dont beaucoup de chapeaux légitimes.
+    — *transverse*
