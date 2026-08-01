@@ -3436,3 +3436,67 @@ skill `spec` ; la spec d'*Un agent pilote Cursus* y est portée.
 tourné sur ce dépôt. On ne sait donc pas si six scénarios suffisent à recetter une feature de cette
 taille, ni où passe la frontière entre un scénario et une règle d'atterrissage quand le cas est moins
 net que sur cette spec-ci. À confronter à la première `Validation` réelle.
+
+## D-055 — Le partage d'une commande vaut pour les gestes de même granularité, pas pour l'authoring (2026-08-01)
+
+Tranché par l'utilisateur en reprise du **cinquième tour** de `revue-spec` sur *Un agent pilote
+Cursus*. La remarque opposait deux passages de la spec : le commentaire du diagramme de séquence
+affirmait que « l'éditeur de la fenêtre appelle la même commande au moment de son enregistrement »,
+alors que l'avertissement sur la granularité, deux paragraphes plus haut, décrivait un éditeur
+*stateful* qui « ne traverse la couche qu'en ce point ».
+
+**`D-052` n'est pas renversé — il est borné.** L'entrée précédente reste valide dans son geste comme
+dans ses écarts ; ce que la présente ajoute est la portée de sa **première raison**.
+
+### 1. Le fait qui borne
+
+À son enregistrement, l'éditeur détient un brouillon portant *n* mutations faites en mémoire.
+Appeler *ajouter une étape* à ce moment-là relirait le disque et perdrait les *n − 1* autres. Il
+appelle donc une **autre** commande — celle qui enregistre un brouillon complet, que l'inventaire de
+la spec porte déjà comme ligne distincte.
+
+⚠️ **Ce qui avait été mal lu, et qui ne pose pas problème** : cette seconde commande est **atomique
+elle aussi**. L'état *stateful* vit dans le ViewModel, jamais dans la couche. L'écart de `D-052` §3
+contre « deux formes dans la couche — des commandes atomiques pour le serveur, une session d'édition
+ouverte pour la fenêtre » **tient donc intact** : ce sont deux commandes atomiques dans une seule
+couche, et non deux formes de couche.
+
+### 2. Ce qui est tranché
+
+**Le partage d'une même commande par les deux portes vaut là où leurs granularités coïncident** —
+ouvrir un projet, lancer ou arrêter un run, lier un tracker. Là, la raison n°1 de `D-052` s'applique
+telle qu'elle est écrite.
+
+**Pour l'authoring, elles ne coïncident pas, et ce n'est pas l'unicité de la commande qui empêche la
+divergence : c'est la couche d'édition que les deux chemins traversent.** Elle existe déjà, ses
+invariants sont construits, et la spec la porte comme invariant sous le nom *aucune seconde porte
+d'authoring*.
+
+Autrement dit, la protection est **plus forte que le mécanisme annoncé**, pas plus faible : elle ne
+dépend pas de ce qu'un futur appelant pense à réutiliser la bonne commande.
+
+### 3. Ce qui a été écarté
+
+**Reformuler la première raison de `D-052`** en « toute écriture est une commande qui porte son
+verrou, et l'authoring passe par la couche d'édition ». Plus exact d'un mot, mais l'entrée avait un
+jour, et le motif y était celui que l'utilisateur avait lui-même proposé contre les deux options
+présentées. Une reformulation aussi rapide efface la trace de ce qui a été pensé quand.
+
+**Changer l'exemple du diagramme de séquence** pour un geste réellement partagé par les deux portes.
+Écarté : *ajouter une étape* est le geste le plus démonstratif de la spec — il porte le brouillon,
+l'instantané et la désambiguïsation du titre. Le remplacer par *ouvrir un projet* aurait acheté la
+cohérence de la figure au prix de tout ce qu'elle enseigne.
+
+**Rendre l'éditeur atomique** — déjà écarté par `D-052` §3, et pour la même raison : ce serait
+changer le produit pour servir l'architecture.
+
+### 4. Registres
+
+**Construit** : rien — la couche applicative n'existe pas encore.
+
+**Tranché, non construit** : la borne est inscrite dans la spec, sous le diagramme de séquence et
+dans l'avertissement de granularité.
+
+**Question ouverte** : combien de gestes partagent réellement leur commande entre les deux portes.
+Quatre sont nommés ; l'inventaire n'a pas été parcouru ligne à ligne pour le vérifier, et ce compte
+décide de ce que la première raison de `D-052` couvre en pratique.
