@@ -3684,3 +3684,57 @@ propre connexion.
 **Tranché, non construit** : la maille est inscrite dans la spec, au registre du même nom.
 
 **Question ouverte** : aucune sur ce point.
+
+## D-059 — La descente du socle se paie une fois, par le premier incrément qui en a besoin (2026-08-01)
+
+Tranché par l'utilisateur en reprise du cinquième tour de `revue-spec` sur *Un agent pilote Cursus*.
+La remarque opposait que la spec donne explicitement sa règle d'atterrissage à la sérialisation, et
+n'en donne aucune à la descente du socle hors de la présentation ni au recâblage des ViewModels —
+alors que ce sont les deux charges structurelles de la feature.
+
+⚠️ **Cet arbitrage avait déjà été rendu, et il a été perdu.** L'utilisateur l'avait tranché en reprise
+du troisième tour, sous la forme *« le fondateur absorbe la descente du socle — pas d'incrément socle
+séparé, il échouerait au test de départage »*. Il vivait dans la section de la spec qui portait
+l'intention de maille, laquelle a été **retirée en entier** en reprise du quatrième tour, au motif
+qu'une spec n'a pas à décrire les lots. Le motif du retrait était juste ; il a emporté avec lui une
+règle qui n'était pas un lot. Voir le journal des frictions pour ce que cela dit du geste de retrait.
+
+### 1. Ce qui est tranché
+
+**Le premier incrément qui a besoin du socle le fait descendre ; les suivants en héritent.** Le
+recâblage des ViewModels suit la même règle, écran par écran, à mesure que les gestes correspondants
+passent par les commandes.
+
+Ce n'est pas un incrément. Seul, il ne livrerait rien d'observable — la spec écrit elle-même que
+*rien ne change pour qui se sert de la fenêtre* —, et il échouerait au test de départage
+(`tickets.md` §1) pour le motif exact déjà opposé à un incrément « sérialisation » et à un incrément
+terminal « la parité est complète ».
+
+### 2. La distinction qui compte, et que l'on aurait pu manquer
+
+**La descente et la sérialisation n'ont pas la même forme, et les écrire pareil tromperait :**
+
+- la **sérialisation** est une contrainte que **chaque** incrément mutant respecte, à chaque
+  écriture, pour toujours ;
+- la **descente** est un déplacement qui se fait **une fois** — le premier la paie, les autres
+  trouvent le code en place.
+
+Les ranger sous une même formulation ferait croire que chaque incrément déplace quelque chose.
+
+### 3. Ce qui a été écarté
+
+**Un incrément propre**, pris avant les autres. Rendrait la charge visible et la sortirait du chemin
+critique. Écarté au test de départage : du code déplacé, aucun comportement neuf.
+
+**La même formulation que la sérialisation**, pour n'avoir qu'une règle à retenir. Écarté au §2 :
+inexact, et l'inexactitude porte précisément sur ce qui distingue les deux.
+
+### 4. Registres
+
+**Construit** : rien.
+
+**Tranché, non construit** : la règle est inscrite dans la spec, au voisinage de celle de la
+sérialisation.
+
+**Question ouverte** : aucune sur la règle. **Où** le socle atterrit — dans quel projet — reste
+ouvert et relève d'un plan de design.

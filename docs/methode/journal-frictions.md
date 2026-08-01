@@ -411,3 +411,18 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     coup, mais sur un seul artefact : ce n'est pas encore une tendance. Piste sans être une décision :
     citer une spec **par ce qu'elle décide**, jamais par le numéro de la section qui le décide.
     — *transverse*
+57. **Retirer une section emporte ce qu'elle contenait d'une autre nature, et personne ne le voit
+    passer.** Le §8.6 de la spec MCP — l'intention de maille — a été retiré en entier en reprise du
+    quatrième tour, sur un motif juste : *une spec n'a pas à décrire les lots*. Mais il portait aussi
+    un **arbitrage rendu par l'utilisateur au troisième tour** — *le fondateur absorbe la descente du
+    socle, pas d'incrément socle séparé* —, qui n'est pas un lot mais une **règle d'atterrissage**.
+    Constaté un tour plus tard, en soldant une remarque qui redemandait exactement cette règle sans
+    savoir qu'elle avait existé : elle ne vivait plus nulle part, ni dans la spec, ni dans
+    `decisions.md`. ⚠️ **Ce qui rend le cas instructif** : le retrait a été discuté, motivé, et chiffré
+    (4 remarques du tour 4 sur 16 visaient cette section) — la décision était bonne, c'est
+    l'**exécution** qui a perdu quelque chose, et aucun des quatre documents de méthode n'a de geste
+    pour ça. ⚠️ **Le coût réel a été payé par la revue** : c'est elle qui a rattrapé, un tour plus
+    tard, et au prix d'une remarque. Piste sans être une décision : avant de retirer une section,
+    demander ce qu'elle porte **qui ne relève pas du motif du retrait** — et le déverser en `D-NNN`
+    plutôt que dans la section voisine, puisque c'est précisément ce que le journal ADR existe pour
+    garder. — *transverse*
