@@ -29,11 +29,17 @@ elle s'arrête ici et le dit.
 
 Fournir l'artefact — le document `Spec` attaché à la feature — et exactement deux axes.
 
-**Axe Conformité** (référentiel : `docs/methode/dod/feature/spec.md` §1 et §2, clause par clause —
-les **douze** cases de §1, les trois de §2 ; les trois dernières de §1 portent le **plan
-d'implémentation**, `D-049`). Une case sans réponse **et** sans « sans objet » explicite
-est une **violation dure** ; l'omission silencieuse est le seul cas que la DoD interdit
-(`tickets.md` §5). Une case répondue par un « sans objet » n'est pas une divergence.
+**Axe Conformité** (référentiel : `docs/methode/dod/feature/spec.md` §1 et §2, clause par clause ;
+les dernières cases de §1 portent le **plan d'architecture**, `D-049` et `D-053`). Une case sans
+réponse **et** sans « sans objet » explicite est une **violation dure** ; l'omission silencieuse est
+le seul cas que la DoD interdit (`tickets.md` §5). Une case répondue par un « sans objet » n'est pas
+une divergence.
+
+⚠️ **Compter les cases dans le référentiel, jamais ici.** Ce skill n'en donne pas le nombre, et c'est
+délibéré : il l'a donné, et le nombre a menti. `D-054` a porté §1 de douze à dix-sept cases sans que
+cette clause l'apprenne — un relecteur fidèle au skill se serait arrêté à douze et aurait manqué les
+cinq neuves (journal 54). Un skill qui compte les clauses d'un document extérieur en porte une copie,
+et une copie diverge en silence.
 
 ⚠️ **Une case y exige un schéma, donc cet axe porte une contradiction de plus à chercher :** celle
 entre le schéma et la prose qui l'annonce (`revue` §3, dernier paragraphe). C'est le défaut que deux
