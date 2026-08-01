@@ -3622,3 +3622,65 @@ spec.
 
 **Question ouverte** : **où** vivent les hosts gardés, qui les possède, et si un host inactif se
 ferme. C'est ce qui reste de la question du cycle de vie, et cela relève d'un plan de design.
+
+## D-058 — Le verrou des commandes est global, parce que la concurrence attendue est légère (2026-08-01)
+
+Tranché par l'utilisateur en reprise du cinquième tour de `revue-spec` sur *Un agent pilote Cursus* :
+*« il n'y aura pas 36 appels simultanés, c'est de la concurrence légère, et des opérations rapides —
+donc il ne faut pas sur-concevoir la solution »*. La remarque opposait que la maille, rangée en
+question ouverte, décide de la recettabilité d'une clause du scénario de concurrence.
+
+### 1. Les faits, relevés dans le code
+
+Les objets écrits n'ont pas tous la même portée, et la question telle qu'elle était posée — *par
+projet, par workflow, globale* — en manquait une :
+
+| Écrivain | Portée | Protection actuelle |
+|---|---|---|
+| `ProjectRegistry` | **globale** (`ForCurrentUser`, un fichier par utilisateur) | aucune |
+| `TrackerRegistry` | **globale** (idem) | aucune |
+| `WorkflowCatalog` | par projet, un fichier par workflow | aucune |
+| `SqliteRunJournal` | par projet, une connexion | un verrou interne, déjà là |
+
+**Deux des branches proposées étaient donc déjà mortes** : ni une maille par workflow ni une maille
+par projet ne protègent les deux registres globaux, alors que le scénario de concurrence exige
+nommément que deux créations simultanées laissent deux projets et non un registre tronqué.
+
+### 2. Ce qui est tranché
+
+**Un seul verrou, pour toutes les écritures.** Toute commande le prend.
+
+Le motif est le régime d'usage, pas la beauté du modèle : la concurrence attendue est légère — deux
+portes, quelques clients — et chaque écriture est brève : une transaction d'un seul événement, ou la
+réécriture d'un fichier de définition. Le code le notait déjà pour le verrou du journal, *négligeable
+devant un lancement de process*.
+
+⚠️ **Ce que le verrou ne tient pas** : la durée d'un run. La commande de lancement démarre, rend
+l'identifiant et lâche — elle ne tient pas les heures que le run peut durer.
+
+### 3. Ce qui a été écarté
+
+**Un verrou par ressource écrite** — global pour les deux registres, par projet pour son journal, son
+catalogue et ses artefacts. Sérialise le strict minimum, et c'est la maille exacte. Écarté parce
+qu'elle demande une table verrou ↔ ressource à tenir et un jugement à chaque commande neuve, plus une
+règle d'ordre de prise dès qu'une commande touche deux ressources — sous peine d'interblocage. C'est
+une **discipline**, exactement ce que `D-052` voulait remplacer par une construction.
+
+**Laisser la maille en question ouverte** et déplacer la clause de concurrence vers `Validation`.
+Écarté : ce serait la seconde clause exemptée sur six, et deux exemptions commencent à vider
+l'acceptation répartie de sa substance.
+
+### 4. Ce qui rend la décision peu coûteuse à reprendre
+
+**La maille est invisible de l'extérieur.** La raffiner plus tard ne change aucun outil, aucune
+clause de recette, aucune frontière d'incrément — c'est une décision de plan de design que la spec
+n'aurait pas eu à porter, si elle ne conditionnait pas une acceptation.
+
+### 5. Registres
+
+**Construit** : rien — seul `SqliteRunJournal` porte aujourd'hui un verrou, et il ne couvre que sa
+propre connexion.
+
+**Tranché, non construit** : la maille est inscrite dans la spec, au registre du même nom.
+
+**Question ouverte** : aucune sur ce point.
