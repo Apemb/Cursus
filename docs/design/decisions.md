@@ -4111,3 +4111,79 @@ l'architecture et la faisabilité, qui sont exactement ce qu'on ne veut pas déc
 
 **Question ouverte** : où s'arrête la série. Rien ici ne fixe un nombre de tours ; le critère est
 qualitatif — quand un tour ne rend plus que des remarques invisibles au code, il est le dernier.
+
+---
+
+## D-068 — Le découpage tranche ce que la spec lui avait laissé, et une relecture lui reprend une frontière (2026-08-02)
+
+**Contexte.** La spec d'*Un agent pilote Cursus* a été découpée le jour même de son `Done`. Cinq
+remarques du huitième tour de revue avaient été soldées avec le motif *« ça se tranche en coupant »* :
+elles attendaient donc le découpage, et aucune n'avait de référentiel ailleurs. Le découpage a produit
+dix-sept incréments (`CUR-47` → `CUR-63`) plus une carte latérale (`CUR-64`), les 31 lignes atteignables
+de l'inventaire réparties sans reste.
+
+### 1. Ce qui est tranché, et par qui
+
+**Le plus petit incrément recettable gagne, toujours** — énoncé par l'utilisateur, et c'est la règle la
+plus large de cette entrée : *« à chaque fois que l'on peut avoir un petit incrément recettable, on le
+prend »*, parce qu'un petit incrément **traverse le flux plus facilement**. Appliquée, elle a fait
+passer le découpage de neuf incréments à dix-sept. La coupe se fait entre une **lecture** et une
+**écriture**, ou entre deux objets que le rôle produit nomme séparément. ⚠️ **Sa borne** : trois lignes
+d'un même objet dont aucune ne se distingue pour le rôle produit ne se coupent pas — le seul cas
+assumé, celui des connexions tracker.
+
+**Un incrément en lecture seule précède le premier mutant, et il porte la porte entière** — hôte HTTP,
+adaptateur MCP, activation, jeton. Sans elle, aucune ligne n'est atteignable, donc aucun incrément
+n'est recettable : la porte ne pouvait pas arriver après. La mettre dans le premier mutant en aurait
+fait une carte portant la porte, le socle, la couche, le verrou et la base d'un coup.
+
+**Le registre des runs en vol naît avec le lancement, pas avec l'arrêt.** La commande de lancement doit
+de toute façon rendre l'identifiant sans attendre la fin du run : elle tient déjà quelque chose, et
+elle inscrit chaque run **avec de quoi l'arrêter**. L'incrément de l'arrêt ajoute le **geste** — au
+noyau, où il n'existe pas — et le recablage de l'écran ; il ne crée ni le registre ni son contenu.
+L'inverse aurait fait revenir un incrément sur du code livré deux incréments plus tôt.
+
+**Le recablage de la fenêtre est une charge propre à chaque incrément, pas une clause de recette.**
+Chaque incrément qui recable emporte *les gestes correspondants de la fenêtre continuent de
+fonctionner*, jumelle de la charge de parité. **Écarté** : un scénario de non-régression ajouté à la
+recette — il aurait fallu rouvrir une spec `Done`, et la clause serait tombée entière sur le dernier
+incrément, dont l'acceptation aurait alors porté sur du code recetté bien plus tôt.
+
+**La remise en état d'un projet dont la base a disparu est *retirer puis réinscrire*.** Aucune ligne
+n'est ajoutée à l'inventaire, donc le référentiel opposable de la parité ne bouge pas. **Écarté** : un
+geste dédié — plus direct pour l'usager, mais il ajoutait une ligne au référentiel, ce qu'un plan de
+design n'a pas le droit de faire et ce que seul ce moment-ci pouvait décider.
+
+### 2. Ce qu'une relecture a repris au découpage, et le motif
+
+Le découpage avait d'abord placé dans l'incrément en lecture seule le **passage de l'ouverture en
+lecture pure** et le scénario du projet dont la base a disparu — conséquence mécanique de la coupe,
+puisque c'est cet incrément-là qui rendait l'ouverture pure. **C'était un défaut, et il est rendu au
+premier incrément mutant**, où la spec l'adressait déjà.
+
+**Le fait qui l'établit, vérifié dans le code** : la création d'un projet pose `workflows/`,
+`project.json` et le `.gitignore`, et **ne crée pas la base** ; c'est le constructeur du journal, en
+`ReadWriteCreate`, qui la matérialise au premier accès. Passer l'ouverture en `ReadWrite` **avant** les
+deux gestes qui matérialisent la base laissait donc un intervalle où **aucun projet neuf ni fraîchement
+cloné ne s'ouvrait** — ni par l'agent, ni dans la fenêtre. La clause de non-régression de l'incrément
+ne l'attrapait pas : elle ne visait que des projets préexistants, qui ont déjà leur base.
+
+⚠️ **Ce que le cas apprend, et qui vaut au-delà** : une coupe entre deux incréments **déplace les
+comportements avec elle**, et un comportement déplacé peut cesser d'être réparable. Ce n'est pas la
+frontière qui était fausse — l'incrément en lecture seule reste le bon premier — c'est le contenu qui
+l'avait suivie sans qu'on vérifie ce qu'il laissait derrière lui.
+
+**Écarté** : *rendre l'incrément de la porte mutant sur ce seul point* — il aurait écrit, ce qui
+détruit la propriété qui justifiait la coupe ; *fusionner les deux incréments* — retour à la carte
+monstre que la coupe existait pour éviter.
+
+### 3. Registres
+
+**Construit** : rien. Le découpage ne livre que des cartes.
+
+**Tranché, non construit** : les cinq arbitrages du §1, et le déplacement du §2. Ils vivent dans les
+cartes, et cette entrée les rend opposables ailleurs qu'à travers elles.
+
+**Question ouverte** : aucune sur ces points. Celles que les incréments portent — où atterrit le socle,
+la forme de la publication de l'endpoint, la forme du témoin de version, ce que fait l'inscription d'un
+projet dont la base existe — relèvent des plans de design, et chaque carte nomme celle qui la ferme.

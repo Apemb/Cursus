@@ -591,3 +591,37 @@ le flux le plus facilement. Appliqué, il fait passer le découpage de neuf incr
 la coupe se faisant entre une lecture et une écriture, ou entre deux objets que le rôle produit nomme
 séparément. ⚠️ **Une seule exception a été assumée et dite** : trois lignes d'un même objet dont
 aucune ne se distingue pour le rôle produit ne se coupent pas — la carte des connexions tracker.
+
+## 2026-08-02 — relecture du découpage par six agents
+
+67. **Un découpage relu tout de suite rend ce qu'une revue de spec ne rendait plus.** Six relecteurs
+    lancés sur les dix-huit cartes fraîchement écrites ont trouvé, en un tour : une **régression réelle
+    et invisible** — entre les deux premiers incréments, plus rien ne matérialisait la base d'un projet,
+    si bien qu'un projet neuf se créait puis refusait de s'ouvrir —, une douzaine de **faits faux**
+    écrits de mémoire (une coupe attribuée à un `.gitignore` qui ne la porte pas, un nom de projet qu'on
+    disait vivre à deux endroits, une clôture référentielle qui refuse une arête qu'elle accepte en
+    réalité, deux renvois ADR pour l'un l'autre), et deux cartes qui **revendiquaient chacune le même
+    rang** dans une liste de trois. ⚠️ **Le contraste est le fait de méthode** : l'analyse de série
+    venait d'établir que huit tours de revue de spec avaient rendu **une seule** remarque
+    d'architecture et 68 remarques invisibles au code. Ici, un seul tour sur l'artefact **suivant**
+    rend un défaut qui aurait cassé la fenêtre en production. La différence n'est pas le dispositif —
+    c'est que le découpage se confronte au **code**, quand la spec ne se confrontait qu'à elle-même.
+    — *découpage, relecture immédiate*
+
+**Ce qui a rendu la régression trouvable, et il faut le nommer.** Aucun des cinq relecteurs de contenu
+ne l'a vue : chacun jugeait son lot, et le défaut ne vit **dans aucune carte** — il vit dans
+l'**intervalle** entre deux. C'est l'axe de cohérence d'ensemble, seul à lire les dix-huit et interdit
+d'écriture, qui l'a produit. Un découpage n'est donc pas relisible carte par carte, et un dispositif
+qui ne relit que des cartes conclura qu'il est conforme.
+
+**Un renvoi périmé né le jour même.** Cinq hors-périmètre citaient un frère par un titre **presque**
+exact — « Enregistrer un brouillon, et le conflit visible » pour « …, et **rendre** le conflit
+visible ». Aucun renommage n'avait eu lieu : la dérive était là à la première écriture, parce que le
+rédacteur citait de mémoire ce qu'il venait d'écrire. C'est l'argument de `tickets.md` §3 pour les
+identifiants (« Pas ici, c'est `CUR-12` »), et il ne vaut pas seulement contre le temps.
+
+**Une carte fantôme a survécu au découpage.** `CUR-32` — le serveur MCP en daemon sans fenêtre, avec sa
+question de jeton « à trancher » — est restée dans le projet, priorisée, pendant que le découpage
+créait la carte qui l'absorbe. La spec disait pourtant qu'elle « reste celle qui portera ce sujet ».
+Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le projet : rien dans le skill
+`decoupage` ne le demande, et c'est le second manque du dispositif, avec celui des questions portées.
