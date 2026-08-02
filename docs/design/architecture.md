@@ -1182,7 +1182,7 @@ Rien de ce qui suit n'existe en code. Le raisonnement complet, les preuves exter
 | **Persistance** | ✅ **CONSTRUIT au jalon 4** pour la partie déterministe (§4.10, §7.11) : journal append-only SQLite, écriture synchrone, artefacts sur disque. Reste non construit et propre au monde agent : le replay (**inapplicable** à un PTY) et la capture en deux phases — scrollback rendu, puis transcript JSONL via les hooks | `modele-metier.md` §7, §4.10 |
 | **HITL** | Suspension durable + reprise par injection de valeur, charges typées, approbations collantes, trois canaux façon Temporal | `modele-metier.md` |
 | **Multi-provider** | Plugin à capacités typées ; deux constructeurs d'env : `BuildTerminalEnv` (hérite tout) vs `BuildAgentEnv` (**allowlist stricte**) | `landscape.md` |
-| **Tracker / MCP / remote** | ⚠️ **révisé par §7.10.2** : le tracker est désormais la source de vérité de l'état des tâches, Cursus ne le réplique pas. MCP délégué à l'agent host ; `IExecutionContext` prévu tôt, SSH plus tard | `modele-metier.md`, §7.10 |
+| **Tracker / MCP / remote** | ⚠️ **révisé deux fois.** Par §7.10.2 : le tracker est la source de vérité de l'état des tâches, Cursus ne le réplique pas. Par **§7.15** : « MCP délégué à l'agent host » ne vaut plus — Cursus **expose** son propre serveur MCP, hébergé dans l'application, et c'est une seconde porte sur le produit entier. `IExecutionContext` prévu tôt, SSH plus tard | `modele-metier.md`, §7.10, §7.15 |
 | **Stack .NET** | `Microsoft.Extensions.AI` pour les appels que **Cursus lui-même** fait ; MAF Workflows comme référence de conception, backend optionnel. Écartés : SK Process Framework, `AgentGroupChat`, AutoGen | `landscape.md` |
 | **Serveur détaché** | Reporté : v1 mono-process Avalonia. Cible de trajectoire : la primitive `wait agent-status` qui transforme Cursus de *viewer* en *orchestrateur* | `landscape.md` |
 | **Versionnement de définition** | ⚠️ **partiellement construit.** `RunId` et la **version figée** existent (la définition entière est snapshotée dans `RunStarted`, §4.10) ; `StartedAt` aussi, porté par le journal. Restent absents : `version`, `contentHash`, et `StepRunId` | `noyau-deterministe.md` §2-3, §4.10 |
@@ -1667,6 +1667,224 @@ document ayant été réécrit entre-temps, elles visaient toutes des passages d
 suppression a dû se faire **à la main** : la racine d'un fil ancré ne se supprime par aucune API
 (`linear-api.md` §10h), seule l'interface le permet.
 
+### 7.15 La seconde porte : un serveur MCP dans l'application — TRANCHÉ, NON CONSTRUIT
+
+> **Rien de ce qui suit n'existe en code.** Ce sont les décisions de la feature *Un agent pilote
+> Cursus*, arrêtées entre le 2026-07-31 et le 2026-08-02 et versées ici parce qu'une spec est
+> **périssable** quand ce document ne l'est pas : ce qui engage la structure du produit doit survivre
+> au document qui l'a fait naître. Les arbitrages complets, leurs alternatives écartées et les mesures
+> qui les fondent sont en `decisions.md`, `D-052` à `D-066` — **ne pas les recopier**.
+
+Un agent — Claude Code au premier chef — pilote Cursus par un **serveur MCP**, là où seule la fenêtre
+Avalonia le pouvait. Ce n'est pas une intégration de plus : c'est une **seconde porte sur le même
+produit**, et c'est ce statut qui fait tout le coût de la feature. La première porte a grandi en
+supposant qu'elle était seule ; ce que la seconde révèle, ce sont les invariants **implicites** que
+personne n'avait eu à écrire.
+
+#### 7.15.1 La parité est de capacité, pas de forme
+
+La clause fondatrice — *tout ce qu'un humain fait dans la fenêtre pour piloter des workflows, un agent
+le fait aussi* — s'entend **par fonctionnalité, jamais par geste**. Les deux portes n'ont ni le même
+mode de consommation ni les mêmes moyens : la fenêtre est un client lourd, avec un état qui persiste
+entre deux gestes et des flux qu'elle suit en continu ; le serveur répond en HTTP, sans état, un appel
+à la fois. **Le même résultat s'obtient donc par des chemins différents, et parfois en plus d'étapes.**
+
+Deux choses seules sont opposables : toute **fonctionnalité** reste atteignable des deux côtés, et
+**les deux chemins passent par le même modèle**, donc valident les mêmes règles métier.
+
+**L'invariant qui porte la parité** : *aucune seconde porte, sur aucun agrégat*. Il ne s'agit pas
+d'unicité de code — deux portes ne peuvent pas partout appeler la même commande — mais d'unicité
+d'**entrée** : un chemin qui n'entre pas par le modèle ne valide pas ses règles. C'est ce qui garantit
+la parité, et non la réutilisation d'un appelant à l'autre (`D-056`, qui borne `D-052`).
+
+⚠️ **Corollaire pour tout inventaire de surface** : deux entrées qui nomment le même résultat obtenu
+depuis deux écrans sont **une** fonctionnalité, pas deux.
+
+#### 7.15.2 L'application porte le serveur, et il exige un jeton
+
+**L'hébergement est dans l'application, pas à côté.** stdio est *un client ↔ un process* : deux
+clients MCP feraient naître deux instances de Cursus, chacune avec sa base et ses hosts. D'où le
+choix — **l'instance qui tourne porte le serveur**, en **HTTP sur loopback**, une instance pour N
+clients. Le motif est emprunté aux IDE JetBrains, où le serveur MCP est intégré depuis 2025.2 et où le
+stdio n'est **pas** un serveur autonome mais un proxy mince. ⚠️ **L'emprunt s'arrête à l'hébergement
+et à la publication de l'endpoint** ; et le modèle diverge sur un point : une instance IntelliJ = un
+projet, quand Cursus vise **N projets** (§7.13) — d'où le projet en **paramètre explicite** de chaque
+outil, jamais en état de session.
+
+**Le serveur exige un jeton**, émis au montage, publié par le même canal que l'endpoint, exigé à
+chaque appel, et **mort avec la session** : aucune saisie, rien au trousseau, la machine le produit
+(`D-066`). Le motif : **une écoute en loopback n'est pas une frontière de confiance** — tout ce qui
+tourne sur la machine atteint `127.0.0.1`, y compris une page ouverte dans un navigateur qui forge des
+requêtes vers un port local. Or ce que le serveur expose est la parité entière : lancer des runs,
+écrire des workflows, déclarer des liaisons. ⚠️ **Sa borne est écrite aussi, et il ne faut pas le
+surestimer** : un process aux droits de l'utilisateur lit le canal de publication, donc le jeton. La
+frontière tenue est celle du process **qui ne peut pas lire ce fichier** — au premier chef le code
+exécuté dans un navigateur, qui forge des requêtes réseau mais ne lit pas le disque local.
+
+⚠️ **Le trousseau n'est pas le bon rangement, et la raison vaut au-delà** : `ISecretStore` existe pour
+les secrets qu'un **tiers émet** et que l'humain doit transcrire (§7.10.1). Celui-ci est produit par la
+machine et personne n'a à le connaître.
+
+**Deux faits mesurés le 2026-07-31, qui ont levé le risque d'hébergement — ne pas les re-sonder :**
+
+- **Kestrel et Avalonia cohabitent** dans un `WinExe` .NET 10 (`FrameworkReference
+  Microsoft.AspNetCore.App` + Avalonia 12.1.0) : écoute, répond, arrêt propre ;
+- **le bind sur le port 0** fait attribuer un port par le système, rendu en clair par l'hôte — la
+  découverte d'endpoint a donc une réponse simple.
+
+#### 7.15.3 La couche applicative : commandes, requêtes, et le verrou dans la commande
+
+**Entre les deux portes et le noyau, une couche applicative porte les gestes** (`D-052`). Elle se
+divise en **commandes** (ce qui écrit) et **requêtes** (ce qui lit), et **c'est la commande qui détient
+le verrou**. Trois raisons, dans l'ordre où elles ont pesé :
+
+- **un geste s'écrit une fois** — *ajouter une étape* est une commande, appelée par l'outil MCP comme
+  par l'éditeur. Sans elle, deux implémentations d'un même geste divergent, ce que la parité existe
+  pour empêcher ;
+- **le verrou devient non contournable par construction.** ⚠️ **La protection actuelle du dépôt est
+  *accidentelle*** : il n'existe **aucune synchronisation** dans `Workflows/Editing/` ni dans
+  `Projects/`, et ce qui tient aujourd'hui est le seul fait que tous les appelants d'édition sont des
+  commandes de ViewModel, donc sur le thread UI. Un serveur qui traite sur le pool de threads casse cet
+  invariant implicite dans les deux sens (bouton ⇄ requête, requête ⇄ requête) — et `WorkflowDraft`
+  mute une `List` par index, donc la panne est une **corruption mémoire silencieuse**, pire qu'un
+  conflit de fichier. Un verrou qu'il faut *penser à prendre* reproduit cette fragilité en explicite ;
+  une écriture qui n'est pas une commande, elle, n'existe pas ;
+- **les requêtes ne verrouillent rien**, ce qui rend la lecture d'un run en vol possible sans faire
+  attendre le run.
+
+**Un seul verrou, global, pour toutes les écritures** (`D-058`). Le motif est le régime d'usage, pas la
+beauté du modèle : la concurrence attendue est légère — deux portes, quelques clients — et chaque
+écriture est brève (une transaction d'un événement, ou la réécriture d'un fichier de définition). ⚠️
+Une maille plus fine était **déjà morte à l'examen** : `ProjectRegistry` et `TrackerRegistry` sont de
+portée **globale** (un fichier par utilisateur), là où `WorkflowCatalog` et `SqliteRunJournal` sont par
+projet — ni une maille par workflow ni une maille par projet ne protègent les deux registres. ⚠️ **Ce
+que le verrou ne tient pas** : la durée d'un run. La commande de lancement démarre, rend l'identifiant
+et lâche.
+
+**La borne de granularité, mesurée dans le code et non supposée** (`D-055`) : `WorkflowEditorViewModel`
+est *stateful* — il ouvre son brouillon au montage, le mute en mémoire, et **n'écrit qu'à son `Save`**.
+L'outil MCP, lui, est atomique. **La couche ne porte donc que le geste atomique**, et l'éditeur ne la
+traverse qu'en son `Save`, où il appelle une *autre* commande — celle qui enregistre un brouillon
+complet. Cette seconde commande est **atomique elle aussi** : l'état *stateful* vit dans le ViewModel,
+jamais dans la couche. Il n'y a qu'une forme de couche, jamais deux.
+
+⚠️ **Rendre l'éditeur atomique a été écarté**, et le motif se rediscuterait sinon : ce serait **changer
+le produit pour servir l'architecture** — plus de bouton *Enregistrer*, plus d'état « brouillon non
+enregistré », et chaque frappe touchant le disque.
+
+**À ne pas confondre avec `CUR-28`** (le repackage `Core`/`Infra`/`Host`/`UI`) : celui-ci déplace des
+**assemblies** le long d'une hexagonale, la couche ajoute un **niveau** qui n'existe nulle part. Les
+deux se touchent sans se recouvrir, et le repackage reste hors périmètre.
+
+#### 7.15.4 La racine descend hors de la présentation, et les hosts sont gardés
+
+`ProjectHost` reste la racine de composition d'un projet (§7.12), mais **une racine multi-projets
+descend hors de `Cursus.App`** : deux portes la résolvent, et la présentation ne peut plus la posséder.
+⚠️ **Ce qui descend est plus large que « la racine »** — `App.axaml.cs` résout aujourd'hui un
+`ProjectWorkspace` (host + `RunArtifactStore` + `WorkflowCatalog`), et ce type vit dans
+`Cursus.App/ViewModels/`.
+
+**Les hosts sont gardés** : la racine construit à la première résolution et conserve (`D-057`). Ce
+n'est pas du confort. `SqliteProjectHost.Open` construit un `SqliteRunJournal` dont le **constructeur**
+crée le répertoire, ouvre une connexion SQLite et crée le schéma ; cette connexion est **unique et non
+thread-safe**. Résoudre à la demande sans garder signifierait une connexion neuve par appel, donc
+plusieurs écrivains concurrents sur le même fichier.
+
+**L'agent n'ouvre pas de projet**, et le motif vaut au-delà du cas : **exiger un « ouvrir » préalable
+porterait un ordre d'appels, donc de l'état entre deux appels** — de l'état conversationnel sous un
+autre nom, incompatible avec un protocole sans état. L'agent adresse par identifiant à chaque appel.
+
+**La descente se paie une fois, par le premier incrément qui en a besoin** (`D-059`) ; le recâblage des
+ViewModels suit la même règle, écran par écran, à mesure que leurs gestes passent par les commandes.
+⚠️ **Ne pas confondre avec la sérialisation** : la descente est un **déplacement qui se fait une
+fois**, la sérialisation une **contrainte que chaque écriture respecte, pour toujours**. Les ranger
+sous une même formulation ferait croire que chaque incrément déplace quelque chose.
+
+#### 7.15.5 Trois comportements existants que la seconde porte change
+
+**La base d'un projet naît d'un geste explicite, jamais d'une lecture** (`D-062`). Aujourd'hui une
+ouverture crée la base et son schéma si elle manque — donc une requête écrirait hors de toute commande.
+Désormais deux gestes seulement la matérialisent : *créer un projet* et *inscrire au registre de ce
+poste un projet déjà versionné*. Les deux sont des écritures, donc des commandes, donc déjà sous le
+verrou global : **aucun mécanisme neuf**. Le journal s'ouvre en `ReadWrite`. ⚠️ **Le cas courant est un
+projet sans base** : `cursus.db*` est gitignoré, donc tout dépôt cloné arrive sans base, et
+`ProjectStore.Create` n'a tourné qu'une fois, sur le poste du créateur. La coupe qui fonde la règle est
+déjà écrite dans le `.gitignore` que la création pose : *l'intention est versionnée, l'observation est
+locale* — une base est de l'observation.
+
+**Un projet inscrit dont la base a disparu ne s'ouvre pas, et le dit** (`D-064`) : *ce projet n'est pas
+initialisé sur ce poste*, sur les deux portes. Une base vide silencieuse **ment** — elle se lit comme
+un projet sans historique, et rien ne distingue « je n'ai jamais rien lancé ici » de « mes runs sont
+sur l'autre machine ». L'erreur nommée se répare ; le silence égare, et ne se répare pas parce que
+personne ne sait qu'il y a quelque chose à réparer.
+
+⚠️ **Ce qui reste, plus étroit que la course dissoute** : la racine garantit **au plus un host par
+projet**. Le verrou du journal protège une *connexion*, pas un fichier — deux instances vivantes pour
+la même base sont deux verrous qui ne se voient pas. Cette garantie existe **déjà** aujourd'hui, mais
+par accident (la coquille n'ouvre qu'un projet à la fois, et aucun type ne l'exprime) ; la feature la
+rend explicite parce qu'elle lui ôte son accident.
+
+**L'enregistrement d'un brouillon périmé échoue, plutôt que d'écraser en silence** (`D-063`). Le verrou
+global garantit qu'aucune écriture n'en corrompt une autre ; il ne garantit pas qu'un geste **survive**.
+L'éditeur repose la définition **entière** à son `Save` : il écraserait donc l'étape que l'agent a
+ajoutée entre-temps, les deux écritures étant pourtant sérialisées et le graphe cohérent. Ce n'est pas
+un cas de bord — la feature existe pour qu'un agent travaille pendant que l'humain regarde. L'éditeur
+retient donc à l'ouverture de quoi reconnaître la version qu'il a lue, et la confronte avant d'écrire.
+**Aucune fusion** : la règle rend le conflit *visible*, elle ne le résout pas. Elle vaut pour toute
+écriture qui repose un document complet ouvert plus tôt, quelle que soit la porte. ⚠️ **La parade du
+dépôt n'est pas transposable** : tout écrivain **partiel** de `project.json` relit le disque avant
+d'écrire (`ProjectStore.Rewrite`, §7.10.1) ; ici l'écriture n'est pas partielle, donc la relecture ne
+suffit pas.
+
+⚠️ **Ce que cela coûte, et le découpage doit le savoir** : un enregistrement peut désormais **échouer**,
+ce qui n'arrive jamais aujourd'hui. Les deux portes doivent savoir le dire — l'écran par un message et
+un rechargement proposé, l'outil MCP par une erreur exploitable.
+
+#### 7.15.6 Les trois manques du noyau que la feature met au jour
+
+Ils ne sont pas des détails d'implémentation du serveur : ce sont des **trous du noyau**, restés
+invisibles tant qu'une seule porte existait.
+
+1. **`LaunchAsync` ne rend son `WorkflowRun` qu'à la terminaison**, et le `runId` est frappé en interne
+   (`Guid.NewGuid()`). Un run dure des heures (§7.13) : un outil MCP qui attendrait ce `Task` ne
+   rendrait jamais la main. Le `runId` doit donc être **connaissable sans attendre le résultat**.
+2. **Arrêter un run n'existe pas au noyau.** Le `CancellationTokenSource` vit dans le ViewModel de
+   l'écran de run — **seul endroit du dépôt qui détienne de quoi arrêter**. D'où un **registre des runs
+   en vol, unique, dans le socle partagé** (`D-061`) : les deux portes arrêtent n'importe quel run,
+   quelle que soit celle qui l'a lancé. Deux registres étanches seraient deux portes sur le même
+   concept ; et en dogfooding, un run lancé à la main serait inarrêtable par l'agent. ⚠️ **Le ViewModel
+   de l'écran de run cesse de posséder son jeton d'annulation et le prend au registre** — c'est un
+   recâblage, pas un ajout.
+3. **La lecture concurrente d'un run en vol** — *suivre un run* signifie **le lire pendant qu'il
+   tourne**, ce qui exige la révision du partage de connexion du journal, trou ouvert de §9.2-14.
+   ⚠️ Ce trou-là **ne dépend pas du registre** : la lecture passe par le disque dans tous les cas.
+
+⚠️ **Une croyance courante à corriger** : « un run à la fois » est **révisé** (§7.13), les runs
+concurrents sont **construits et prouvés** (§4.13). Ce qui reste non supporté est la seule lecture
+concurrente ci-dessus, bien plus étroit.
+
+**Un défaut voisin, qui préexiste à la feature et lui est étranger** : un échec de `git worktree` est
+**silencieux** — `ProvisionAsync` ne teste que `LaunchFailed`, donc un git qui se lance et échoue passe
+pour terminé, et le run part sur un dossier inexistant. À porter en carte propre.
+
+#### 7.15.7 Questions ouvertes de cette section
+
+- **Où le socle atterrit** — dans quel projet vivent la couche applicative, la racine multi-projets et
+  le registre des runs en vol. Relève d'un plan de design, pas de la spec.
+- **Où vivent les hosts gardés**, qui les possède, et si un host inactif se ferme.
+- **La forme de la publication** de l'endpoint et du jeton — fichier de configuration, réglage affiché
+  à copier, ou les deux.
+- **La forme du témoin de version** que l'éditeur retient pour détecter un brouillon périmé —
+  horodatage, empreinte, ou numéro porté par la définition.
+- **Ce que fait l'inscription d'un projet dont la base existe déjà** — rien, ou une vérification de
+  schéma ? Il n'existe **aucun mécanisme de migration** dans le dépôt, et ces décisions n'en créent pas.
+- **Par quel geste l'usager remet en état** un projet inscrit dont la base a disparu : les deux gestes
+  qui matérialisent une base supposent un projet *pas encore inscrit*, et celui-ci l'est.
+- **La façade stdio** — rouvrable, aucun incrément ne la porte : les deux clients de la recette parlent
+  HTTP.
+- **La concurrence d'actions** (quel run a le droit de démarrer) mérite **sa propre feature** : elle est
+  transverse au manuel, au MCP et au périodique, et son ancrage est déjà tranché au §7.13.1.
+
 ---
 
 ## 8. Règles de contribution
@@ -1723,7 +1941,7 @@ Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des
 11. **Aucun test sur `Cursus.App`** — le point de contact le moins abstrait du dépôt est le moins couvert. Le jalon 6 y répond **par le découpage** (§7.12) et non par des tests de contrôles : la logique sort vers des classes POCO testées en xUnit nu. ⚠️ Le harnais `Avalonia.Headless` dépendrait de **xUnit v3** alors que les deux projets de tests sont en **2.9.3** — à confirmer, et sans urgence, ce harnais étant de toute façon inadapté au cycle TDD (`presentation.md` §8).
 12. **Aucune interface d'abstraction du terminal** alors que le principe d'architecture la prévoyait ; couplage direct au type concret de RoyalTerminal.
 13. **L'app est de fait macOS-only** (provider VT natif OSX) alors que le cross-platform est revendiqué comme différenciateur (§1.2).
-14. ~~**Pas de politique de concurrence** documentée ni testée pour `WorkflowEngine`, et **`SqliteRunJournal` ne la supporte pas**~~ — **refermé au jalon 6b** (§4.13). `Append` est sérialisé par un `lock`, et chaque run s'exécute dans un **worktree git isolé** (`GitWorkspaceProvisioner`) : la preuve d'assemblage lance deux runs de front sur un même projet sans corruption du journal ni collision de fichiers. Restent ouverts et notés là-bas : la lecture concurrente *pendant* l'écriture (connexion séparée, propre à 6c), et un verrou de provisionnement si un jour on monte des worktrees en parallèle (aujourd'hui le montage est séquentiel).
+14. ~~**Pas de politique de concurrence** documentée ni testée pour `WorkflowEngine`, et **`SqliteRunJournal` ne la supporte pas**~~ — **refermé au jalon 6b** (§4.13). `Append` est sérialisé par un `lock`, et chaque run s'exécute dans un **worktree git isolé** (`GitWorkspaceProvisioner`) : la preuve d'assemblage lance deux runs de front sur un même projet sans corruption du journal ni collision de fichiers. Restent ouverts et notés là-bas : la lecture concurrente *pendant* l'écriture (connexion séparée, propre à 6c), et un verrou de provisionnement si un jour on monte des worktrees en parallèle (aujourd'hui le montage est séquentiel). ⚠️ **La lecture concurrente a désormais un demandeur nommé** : *suivre un run* depuis le serveur MCP, c'est le lire pendant qu'il tourne (§7.15.6) — elle cesse d'être une réserve théorique. ⚠️ **Et le trou voisin, plus large, est neuf** : il n'existe **aucune** synchronisation dans `Workflows/Editing/` ni `Projects/` ; ce qui protège aujourd'hui l'édition est le seul fait que tous ses appelants sont des commandes de ViewModel, donc sur le thread UI (§7.15.3).
 15. **Le `PATH` d'une app installée est tronqué** — ⚠️ **traité au 6c·3c ; mécanisme prouvé (jambe 1), confirmation bundle restante.** `PathStrategy` (`Workflows/Execution/`, `D-014`) résout un binaire hors du `PATH` minimal et enrichit le `PATH` transmis aux descendants ; `ProcessRunner` l'applique au lancement. ⚠️ **Gotcha .NET durable** : `Process.Start` **ne résout pas** une commande nue via le `PATH` de `StartInfo` — il faut la résoudre en **chemin absolu** nous-mêmes (`Resolve`), l'enrichissement ne servant qu'aux petits-fils (npm→node). La part pure est **testée**, et le **mécanisme est prouvé au réel** : `ProcessRunner` lançant `dotnet` **nu** sous un `PATH` **vidé** le résout (via `~/.asdf/shims`, 1re racine connue) et sort 0 — preuve *plus dure* que le bundle réel (dont le `PATH` garde `/usr/bin`), et qui **rend superflue la béquille `/bin/sh -c`**. Ne reste que la confirmation par **double-clic sur le `.app`**, seule chose que `dotnet test` ne donne pas. Le **check des prérequis Cursus** (git, `claude`…) reste un petit jalon voisin — même logique pure, restitution qui attend sa surface. Le preflight des prérequis *d'un workflow* (`node`, `python`…) reste à la charge de l'utilisateur — question ouverte basse priorité.
 16. **Le bundle n'est pas notarisé** (signature ad-hoc) : installable sur la machine qui le construit, refusé par Gatekeeper ailleurs (§6.6).
 17. Hygiène : plan de jalons de `landscape.md` caduc, aucun remote git, pas de CI ni de LICENSE, pas d'icône d'application (§1.3-1.4).
@@ -1743,6 +1961,8 @@ Le détail et les alternatives vivent dans les documents de conception ; ceci es
 | Idempotence et reprise après crash de Cursus | « Journaliser d'abord » est **fait** (§4.10) ; le socle de reprise (event-sourcing, ancrage `(runId, stepId, iteration)`) est posé et le jalon 6b l'a **gardé ouvert sans y toucher**. La reprise reste un **jalon à part, plutôt près de l'`AgentStep`** (qui la motive : long, coûteux, échoue par l'extérieur). Reconstruire *où* reprendre est facile grâce au journal ; le point dur sera l'**idempotence d'une étape à effet de bord** (rejouer un `POST` Linear duplique) — « l'idempotence remonte jusqu'au moteur ». À ne pas confondre avec rejouer une étape *échouée par code de sortie*, déjà faisable (arête réflexive + `maxVisits`). Premier obstacle connu : un run non clos est indiscernable d'un run en cours |
 | Nœuds terminaux typés (`Success`/`Failure`) ou garde `Default` obligatoire ? | **Ouvert** (§4.3) — soulevé par le comportement actuel de `RunState` |
 | Câblage de données entre étapes (`${step.output}`, variables de run) | **Reporté, non écarté** (§4.8) — se rouvrira avec l'`AgentStep` |
+
+**La seconde porte (serveur MCP)** — huit questions ouvertes, listées au **§7.15.7** : où atterrit le socle partagé (couche applicative, racine multi-projets, registre des runs en vol), où vivent les hosts gardés, la forme de la publication de l'endpoint et du jeton, la forme du témoin de version d'un brouillon, ce que fait l'inscription d'un projet dont la base existe, par quel geste on remet en état un projet dont la base a disparu, la façade stdio, et la concurrence d'actions — qui mérite sa propre feature.
 
 **Projet, tracker et déclenchement** — trois questions ouvertes, argumentées au **§7.10.6** : l'auto-déclenchement par cron (cible acceptée, reportée, et ce qui devra le rendre sûr), la forme des prédicats de disponibilité, et l'unification ou non du journal des runs avec un futur historique de board.
 
