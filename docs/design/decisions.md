@@ -3950,3 +3950,71 @@ préexiste sous la forme fenêtre-contre-fenêtre et que la feature l'expose plu
 
 **Question ouverte** : la forme de ce que l'éditeur retient — horodatage, empreinte, ou numéro de
 version porté par la définition. Relève d'un plan de design.
+
+---
+
+## D-064 — Un projet inscrit dont la base a disparu ne s'ouvre pas, et le dit (2026-08-02)
+
+**Contexte.** `D-062` a fait de l'ouverture d'un projet une lecture pure : la base naît de deux
+gestes explicites — *créer un projet*, *inscrire au registre de ce poste un projet déjà versionné* —
+et plus jamais du premier accès. Le motif était la concurrence : une course qu'on **dissout** vaut
+mieux qu'une course qu'on protège.
+
+**Ce que la revue a opposé.** L'arbitrage a une conséquence d'expérience que `D-062` ne prononce
+pas, et qui ne relève pas de la concurrence : un projet **déjà inscrit** dont le fichier de base a
+disparu — dépôt recloné, dossier nettoyé, machine changée — cesse de s'ouvrir et exige un geste
+explicite. Le cas est nominal, non exceptionnel : `cursus.db*` est gitignoré, donc **tout dépôt
+cloné arrive sans base**. La spec tranchait cela en passant, dans une phrase de plan technique.
+
+**Tranché** : le comportement est confirmé, et prononcé pour lui-même. Un fichier manquant est une
+**erreur nommée** — *ce projet n'est pas initialisé sur ce poste* — sur les deux portes.
+
+**Le motif, qui n'est pas celui de `D-062`.** Une base vide silencieuse **ment** : elle se lit comme
+un projet sans historique, et rien ne distingue pour l'usager « je n'ai jamais rien lancé ici » de
+« mes runs sont sur l'autre machine ». L'erreur nommée dit la vérité et se répare ; le silence égare
+et ne se répare pas, parce que personne ne sait qu'il y a quelque chose à réparer.
+
+**Ce que ça engage** : un scénario de recette de plus (le dixième), qui tombe sur le premier
+incrément mutant — celui qui fait de l'ouverture une lecture pure, donc celui qui fait apparaître
+l'erreur. Sans lui, cet incrément livrerait sur les deux portes un comportement que `Validation` ne
+rejouerait pas : la charge de parité prouve qu'un outil **répond**, jamais qu'il répond ce qu'on
+attend.
+
+**Écarté.** *Assumer sans recetter* — cohérent avec l'idée que la recette ne couvre pas tout cas
+d'erreur, mais le découpage n'aurait alors rien à donner en acceptation à l'incrément qui change le
+mode d'ouverture. *Adoucir en proposant la matérialisation à l'ouverture* — plus doux pour l'usager
+d'un dépôt fraîchement cloné, écarté parce que cela réintroduit l'écriture au premier accès que
+`D-062` venait de supprimer, avec la course qu'elle porte.
+
+**Question ouverte** : par quel geste l'usager remet le projet en état. Les deux gestes qui
+matérialisent une base supposent un projet *pas encore inscrit*, et celui-ci l'est.
+
+---
+
+## D-065 — La recette de concurrence se répartit sans bijection : zéro, une, ou plusieurs clauses par incrément (2026-08-02)
+
+**Contexte.** La spec d'*Un agent pilote Cursus* posait une règle d'atterrissage pour son scénario
+de concurrence : ses clauses portent sur des objets, et **chaque incrément mutant emporte la clause
+de l'objet qu'il livre, et celle-là seule**. Le motif tient toujours — sans elle, le scénario
+tomberait entier sur le dernier incrément, dont l'acceptation porterait sur du code recetté
+plusieurs incréments plus tôt.
+
+**Ce que la tentative de découpage a montré.** La règle supposait une correspondance un-à-un entre
+objets et incréments, et elle échoue dans les deux sens :
+
+- **un incrément, deux clauses** — le registre des projets et la base d'un projet naissent des deux
+  **mêmes** gestes (`D-062`), donc aucune frontière de découpage ne les sépare ;
+- **un incrément, aucune clause** — créer, renommer et supprimer un workflow, ou déclarer une
+  liaison de tracker, rendent un incrément mutant sans qu'aucune clause porte leur objet.
+
+**Tranché** : la règle devient *chaque incrément mutant emporte les clauses des objets qu'il rend
+écrivables — zéro, une, ou plusieurs*. L'exclusivité tombe, la bijection avec elle.
+
+**Le corollaire qui compte le plus** : un incrément mutant sans clause est **conforme**, et il ne
+faut pas lui en inventer une. Une clause de recette naît d'un risque de concurrence identifié,
+jamais d'une case à remplir — la règle décrit un atterrissage, elle ne distribue pas des quotas.
+
+**Écarté.** *Rétablir la bijection en élargissant la recette* — deux clauses de plus pour les objets
+qui n'en ont pas ; écarté parce qu'elles auraient été écrites pour satisfaire une règle, non pour
+couvrir un risque, et qu'une recette qui grossit ainsi cesse d'être opposable. *Déclarer solidaires
+les deux clauses qui visent le même objet* — sauve le compte, laisse l'échec de l'autre sens intact.

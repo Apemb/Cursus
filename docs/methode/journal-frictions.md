@@ -498,3 +498,25 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     **préparation à l'attente**, si bien que deux dispositifs de coût différent rendent le même
     chiffre. Une mesure qui ne distingue plus ce qu'elle existe pour distinguer cesse d'arbitrer
     entre synchrone et arrière-plan. — *méthode de mesure*
+
+## 2026-08-02 — reprise du septième tour
+
+63. **Un total agrégé écrit dans une spec est invérifiable, et il se propage.** Le §2.3 de la spec
+    *Un agent pilote Cursus* annonçait « douze points de traversée » ventilés en cinq termes. Le
+    chiffre avait été recompté **à la main, en ouvrant le dépôt**, et corrigé deux fois avant d'être
+    écrit — il omettait un ViewModel entier (trois écritures), et sa règle de comptage variait d'un
+    terme à l'autre. ⚠️ **Ce qui rend le défaut coûteux n'est pas l'erreur mais la forme** : un total
+    est lu par le découpage, puis par chaque plan de design, et **aucun des deux ne rouvre le
+    dépôt**. Une énumération, elle, se recontrôle ligne à ligne par n'importe quel lecteur, et une
+    règle de comptage énoncée se conteste. Remède appliqué : la liste remplace le total, et la règle
+    est écrite avant elle — « un point de traversée est un appel d'un ViewModel qui écrit », avec ce
+    qu'elle exclut. ⚠️ **Le coût réel n'était pas le chiffre** : c'est la phrase qu'il portait — « un
+    second incrément d'authoring n'a rien à recabler » — qui était fausse, et elle aurait dimensionné
+    un incrément. **Un agrégat faux ne trompe pas sur sa valeur, il trompe sur la conclusion qu'on en
+    tire.** — *écriture de spec*
+
+**Seconde occurrence de la friction 61, et elle en élargit la portée** : ce n'est pas l'outil de
+*pose* qui exige un projet Cursus, c'est **toute** la CLI — `linear doc show` a échoué de la même
+façon, depuis le même répertoire de travail. La contrainte vaut donc pour lire comme pour écrire, et
+elle se paiera à chaque tour tant que le dispositif recommandera de matérialiser l'artefact hors
+dépôt.
