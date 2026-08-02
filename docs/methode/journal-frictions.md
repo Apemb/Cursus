@@ -558,3 +558,36 @@ raison. ⚠️ **Le coût réel est ailleurs** : le relecteur a failli consigner
 de la carte, c'est-à-dire ouvrir un litige sur le seul fait qu'il ne peut pas établir lui-même.
 Rattaché ici plutôt que numéroté à part : c'est un défaut d'ergonomie de la CLI, de la même famille
 que la friction 61.
+
+## 2026-08-02 — découpage de la feature *Un agent pilote Cursus*
+
+66. **Un axe de revue a produit un « instrument réutilisable », et l'instrument n'existait plus.** Le
+    huitième tour de `revue-spec` a rendu un découpage candidat complet — neuf incréments, leurs
+    frontières, ce que chacun livre, leur recette, et les 31 lignes de l'inventaire réparties sans
+    reste. La fiche de rex le célèbre nommément : *« c'est la première fois qu'un axe rend un
+    instrument réutilisable plutôt qu'une liste de manques »*, et *« cette sortie survivra au tour qui
+    l'a produite, ce qu'aucune remarque ne fait »*. Elle a survécu **comme affirmation** : la rubrique
+    4 en atteste l'existence et en donne le résumé, mais **ne porte pas la pièce**. Au découpage réel,
+    il a fallu la reconstruire entièrement depuis la spec. ⚠️ **Ce que le cas apprend n'est pas « il
+    fallait le copier »** : c'est qu'une fiche de rex est un **jugement sur une exécution**, jamais un
+    dépôt d'artefact — et qu'un dispositif qui produit une pièce durable doit nommer **où elle est
+    déposée**, sinon la seule trace en est l'éloge. Le coût est mesurable : le travail a été fait
+    deux fois, la seconde sans le contexte qui l'avait produit. Même famille que la friction 63 — ce
+    qui n'est pas vérifiable se recopie plutôt qu'il ne se recontrôle, ici jusqu'à disparaître. —
+    *découpage, premier usage réel du skill*
+
+**Le skill `decoupage` a tenu son premier tour réel, et ses huit étapes ont servi.** Rien à redire sur
+la mécanique — geler la recette, trancher verticalement, dimensionner, ordonner par les arêtes,
+déposer le hors-périmètre en nommant les frères, faire trancher l'humain, publier. ⚠️ **Un manque
+pourtant** : le skill ne dit nulle part **qui répond aux questions que la revue a portées au
+découpage**. Cinq remarques de la spec avaient été soldées avec le motif *« ça se tranche en
+coupant »*, et rien dans les huit étapes ne les réclame. Elles ont été posées à l'humain parce que le
+binôme les avait en mémoire, pas parce que le dispositif les demandait — sur une session neuve, elles
+auraient été tranchées en silence par celui qui coupe.
+
+**L'arbitrage de granularité rendu par l'utilisateur vaut au-delà de ce découpage** : *« à chaque fois
+que l'on peut avoir un petit incrément recettable, on le prend »* — le plus petit incrément traverse
+le flux le plus facilement. Appliqué, il fait passer le découpage de neuf incréments à **dix-sept**,
+la coupe se faisant entre une lecture et une écriture, ou entre deux objets que le rôle produit nomme
+séparément. ⚠️ **Une seule exception a été assumée et dite** : trois lignes d'un même objet dont
+aucune ne se distingue pour le rôle produit ne se coupent pas — la carte des connexions tracker.
