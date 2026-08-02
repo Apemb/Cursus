@@ -3910,3 +3910,43 @@ par la racine et non par l'appelant ; il devient simplement sans objet une fois 
 **Question ouverte** : que fait l'inscription d'un projet dont la base existe déjà — rien, ou une
 vérification de schéma ? Il n'existe aucun mécanisme de migration dans le dépôt, et cette décision
 n'en crée pas. Relève d'un plan de design.
+
+---
+
+## D-063 — L'enregistrement d'un brouillon périmé échoue, plutôt que d'écraser en silence (2026-08-02)
+
+Tranché par l'utilisateur en reprise du sixième tour de `revue-spec` sur *Un agent pilote Cursus*.
+Le constat venait de la seule remarque **hors mandat** du tour — un point de justesse, qui n'a par
+définition aucun référentiel dans la DoD et revient donc à l'humain.
+
+**Le défaut.** Le verrou global garantit qu'aucune écriture n'en corrompt une autre. Il ne garantit
+pas qu'un geste **survive**. L'éditeur de la fenêtre ouvre son brouillon au montage, le mute en
+mémoire, et son enregistrement repose la définition **entière** : il écrase donc l'étape que l'agent
+a ajoutée entre-temps. Les deux écritures sont sérialisées et le graphe reste cohérent — **la clause
+du scénario 4 est satisfaite pendant que le geste de l'agent disparaît en silence.**
+
+**Ce qui a emporté l'arbitrage** : le cas n'est pas de bord. La feature existe pour qu'un agent
+travaille pendant que l'humain regarde ; un éditeur ouvert sur un workflow que l'agent modifie est
+donc le cas **nominal**, et le défaut tombe exactement sur le scénario d'usage visé.
+
+**Tranché** : l'enregistrement d'un brouillon **périmé** échoue, en le disant. L'éditeur retient à
+l'ouverture de quoi reconnaître la version qu'il a lue et la confronte avant d'écrire. **Aucune
+fusion** — la règle rend le conflit *visible*, elle ne le résout pas. Elle vaut pour toute écriture
+qui repose un document complet ouvert plus tôt, quelle que soit la porte.
+
+**Ce que ça coûte, et le découpage doit le savoir** : un enregistrement peut désormais **échouer**,
+ce qui n'arrive jamais aujourd'hui. Les deux portes doivent savoir le dire — l'écran par un message
+et un rechargement proposé, l'outil MCP par une erreur exploitable.
+
+**Le motif existe déjà dans le dépôt, et sa parade n'est pas transposable.** `architecture.md` note
+que tout écrivain partiel de `project.json` relit le disque avant d'écrire, sans quoi un renommage
+depuis un instantané effaçait la déclaration en silence. Ici l'éditeur n'écrit pas partiellement : il
+repose un document entier. La relecture ne suffit donc pas, d'où la détection.
+
+**Écarté.** *Accepter au premier jour et l'écrire comme risque connu* : coût nul, mais le défaut
+frappe le cas d'usage central. *Le porter en carte séparée* — l'argument était que le problème
+préexiste sous la forme fenêtre-contre-fenêtre et que la feature l'expose plutôt qu'elle ne le crée ;
+écarté parce que rien n'aurait garanti la prise de la carte avant la mise en service.
+
+**Question ouverte** : la forme de ce que l'éditeur retient — horodatage, empreinte, ou numéro de
+version porté par la définition. Relève d'un plan de design.
