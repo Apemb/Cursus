@@ -12,8 +12,14 @@
 > lieu … et au moins l'un d'eux a démarré »*. Deux moments distincts du même passage, deux DoD.
 >
 > **Qui vérifie.** Aucun tiers n'est assigné à cette transition (`tickets.md` §6.3 ne la liste dans
-> aucun des trois régimes) : c'est l'agent de découpage lui-même qui se l'applique avant de faire
-> passer la carte — régime *Production*, pas *Trio*.
+> aucun des trois régimes) — régime *Production*, pas *Trio*. C'est donc **celui qui prend le
+> premier incrément** qui la vérifie : la feature est déjà en `In Progress`, tirée par l'humain
+> après l'accord sur la spec, et ce fichier lui dit ce que le découpage devait lui laisser.
+>
+> ⚠️ **Ce n'est pas au découpeur de se l'appliquer**, et l'inverse a été écrit ici jusqu'au
+> 2026-08-02. Une DoD que l'amont s'applique à lui-même n'est plus une DoD (`cycle.md` §4) : elle
+> devient une case qu'on coche en poussant sa propre carte, là où elle existe pour donner à l'aval
+> de quoi refuser.
 
 ## 1. L'artefact est complet
 

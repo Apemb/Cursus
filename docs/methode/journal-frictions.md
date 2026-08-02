@@ -625,3 +625,32 @@ question de jeton « à trancher » — est restée dans le projet, priorisée, 
 créait la carte qui l'absorbe. La spec disait pourtant qu'elle « reste celle qui portera ce sujet ».
 Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le projet : rien dans le skill
 `decoupage` ne le demande, et c'est le second manque du dispositif, avec celui des questions portées.
+
+## 2026-08-02 — premier plan de design, et un ticket poussé
+
+68. **Un skill a poussé une carte, parce que la règle n'avait que sa moitié amont.** `plan-design`
+    §6 prescrivait « Place ensuite la carte en `Plan Review` », quand `cycle-increment.md` §4 posait
+    l'étiquette `Done` et laissait la carte en `Planning`. L'exécutant a suivi le skill.
+    ⚠️ **Le fait de méthode n'est pas la contradiction, c'est ce qui l'a rendue inévitable** : la
+    règle du flux tiré était écrite partout du côté de celui qui **pose** (« un skill ne déplace
+    jamais la carte »), et nulle part du côté de celui qui **tire**. Un audit de quatre lots l'a
+    confirmé : neuf frontières de colonne sur seize n'avaient **aucun tireur écrit**, et toutes
+    avaient la même forme — celle qui suit une pose de `Done`. Une interdiction sans contrepartie ne
+    produit pas l'abstention : elle produit la transgression, parce qu'il faut bien que la carte
+    avance. — *étape 5, dette de méthode*
+
+69. **La règle manquait là où elle aurait servi : dans le seul fichier chargé d'office.** `CLAUDE.md`
+    ne contenait aucune occurrence de « tiré », « pousser », `Done` ni *Advancement Labels*. Un agent
+    qui charge `CLAUDE.md` puis un skill n'avait donc aucun moyen de savoir que le skill était
+    fautif. Corollaire général : **une règle transverse qui ne vit que dans les documents de méthode
+    n'est appliquée que par qui les ouvre**, et un exécutant n'ouvre que ce que sa tâche appelle.
+    — *étape 5, dette de méthode*
+
+70. **Deux affirmations écrites étaient fausses, et personne ne les avait contredites.**
+    `cycle-pas.md` §1 (« Aucune étiquette, à aucun moment ») et `dod/pas/done.md` §4 (« le pas n'a
+    pas de tiers qui juge ») décrivaient un niveau pas sans signal ni revue. L'utilisateur a tranché
+    l'inverse : le pas porte les mêmes étiquettes que l'incrément, et `Code Review` existe à deux
+    échelles — la **fonction** au pas, le **module** à l'incrément, le même skill contre deux
+    référentiels. ⚠️ **Ce que le dispositif n'a pas su faire** : ces deux clauses étaient cohérentes
+    entre elles et se citaient l'une l'autre, ce qui les rendait indétectables par une relecture
+    croisée. Seul un humain qui connaît son intention pouvait les démentir. — *étape 7, correction*

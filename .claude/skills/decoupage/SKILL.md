@@ -73,13 +73,20 @@ sont-elles justes ? faut-il fusionner ou scinder des incréments ?
 **Critère** : un accord explicite de l'humain porte sur le découpage complet — pas incrément par
 incrément — avant toute création de carte.
 
-## 7. Créer les cartes et transitionner la feature
+## 7. Créer les cartes, et ne toucher à rien d'autre
 
 Une fois l'accord obtenu : chaque incrément devient une issue rattachée au projet de la feature,
-`blockedBy` posé, née en `Todo` ou en `Backlog` selon l'étape 4. La feature passe de `Spec` à
-`In Progress`.
+`blockedBy` posé, née en `Todo` ou en `Backlog` selon l'étape 4.
 
-**Critère** : chaque incrément retenu existe comme carte, et la feature porte le nouveau statut.
+⚠️ **Ne déplace pas la feature, et ne lui pose aucune étiquette.** Elle est déjà en `In Progress` —
+c'est l'humain qui l'y a tirée après l'accord sur la spec, et le découpage est le **premier**
+travail de cette colonne, pas ce qui la clôt. Son `Done` viendra bien plus tard : quand tous les
+incréments seront faits, validés et fusionnés, et que la feature entière sera recettable d'un bloc
+(`cycle-feature.md` §5). Poser `Done` ici rendrait tirable vers `Validation` une feature dont pas
+une ligne n'est écrite.
+
+**Critère** : chaque incrément retenu existe comme carte — et la feature est exactement dans l'état
+où on l'a trouvée.
 
 ## 8. Ce que le découpage ne fait pas
 

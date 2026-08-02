@@ -1,22 +1,39 @@
 ---
 name: revue-code
-description: Relit un comportement complet — un pas ou un incrément — contre un point fixe,
-  pour l'étape Code Review du flux (`flux.md` #8). Use quand une carte entre en `Code Review`,
-  quand on demande une revue de code, une relecture de PR `pas/` ou `story/`, ou de raffiner
-  une test list après un cycle TDD.
+description: Relit contre un point fixe, à deux échelles — la fonction pour un pas, le module pour
+  un incrément (`flux.md` #8 et #9). Use quand une carte de pas ou d'incrément porte `Done` et
+  attend sa revue, quand on demande une revue de code, une relecture de PR `pas/` ou `story/`, ou
+  de raffiner une test list après un cycle TDD.
 ---
 
 > **Draft non éprouvé.** Écrit d'après l'état de l'art, pas récolté sur une exécution réelle —
 > `D-039` demande l'inverse. À confronter au premier usage ; en cas de désaccord,
 > `docs/methode/journal-frictions.md` prime sur ce fichier.
 
-## Le bloc
+## Tirer la carte — c'est toi qui la déplaces
 
-On relit un **comportement**, jamais un commit isolé — c'est pour ça que `Code Review` n'existe
-pas au niveau du pas (`tickets.md` §6.2). L'objet est le **cumul** d'une branche `pas/` ou
-`story/` contre son point fixe (`git diff <base>...HEAD`) : la base de la story pour une PR
-`pas/`, la base de la feature ou de `main` pour une PR `story/`. Jamais « la PR » en général,
-toujours ce diff-là contre ce point-là. Identifie le point fixe avant d'ouvrir quoi que ce soit.
+La carte t'attend **portant `Done`**, dans la colonne où son auteur s'est arrêté : un ticket n'est
+jamais poussé (`cycle.md` §4). **Tire-la en `Code Review` et retire l'étiquette** — un seul geste, à
+la prise. C'est ton **unique** déplacement de carte : le verdict rendu, elle reste où elle est, et
+c'est l'aval qui la tirera plus loin. Pas même sur escalade, qui **assigne** sans bouger.
+
+## Le bloc, et à quelle échelle
+
+**Deux échelles, deux référentiels, et la grande ne rattrape pas la fine** :
+
+| Niveau | Ce qui se relit | Référentiel |
+|---|---|---|
+| **Pas** | La **fonction** : ce que prouve chaque test, sa formulation, le nommage, la forme du code | [`dod/pas/code-review.md`](../../../docs/methode/dod/pas/code-review.md) |
+| **Incrément** | Le **module** : la découpe en classes, le design, la cohérence de l'ensemble — et **lui seul** peut réclamer des pas supplémentaires | [`dod/story/code-review.md`](../../../docs/methode/dod/story/code-review.md) |
+
+⚠️ **Ne rejuge pas la fonction à l'échelle du module** : le diff de plusieurs pas est trop large
+pour qu'on y voie un nom de variable, et chaque pas a déjà eu son relecteur. Inversement, ne juge
+pas le design sur un pas : le diff est trop étroit pour le fonder.
+
+L'objet est le **cumul** d'une branche `pas/` ou `story/` contre son point fixe
+(`git diff <base>...HEAD`) : la base de la story pour une PR `pas/`, la base de la feature ou de
+`main` pour une PR `story/`. Jamais « la PR » en général, toujours ce diff-là contre ce point-là.
+Identifie le point fixe avant d'ouvrir quoi que ce soit.
 
 ## Exécution
 
@@ -80,7 +97,9 @@ point en litige, jamais de prose libre) pour qu'un tiers reconstitue le litige e
 
 ## Critère d'achèvement
 
-La carte porte `Done` (le diff tire vers `QA Review` ou `Done` selon `tickets.md` §6.2) ou
-`Rework Needed` avec le point de désaccord écrit — jamais un déplacement de colonne par ce skill.
+La carte porte `Done` ou `Rework Needed` avec le point de désaccord écrit — et elle **n'a pas
+bougé** depuis que tu l'as tirée. Ce que `Done` autorise ensuite, c'est un **autre** qui l'exerce :
+au pas, la fusion de `pas/` dans `story/` ; à l'incrément, celui qui recette, vers `QA Review` ou
+vers `Done` selon `tickets.md` §6.2.
 Avant de poser l'étiquette : la [DoD `code-review`](../../../docs/methode/dod/story/code-review.md)
 est cochée case par case, pas résumée.

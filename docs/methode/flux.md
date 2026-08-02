@@ -93,28 +93,51 @@ PAS                                              Backlog ──► Todo ──�
 | 5 | **Planning** | Incrément | Agent | Production | `plan-design` |
 | 6 | **Plan Review** | Incrément | Agent ⇄ agent | Boucle + escalade | `revue-plan` |
 | 7 | **In Progress** | Pas | Agent | Production | `prendre-un-pas` |
-| 8 | **Code Review** | Incrément | Agent ⇄ agent | Boucle + escalade | `revue-code` |
-| 9 | **QA Review** | Incrément | Humain | Œil | — *(s'appuie sur la skill `run`)* |
-| 10 | **Validation** | Feature | Humain | Œil | — |
+| 8 | **Code Review** — la **fonction** | Pas | Agent ⇄ agent | Boucle + escalade | `revue-code` |
+| 9 | **Code Review** — le **module** | Incrément | Agent ⇄ agent | Boucle + escalade | `revue-code` |
+| 10 | **QA Review** | Incrément | Humain | Œil | — *(s'appuie sur la skill `run`)* |
+| 11 | **Validation** | Feature | Humain | Œil | — |
 
-Les étapes **9** et **10** n'ont pas de skill **par décision, pas par retard** : ce sont les
+Les étapes **10** et **11** n'ont pas de skill **par décision, pas par retard** : ce sont les
 deux jugements sans référentiel opposable (`tickets.md` §6.3). Un agent qui les porterait
 rendrait un verdict qu'il n'a pas les moyens de fonder.
 
+**Les étapes 8 et 9 sont la même colonne à deux échelles**, et le même skill les sert contre deux
+référentiels distincts : au **pas**, ce que prouve un test, sa formulation, le nommage
+(`dod/pas/code-review.md`) ; à l'**incrément**, la découpe en classes, le design, la cohérence de
+l'ensemble (`dod/story/code-review.md`) — et l'incrément seul a le droit de réclamer des **pas
+supplémentaires**. ⚠️ La grande échelle ne rattrape pas la fine : un relecteur qui parcourt le diff
+de plusieurs pas ne relit pas chaque nom de variable.
+
 ### Ce que chaque étape reçoit et produit
 
-| # | Entrée | Sortie | Transition de carte |
+⚠️ **Cette table se lit du point de vue du tireur.** Aucune étape n'avance sa propre carte : elle
+pose son signal et s'arrête, et c'est l'aval nommé ci-dessous qui tire — en retirant l'étiquette
+(`cycle.md` §4).
+
+| # | Entrée | Sortie | Ce que l'étape pose, et qui tire ensuite |
 |---|---|---|---|
-| 1 | Un cap nommé | Un **besoin** établi, des pistes ouvertes, **aucun choix** | `Backlog → Discovery`, puis `→ Spec` ou `→ Canceled` |
-| 2 | Un besoin | Une **spec** : options arbitrées, capacité énoncée, **recette définie** | `Discovery → Spec` |
-| 3 | Une spec | Un verdict, ou des divergences à reprendre en 2 | reste en `Spec` jusqu'à l'accord |
-| 4 | Une spec validée | N **incréments** avec leurs **frontières** et leur ordre | `Spec → In Progress` ; les incréments naissent en `Todo` ou `Backlog` |
-| 5 | Un incrément éligible | Un **plan de design** avec son schéma-delta, et le **découpage en pas** | `Todo → Planning → Plan Review` |
-| 6 | Un plan | Un accord, ou un litige | `Plan Review → In Progress`, ou **assignation à l'humain** |
-| 7 | Un pas | Une **test list**, des cycles TDD, un commit | `Todo → In Progress → Done` |
-| 8 | Un comportement complet | Un accord, ou un litige | `Code Review → QA Review`/`Done`, ou **assignation** |
-| 9 | L'app lancée | Le parcours refait à la main | `QA Review → Done` |
-| 10 | La feature entière | Recettée **contre sa spec** | `In Progress → Validation → Completed` |
+| 1 | Un cap nommé | Un **besoin** établi, des pistes ouvertes, **aucun choix** | pose `Done` ; **l'humain tire** vers `Spec`, ou vers `Canceled` |
+| 2 | Un besoin | Une **spec** : options arbitrées, capacité énoncée, **recette définie** | pose `Review Requested` ; le relecteur tire à sa prise |
+| 3 | Une spec | Un verdict, ou des divergences à reprendre en 2 | pose `Rework Needed`, ou `Human Review Requested` si aucune remarque — **jamais un déplacement** ; après accord, **l'humain tire** vers `In Progress` |
+| 4 | Une spec validée | N **incréments** avec leurs **frontières** et leur ordre | ne pose **rien** sur la feature : elle reste en `In Progress` tant que ses incréments courent ; les incréments naissent en `Todo` ou `Backlog` |
+| 5 | Un incrément éligible | Un **plan de design** avec son schéma-delta, et le **découpage en pas** | pose `Done` ; **`revue-plan` tire** vers `Plan Review` à sa prise |
+| 6 | Un plan | Un accord, ou un litige | pose `Done`, ou **assigne l'humain** ; **qui prend le premier pas tire** vers `In Progress` |
+| 7 | Un pas | Une **test list**, des cycles TDD, un commit | pose `Done` ; **`revue-code` tire** vers `Code Review` à sa prise |
+| 8 | Le diff d'un pas | Un accord sur la **fonction**, ou un litige | pose `Done`, ou **assigne** ; **la fusion** de `pas/` dans `story/` bascule le pas en `Done` |
+| 9 | Un comportement complet | Un accord sur le **module**, ou un litige | pose `Done`, ou **assigne** ; **qui recette tire** vers `QA Review` — ou vers `Done` si elle se saute |
+| 10 | L'app lancée | Le parcours refait à la main | pose `Done` ; colonne **terminale** |
+| 11 | La feature entière | Recettée **contre sa spec** | pose `Done` ; `Completed` est **terminal** |
+
+**Quand une feature devient `Done`** : quand tous ses incréments sont faits, validés et **fusionnés
+dans sa branche `feature/`**, et que la feature entière devient recettable d'un bloc. Pas à la fin
+du découpage — à ce moment-là rien n'est construit, et une feature « tirable » vers `Validation`
+sans code serait un mensonge. Quand la feature n'a pas de branche propre (elle ne s'impose pas,
+`D-042`), c'est l'arrivée du dernier incrément dans `main` qui vaut fusion.
+
+**Les colonnes terminales sont la seule exception au flux tiré** : `Done` pour un pas ou un
+incrément, `Completed` pour une feature. Aucun travail ne commence après elles, donc rien ne peut
+les atteindre en tirant — celui qui pose le dernier `Done` y déplace la carte (`cycle.md` §4).
 
 **Le plan de design s'écrit à l'étape 5, pas à l'étape 4.** Le découpage capture ce que lui seul
 peut savoir — les frontières entre incréments, vues d'en haut, et qui disparaîtraient avec la
@@ -122,7 +145,7 @@ session qui les a produites. La conception de chacun attend sa prise : ce qu'on 
 faisant le premier change ce qu'on sait au quatrième. Même raison que pour la test list, qui
 attend elle aussi la prise de son pas.
 
-**L'escalade** (étapes 6 et 8) : après deux ou trois tours sans convergence, **la carte
+**L'escalade** (étapes 6, 8 et 9) : après deux ou trois tours sans convergence, **la carte
 s'assigne à l'humain**. Non assignée, elle boucle. Voir `tickets.md` §6.4 pour les trois
 exigences qui rendent une escalade utilisable.
 

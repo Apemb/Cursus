@@ -4,10 +4,13 @@
 > `D-039` demande l'inverse. À confronter au premier usage ; en cas de désaccord,
 > `docs/methode/journal-frictions.md` prime sur ce fichier.
 
-> **La question** : ce pas peut-il être **tiré** en `Done` ?
+> **La question** : la branche de ce pas peut-elle être **fusionnée** dans le `story/` de son
+> incrément ? C'est cette fusion qui le fait basculer en `Done` — la colonne étant terminale, rien
+> ne l'y tire (`cycle.md` §4).
 >
-> Aucun tiers ne juge ici (`tickets.md` §6.3 : la ligne « pas » ne porte personne « autour de la
-> table ») — le critère est **mécanique**, pas un verdict.
+> **Ce fichier ne porte que le mécanique.** Le verdict sur la **forme** — les tests prouvent-ils ce
+> qu'ils annoncent, les noms tiennent-ils — a déjà eu lieu en `Code Review`, à l'échelle du pas
+> (`cycle-pas.md` §5). Ici on ne vérifie plus que ce qu'une machine peut constater.
 
 ## 1. Le critère mécanique (`tickets.md` §6.2)
 
@@ -29,10 +32,13 @@ Trois clauses suffisent ; ne pas en ajouter pour paraître sérieux (`mattpocock
 
 > Le vert prouve que le test passe ; il ne prouve ni le bon comportement ni la bonne formulation
 > (`tickets.md` §4). `Done` ne certifie donc que la mécanique — le raffinement de la test list et
-> des noms de test est le travail de la `Code Review`, au niveau de l'incrément.
+> des noms de test s'est joué en `Code Review` du pas, et la cohérence de l'ensemble se jouera en
+> `Code Review` de l'incrément.
 
 ## 4. Ce qui n'est *pas* un critère ici
 
-- **La relecture du diff comme un bloc** — c'est `Code Review`, au niveau de l'incrément, jamais
-  du pas isolé.
-- **Une étiquette `Done` / `Rework Needed` sur la carte** — le pas n'a pas de tiers qui juge.
+- **La relecture du diff comme un bloc** — la cohérence du module, la découpe en classes et le
+  design se relisent en `Code Review` au niveau de l'**incrément**, jamais sur un pas isolé, qui
+  est par construction plus petit qu'un comportement observable.
+- **Le verdict de forme sur ce pas** — il a déjà été rendu, en `Code Review` du pas ; y revenir ici
+  ferait juger deux fois la même chose, sans référentiel neuf pour trancher autrement.

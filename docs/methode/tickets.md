@@ -415,12 +415,13 @@ documents de niveau ([feature](cycle-feature.md), [incrément](cycle-increment.m
 ```
 Feature     Backlog → Discovery → Spec → In Progress → Validation → Completed
 Incrément   [Backlog] → Todo → [Planning → Plan Review] → In Progress → Code Review → [QA Review] → Done
-Pas         [Backlog] → Todo → In Progress → Done
+Pas         [Backlog] → Todo → In Progress → Code Review → Done
 ```
 
 Les crochets marquent ce qui est **conditionnel** — voir les matrices. Un chemin court n'est
-pas un chemin bâclé : la revue d'un pas existe, elle a simplement lieu là où son effet devient
-observable.
+pas un chemin bâclé : le pas n'a ni `Planning` (il aurait la taille d'un incrément) ni
+`QA Review` (rien n'y est observable par le rôle produit), mais il a **sa** `Code Review`, à
+l'échelle de la fonction (`D-069`).
 
 Les features et les issues n'ont pas le même jeu de colonnes ; les mettre dans un seul tableau
 force à assimiler des étapes qui ne se correspondent pas. D'où deux matrices.
@@ -457,10 +458,10 @@ spec un contrat plutôt qu'un document d'intention.
 |---|---|---|
 | **Backlog** | Une **salle d'attente à deux populations** : ce qui est né du découpage mais **pas encore éligible** (un `blockedBy` ouvert), et ce qui **n'a pas de parent** — voir ci-dessous → [`dod/story/backlog.md`](dod/story/backlog.md) | Créé au découpage, son tour n'est pas venu |
 | **Todo** | **La colonne d'éligibilité** : plus aucun `blockedBy` ouvert, le contexte tient dans la carte → [`dod/story/todo.md`](dod/story/todo.md) | Son incrément est `In Progress` et ce pas est le suivant → [`dod/pas/todo.md`](dod/pas/todo.md) |
-| **Planning** | C'est **ici que le plan de design s'écrit**, et qu'il découpe l'incrément en pas. **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon **on saute** directement à `In Progress` | — *(un pas qui exigerait son plan de design aurait la taille d'un incrément)* |
+| **Planning** | C'est **ici que le plan de design s'écrit**, et qu'il découpe l'incrément en pas. **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon la carte porte `Done` sans plan, et **qui prend le premier pas** la tire directement en `In Progress` | — *(un pas qui exigerait son plan de design aurait la taille d'un incrément)* |
 | **Plan Review** | Le plan de design est écrit, avec son **schéma-delta**, et il est **en cours de revue** — voir §6.3 → [`dod/story/plan-review.md`](dod/story/plan-review.md) | — |
 | **In Progress** | La série de cycles TDD tourne ; la documentation se met à jour **au fil**, pas à la fin | Un cycle : rouge observé *pour la bonne raison*, vert, refactor. La test list s'écrit ici et vit ici |
-| **Code Review** | Le comportement est **complet** ; le diff se relit d'un bloc, les commits sont argumentés, `architecture.md` / `decisions.md` sont à jour. La test list et la **formulation des comportements** se raffinent ici → [`dod/story/code-review.md`](dod/story/code-review.md) | — *(on ne relit pas un commit isolé, on relit un comportement)* |
+| **Code Review** | L'échelle du **module** : le comportement est **complet**, le diff se relit d'un bloc, les commits sont argumentés, `architecture.md` / `decisions.md` sont à jour. Seul ce niveau peut réclamer des **pas supplémentaires** → [`dod/story/code-review.md`](dod/story/code-review.md) | L'échelle de la **fonction** : ce que prouve chaque test, sa formulation, le nommage, la forme du code → [`dod/pas/code-review.md`](dod/pas/code-review.md) |
 | **QA Review** | **Conditionnel** : obligatoire dès que l'incrément touche la présentation (§7.12, non testée) — l'app est lancée, le parcours refait à la main. **Sautée** pour un incrément purement Core, et le dire vaut mieux que traverser la colonne pour la forme → [`dod/story/qa-review.md`](dod/story/qa-review.md) | — |
 | **Done** | L'acceptation est cochée **case par case**, la validation manuelle est faite si elle était due → [`dod/story/done.md`](dod/story/done.md) | Commit fait, suite verte, **0 warning** → [`dod/pas/done.md`](dod/pas/done.md) |
 

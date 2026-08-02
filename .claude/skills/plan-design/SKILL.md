@@ -28,9 +28,10 @@ dans les deux sens :
 `Planning` est **conditionnel** (`tickets.md` §6.2). Relis l'incrément en `Todo` contre les trois
 critères ci-dessus.
 
-- Aucun ne s'applique → saute directement à `In Progress`, écris-le en une phrase dans l'incrément
-  (« pas de plan, changement local à une classe ») pour que le lecteur suivant sache que ce n'est
-  pas un oubli.
+- Aucun ne s'applique → écris-le en une phrase dans l'incrément (« pas de plan, changement local à
+  une classe ») pour que le lecteur suivant sache que ce n'est pas un oubli, **pose `Done` et
+  arrête-toi**. Ne saute pas la carte en `In Progress` toi-même : c'est qui prend le premier pas
+  qui l'y tire (`cycle-increment.md` §5).
 - Au moins un s'applique → continue.
 
 **Fait quand** : la décision est écrite quelque part, jamais silencieuse.
@@ -94,7 +95,11 @@ par clause, et il n'existe aucune raison de le découvrir après coup. **Ne jama
 ici** : une copie d'un référentiel diverge de lui en silence (journal 54). Le faire sur le plan
 **fini**, pas en le rédigeant — viser une grille en écrivant produit un plan qui coche.
 
-Place ensuite la carte en `Plan Review`. C'est `revue-plan` qui prend le relais — ce skill ne juge
-pas son propre plan.
+**Pose ensuite `Done` sur la carte, et arrête-toi là.** ⚠️ **Ne déplace pas la carte en
+`Plan Review`** : `Done` n'avance pas une carte, elle **autorise** qu'on l'avance, et c'est
+`revue-plan` qui la tire à sa prise, en retirant l'étiquette (`cycle.md` §4). Un ticket n'est
+jamais poussé. Le plan reste donc en `Planning`, portant `Done`, jusqu'à ce que la revue vienne le
+chercher — et ce skill ne juge pas son propre plan.
 
-**Fait quand** : le plan est complet, il a été passé contre la DoD, et la colonne dit `Plan Review`.
+**Fait quand** : le plan est complet, il a été passé contre la DoD, l'étiquette dit `Done` — et la
+colonne dit toujours `Planning`.

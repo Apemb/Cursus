@@ -1,6 +1,6 @@
 ---
 name: prendre-un-pas
-description: Prendre un pas (sous-tâche Linear) de `Todo` à `Done` — écrire sa test list à la prise, dérouler le cycle rouge → vert → refactor un test à la fois, committer librement, clore sur suite verte et zéro warning. À invoquer dès qu'une carte de pas passe en `In Progress`, qu'on exécute une sous-tâche technique du backlog, ou qu'on demande de « prendre le pas suivant ».
+description: Prendre un pas (sous-tâche Linear) de `Todo` jusqu'à sa revue — écrire sa test list à la prise, dérouler le cycle rouge → vert → refactor un test à la fois, committer librement, poser `Done` sur suite verte et zéro warning. À invoquer dès qu'on prend une carte de pas en `Todo`, qu'on exécute une sous-tâche technique du backlog, ou qu'on demande de « prendre le pas suivant ».
 ---
 
 # Prendre un pas
@@ -17,6 +17,9 @@ tenir.
 
 ## 1. Avant le premier test
 
+- **Tirer la carte** : le pas t'attend en `Todo` ; déplace-le en `In Progress` et retire son
+  étiquette s'il en porte une. Un ticket n'est jamais poussé — c'est celui qui prend le travail qui
+  déplace la carte (`cycle.md` §4).
 - Lire la carte en entier : le pas, le pourquoi à cette place, le piège local s'il existe.
 - Créer, ou reprendre, la branche `pas/<identifiant>-slug` depuis la branche de la story.
 - Le pas touche-t-il un objet déjà modélisé, ou en nomme-t-il un nouveau ? Si oui, relire la
@@ -62,11 +65,20 @@ Librement — WIP, correction, refactor : la fusion en squash produit le commit 
 « un commit par comportement » n'existe plus. Ce qui ne bouge pas : chaque commit reste sur une
 suite verte et zéro warning — la liberté porte sur leur nombre, pas sur le standard.
 
-## 5. Clore le pas
+## 5. Clore le pas — poser `Done`, et s'arrêter là
 
-Une fois la test list épuisée et la suite verte : fusionner `pas/` dans `story/` en **squash**, et
-réécrire le corps à la main — GitHub y colle par défaut la concaténation des WIP, et c'est ce
-commit-là qui reste dans l'histoire. Le corps dit le comportement ajouté et les alternatives
-écartées en cours de route, pas la liste des commits.
+Une fois la test list épuisée, la suite verte et zéro warning : **pose `Done` sur la carte du pas**,
+et arrête-toi.
 
-**Fin de l'étape** : `docs/methode/dod/pas/done.md` coché de bout en bout.
+⚠️ **Ne fusionne pas encore, et ne déplace pas la carte.** Un pas passe par sa propre `Code Review`,
+à l'échelle de la **fonction** — ce que prouvent les tests, leur formulation, le nommage
+(`cycle-pas.md` §5). C'est `revue-code` qui tire la carte en `Code Review` à sa prise, et la fusion
+n'a lieu qu'**après** son accord : c'est elle qui fait basculer le pas en `Done`, colonne terminale.
+
+Quand ce moment vient, la fusion de `pas/` dans `story/` se fait en **squash**, corps réécrit à la
+main — GitHub y colle par défaut la concaténation des WIP, et c'est ce commit-là qui reste dans
+l'histoire. Le corps dit le comportement ajouté et les alternatives écartées en cours de route, pas
+la liste des commits.
+
+**Fin de l'étape** : la carte porte `Done`, elle est toujours en `In Progress`, et
+`docs/methode/dod/pas/code-review.md` est ce contre quoi elle va être relue.

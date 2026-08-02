@@ -14,6 +14,19 @@ arbitre d'exception. Ce skill ne relit pas lui-même — il invoque `revue`, le 
 ajoute ce que la boucle réclame en plus : un **litige** qui se compare d'un tour à l'autre, et une
 sortie quand il ne converge pas.
 
+## 0. Tirer la carte — c'est toi qui la déplaces
+
+L'incrément t'attend en **`Planning`, portant `Done`** : `plan-design` a posé son signal et s'est
+arrêté là, parce qu'un ticket n'est jamais poussé (`cycle.md` §4). **Tire-la en `Plan Review` et
+retire l'étiquette `Done`** — un seul geste, à la prise. La colonne dit *« ça se fait ici »*, donc
+elle ne doit basculer qu'au moment où tu commences réellement.
+
+⚠️ **C'est le seul déplacement de carte de ce skill.** Il a lieu à la **prise**, jamais à la sortie :
+une fois le verdict rendu, la carte reste en `Plan Review` et c'est qui prend le premier pas qui la
+tirera vers `In Progress` (`cycle-increment.md` §5).
+
+**Fait quand** : la carte est en `Plan Review`, sans étiquette.
+
 ## 1. Invoquer `revue`, sur ces axes
 
 Deux ou trois, pas plus — au-delà, aucun ne reçoit assez d'attention :
@@ -29,7 +42,8 @@ Deux ou trois, pas plus — au-delà, aucun ne reçoit assez d'attention :
 
 `revue` tourne ces axes en sous-agents parallèles, jamais fusionnés, chacun citant le référentiel
 et l'extrait, s'abstenant si l'un manque. Il pose `Done` ou `Rework Needed` — il ne déplace jamais
-la carte, et ce skill ne le fait pas non plus tant qu'aucune escalade n'a eu lieu.
+la carte, et ce skill ne le fait plus non plus : son unique déplacement a eu lieu à l'étape 0, en la
+tirant. **Pas même sur escalade** — escalader, c'est *assigner* la carte (§4), jamais la bouger.
 
 **Fait quand** : `revue` a rendu son verdict sur les axes retenus.
 

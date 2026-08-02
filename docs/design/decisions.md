@@ -4187,3 +4187,66 @@ cartes, et cette entrée les rend opposables ailleurs qu'à travers elles.
 **Question ouverte** : aucune sur ces points. Celles que les incréments portent — où atterrit le socle,
 la forme de la publication de l'endpoint, la forme du témoin de version, ce que fait l'inscription d'un
 projet dont la base existe — relèvent des plans de design, et chaque carte nomme celle qui la ferme.
+
+## D-069 — Un ticket n'est jamais poussé, le pas a des étiquettes, et `Code Review` a deux échelles (2026-08-02)
+
+**Contexte.** Le premier plan de design de la feature *Un agent pilote Cursus* a été déposé, puis sa
+carte **poussée** en `Plan Review` par le skill qui venait de l'écrire. L'utilisateur l'a relevé —
+« qui l'a tiré ? » — et a demandé un audit de la règle sur tout le dépôt : quatre lots disjoints
+(skills de production, skills de revue, documents de méthode, DoD et `cursus-cli`).
+
+### 1. Ce que l'audit a établi
+
+**La règle existait, correctement formulée, et elle n'avait que sa moitié amont.** `tickets.md`, la
+table des étiquettes de `cycle.md` et dix DoD sur douze disaient déjà qu'un skill pose `Done` et ne
+déplace pas la carte. Mais **neuf frontières de colonne sur seize n'avaient aucun tireur écrit**, et
+toutes avaient la même forme : celle qui suit immédiatement une pose de `Done`. Une interdiction sans
+contrepartie ne produit pas l'abstention — l'amont finit par pousser, faute d'un autre geste
+disponible. ⚠️ **C'est le motif à retenir bien au-delà de ce cas** : une règle négative n'est
+applicable que si le geste positif qu'elle suppose est écrit, et attribué à quelqu'un.
+
+**`flux.md` §2 était structurellement poussé** — sa colonne « Transition de carte » attribuait à
+chaque étape le mouvement qui la *suit*, six lignes sur dix en violation. **`CLAUDE.md` ne portait
+la règle nulle part**, alors que c'est le seul fichier chargé d'office : un agent n'avait aucun moyen
+de savoir que le skill qu'il suivait était fautif.
+
+### 2. Les trois décisions de l'utilisateur
+
+**Un ticket n'est jamais poussé.** Qui finit son étape pose `Done` et s'arrête ; l'aval tire, **et
+retire l'étiquette en tirant** — un seul geste. Une carte achevée mais pas encore reprise reste dans
+sa colonne, portant `Done`. Une seule exception, écrite comme telle : une colonne **terminale**
+(`Done` d'un pas ou d'un incrément, `Completed` d'une feature) n'a aucun aval, donc rien ne peut
+l'atteindre en tirant — celui qui pose le dernier `Done` y déplace la carte.
+
+**Le pas porte les mêmes étiquettes que l'incrément**, et il suit les mêmes colonnes. Ce qui le tire
+en `Done` est la **fusion de sa branche** dans le `story/` de son incrément — le même motif qu'à la
+feature, dont le `Done` attend la fusion de ses incréments. ⚠️ **Cela renverse deux affirmations
+écrites** : `cycle-pas.md` §1 (« aucune étiquette, à aucun moment ») et `dod/pas/done.md` §4 (« le
+pas n'a pas de tiers qui juge »), toutes deux fausses et supprimées.
+
+**`Code Review` porte deux échelles de revue, dans la même colonne.** Au **pas** : la fonction — ce
+que prouvent les tests, leur formulation, le nommage, la forme du code. À l'**incrément** : le
+module — la découpe en classes, le design, la cohérence de l'ensemble, et lui seul a le droit de
+réclamer des **pas supplémentaires**. Le même skill `revue-code` sert les deux, contre deux
+référentiels distincts (`dod/pas/code-review.md`, créé ici, et `dod/story/code-review.md`).
+⚠️ **Le motif** : la grande échelle ne rattrape pas la fine. Un relecteur qui parcourt le diff de
+plusieurs pas ne relit pas chaque nom de variable — compter sur lui pour le faire, c'est n'avoir
+personne. Cela **écarte** l'argument qui avait fondé l'absence de revue au pas (« on relit un
+comportement, jamais un commit isolé ») : il reste vrai pour le design, il ne l'est pas pour la
+forme.
+
+### 3. Quand une feature devient `Done`
+
+Quand tous ses incréments sont faits, **validés** et **fusionnés** dans sa branche `feature/` — ou
+dans `main` quand elle n'a pas de branche propre (`D-042`) —, et que la feature entière devient
+recettable d'un bloc. **Pas à la fin du découpage**, comme `cycle-feature.md` §5 le prescrivait :
+à cet instant rien n'est construit, et une feature déclarée tirable vers `Validation` sans une ligne
+de code promettrait une recette impossible.
+
+### 4. Ce qui n'est pas décidé ici
+
+Le contenu des deux DoD de `Code Review` au-delà de leur partage d'échelle ; le sort des skills
+`correction` et `verification`, toujours à écrire, que le niveau pas réclame désormais comme
+l'incrément ; et l'outillage du geste terminal — `cursus-cli` sait poser et solder une remarque,
+jamais poser `Done`, si bien que le seul chemin praticable reste l'appel générique qui déplace
+colonne et étiquette d'un même geste, sans garde-fou.

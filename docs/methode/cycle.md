@@ -114,6 +114,22 @@ Un skill **ne déplace jamais la carte** — il pose l'étiquette et s'arrête l
 ([`revue`](../../.claude/skills/revue/SKILL.md) §8). Déplacer est l'acte de celui qui **tire**, et
 c'est ce qui rend le flux tiré observable plutôt que déclaratif.
 
+**Et celui qui tire retire l'étiquette `Done` en tirant.** Le geste est un, pas deux : on déplace la
+carte dans sa colonne *et* on efface le signal qui autorisait ce déplacement. C'est ce qui fait que
+chaque colonne s'observe en « + *aucune* » à sa première ligne — l'état initial ① est celui d'un
+travail qui commence, et une carte qui entrerait en portant encore `Done` dirait que son travail est
+fini avant d'avoir commencé.
+
+⚠️ **Sans ce geste, la règle est incomplète et elle se retourne.** Une étape qui n'a pas de tireur
+écrit n'a pas pour autant de carte immobile : son amont finit par pousser, faute d'un autre geste
+disponible. Toute frontière de colonne doit donc nommer **qui** tire, au même titre qu'elle nomme
+qui pose.
+
+**Une seule exception, et il faut l'écrire pour qu'on cesse de la retrouver** : une colonne
+**terminale** — `Done` pour un incrément ou un pas, `Completed` pour une feature — n'a aucun aval,
+puisqu'aucun travail ne commence après elle. Rien ne peut donc l'atteindre en tirant. C'est celui
+qui pose le dernier `Done` qui y déplace la carte, et ce cas-là seulement.
+
 ---
 
 ## 5. Le piège : la même étiquette n'appelle pas le même acteur

@@ -142,7 +142,20 @@ pour que le fait se compte.
 
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
-| `In Progress` + *aucune* | [`decoupage`](../../.claude/skills/decoupage/SKILL.md) | N incréments existent comme cartes rattachées au projet, chacun avec ses **frontières**, son `blockedBy`, et le hors-périmètre **nommant les frères** | `Done` |
+| `In Progress` + *aucune* | [`decoupage`](../../.claude/skills/decoupage/SKILL.md) | N incréments existent comme cartes rattachées au projet, chacun avec ses **frontières**, son `blockedBy`, et le hors-périmètre **nommant les frères** | **rien** — le découpage ne clôt pas la colonne, il l'ouvre |
+| `In Progress` + *aucune*, tous les incréments faits | — | Chaque incrément **validé** et **fusionné** dans la branche `feature/`, la feature entière devenue recettable d'un bloc | `Done` |
+| `In Progress` + `Done` | — | — | **l'humain qui recette tire** vers `Validation` |
+
+⚠️ **`Done` se pose à la fin des incréments, pas à la fin du découpage.** Le découpage ne produit
+que des cartes : au moment où il finit, **rien n'est construit**, et une feature déclarée tirable
+vers `Validation` à cet instant promettrait une recette impossible. La colonne `In Progress` couvre
+donc les deux : l'acte de découper, puis toute la durée des incréments.
+
+**Les trois conditions, et la troisième est celle qu'on oublie** : tous les incréments sont faits,
+tous sont **validés**, et tous sont **fusionnés** là où la feature s'assemble — sa branche
+`feature/` quand elle en a une, `main` sinon, puisqu'une branche de feature ne s'impose pas
+(`flux.md` §6, `D-042`). Des incréments verts mais non fusionnés ne font pas une feature
+recettable : c'est l'assemblage qu'on recette, pas la somme des parties.
 
 **Pas de cycle de revue ici, et ce n'est pas un oubli** : le skill `decoupage` §6 fait trancher
 l'humain sur la granularité **avant publication**. Le jugement a lieu dans le geste, pas après.

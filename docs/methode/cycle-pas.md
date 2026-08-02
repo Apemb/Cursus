@@ -19,21 +19,34 @@
 ## 1. Le chemin, et ce qu'il n'a pas
 
 ```
-[Backlog] ──► Todo ──► In Progress ──► Done
+[Backlog] ──► Todo ──► In Progress ──► Code Review ──► Done
 ```
 
-**Aucune étiquette, à aucun moment.** C'est le seul des trois niveaux dans ce cas, et c'est écrit
-noir sur blanc dans [`dod/pas/done.md`](dod/pas/done.md) §4 : *le pas n'a pas de tiers qui juge*.
+**Les mêmes étiquettes qu'à l'incrément** — les six états du groupe *Advancement Labels*
+([`cycle.md`](cycle.md) §2), `Done` et `Rework Needed` en tête. Un pas se signale et se tire comme
+n'importe quelle carte : qui finit pose, l'aval tire et retire l'étiquette (`cycle.md` §4).
 
-**Aucun cycle de revue non plus** — et ce n'est pas un raccourci. On ne relit pas un commit isolé,
-on relit un **comportement** ; or un pas est par construction plus petit qu'un comportement
-observable. La revue existe donc, elle a simplement lieu **là où son effet devient observable** :
-en `Code Review`, au niveau de l'incrément.
+**Ce qui tire un pas en `Done`, c'est la fusion de sa branche** — le squash de `pas/` dans le
+`story/` de son incrément. Le motif se retrouve à chaque niveau : c'est l'arrivée du travail dans la
+branche du niveau au-dessus qui fait basculer la carte, jamais la satisfaction de celui qui l'a
+écrit. Un pas dont la suite est verte mais dont la branche n'est pas fusionnée reste en
+`Code Review`, portant `Done`.
 
-**Aucun plan de design non plus.** Un pas qui exigerait son plan de design aurait la taille d'un
-incrément — c'est le signe qu'il a été mal découpé, pas qu'il lui manque un document.
+**Une `Code Review`, à l'échelle du pas.** Elle existe, et elle n'est pas celle de l'incrément : ici
+on relit la **fonction** — la validité des tests, ce qu'ils prouvent réellement, la formulation des
+noms de test, le nommage des variables, la forme du code écrit. L'incrément, lui, relit le
+**module** : la classe, le design, la cohérence de l'ensemble, et il a le droit de réclamer des pas
+supplémentaires pour corriger. Même colonne, deux échelles — et la plus grande ne rattrape pas la
+plus fine, parce qu'elle ne la regarde pas.
 
-Ce que le pas porte à la place, et qui lui est propre : une **test list**, écrite à sa prise.
+**Aucun `Planning`, donc aucun `Plan Review`.** Un pas qui exigerait son plan de design aurait la
+taille d'un incrément — c'est le signe qu'il a été mal découpé, pas qu'il lui manque un document.
+
+**Aucune `QA Review` non plus.** Recetter demande quelque chose d'observable par le rôle produit ;
+un pas ne l'est pas, et c'est précisément ce qui le distingue d'un incrément
+([`tickets.md`](tickets.md) §1).
+
+Ce que le pas porte en propre : une **test list**, écrite à sa prise.
 
 ---
 
@@ -67,7 +80,7 @@ conception avant la prise.
 
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
-| `In Progress` | [`prendre-un-pas`](../../.claude/skills/prendre-un-pas/SKILL.md) | La test list écrite **à la prise**, puis un cycle par test, puis le commit | — *(aucune étiquette à ce niveau)* |
+| `In Progress` + *aucune* | [`prendre-un-pas`](../../.claude/skills/prendre-un-pas/SKILL.md) | La test list écrite **à la prise**, puis un cycle par test, puis le commit | `Done` |
 
 **La test list s'écrit ici et vit ici.** Jamais d'avance : ce qu'on apprend au troisième test change
 ce qu'on sait qu'il faut écrire au sixième. Elle reflète l'état **final** — tout cas découvert en
@@ -91,7 +104,29 @@ mécanique.
 
 ---
 
-## 5. `Done` — le mécanique, et ce qu'il ne prouve pas
+## 5. `Code Review` — relire la fonction, pas le module
+
+| État observé | Skill invoqué | Livrable | État posé |
+|---|---|---|---|
+| `Code Review` + *aucune* | [`revue-code`](../../.claude/skills/revue-code/SKILL.md), **à l'échelle du pas** | Les remarques posées sur la carte du pas, chacune citant son référentiel | `Rework Needed` \| `Done` si aucune |
+| `Code Review` + `Rework Needed` | `correction` **(à écrire)** | Le pas repris, une réponse dans chaque fil | `Rework Done` |
+| `Code Review` + `Rework Done` | `verification` **(à écrire)** | Chaque remarque soldée, ou rouverte avec ce qui manque | `Rework Needed` \| `Done` si `open` vaut 0 |
+| `Code Review` + `Done` | — | — | **la fusion** de `pas/` dans `story/` tire vers `Done` |
+
+**Ce qui se relit ici** : la validité des tests — prouvent-ils ce que leur titre annonce —, la
+formulation des noms de test contre la convention `étant donné / quand / alors`, le nommage, la
+forme du code. **Ce qui ne s'y relit pas** : le design, la découpe en classes, la cohérence de
+l'ensemble. Ceux-là attendent la `Code Review` de l'**incrément**, qui voit ce qu'un pas seul ne
+montre pas — et qui peut réclamer des pas supplémentaires, ce qu'une revue de pas ne fait jamais.
+
+⚠️ **La plus grande échelle ne rattrape pas la plus fine.** Un relecteur d'incrément qui parcourt un
+diff de plusieurs pas ne relit pas le nom de chaque variable ; compter sur lui pour le faire, c'est
+n'avoir personne. C'est le motif qui donne à ce niveau sa propre revue, alors qu'un pas est plus
+petit qu'un comportement observable.
+
+---
+
+## 6. `Done` — le mécanique, et ce qu'il ne prouve pas
 
 | Ce qui est exigé | Où c'est écrit |
 |---|---|
@@ -107,7 +142,13 @@ repose entièrement sur l'honnêteté de qui exécute.
 
 ---
 
-## 6. Registre
+⚠️ **`Done` est une colonne terminale** : aucun travail ne commence après elle, donc rien ne peut
+l'atteindre en tirant. C'est l'unique exception à la règle du flux tiré, et elle est écrite en
+[`cycle.md`](cycle.md) §4 — ici, c'est la fusion de la branche qui fait le geste.
+
+---
+
+## 7. Registre
 
 **Construit** : rien de ce cycle n'a tourné **avec un agent**. Le régime TDD lui-même est en
 revanche tenu depuis le premier jalon, à la main, sur toute la logique métier — c'est le seul

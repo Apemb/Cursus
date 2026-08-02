@@ -136,6 +136,21 @@ conçoit *comment c'est structuré* dans son **plan de design** ; le **pas** pro
 list** s'écrit à sa prise, jamais d'avance. Le juge de ce qui mérite d'être un incrément plutôt qu'un pas est le **rôle produit** :
 est-ce recettable par quelqu'un qui ne lit pas le code ?
 
+### Un ticket n'est jamais poussé
+
+**Le flux est tiré** (`D-041`). Qui finit son étape **pose l'étiquette `Done`** et s'arrête là :
+`Done` n'avance pas la carte, elle **autorise** qu'on l'avance. Une carte achevée mais pas encore
+reprise **reste dans sa colonne**, portant `Done`. C'est l'**aval** — celui qui prend le travail
+suivant — qui tire la carte à lui, et qui **retire l'étiquette en tirant**. Une colonne dit donc
+*« ça se fait ici »*, jamais *« c'est fini »*.
+
+⚠️ **La tentation de pousser vient d'un manque, pas d'une envie** : quand une frontière ne nomme
+personne pour tirer, celui qui vient de finir croit devoir avancer la carte lui-même. Si le tireur
+n'est pas écrit, c'est la documentation qu'il faut corriger — jamais la carte qu'il faut pousser.
+
+Le détail vit dans `docs/methode/cycle.md` §4 (qui pose, qui tire) et dans les trois `cycle-*.md`,
+frontière par frontière.
+
 ## Entretenir la carte visuelle
 
 `docs/design/schemas.md` suit la même règle de fraîcheur que l'architecture, mais avec une nuance : ses

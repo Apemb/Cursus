@@ -11,9 +11,14 @@
 > ce que **l'aval vérifie avant de tirer**. Le relecteur qui bute repose la carte et pose
 > `Rework Needed`.
 >
-> On relit un **comportement**, jamais un commit isolé (`tickets.md` §6.2) — ce qui suit vaut
-> aussi bien pour le cumul d'une branche `pas/` que pour celui d'une branche `story/`, chacun
-> contre son propre point fixe (`D-042`).
+> On relit un **comportement**, jamais un commit isolé (`tickets.md` §6.2) : le cumul de la branche
+> `story/` contre son point fixe (`D-042`).
+>
+> **L'échelle est celle du module** (`cycle-pas.md` §5) : la découpe en classes, le design, la
+> cohérence de l'ensemble — et cette revue seule a le droit de réclamer des **pas supplémentaires**
+> pour corriger. La **fonction** — ce que prouve chaque test, sa formulation, le nommage — a déjà
+> été relue pas par pas, contre `dod/pas/code-review.md`. Ne pas la rejuger ici : le diff est trop
+> large pour qu'on la voie, et elle a eu son relecteur.
 
 ## 1. Le comportement est complet
 
@@ -47,12 +52,13 @@
       `decisions.md` relue juste avant de commiter, pas au moment où la revue a commencé (gotcha
       payé deux fois le même jour, deux sessions parallèles ayant choisi le même numéro)
 
-## 5. La test list et la formulation des comportements sont raffinées
+## 5. Ce que seul l'ensemble révèle
 
-- [ ] Chaque titre de test qui ne suit pas `étant donné/quand/alors`, ou qui décrit mal ce qu'il
-      prouve, porte sa reformulation proposée
-- [ ] Chaque comportement observable dans le diff sans test qui le nomme a été ajouté à la test
-      list du pas concerné — écrit sur la carte, pas seulement mentionné dans le verdict
+- [ ] Chaque comportement observable dans le diff **d'un bloc** sans test qui le nomme a été ajouté
+      à la test list du pas concerné — écrit sur la carte, pas seulement mentionné dans le verdict.
+      C'est le trou qu'aucune revue de pas ne peut voir : il naît **entre** deux pas
+- [ ] Un manque qui exige du code neuf donne lieu à un **pas supplémentaire** sur cet incrément,
+      pas à une remarque qu'on espère voir reprise au passage
 
 ## 6. Le verdict est posé, l'escalade est traçable si elle a eu lieu
 

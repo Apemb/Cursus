@@ -79,6 +79,12 @@ vaut mieux que traverser la colonne pour la forme.
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
 | `Planning` + *aucune* | [`plan-design`](../../.claude/skills/plan-design/SKILL.md) | Le plan de design, avec son **schéma-delta** `mermaid` en tête, la table « Objets impactés », et le **découpage en pas** | `Done` |
+| `Planning` + `Done` | — | — | **`revue-plan` tire** vers `Plan Review` |
+
+⚠️ **Qui tire dans cette colonne** : celui qui prend l'incrément, depuis `Todo`. Et `plan-design`,
+son travail fini, **pose `Done` et s'arrête** — il ne déplace pas la carte en `Plan Review`, pas
+plus qu'il ne la saute en `In Progress` quand le plan n'est pas dû. Poser le signal est tout ce
+qu'on attend de lui (`cycle.md` §4).
 
 **Où vit le plan** : dans le **document attaché** à la carte, écrit en `Planning`. Linear rend le
 `mermaid` nativement, donc le schéma se lit sur la carte — sans fichier intermédiaire à créer puis
@@ -131,7 +137,8 @@ chacun est dans [`cycle-pas.md`](cycle-pas.md).
 
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
-| `In Progress` + *aucune* | [`prendre-un-pas`](../../.claude/skills/prendre-un-pas/SKILL.md), **une fois par pas** | Chaque pas `Done` : commit arrivé en squash dans `story/`, suite verte, **0 warning** | `Done` quand tous les pas sont `Done` |
+| `In Progress` + *aucune* | [`prendre-un-pas`](../../.claude/skills/prendre-un-pas/SKILL.md), **une fois par pas** | Chaque pas mené jusqu'à sa colonne `Done` : sa `Code Review` passée à l'échelle de la fonction, puis son commit arrivé en squash dans `story/`, suite verte, **0 warning** | `Done` quand tous les pas sont en `Done` |
+| `In Progress` + `Done` | — | — | **`revue-code` tire** vers `Code Review`, à l'échelle du module |
 
 **La documentation se met à jour au fil, pas à la fin.** `architecture.md` dès qu'un type
 structurant bouge ou qu'une frontière entre couches change ; `decisions.md` dès qu'une décision
