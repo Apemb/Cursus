@@ -463,3 +463,38 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
     opposables. Deux référentiels se partageaient l'exigence, et celui que l'auteur lit n'en portait
     qu'un dixième. Soldé le jour même par `D-060`, qui écarte l'issue inverse — assouplir la sortie
     du cycle. — *transverse*
+
+## 2026-08-02 — septième tour de `revue-spec`
+
+60. **Compter les remarques d'une carte en expose le contenu, et le protocole demande ce décompte
+    sans dire quand.** La fiche d'un tour doit attester le mouvement de la carte — ici `99 → 111` —
+    et le seul moyen de l'établir est de lister les fils, ce qui rend leur **corps** avec les
+    compteurs. Le relecteur a donc lu la réponse d'un tour antérieur, c'est-à-dire une pièce du fil
+    de production que `revue-spec` §1 lui interdit d'ouvrir. ⚠️ **Sans effet ce tour** : le décompte
+    a été fait **après** la production et la pose des douze constats. C'est le placement qui a sauvé,
+    et rien ne le prescrit — un relecteur qui commencerait par attester l'état de la carte, geste
+    parfaitement naturel, se contaminerait avant d'avoir lu l'artefact. ⚠️ **La tension est entre
+    deux exigences légitimes** : la fiche veut un chiffre vérifiable, la clause de session neuve veut
+    un relecteur ignorant. Le remède tient probablement en une ligne — *n'attester l'état de la carte
+    qu'une fois les constats posés* — mais il appartient au skill, pas au journal. Voisine de la
+    friction 50, qui portait sur les faits d'état **fournis** ; celle-ci porte sur ceux que le
+    relecteur va **chercher**. — *`revue-spec`*
+
+61. **L'outil de pose des remarques exige d'être appelé depuis un projet Cursus, et rien ne le dit.**
+    Le premier lot de trois remarques a échoué **en bloc**, le relecteur travaillant depuis le
+    répertoire de ses fichiers de travail, hors dépôt. Coût réel : un appel. ⚠️ **Ce qui mérite
+    d'être écrit n'est pas la panne mais sa forme** : l'échec est groupé et silencieux sur sa cause
+    de chemin, alors même que le dispositif recommandé depuis le tour 4 — matérialiser l'artefact
+    dans un fichier de travail hors dépôt — **conduit** à s'y placer. Deux consignes de la méthode
+    se contrarient donc sans le savoir, et la seconde se paiera à chaque tour tant qu'elle n'est pas
+    écrite quelque part. — *outillage*
+
+62. **La friction 49 peut rester à zéro occurrence tout en ayant coûté un appel, et la fiche ne sait
+    pas l'exprimer.** Les tours 5 et 6 avaient supprimé les appels d'attente en lançant les axes en
+    synchrone ; ce tour les a lancés en arrière-plan. Les notifications ont bien évité toute attente
+    active — **zéro appel d'attente**, la ligne du tableau est exacte — mais un outil de veille a été
+    chargé « au cas où » et n'a jamais servi. ⚠️ **Le point n'est pas le coût, dérisoire, c'est que la
+    métrique a un angle mort** : elle compte les appels d'attente et ignore les appels de
+    **préparation à l'attente**, si bien que deux dispositifs de coût différent rendent le même
+    chiffre. Une mesure qui ne distingue plus ce qu'elle existe pour distinguer cesse d'arbitrer
+    entre synchrone et arrière-plan. — *méthode de mesure*
