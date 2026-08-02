@@ -4018,3 +4018,44 @@ jamais d'une case à remplir — la règle décrit un atterrissage, elle ne dist
 qui n'en ont pas ; écarté parce qu'elles auraient été écrites pour satisfaire une règle, non pour
 couvrir un risque, et qu'une recette qui grossit ainsi cesse d'être opposable. *Déclarer solidaires
 les deux clauses qui visent le même objet* — sauve le compte, laisse l'échec de l'autre sens intact.
+
+---
+
+## D-066 — Le serveur MCP exige un jeton, parce que le loopback n'est pas une frontière de confiance (2026-08-02)
+
+**Contexte.** La spec d'*Un agent pilote Cursus* pose que le serveur émet un jeton en montant et le
+publie là où le client trouve déjà l'endpoint. La règle était tranchée, recettée — le scénario 6
+exige qu'un appel sans jeton valide soit refusé — et **son motif n'était écrit nulle part**. Une
+relecture l'a relevé : ses voisins du même registre citent tous leur entrée, celle-ci n'en avait pas.
+
+**Ce que le motif JetBrains couvre, et ce qu'il ne couvre pas.** L'hébergement — l'instance qui
+tourne porte le serveur, le stdio n'étant qu'un proxy mince — et la **publication** de l'endpoint,
+généré par l'application parce qu'il dépend de l'instance : ces deux-là sont repris de JetBrains et
+vérifiés. ⚠️ **Le jeton, lui, ne l'est pas.** La documentation de l'IDE décrit une configuration à
+copier, sans qu'un jeton y apparaisse ; rien ne permet de dire qu'il en émet un. Le jeton est **notre
+ajout**, et l'emprunt ne s'étend pas jusque-là.
+
+**Tranché** : le serveur émet un jeton au montage, l'exige à chaque appel, et le publie par le même
+canal que l'endpoint. Aucune saisie, rien au trousseau, et il meurt avec la session.
+
+**Le motif** : une écoute en loopback **n'est pas une frontière de confiance**. Tout ce qui tourne
+sur la machine peut atteindre `127.0.0.1`, y compris une page ouverte dans un navigateur qui forge
+des requêtes vers un port local. Or ce que le serveur expose n'est pas une lecture anodine : c'est la
+parité complète — lancer des runs, écrire des workflows, déclarer des liaisons. Le jeton distingue
+**le client que l'humain a configuré** de *n'importe quoi qui tourne sur la machine*, et il coûte une
+ligne au montage.
+
+⚠️ **Ce qu'il ne protège pas, et il ne faut pas le surestimer.** Un process qui s'exécute avec les
+droits de l'utilisateur peut lire le canal de publication, donc le jeton. La frontière tenue est
+celle du **process qui ne peut pas lire ce fichier** — au premier chef le code exécuté dans un
+navigateur, qui forge des requêtes réseau mais ne lit pas le disque local.
+
+**Écarté.** *Aucun jeton, le loopback suffit* — c'est la position que le motif ci-dessus réfute : le
+loopback borne l'origine réseau, pas l'appelant. *Un jeton saisi par l'humain et rangé au trousseau*
+— `ISecretStore` existe pour les secrets qu'un tiers émet (un tracker) et que l'humain doit
+transcrire ; celui-ci est produit par la machine, personne n'a à le connaître, et le faire saisir
+ajouterait un geste sans rien protéger de plus. *Un jeton persistant entre sessions* — il faudrait
+alors le révoquer et le renouveler ; mourir avec la session rend ces deux mécanismes inutiles.
+
+**Question ouverte** : la forme de la publication — un fichier de configuration, un réglage affiché à
+copier, ou les deux. Elle est commune à l'endpoint et au jeton, et la spec la porte déjà comme telle.
