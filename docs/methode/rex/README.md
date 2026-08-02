@@ -52,3 +52,20 @@ un trou dans une fiche casse la comparaison qui est sa seule raison d'être.
 
 `AAAA-MM-JJ-<ce-qui-a-tourné>.md` — la date d'abord, pour que l'ordre du dossier soit l'ordre des
 tours.
+
+## Ce qui vit ici sans être une fiche
+
+Un fichier nommé `AAAA-MM-JJ-analyse-serie-<skill>.md` n'est **pas** une fiche : il regarde une
+**série entière** par-dessus les fiches, et **ne porte pas les rubriques**. Ne pas y chercher les
+sept, ne pas le compter dans une série, ne pas le comparer à un tour.
+
+Le motif de l'exception : une fiche mesure un tour **depuis l'intérieur** de ce tour, et il existe une
+question qu'aucune ne peut poser de là — *est-ce que cette série trouve encore quelque chose qui
+vaille son coût ?* C'est la question du dossier (*est-ce que ça progresse ?*) posée à l'échelle où
+« progresser » cesse de vouloir dire « mieux qu'au tour d'avant ». Elle a besoin des fiches comme
+matériau ; elle ne peut pas en être une.
+
+Un tel document **conclut sans recommander** — ce qu'on décide en le lisant va dans `decisions.md` —
+et **porte en tête ce qu'il ne peut pas établir**. Une analyse de série repose sur un contrefactuel
+reconstruit, jamais observé : sans cet avertissement en tête, elle se lira dans six mois comme une
+mesure.
