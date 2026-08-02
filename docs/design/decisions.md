@@ -4059,3 +4059,55 @@ alors le révoquer et le renouveler ; mourir avec la session rend ces deux méca
 
 **Question ouverte** : la forme de la publication — un fichier de configuration, un réglage affiché à
 copier, ou les deux. Elle est commune à l'endpoint et au jeton, et la spec la porte déjà comme telle.
+
+## D-067 — Une remarque de revue vraie n'est pas automatiquement une remarque à traiter (2026-08-02)
+
+**Contexte.** La spec d'*Un agent pilote Cursus* a été relue **huit fois**, produisant 11, 12, 16,
+16, 12, 19, 12 puis 13 remarques. La série ne converge pas, alors que le cycle de revue exige **zéro
+remarque** pour sortir. Trois causes étaient plausibles — une feature trop grosse, un processus de
+spec sur-exhaustif, un critère de sortie qui ne termine pas.
+
+**La mesure qui tranche.** Les 124 remarques posées ont été classées une à une par scope, portée et
+survie au contact du code (`docs/methode/rex/2026-08-02-analyse-serie-revue-spec.md`). Sur les 111
+remarques de spec :
+
+- **une seule** relève de l'architecture, treize de la faisabilité, et ces deux scopes s'épuisent
+  après le troisième tour — 23 % des remarques des tours 1 à 3, 7 % des tours 4 à 8 ;
+- **68 sont invisibles au code** : rien dans une implémentation ne les aurait signalées. Vingt
+  seulement auraient coûté cher découvertes tard ;
+- **69 % visent du texte écrit par une reprise antérieure**, et 92 % sur les deux derniers tours. Le
+  nombre de remarques nées de la reprise vaut **6 aux tours 6, 7 et 8**, sur des récoltes de 19, 12
+  et 13.
+
+**Le fait qui explique le mécanisme, et il vise le binôme.** **98 remarques retenues sur 98, aucun
+refus motivé jamais enregistré.** Chaque objection était traitée comme un fait ; chaque reprise
+écrivait du texte neuf ; le tour suivant y trouvait sa récolte. La boucle ne divergeait pas parce que
+l'artefact était mauvais — **elle s'alimentait elle-même**.
+
+**Tranché** : une remarque de revue est retenue si elle change **ce qu'on va construire** ou **ce que
+le découpage peut décider**. Une remarque vraie qui ne change que la façon dont le document se lit
+est **refusée, avec son motif écrit en fil**. Le refus devient une issue de plein droit, à côté de la
+reprise.
+
+**Ce que cela ne dit pas.** Ce n'est pas une licence à ignorer les remarques gênantes : le refus se
+motive, en fil, sur la carte, et il est aussi opposable que la reprise. Une remarque refusée reste
+vraie — c'est sa conséquence qui est jugée nulle, pas son constat.
+
+**Deux corollaires.**
+
+- **Le critère de sortie du cycle change de nature.** « Zéro remarque » redevient atteignable, parce
+  que solder inclut désormais refuser. Sans cela, le critère exigeait qu'un document cesse d'appeler
+  des remarques, ce que rien ne garantit d'un texte long relu par un agent frais.
+- **La découpabilité ne se règle pas par ce chemin.** C'est le seul scope qui ne s'épuise pas — 36
+  remarques en huit tours, dont les 5 du tour 8, toutes structurantes. Elle ne se prouve pas en
+  relisant : ses remarques deviennent des **entrées du découpage**, tranchées en coupant puis en
+  codant.
+
+**Écarté** : *continuer jusqu'à zéro* — la mesure montre que le point fixe n'existe pas tant que la
+reprise engendre sa propre récolte. *Réduire la taille de la feature* — une spec deux fois plus
+petite bouclerait pareil, avec trois remarques par tour au lieu de six ; le mécanisme est
+indifférent à la taille. *Supprimer la revue de spec* — ses deux premiers tours ont rendu
+l'architecture et la faisabilité, qui sont exactement ce qu'on ne veut pas découvrir dans le code.
+
+**Question ouverte** : où s'arrête la série. Rien ici ne fixe un nombre de tours ; le critère est
+qualitatif — quand un tour ne rend plus que des remarques invisibles au code, il est le dernier.
