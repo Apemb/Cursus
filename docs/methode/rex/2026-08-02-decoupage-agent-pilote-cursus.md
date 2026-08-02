@@ -235,6 +235,28 @@ puis réinscrire*, sans ligne neuve à l'inventaire — plus l'amendement que la
 corrigés — `D-039` demande un second artefact de chaque espèce avant de légiférer, et ce découpage
 est le premier.
 
+**Une règle a pourtant été tranchée, et elle est déposée ici faute d'un meilleur endroit.** Interrogé
+sur le régime de relecture au vu des trois essayés en deux jours, l'utilisateur a tranché deux choses
+distinctes :
+
+- **le régime d'ensemble n'est pas inscrit** — ni ADR, ni document de cycle : on attend un **second
+  découpage** avant de légiférer. La proposition qui n'a pas été retenue *pour l'instant* était
+  d'étendre à tout le cycle le critère que `CLAUDE.md` porte déjà pour l'entretien de la
+  documentation — *une relecture adversariale ne paie que s'il n'existe pas de source de vérité à
+  laquelle se comparer* —, avec trois régimes (la passe qui corrige · la revue qui contredit · l'axe
+  d'ensemble) et un plafond de trois tours pleins sur ce qui n'a pas de source de vérité ;
+- **l'axe d'ensemble en lecture seule devient obligatoire sur tout ensemble de pièces** — un
+  découpage, un lot de cartes, un backlog réorganisé —, et **pas seulement sur un découpage. C'est la
+  seule règle tranchée par ce tour.** Le motif est le §4 : le défaut le plus grave vivait dans
+  l'**intervalle** entre deux cartes, donc aucun relecteur d'une pièce ne pouvait le voir, quel que
+  soit son soin. La lecture seule n'est pas une précaution de confort : elle est ce qui rend cet axe
+  **combinable** avec des relecteurs qui, eux, corrigent en même temps.
+
+⚠️ **Cette règle n'a donc aujourd'hui aucun porteur** — aucun skill ne la prescrit, aucun document de
+cycle ne la range. Elle vaut jusqu'au second découpage, où elle sera légiférée avec le reste ou
+tombera. La déposer ici est le minimum : la friction **66** de ce même dossier documente ce qu'il en
+coûte de célébrer un dispositif sans l'écrire quelque part.
+
 **Ce qui n'a pas changé et qu'on aurait pu croire** : le gabarit de fiche de rex. Le §5 de ce dossier
 dit déjà « renvoi, pas de recopie » ; ce qui a manqué au tour 8 n'était pas une rubrique, c'était un
 **dépôt** pour l'artefact — un autre objet, qui ne relève pas de ce gabarit.
