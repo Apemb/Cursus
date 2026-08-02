@@ -520,3 +520,41 @@ sa seule description. C'est la première exécution du dispositif de `D-047`.
 façon, depuis le même répertoire de travail. La contrainte vaut donc pour lire comme pour écrire, et
 elle se paiera à chaque tour tant que le dispositif recommandera de matérialiser l'artefact hors
 dépôt.
+
+64. **Interdire d'ouvrir la mémoire ne protège pas d'une présentation d'office.** Le mandat du
+    huitième tour de `revue-spec` interdisait explicitement d'ouvrir tout fichier de mémoire de
+    session, motif écrit : ils portaient les attentes du binôme sur ce tour-là. Le relecteur a tenu la
+    consigne — **aucun fichier ouvert**, rien transmis aux deux axes — et un **extrait lui a
+    néanmoins été présenté d'office** dans son contexte de session. ⚠️ **Ce qui est neuf, ce n'est pas
+    l'occurrence, c'est ce qu'elle apprend** : l'injection n'est pas un geste du relecteur, donc
+    aucune clause adressée au relecteur ne peut l'empêcher — et la clause de session neuve n'a
+    **aucune doctrine** pour un contexte qu'on ne choisit pas. Sixième occurrence de la friction 43,
+    et la première où la consigne était explicite. Le tour y survit par chance et non par
+    construction : l'extrait portait bien les attentes, mais **pas** le nombre de cases, qui était la
+    mesure du tour. — *revue de spec, huitième tour*
+
+65. **« Zéro constat écarté » ne distingue pas un tour vérifié d'un tour qui ne l'est pas.** Les
+    sixième et septième tours confrontaient au dépôt une demi-douzaine d'assertions de leurs axes
+    avant de poser, et la ligne du tableau mesurait alors un **taux d'erreur**. Le huitième n'a
+    confronté aucune assertion et rend la **même valeur**. ⚠️ **Le reproche ne vise pas la
+    vérification manquante** — le protocole ne la prescrit nulle part, les deux tours l'avaient
+    ajoutée d'eux-mêmes : il vise le fait que **la ligne ne dit pas si elle a eu lieu**. Deux
+    dispositifs de fiabilité très différente rendent un chiffre identique, et rien dans le tableau ne
+    permet de les départager. Même famille que la friction 62 — une métrique dont la valeur ne porte
+    pas son mode d'obtention. Remède provisoire : l'écrire en prose à chaque tour, jusqu'à ce que la
+    ligne soit refaite. — *revue de spec, huitième tour*
+
+**Occurrence dérivée de la friction 44, et la première qui *infirme* un critère.** Le septième tour
+avait dégagé un départage — citation identique → une remarque, citations distinctes → deux. Le
+huitième a rencontré deux axes citant **le même passage au caractère près** et a posé **deux**
+remarques, parce que les deux constats opposaient deux référentiels différents. Le critère est donc
+faux tel qu'écrit : ce qui départage n'est pas la citation, c'est **le référentiel opposé**.
+
+**Le listage des remarques d'une carte contredit ses propres compteurs.** L'outil rend `total: 111` et
+`open: 0` en tête, puis un tableau de 222 entrées dont 111 portent `resolved: false` — les réponses en
+fil, qui n'héritent pas de la résolution de leur racine. Un décompte naïf contredit frontalement le
+fait d'état fourni par l'appelant, et il a fallu deux appels pour établir que les compteurs avaient
+raison. ⚠️ **Le coût réel est ailleurs** : le relecteur a failli consigner une divergence sur l'état
+de la carte, c'est-à-dire ouvrir un litige sur le seul fait qu'il ne peut pas établir lui-même.
+Rattaché ici plutôt que numéroté à part : c'est un défaut d'ergonomie de la CLI, de la même famille
+que la friction 61.
