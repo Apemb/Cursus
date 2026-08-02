@@ -4250,3 +4250,79 @@ Le contenu des deux DoD de `Code Review` au-delà de leur partage d'échelle ; l
 l'incrément ; et l'outillage du geste terminal — `cursus-cli` sait poser et solder une remarque,
 jamais poser `Done`, si bien que le seul chemin praticable reste l'appel générique qui déplace
 colonne et étiquette d'un même geste, sans garde-fou.
+
+---
+
+## D-070 — Le découpage en pas quitte le plan de design et s'exécute à l'ouverture de l'incrément (2026-08-02)
+
+**Contexte.** Le plan de design de `CUR-47`, premier incrément de *Un agent pilote Cursus*, énumérait
+six pas — titre, « où il s'arrête », piège local — avant qu'une ligne de code n'existe. En le
+relisant, l'utilisateur a posé la question à l'envers de celle qu'on attendait : *pourquoi un
+découpage en pas dans cet incrément, alors que le découpage se fait au passage en `In Progress` ?*
+La règle écrite lui donnait tort — `cycle-pas.md` §2 disait « les pas naissent en `Planning` » — et
+c'est la règle qui a cédé.
+
+### 1. Ce que l'incohérence révélait
+
+Le dépôt tenait déjà, à l'échelle du dessus, exactement la doctrine inverse : une spec ne porte
+qu'une **intention** de découpage, et les cartes d'incrément naissent à l'ouverture de la feature
+(`tickets.md` §2). Le motif y était écrit noir sur blanc — *ce qu'on apprend en faisant le premier
+incrément change ce qu'on sait au quatrième* — et le même document invoquait déjà ce motif, mot pour
+mot, pour interdire d'écrire les test lists d'avance : *ce qu'on apprend au pas 1 change ce qu'on
+sait au pas 4*.
+
+**Le même argument était donc admis au-dessus et en dessous du plan de design, et refusé à
+l'intérieur.** Rien ne le justifiait : `tickets.md` §1.2 se contentait d'affirmer qu'« ordonner des
+pas n'est pas les concevoir », ce qui est vrai et ne dit rien du **moment** où l'on ordonne.
+
+### 2. La décision
+
+**Le découpage effectif en pas a lieu au passage de l'incrément en `In Progress`**, porté par un
+skill dédié, `decoupage-pas`, frère de `decoupage` une échelle plus bas. C'est lui qui **tire** la
+carte depuis `Plan Review` (ou depuis `Planning` quand le plan n'était pas dû), et le découpage est
+le **premier travail** de cette colonne, jamais ce qui la clôt.
+
+**Le plan de design ne garde que la maille visée** — l'ordre de grandeur de pas, les frontières qui
+tombent des objets eux-mêmes, l'ordre là où il est contraint. C'est une intention au même titre que
+celle qu'une spec porte sur ses incréments, et elle n'engage pas davantage : le découpage a le droit
+de s'en écarter au contact, à condition de le dire (`D-049`).
+
+⚠️ **Les pièges connus restent dans le plan, accrochés à leur objet.** Une connexion non
+thread-safe, un arrêt qu'il faut attendre, un chemin qu'il ne faut pas recomposer à la main : ce
+sont des propriétés des **objets**, pas des pas qui les touchent. Les renvoyer à des pas qui
+n'existent pas encore les perdrait — et *décorréler* ne doit jamais vouloir dire *jeter*. C'est la
+seule chose que cette décision aurait pu détruire, et la clause qui l'en empêche.
+
+### 3. La forme que le flux prend
+
+Conception et ordonnancement **alternent**, et l'alternance est désormais régulière : architecture →
+découpage en incréments → design → découpage en pas → implémentation. Chaque conception s'écrit **à
+la prise** de ce qu'elle conçoit ; chaque découpage **à l'ouverture** de ce qu'il coupe. Le flux
+passe de onze à douze étapes, `decoupage-pas` s'intercalant en 7.
+
+**Ce que le découpage ne tranche jamais** : si couper réclame une décision de structure que le plan
+n'a pas prise, la carte **repose en `Planning`** avec le manque nommé. C'est le critère opposable de
+`dod/story/plan-review.md`, constaté un cran plus tard — celui qui ordonne ne tranche pas ce que
+celui qui conçoit a laissé ouvert (`D-053`).
+
+### 4. Ce que « sans revue » veut dire ici, et la distinction qui le porte
+
+Le nouveau skill n'a **pas** de colonne de revue, et l'utilisateur a précisé la frontière qui le
+justifie : **une revue est une étape à part, portée par un statut** — avec son aller-retour, ses
+étiquettes et son escalade. Une relecture faite par un agent ou un sous-agent à l'intérieur d'un
+skill de production n'en est pas une : elle ne déplace rien, ne pose rien, et appartient au geste
+qu'elle sert. ⚠️ **La distinction vaut au-delà de ce cas** — elle dit quand un tour de relecture
+mérite un statut et quand il n'en mérite pas.
+
+C'est à ce titre que `decoupage-pas` porte l'**axe d'ensemble en lecture seule**, obligatoire sur
+tout ensemble de pièces : un défaut grave vit dans l'**intervalle** entre deux cartes — un geste
+qu'aucun pas ne porte, un geste que deux pas croient l'autre porter —, et nul relecteur d'une pièce
+isolée ne peut l'y voir. Cette règle était tranchée depuis le découpage de `CUR-47`→`CUR-64` et
+**n'avait aucun porteur** ; elle en trouve un ici, sans devenir une étape.
+
+### 5. Ce qui n'est pas décidé ici
+
+La **maille** d'un pas reste inconnue, et `D-070` ne la découvre pas : elle réduit ce que l'ignorance
+coûte — on ne fige plus qu'un ordre de grandeur — mais seule l'exécution réelle de pas par un agent
+la mesurera. Reste ouvert également le sort des cartes déjà décrites dans le plan de `CUR-47`, dont
+la reprise est le premier usage de la règle neuve.

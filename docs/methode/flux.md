@@ -92,17 +92,22 @@ PAS                                              Backlog ──► Todo ──�
 | 4 | **Découpage** | Feature → incréments | Agent | Production | `decoupage` |
 | 5 | **Planning** | Incrément | Agent | Production | `plan-design` |
 | 6 | **Plan Review** | Incrément | Agent ⇄ agent | Boucle + escalade | `revue-plan` |
-| 7 | **In Progress** | Pas | Agent | Production | `prendre-un-pas` |
-| 8 | **Code Review** — la **fonction** | Pas | Agent ⇄ agent | Boucle + escalade | `revue-code` |
-| 9 | **Code Review** — le **module** | Incrément | Agent ⇄ agent | Boucle + escalade | `revue-code` |
-| 10 | **QA Review** | Incrément | Humain | Œil | — *(s'appuie sur la skill `run`)* |
-| 11 | **Validation** | Feature | Humain | Œil | — |
+| 7 | **Découpage en pas** | Incrément → pas | Agent | Production | `decoupage-pas` |
+| 8 | **In Progress** | Pas | Agent | Production | `prendre-un-pas` |
+| 9 | **Code Review** — la **fonction** | Pas | Agent ⇄ agent | Boucle + escalade | `revue-code` |
+| 10 | **Code Review** — le **module** | Incrément | Agent ⇄ agent | Boucle + escalade | `revue-code` |
+| 11 | **QA Review** | Incrément | Humain | Œil | — *(s'appuie sur la skill `run`)* |
+| 12 | **Validation** | Feature | Humain | Œil | — |
 
-Les étapes **10** et **11** n'ont pas de skill **par décision, pas par retard** : ce sont les
+Les étapes **11** et **12** n'ont pas de skill **par décision, pas par retard** : ce sont les
 deux jugements sans référentiel opposable (`tickets.md` §6.3). Un agent qui les porterait
 rendrait un verdict qu'il n'a pas les moyens de fonder.
 
-**Les étapes 8 et 9 sont la même colonne à deux échelles**, et le même skill les sert contre deux
+**Les étapes 4 et 7 sont le même geste à deux échelles** — couper, et déposer des frontières avant
+qu'elles ne disparaissent avec la session qui les a vues. L'une ouvre le `In Progress` d'une
+feature, l'autre celui d'un incrément ; ni l'une ni l'autre ne conçoit (`D-070`).
+
+**Les étapes 9 et 10 sont la même colonne à deux échelles**, et le même skill les sert contre deux
 référentiels distincts : au **pas**, ce que prouve un test, sa formulation, le nommage
 (`dod/pas/code-review.md`) ; à l'**incrément**, la découpe en classes, le design, la cohérence de
 l'ensemble (`dod/story/code-review.md`) — et l'incrément seul a le droit de réclamer des **pas
@@ -121,13 +126,14 @@ pose son signal et s'arrête, et c'est l'aval nommé ci-dessous qui tire — en 
 | 2 | Un besoin | Une **spec** : options arbitrées, capacité énoncée, **recette définie** | pose `Review Requested` ; le relecteur tire à sa prise |
 | 3 | Une spec | Un verdict, ou des divergences à reprendre en 2 | pose `Rework Needed`, ou `Human Review Requested` si aucune remarque — **jamais un déplacement** ; après accord, **l'humain tire** vers `In Progress` |
 | 4 | Une spec validée | N **incréments** avec leurs **frontières** et leur ordre | ne pose **rien** sur la feature : elle reste en `In Progress` tant que ses incréments courent ; les incréments naissent en `Todo` ou `Backlog` |
-| 5 | Un incrément éligible | Un **plan de design** avec son schéma-delta, et le **découpage en pas** | pose `Done` ; **`revue-plan` tire** vers `Plan Review` à sa prise |
-| 6 | Un plan | Un accord, ou un litige | pose `Done`, ou **assigne l'humain** ; **qui prend le premier pas tire** vers `In Progress` |
-| 7 | Un pas | Une **test list**, des cycles TDD, un commit | pose `Done` ; **`revue-code` tire** vers `Code Review` à sa prise |
-| 8 | Le diff d'un pas | Un accord sur la **fonction**, ou un litige | pose `Done`, ou **assigne** ; **la fusion** de `pas/` dans `story/` bascule le pas en `Done` |
-| 9 | Un comportement complet | Un accord sur le **module**, ou un litige | pose `Done`, ou **assigne** ; **qui recette tire** vers `QA Review` — ou vers `Done` si elle se saute |
-| 10 | L'app lancée | Le parcours refait à la main | pose `Done` ; colonne **terminale** |
-| 11 | La feature entière | Recettée **contre sa spec** | pose `Done` ; `Completed` est **terminal** |
+| 5 | Un incrément éligible | Un **plan de design** avec son schéma-delta, et la **maille visée** | pose `Done` ; **`revue-plan` tire** vers `Plan Review` à sa prise |
+| 6 | Un plan | Un accord, ou un litige | pose `Done`, ou **assigne l'humain** ; **`decoupage-pas` tire** vers `In Progress` |
+| 7 | Un incrément conçu | N **pas** avec leurs frontières et leurs arêtes de blocage | ne pose **rien** sur l'incrément : il reste en `In Progress` tant que ses pas courent ; les pas naissent en `Todo` ou `Backlog` |
+| 8 | Un pas | Une **test list**, des cycles TDD, un commit | pose `Done` ; **`revue-code` tire** vers `Code Review` à sa prise |
+| 9 | Le diff d'un pas | Un accord sur la **fonction**, ou un litige | pose `Done`, ou **assigne** ; **la fusion** de `pas/` dans `story/` bascule le pas en `Done` |
+| 10 | Un comportement complet | Un accord sur le **module**, ou un litige | pose `Done`, ou **assigne** ; **qui recette tire** vers `QA Review` — ou vers `Done` si elle se saute |
+| 11 | L'app lancée | Le parcours refait à la main | pose `Done` ; colonne **terminale** |
+| 12 | La feature entière | Recettée **contre sa spec** | pose `Done` ; `Completed` est **terminal** |
 
 **Quand une feature devient `Done`** : quand tous ses incréments sont faits, validés et **fusionnés
 dans sa branche `feature/`**, et que la feature entière devient recettable d'un bloc. Pas à la fin
@@ -139,13 +145,14 @@ sans code serait un mensonge. Quand la feature n'a pas de branche propre (elle n
 incrément, `Completed` pour une feature. Aucun travail ne commence après elles, donc rien ne peut
 les atteindre en tirant — celui qui pose le dernier `Done` y déplace la carte (`cycle.md` §4).
 
-**Le plan de design s'écrit à l'étape 5, pas à l'étape 4.** Le découpage capture ce que lui seul
-peut savoir — les frontières entre incréments, vues d'en haut, et qui disparaîtraient avec la
-session qui les a produites. La conception de chacun attend sa prise : ce qu'on apprend en
-faisant le premier change ce qu'on sait au quatrième. Même raison que pour la test list, qui
-attend elle aussi la prise de son pas.
+**Conception et ordonnancement alternent, et ne se mélangent jamais** (`D-070`). Les étapes 4 et 7
+ordonnancent — elles coupent et déposent des frontières, sans rien concevoir. Les étapes 2, 5 et 8
+conçoivent, à trois échelles de plus en plus fines. Chaque conception s'écrit **à la prise** de ce
+qu'elle conçoit, et chaque découpage **à l'ouverture** de ce qu'il coupe : ce qu'on apprend en
+faisant le premier incrément change ce qu'on sait au quatrième, et ce qu'on apprend au pas 1 change
+ce qu'on sait au pas 4.
 
-**L'escalade** (étapes 6, 8 et 9) : après deux ou trois tours sans convergence, **la carte
+**L'escalade** (étapes 6, 9 et 10) : après deux ou trois tours sans convergence, **la carte
 s'assigne à l'humain**. Non assignée, elle boucle. Voir `tickets.md` §6.4 pour les trois
 exigences qui rendent une escalade utilisable.
 
@@ -179,10 +186,11 @@ personnel écrase silencieusement son homonyme du dépôt.
 | `spec` | 2 | Arbitrer les options avec faisabilité et coût, **écrire les écarts**, énoncer la capacité, définir la recette | [**draft**](../../.claude/skills/spec/SKILL.md) |
 | `revue-spec` | 3 | Valider une spec qu'on n'a pas co-écrite. Lister les divergences, **ne pas réécrire** | [**draft**](../../.claude/skills/revue-spec/SKILL.md) |
 | `decoupage` | 4 | Produire les incréments et leurs **frontières** ; déposer dans chacun le hors-périmètre **en nommant les frères** | [**draft**](../../.claude/skills/decoupage/SKILL.md) |
-| `plan-design` | 5 | Le plan gaté de `CLAUDE.md` : schéma-delta, blocs touchés, découpage en pas | [**draft**](../../.claude/skills/plan-design/SKILL.md) |
+| `plan-design` | 5 | Le plan gaté de `CLAUDE.md` : schéma-delta, blocs touchés, **maille visée** | [**draft**](../../.claude/skills/plan-design/SKILL.md) |
 | `revue-plan` | 6 | La boucle : verdict structuré, compteur de tours, escalade par assignation | [**draft**](../../.claude/skills/revue-plan/SKILL.md) |
-| `prendre-un-pas` | 7 | Test list, cycles TDD (rouge observé *pour la bonne raison*), commit argumenté | [**draft**](../../.claude/skills/prendre-un-pas/SKILL.md) |
-| `revue-code` | 8 | Relire un **comportement**, pas un commit ; raffiner la test list et la formulation des comportements | [**draft**](../../.claude/skills/revue-code/SKILL.md) |
+| `decoupage-pas` | 7 | Produire les pas et leurs arêtes ; relire l'**ensemble** avant de créer la moindre carte ; reposer plutôt que trancher ce que le plan a laissé ouvert | [**draft**](../../.claude/skills/decoupage-pas/SKILL.md) |
+| `prendre-un-pas` | 8 | Test list, cycles TDD (rouge observé *pour la bonne raison*), commit argumenté | [**draft**](../../.claude/skills/prendre-un-pas/SKILL.md) |
+| `revue-code` | 9 | Relire un **comportement**, pas un commit ; raffiner la test list et la formulation des comportements | [**draft**](../../.claude/skills/revue-code/SKILL.md) |
 
 Une ligne sans lien est une étape encore manuelle — c'est l'unique état d'avancement que ce
 document a le droit de porter. **`draft` n'est pas `écrit`** : le fichier existe et se charge, mais
@@ -200,9 +208,9 @@ quand le référentiel manque. Les autres les invoquent au lieu de les recopier.
 **Ordre** : `prendre-un-pas` d'abord. C'est le plus petit périmètre, l'erreur y coûte un commit,
 il ne dépend d'aucun autre — on peut lui tendre un pas écrit à la main — et il rend tout de
 suite le signal qui manque : *une carte de pas contient-elle assez pour qu'un agent travaille
-sans avoir eu la conversation ?* Le découpage est plus tentant et c'est le mauvais premier pas :
+sans avoir eu la conversation ?* `decoupage-pas` est plus tentant et c'est le mauvais premier pas :
 tant qu'aucun pas n'a été exécuté par un agent, on ne sait pas quelle **maille** de pas est
-bonne — or c'est précisément ce que le découpage décide.
+bonne — or c'est précisément ce qu'il décide.
 
 ### Comment on les écrit — la ligne de base d'abord (`D-039`)
 
@@ -229,7 +237,7 @@ contraignent l'architecture avant la rédaction — vit dans `docs/reference/ski
 
 ## 5. Registre
 
-**Construit** : rien d'**éprouvé**. Les dix skills existent en **draft** (les huit étapes, plus
+**Construit** : rien d'**éprouvé**. Les onze skills existent en **draft** (les neuf étapes, plus
 les primitifs `interrogatoire` et `revue`) et les douze DoD sont écrites — mais aucun n'a servi sur un
 travail réel, donc tout cela est du *tranché non validé*, pas du construit. Aucune étape n'est
 automatisée.

@@ -22,8 +22,8 @@ retire l'étiquette `Done`** — un seul geste, à la prise. La colonne dit *« 
 elle ne doit basculer qu'au moment où tu commences réellement.
 
 ⚠️ **C'est le seul déplacement de carte de ce skill.** Il a lieu à la **prise**, jamais à la sortie :
-une fois le verdict rendu, la carte reste en `Plan Review` et c'est qui prend le premier pas qui la
-tirera vers `In Progress` (`cycle-increment.md` §5).
+une fois le verdict rendu, la carte reste en `Plan Review` portant `Done`, et c'est `decoupage-pas`
+qui la tirera vers `In Progress` pour y découper les pas (`cycle-increment.md` §5).
 
 **Fait quand** : la carte est en `Plan Review`, sans étiquette.
 
@@ -34,9 +34,11 @@ Deux ou trois, pas plus — au-delà, aucun ne reçoit assez d'attention :
 - **Le plan contre `architecture.md`** — l'état présent, les invariants, les trois registres
   (construit / tranché non construit / question ouverte). Un plan qui rouvre une question déjà
   tranchée, ou ignore un invariant listé, est une divergence ici.
-- **Le découpage en pas contre la maille** — chaque pas tient-il dans une fenêtre de contexte
-  fraîche (`plan-design` §4), répond-il à « pourquoi celui-là, à cette place » sans renvoyer à une
-  conversation absente ?
+- **La maille visée contre ce que le plan structure** — l'ordre de grandeur annoncé est-il tenable
+  avec des pas qui tiennent chacun dans une fenêtre de contexte fraîche (`plan-design` §4) ? Les
+  frontières annoncées tombent-elles bien des objets, ou sont-ce des ordres d'exécution déguisés ?
+  ⚠️ Le plan ne porte **pas** les pas eux-mêmes — ils naissent à l'entrée en `In Progress`
+  (`D-070`) ; un plan qui les énumère est en trop, pas en avance.
 - **Le schéma-delta contre `schemas.md` §6** — couleurs correctes, anatomie du nœud respectée, la
   ligne `+` présente sur chaque bloc modifié.
 

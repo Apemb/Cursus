@@ -1,6 +1,6 @@
 ---
 name: plan-design
-description: Produit le plan de design d'un incrément — schéma-delta, table des objets impactés, découpage en pas — et gate la première ligne de code derrière sa validation. Use when un incrément entre en Planning, quand un changement va créer ou supprimer une classe, traverser plusieurs modules, ou impliquer une découpe non évidente, ou quand on demande explicitement de planifier ou d'écrire le plan de design d'un incrément.
+description: Produit le plan de design d'un incrément — schéma-delta, table des objets impactés, maille visée — et gate la première ligne de code derrière sa validation. Use when un incrément entre en Planning, quand un changement va créer ou supprimer une classe, traverser plusieurs modules, ou impliquer une découpe non évidente, ou quand on demande explicitement de planifier ou d'écrire le plan de design d'un incrément. Ne pas l'utiliser pour créer les sous-tâches de pas (c'est `decoupage-pas`, à l'entrée en In Progress).
 ---
 
 > **Draft non éprouvé.** Écrit d'après l'état de l'art, pas récolté sur une exécution réelle —
@@ -20,8 +20,9 @@ dans les deux sens :
 - **au-dessus**, le **plan d'architecture** de la spec a tenu le système et le module. Il est
   d'ensemble et **indicatif** : tu as le droit de t'en écarter au contact du réel, à condition de le
   dire — ne le rejoue pas, ne le contredis pas en silence ;
-- **en dessous**, la **test list** de chaque pas tiendra le code, fichier par fichier. Elle s'écrit
-  à la prise du pas, jamais ici.
+- **en dessous**, le **découpage en pas** tracera le chemin, et la **test list** de chaque pas
+  tiendra le code, fichier par fichier. Le premier a lieu à l'entrée en `In Progress`
+  (`decoupage-pas`), la seconde à la prise du pas — jamais ici, ni l'un ni l'autre.
 
 ## 1. Décider si l'étape a lieu
 
@@ -30,8 +31,8 @@ critères ci-dessus.
 
 - Aucun ne s'applique → écris-le en une phrase dans l'incrément (« pas de plan, changement local à
   une classe ») pour que le lecteur suivant sache que ce n'est pas un oubli, **pose `Done` et
-  arrête-toi**. Ne saute pas la carte en `In Progress` toi-même : c'est qui prend le premier pas
-  qui l'y tire (`cycle-increment.md` §5).
+  arrête-toi**. Ne saute pas la carte en `In Progress` toi-même : c'est `decoupage-pas` qui l'y
+  tire, pour y découper les pas (`cycle-increment.md` §4).
 - Au moins un s'applique → continue.
 
 **Fait quand** : la décision est écrite quelque part, jamais silencieuse.
@@ -59,37 +60,44 @@ bloc touché, s'il déplace la définition ou l'exécution.
 (ajouté/modifié/supprimé), chaque bloc modifié porte sa ligne `+`, aucun bloc n'est ambigu sur son
 registre.
 
-## 4. Découper en pas
+## 4. Dire la maille visée — sans créer les pas
 
-Le pas est **entièrement technique** (`tickets.md` §4) : il n'a pas son propre plan, celui-ci a
-déjà posé ses frontières. Pour chaque pas, écris seulement ce que le découpage sait et que la
-prise du pas ne pourra plus retrouver :
+⚠️ **Tu ne découpes pas en pas ici, et tu ne crées aucune sous-tâche.** Le découpage effectif a lieu
+à l'entrée en `In Progress`, porté par `decoupage-pas`, pour la raison qui interdit déjà d'écrire les
+test lists d'avance : ce qu'on apprend au pas 1 change ce qu'on sait au pas 4 (`D-070`).
 
-- un titre qui tient en une action ;
-- **pourquoi celui-là, à cette place, et où il s'arrête** — la question qui ne se rattrape pas
-  (`tickets.md` §4) ; nommer le pas frère plutôt que justifier dans l'absolu ;
-- le piège local, s'il y en a un — sinon rien.
+Ce que ce plan doit dire, c'est ce que **seule la conception sait** et que le découpage ne
+retrouverait pas :
 
-N'écris ni test list (elle s'écrit à la prise du pas) ni comment coder chaque pas.
+- **la maille visée** — combien de pas, en ordre de grandeur, et pourquoi cette taille-là. L'unité
+  opposable : un pas tient dans **une fenêtre de contexte fraîche**. Vérifie aussi le test de
+  `tickets.md` §1 à l'envers — si un pas était recettable seul par quelqu'un qui ne lit pas le code,
+  ce n'est pas un pas, c'est un incrément mal découpé ;
+- **les frontières que la conception rend évidentes** — celles qui tombent des objets eux-mêmes.
+  *« La descente du socle ne se mêle à rien d'autre »* est une frontière de conception ; *« puis on
+  câble l'interrupteur »* est un ordre d'exécution, et il ne t'appartient pas ;
+- **l'ordre contraint, là où il l'est** — quand un objet doit exister avant qu'un autre puisse être
+  monté. Ailleurs, dis que l'ordre est indifférent plutôt que d'en inventer un.
 
-**La maille** : un pas tient dans **une fenêtre de contexte fraîche** — s'il faut deviner ce
-qu'un pas précédent a fait pour continuer, il est trop gros. Vérifie aussi le test de
-`tickets.md` §1 à l'envers : si un pas était recettable seul par quelqu'un qui ne lit pas le
-code, ce n'est pas un pas, c'est un incrément mal découpé.
+**Les pièges restent ici, accrochés à leur objet.** Un piège local — une connexion non thread-safe,
+un arrêt qu'il faut attendre, un chemin qu'il ne faut pas recomposer à la main — est une propriété
+de l'**objet**, pas du pas qui le touche. L'écrire dans la table « Objets impactés » le préserve
+quelle que soit la façon dont le découpage coupera ensuite. Le renvoyer à un pas qui n'existe pas
+encore, c'est le perdre.
 
-**Fait quand** : chaque pas a sa raison d'être *à cette place*, l'ordre entre pas est explicite
-(dépendance ou indifférence assumée), et aucun pas ne réclame la conversation qui l'a précédé.
+**Fait quand** : un lecteur sait en quel ordre de grandeur de pas cet incrément se fait, quelles
+frontières tombent de la conception, et aucun piège connu ne dépend d'un pas pour survivre.
 
 ## 5. Une découpe non évidente ne se tranche pas seul
 
-Si l'étape 4 hésite entre plusieurs façons radicalement différentes de couper les responsabilités
-— pas seulement l'ordre des pas, la **forme** des objets eux-mêmes — ne choisis pas seul.
+Si le plan hésite entre plusieurs façons radicalement différentes de couper les responsabilités —
+la **forme** des objets eux-mêmes — ne choisis pas seul.
 Lis [`CONCEVOIR-DEUX-FOIS.md`](CONCEVOIR-DEUX-FOIS.md) et lance-le : c'est le cas qui le mérite.
 Le cas courant (frontières déjà lisibles) n'y va pas.
 
 ## 6. Terminer l'étape
 
-Écris le plan (schéma-delta + table + pas), puis **passe-le contre
+Écris le plan (schéma-delta + table « Objets impactés » + maille visée), puis **passe-le contre
 `docs/methode/dod/story/plan-review.md`** — c'est le référentiel que `revue-plan` appliquera, clause
 par clause, et il n'existe aucune raison de le découvrir après coup. **Ne jamais recopier ses cases
 ici** : une copie d'un référentiel diverge de lui en silence (journal 54). Le faire sur le plan

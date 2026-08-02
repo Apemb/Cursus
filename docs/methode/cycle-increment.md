@@ -78,8 +78,8 @@ vaut mieux que traverser la colonne pour la forme.
 
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
-| `Planning` + *aucune* | [`plan-design`](../../.claude/skills/plan-design/SKILL.md) | Le plan de design, avec son **schéma-delta** `mermaid` en tête, la table « Objets impactés », et le **découpage en pas** | `Done` |
-| `Planning` + `Done` | — | — | **`revue-plan` tire** vers `Plan Review` |
+| `Planning` + *aucune* | [`plan-design`](../../.claude/skills/plan-design/SKILL.md) | Le plan de design, avec son **schéma-delta** `mermaid` en tête, la table « Objets impactés », et la **maille visée** | `Done` |
+| `Planning` + `Done` | — | — | **`revue-plan` tire** vers `Plan Review` — ou **`decoupage-pas` tire** vers `In Progress` si le plan n'était pas dû |
 
 ⚠️ **Qui tire dans cette colonne** : celui qui prend l'incrément, depuis `Todo`. Et `plan-design`,
 son travail fini, **pose `Done` et s'arrête** — il ne déplace pas la carte en `Plan Review`, pas
@@ -94,6 +94,16 @@ qu'on attend de lui (`cycle.md` §4).
 frontières entre incréments, vues d'en haut. La conception de chacun attend sa prise : ce qu'on
 apprend en faisant le premier change ce qu'on sait au quatrième. Même raison que pour la test list.
 
+⚠️ **Et le plan ne découpe pas en pas** — il n'en dit que la **maille visée** : l'ordre de grandeur,
+les frontières qui tombent des objets, l'ordre là où il est contraint. Les pas eux-mêmes naissent à
+l'entrée en `In Progress` (§6), et pour la raison qui vaut un cran plus haut : ce qu'on apprend au
+pas 1 change ce qu'on sait au pas 4 (`D-070`). Un plan qui énumère six pas n'est pas en avance, il
+est en trop.
+
+**Les pièges connus restent dans le plan, accrochés à leur objet.** Une connexion non thread-safe,
+un arrêt qu'il faut attendre : ce sont des propriétés des objets, et les rattacher à des pas qui
+n'existent pas encore les perdrait.
+
 **Le plan ne contient ni test list, ni instructions ligne à ligne.** La conception s'arrête où
 commence la preuve.
 
@@ -107,7 +117,7 @@ commence la preuve.
 | `Plan Review` + `Rework Needed` | `correction` **(à écrire)** | Le plan repris, **une réponse dans chaque fil** disant la reprise faite ou le refus motivé | `Rework Done` |
 | `Plan Review` + `Rework Done` | `verification` **(à écrire)** | Chaque remarque soldée, ou rouverte avec ce qui manque encore | `Rework Needed` \| `Done` si `open` vaut 0 \| `Human Review Requested` + `Escalated` |
 | `Plan Review` + `Human Review Requested` | — *(humain)* | Le litige tranché, et sa suite écrite dans le fil | `Rework Needed` \| `Done` |
-| `Plan Review` + `Done` | — | — | qui prend le premier pas **tire** vers `In Progress` |
+| `Plan Review` + `Done` | — | — | **`decoupage-pas` tire** vers `In Progress`, pour y découper les pas |
 
 ⚠️ **La remarque se pose sur l'issue, jamais sur le document.** `D-045` l'a établi par la mesure :
 un commentaire de document ne peut pas être ancré par l'API, il est donc **invisible** dans
@@ -130,15 +140,28 @@ agentique ne tient pas — et la conclusion peut être que le skill de revue est
 
 ---
 
-## 6. `In Progress` — la série de cycles TDD
+## 6. `In Progress` — le découpage en pas, puis la série de cycles TDD
 
-L'incrément ne fait rien lui-même : il **délègue à ses pas**, un par un. Ce qui se passe dans
-chacun est dans [`cycle-pas.md`](cycle-pas.md).
+**Cette colonne s'ouvre par un découpage**, exactement comme celle d'une feature : le premier
+travail de `In Progress` n'est pas un test rouge, c'est de couper l'incrément en pas et de créer
+leurs sous-tâches. Ensuite seulement l'incrément **délègue à ses pas**, un par un. Ce qui se passe
+dans chacun est dans [`cycle-pas.md`](cycle-pas.md).
 
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
-| `In Progress` + *aucune* | [`prendre-un-pas`](../../.claude/skills/prendre-un-pas/SKILL.md), **une fois par pas** | Chaque pas mené jusqu'à sa colonne `Done` : sa `Code Review` passée à l'échelle de la fonction, puis son commit arrivé en squash dans `story/`, suite verte, **0 warning** | `Done` quand tous les pas sont en `Done` |
+| `In Progress` + *aucune*, **aucun pas** | [`decoupage-pas`](../../.claude/skills/decoupage-pas/SKILL.md) | Les pas, avec leurs `blockedBy`, nés en `Todo` ou `Backlog` ; chacun répond aux trois questions de `tickets.md` §4 | *aucune* — la carte reste où elle est |
+| `In Progress` + *aucune*, **des pas existent** | [`prendre-un-pas`](../../.claude/skills/prendre-un-pas/SKILL.md), **une fois par pas** | Chaque pas mené jusqu'à sa colonne `Done` : sa `Code Review` passée à l'échelle de la fonction, puis son commit arrivé en squash dans `story/`, suite verte, **0 warning** | `Done` quand tous les pas sont en `Done` |
 | `In Progress` + `Done` | — | — | **`revue-code` tire** vers `Code Review`, à l'échelle du module |
+
+⚠️ **Le découpage ne pose aucune étiquette et ne déplace rien** — il a déjà tiré la carte ici, c'est
+son unique geste de colonne. Un incrément qui vient d'être découpé est indiscernable d'un incrément
+dont le premier pas est en cours, et c'est voulu : la colonne dit *« ça se fait ici »*, la présence
+de sous-tâches dit où l'on en est.
+
+**Si le découpage bute sur la structure** — une décision d'objets que le plan n'a pas prise —
+la carte **repose en `Planning`** avec le manque nommé. C'est le critère opposable de
+[`dod/story/plan-review.md`](dod/story/plan-review.md) §3, constaté un cran plus tard : celui qui
+ordonne ne tranche pas ce que celui qui conçoit a laissé ouvert.
 
 **La documentation se met à jour au fil, pas à la fin.** `architecture.md` dès qu'un type
 structurant bouge ou qu'une frontière entre couches change ; `decisions.md` dès qu'une décision
@@ -226,4 +249,6 @@ rendu inutile. Ils sont à reprendre **avant** de servir.
   laisse-t-elle en `In Progress` marquée ? Question distincte de la boucle de revue, qui elle reste
   dans sa colonne.
 - **La maille d'un pas n'est pas connue.** Tant qu'aucun pas n'a été exécuté par un agent, on ne
-  sait pas quelle taille est bonne — or c'est précisément ce que le découpage décide en amont.
+  sait pas quelle taille est bonne. `D-070` a réduit ce que cette ignorance coûte — le découpage a
+  désormais lieu au contact, et le plan ne fige qu'un ordre de grandeur — mais ne l'a pas levée :
+  elle se lèvera par la mesure, pas par le déplacement du moment où l'on décide.

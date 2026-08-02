@@ -106,12 +106,20 @@ La conception se fait à **trois échelles**, de plus en plus fine, et chacune a
 | Échelle | Où | Artefact | Décide |
 |---|---|---|---|
 | **Architecture** — système / module | Feature, en `Spec` | la **spec**, moitié technique | Composants, frontières, dépendances externes |
-| **Design** — objets / classes | Incrément, en `Planning` | le **plan de design** | Objets qui naissent, changent, meurent ; responsabilités ; ordre des pas |
+| **Design** — objets / classes | Incrément, en `Planning` | le **plan de design** | Objets qui naissent, changent, meurent ; responsabilités ; **maille visée** |
 | **Implémentation** — code | Pas, à sa prise | la **test list** | Les cas à prouver, fichier par fichier |
 
-⚠️ **Le découpage d'une feature en incréments n'est pas une de ces échelles** : c'est un
-ordonnancement. Il livre à chaque incrément sa **direction** et son **acceptation** — vers où il va,
-ce qu'on vérifiera à la fin — jamais sa structure, et encore moins ses pas.
+⚠️ **Les deux découpages ne sont pas des échelles de conception** : ce sont des **ordonnancements**,
+et il y en a un entre chaque échelle (`D-070`). Le découpage d'une feature en incréments a lieu au
+passage de la **feature** en `In Progress` ; celui d'un incrément en pas au passage de
+l'**incrément** en `In Progress`, porté par `decoupage-pas`. Chacun livre direction et acceptation —
+vers où ça va, ce qu'on vérifiera à la fin — **jamais de structure**.
+
+⚠️ **Le plan de design ne découpe donc pas en pas** : il n'en dit que la **maille visée** — l'ordre
+de grandeur, les frontières qui tombent des objets, l'ordre là où il est contraint. Motif : ce qu'on
+apprend au pas 1 change ce qu'on sait au pas 4, exactement comme ce qu'on apprend au premier
+incrément change ce qu'on sait au quatrième. Les **pièges connus**, eux, restent dans le plan,
+accrochés à leur **objet** — jamais à un pas, qui n'existe pas encore.
 
 ⚠️ **L'autorité ne suit pas l'échelle** : le plan **le plus haut est le moins engageant**. Le plan
 d'architecture est d'ensemble et **indicatif** — il montre que ça **peut** fonctionner et comment

@@ -52,8 +52,16 @@ Ce que le pas porte en propre : une **test list**, écrite à sa prise.
 
 ## 2. `Backlog` — créé au découpage, son tour n'est pas venu
 
-Rien ne s'y fait. Les pas naissent au **découpage de leur incrément**, en `Planning` — jamais
-avant, puisque c'est le plan de design qui les produit.
+Rien ne s'y fait. Les pas naissent au **découpage de leur incrément**, à l'entrée de celui-ci en
+`In Progress` — porté par [`decoupage-pas`](../../.claude/skills/decoupage-pas/SKILL.md), jamais
+plus tôt (`D-070`).
+
+⚠️ **Pas en `Planning`, donc** : le plan de design ne dit que la **maille visée**, il ne crée aucune
+sous-tâche. Un pas figé avant que le premier ne soit exécuté est un *waterfall* à petite échelle —
+c'est ce qu'on apprend au pas 1 qui donne sa forme au pas 4.
+
+Un pas naît ici quand un `blockedBy` est encore ouvert sur lui ; sinon il naît directement en
+`Todo` (§3).
 
 ---
 

@@ -9,8 +9,9 @@ description: Prendre un pas (sous-tâche Linear) de `Todo` jusqu'à sa revue —
 > `D-039` demande l'inverse. À confronter au premier usage ; en cas de désaccord,
 > `docs/methode/journal-frictions.md` prime sur ce fichier.
 
-La conception a déjà eu lieu : le plan de design de l'incrément a posé les frontières, la carte du
-pas dit où il s'arrête. Ici, les mains, pas la tête — ce skill n'invente rien, il **exécute**. Le
+La conception a déjà eu lieu : le plan de design de l'incrément a posé les frontières, et
+`decoupage-pas` a créé la carte de ce pas en disant où il s'arrête. Ici, les mains, pas la tête — ce
+skill n'invente rien, il **exécute**. Le
 standard non négociable, le régime TDD, la frontière testé/non-testé et les conventions de
 modélisation sont déjà dans `CLAUDE.md`, chargé par ailleurs : ne pas les répéter, seulement les
 tenir.
@@ -19,7 +20,9 @@ tenir.
 
 - **Tirer la carte** : le pas t'attend en `Todo` ; déplace-le en `In Progress` et retire son
   étiquette s'il en porte une. Un ticket n'est jamais poussé — c'est celui qui prend le travail qui
-  déplace la carte (`cycle.md` §4).
+  déplace la carte (`cycle.md` §4). ⚠️ **Tu ne touches pas à l'incrément parent** : il est déjà en
+  `In Progress`, `decoupage-pas` l'y a tiré pour y créer ce pas. Ne lui pose aucune étiquette — son
+  `Done` viendra quand tous ses pas seront faits.
 - Lire la carte en entier : le pas, le pourquoi à cette place, le piège local s'il existe.
 - Créer, ou reprendre, la branche `pas/<identifiant>-slug` depuis la branche de la story.
 - Le pas touche-t-il un objet déjà modélisé, ou en nomme-t-il un nouveau ? Si oui, relire la

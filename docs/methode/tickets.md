@@ -45,7 +45,9 @@ Un client Linear **en lecture seule**, qui ne touche jamais le vrai tableau, est
 malgré ses cinq commits : rien de recettable n'en sort.
 
 **Corollaire** : un incrément qui n'a qu'un seul pas n'a pas besoin de sous-tâches. On ne
-découpe pas pour découper ; on découpe quand l'ordre des pas est **une information**.
+découpe pas pour découper ; on découpe quand l'ordre des pas est **une information**. Le constat se
+fait à l'entrée en `In Progress`, quand les pas se tracent — pas au plan de design, qui n'en sait
+pas encore assez pour l'affirmer (`D-070`).
 
 ### Chaque niveau produit son propre artefact
 
@@ -59,26 +61,48 @@ au mauvais endroit :
 | Incrément | Un **plan de design** | **À la prise de l'incrément**, en `Planning` | Datée |
 | Pas | Une **test list** | **À la prise du pas** | **Vivante** — un cas découvert au rouge s'y ajoute |
 
+⚠️ **Les cartes ne figurent pas dans cette table, et ce n'est pas un oubli** : les incréments comme
+les pas naissent à l'**ouverture** du niveau qui les contient — les incréments au passage de leur
+feature en `In Progress`, les pas au passage de leur incrément en `In Progress` (`D-070`). Un
+artefact conçoit ; une carte ordonne. Les deux ne s'écrivent pas au même moment, et confondre les
+deux moments produit un *waterfall* à l'échelle où on l'a confondu.
+
 ### Les trois échelles de conception, et le moment qui n'en est pas une
 
 Ces artefacts ne sont pas trois tailles du même objet : ils conçoivent à **trois échelles
-distinctes**, de plus en plus fine (`D-053`). Entre les deux premières s'intercale un moment qui
-ressemble à de la conception sans en être — le **découpage**.
+distinctes**, de plus en plus fine (`D-053`). Et **entre chacune s'intercale un moment qui ressemble
+à de la conception sans en être** — un **découpage**. Conception et ordonnancement alternent donc,
+et l'alternance est régulière (`D-070`).
 
 | Échelle | Quand | Artefact | Décide | Ne décide pas |
 |---|---|---|---|---|
 | **Architecture** — système / module | Feature, en `Spec` | la spec, moitié technique | Composants, frontières entre eux, dépendances externes | La forme des objets |
 | *(ordonnancement)* | Feature → `In Progress` | les **cartes** d'incrément | Vers où chaque incrément va, son acceptation, l'ordre, les blocages | **Rien de structurel** |
-| **Design** — objets / classes | Incrément, en `Planning` | le **plan de design** | Objets qui naissent, changent, meurent ; leurs responsabilités ; le schéma-delta ; l'ordre des pas | La test list, le code |
+| **Design** — objets / classes | Incrément, en `Planning` | le **plan de design** | Objets qui naissent, changent, meurent ; leurs responsabilités ; le schéma-delta ; la **maille visée** | Les pas, la test list, le code |
+| *(ordonnancement)* | Incrément → `In Progress` | les **cartes** de pas | Où chaque pas s'arrête, pourquoi à cette place, l'ordre, les blocages | **Rien de structurel** |
 | **Implémentation** — code | Pas, à sa prise | la **test list** | Les cas à prouver, fichier par fichier | — |
 
-**Le découpage ne livre que direction et acceptation.** Un incrément qui sort du découpage sait
-*vers où il va* et *ce qu'on vérifiera à la fin* — jamais quels objets il touchera, encore moins en
-combien de pas. La structure attend `Planning`, le détail attend la prise du pas.
+**Un découpage ne livre que direction et acceptation.** Un incrément qui sort du découpage sait
+*vers où il va* et *ce qu'on vérifiera à la fin* — jamais quels objets il touchera. Un pas qui sort
+du sien sait *où il s'arrête* et *pourquoi à cette place* — jamais quels cas il prouvera. La
+structure attend `Planning`, le détail attend la prise du pas.
 
-**Ordonner des pas n'est pas les concevoir**, et c'est pourquoi le plan de design porte l'ordre des
-pas sans contredire ce qui précède : il donne à chacun son titre, sa raison d'être *à cette place* et
-son piège local — pas ses cas de test.
+**Chaque conception s'écrit à la prise de ce qu'elle conçoit ; chaque découpage à l'ouverture de ce
+qu'il coupe.** C'est une seule règle, appliquée deux fois, et son motif est le même aux deux
+échelles : ce qu'on apprend en faisant le premier incrément change ce qu'on sait au quatrième, et ce
+qu'on apprend au pas 1 change ce qu'on sait au pas 4. Figer les pas au plan de design serait un
+*waterfall* à petite échelle, exactement comme figer les incréments dans la spec en serait un à
+grande.
+
+**Ce que le plan de design garde des pas** est donc ce que seule la conception sait : la **maille
+visée** — l'ordre de grandeur, les frontières qui tombent des objets eux-mêmes, l'ordre là où il est
+contraint. C'est une intention, au même titre que celle qu'une spec peut porter sur ses incréments,
+et elle n'engage pas plus : le découpage a le droit de s'en écarter au contact, à condition de le
+dire (`D-049`).
+
+⚠️ **Les pièges connus, eux, restent dans le plan** — accrochés à l'objet qu'ils concernent, jamais
+à un pas. Un piège est une propriété de l'objet ; le rattacher à un pas qui n'existe pas encore le
+perdrait, et « décorréler » ne doit jamais vouloir dire « jeter ».
 
 **Un artefact, un document** (`D-041`). La discovery et la spec sont **deux** documents Linear, pas
 deux moitiés d'un même. Leurs fraîcheurs diffèrent — l'une meurt, l'autre est un contrat vivant
@@ -253,7 +277,7 @@ feature-ci**, que rien d'autre ne porte.
   `In Progress`**, pas à l'écriture de la spec. Ce qu'elle peut porter, c'est une *intention*
   de découpage — une idée de la maille. Les cartes naissent à l'ouverture, pas au backlog.
 - **Le plan de design d'un incrément.** Il appartient à l'incrément, qui décide *comment **ce**
-  changement-ci est structuré* — schéma-delta, objets impactés, ordre des pas. La feature montre
+  changement-ci est structuré* — schéma-delta, objets impactés, maille visée. La feature montre
   que **ça peut marcher** ; l'incrément s'engage sur **comment il le fait**.
 
 ---
@@ -328,12 +352,15 @@ s'écrit à la prise du pas, pas au découpage : ce qu'on apprend au pas 1 chang
 au pas 4, et une test list planifiée d'avance serait un petit *waterfall* qui périmerait. Elle
 reste vivante pendant le cycle — un cas découvert au rouge s'y ajoute.
 
+**La carte du pas, elle, naît au découpage** — à l'entrée de son incrément en `In Progress`,
+portée par `decoupage-pas` (`D-070`). Elle porte les trois réponses ci-dessous, et rien de plus.
+
 Les questions :
 
 1. **Quel est le pas ?** Un titre qui tient en une action.
 2. **Pourquoi celui-là, à cette place, et où s'arrête-t-il ?** **La question la plus
    importante des trois, et la seule qui ne se rattrape pas.** Au découpage, quelqu'un avait
-   toute la feature en tête et voyait les frontières entre les pas ; cette vue disparaît avec
+   l'incrément entier en tête et voyait les frontières entre les pas ; cette vue disparaît avec
    la session qui l'a produite. Ce qui n'est pas écrit là n'existe plus. Nommer le frère
    voisin vaut mieux qu'une justification abstraite — « les trois opérations en dépendent, la
    faire d'abord évite de la disperser en trois copies ».
@@ -458,9 +485,9 @@ spec un contrat plutôt qu'un document d'intention.
 |---|---|---|
 | **Backlog** | Une **salle d'attente à deux populations** : ce qui est né du découpage mais **pas encore éligible** (un `blockedBy` ouvert), et ce qui **n'a pas de parent** — voir ci-dessous → [`dod/story/backlog.md`](dod/story/backlog.md) | Créé au découpage, son tour n'est pas venu |
 | **Todo** | **La colonne d'éligibilité** : plus aucun `blockedBy` ouvert, le contexte tient dans la carte → [`dod/story/todo.md`](dod/story/todo.md) | Son incrément est `In Progress` et ce pas est le suivant → [`dod/pas/todo.md`](dod/pas/todo.md) |
-| **Planning** | C'est **ici que le plan de design s'écrit**, et qu'il découpe l'incrément en pas. **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon la carte porte `Done` sans plan, et **qui prend le premier pas** la tire directement en `In Progress` | — *(un pas qui exigerait son plan de design aurait la taille d'un incrément)* |
+| **Planning** | C'est **ici que le plan de design s'écrit** — objets, responsabilités, schéma-delta, **maille visée** ; il ne découpe pas en pas (`D-070`). **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon la carte porte `Done` sans plan, et **`decoupage-pas`** la tire directement en `In Progress` | — *(un pas qui exigerait son plan de design aurait la taille d'un incrément)* |
 | **Plan Review** | Le plan de design est écrit, avec son **schéma-delta**, et il est **en cours de revue** — voir §6.3 → [`dod/story/plan-review.md`](dod/story/plan-review.md) | — |
-| **In Progress** | La série de cycles TDD tourne ; la documentation se met à jour **au fil**, pas à la fin | Un cycle : rouge observé *pour la bonne raison*, vert, refactor. La test list s'écrit ici et vit ici |
+| **In Progress** | **Le découpage en pas ouvre la colonne**, puis la série de cycles TDD tourne ; la documentation se met à jour **au fil**, pas à la fin | Un cycle : rouge observé *pour la bonne raison*, vert, refactor. La test list s'écrit ici et vit ici |
 | **Code Review** | L'échelle du **module** : le comportement est **complet**, le diff se relit d'un bloc, les commits sont argumentés, `architecture.md` / `decisions.md` sont à jour. Seul ce niveau peut réclamer des **pas supplémentaires** → [`dod/story/code-review.md`](dod/story/code-review.md) | L'échelle de la **fonction** : ce que prouve chaque test, sa formulation, le nommage, la forme du code → [`dod/pas/code-review.md`](dod/pas/code-review.md) |
 | **QA Review** | **Conditionnel** : obligatoire dès que l'incrément touche la présentation (§7.12, non testée) — l'app est lancée, le parcours refait à la main. **Sautée** pour un incrément purement Core, et le dire vaut mieux que traverser la colonne pour la forme → [`dod/story/qa-review.md`](dod/story/qa-review.md) | — |
 | **Done** | L'acceptation est cochée **case par case**, la validation manuelle est faite si elle était due → [`dod/story/done.md`](dod/story/done.md) | Commit fait, suite verte, **0 warning** → [`dod/pas/done.md`](dod/pas/done.md) |

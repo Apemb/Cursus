@@ -4,8 +4,8 @@
 
 # DoD — incrément (story), sortie de `Plan Review`
 
-> **La question** : cet incrément peut-il être **tiré** en `In Progress`, c'est-à-dire ses cycles
-> TDD peuvent-ils commencer ?
+> **La question** : cet incrément peut-il être **tiré** en `In Progress`, c'est-à-dire peut-on le
+> découper en pas — puis ouvrir les cycles TDD — sans revenir redemander comment c'est structuré ?
 >
 > **L'artefact relu ici est le plan de design** — l'échelle des **objets** : lesquels naissent,
 > changent ou meurent, et quelles responsabilités ils portent (`D-053`). Au-dessus, le plan
@@ -14,8 +14,9 @@
 > échelle.
 >
 > **Le flux est tiré.** Une DoD n'est pas une condition de sortie que l'amont s'applique à
-> lui-même : c'est **ce que l'aval vérifie avant de tirer**. Qui prend le premier pas et bute sur
-> un plan insuffisant repose la carte.
+> lui-même : c'est **ce que l'aval vérifie avant de tirer**. L'aval, ici, est `decoupage-pas` : s'il
+> bute sur une décision de structure que le plan n'a pas prise, il **repose la carte en `Planning`**
+> avec le manque nommé, plutôt que de trancher lui-même (`decoupage-pas` §6).
 >
 > **Régime Boucle** (`tickets.md` §6.3), pas Trio : le tiers qui prononce ici est un **agent**, pas
 > un humain — l'humain n'entre qu'en **arbitre d'exception**, sur escalade (`tickets.md` §6.4). Le
@@ -30,9 +31,11 @@
       bloc modifié)
 - [ ] La table **« Objets impactés »** couvre tout ce que le schéma colore — rien d'ajouté,
       modifié ou supprimé n'est visible sur le schéma sans l'être dans la table, ni l'inverse
-- [ ] Chaque **pas** du découpage répond aux deux questions qui ne se rattrapent pas
-      (`tickets.md` §4) : pourquoi celui-là, à cette place, et où il s'arrête — jamais une
-      justification dans l'absolu quand un pas frère peut être nommé
+- [ ] La **maille visée** est dite : l'ordre de grandeur de pas, les frontières qui tombent des
+      objets, et l'ordre là où il est contraint — ⚠️ **pas les pas eux-mêmes**, qui naissent à
+      l'entrée en `In Progress` (`D-070`). Un plan qui les énumère est en trop, pas en avance
+- [ ] Les **pièges connus** sont accrochés à leur **objet** dans la table, jamais à un pas — un
+      piège rattaché à un pas qui n'existe pas encore est un piège perdu
 - [ ] Le plan vit **au bon endroit** (`CLAUDE.md` §Où vit le plan) : document attaché si une carte
       porte le travail, fichier avec `> Fichier : <chemin>` en tout premier sinon
 - [ ] Le plan ne contient **ni test list, ni instructions ligne à ligne** — la conception s'arrête
@@ -40,9 +43,9 @@
 
 ## 2. La boucle a eu lieu et son issue est lisible
 
-- [ ] `revue` a tourné sur les axes de `revue-plan` (le plan contre `architecture.md`, le
-      découpage contre la maille, le schéma-delta contre `schemas.md`), en sous-agents parallèles
-      **jamais fusionnés**
+- [ ] `revue` a tourné sur les axes de `revue-plan` (le plan contre `architecture.md`, la maille
+      visée contre ce que le plan structure, le schéma-delta contre `schemas.md`), en sous-agents
+      parallèles **jamais fusionnés**
 - [ ] Chaque divergence relevée porte sa **citation** (référentiel + extrait), ou son
       **abstention explicite** si le référentiel manquait
 - [ ] Le document de boucle existe si au moins un tour a eu lieu, et chacune de ses entrées est
@@ -57,19 +60,21 @@ Deux issues, l'une ferme la colonne, l'autre non :
 
 ## 3. Le critère opposable
 
-> **Un plan est fini quand le premier pas peut ouvrir son cycle TDD sans revenir redemander
-> comment c'est structuré.**
+> **Un plan est fini quand on peut le découper en pas, et ouvrir le premier cycle TDD, sans revenir
+> redemander comment c'est structuré.**
 
-Il se **teste** : on tente d'écrire la test list du premier pas. Si elle réclame une décision de
-structure que le plan n'a pas prise, le manque est dans le plan — pas dans le pas.
+Il se **teste**, et deux fois plutôt qu'une : on tente de tracer les frontières entre pas, puis
+d'écrire la test list du premier. Si l'un ou l'autre réclame une décision de structure que le plan
+n'a pas prise, le manque est dans le plan — pas dans le découpage, pas dans le pas.
 
 ## 4. Ce qui n'est *pas* un critère
 
 - **Un accord obtenu au premier tour.** Un litige résolu au tour deux ou trois n'est pas un plan
   moins bon — la boucle a fonctionné comme prévu (`tickets.md` §6.4, `docs/reference/skills.md`
   §5.3 : la zone utile est deux à trois tours).
-- **La test list de chaque pas.** Elle s'écrit à la prise du pas, jamais avant (`tickets.md` §4) —
-  un plan qui l'anticipe a mangé l'étape suivante, il ne l'a pas mieux préparée.
+- **Les pas eux-mêmes, ni leur test list.** Les pas naissent à l'entrée en `In Progress` (`D-070`),
+  la test list à la prise de chacun (`tickets.md` §4) — un plan qui les anticipe a mangé les étapes
+  suivantes, il ne les a pas mieux préparées.
 - **L'unanimité sur la forme.** `revue` liste les divergences, elle ne réécrit pas ; un désaccord
   de jugement documenté et assumé peut sortir en `Done` s'il n'est pas une violation dure.
 
