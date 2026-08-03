@@ -13,6 +13,15 @@ Ce skill est le **frère de `decoupage`**, une échelle plus bas : là où celui
 incréments à l'ouverture de la feature, celui-ci coupe un incrément en pas à l'ouverture de
 l'incrément. Même geste, même moment relatif, même interdit — **ordonner n'est pas concevoir**.
 
+⚠️ **Une seule chose ne se transpose pas : la porte humaine.** `decoupage` §6 fait trancher l'humain
+sur la granularité avant qu'aucune carte n'existe ; **ici, il n'y a pas d'équivalent, et c'est
+délibéré.** Le pas est le niveau *entièrement technique*, et le seul destiné à être **entièrement
+automatisé** (`tickets.md` §4) : y remettre un accord humain par incrément coûterait à chaque
+découpage ce qu'il ne rattrape qu'au premier. Ce qui tient lieu de garde-fou est la relecture
+d'ensemble de l'étape 5 — moins sûre qu'un œil humain, mais payée une fois et sans temps d'arrêt.
+L'asymétrie est donc **écrite**, pas oubliée : c'est la seule différence de dispositif entre les
+deux frères, et elle se rejugera si un découpage en pas se révèle faux après coup.
+
 **Il ne conçoit pas.** La structure a été décidée en `Planning` par le plan de design, à l'échelle
 des objets (`D-053`). Ici, on découpe le chemin qui y mène. Si le découpage réclame une décision de
 structure que le plan n'a pas prise, ce n'est pas à toi de la prendre : voir §6.
@@ -117,6 +126,10 @@ Ce que cet axe cherche, et lui seul peut trouver :
 Ce n'est **pas une revue** au sens du cycle : la revue est une étape portée par un statut, avec son
 aller-retour et son escalade. Ceci est une relecture interne à la production, qui ne déplace rien et
 ne pose aucune étiquette.
+
+⚠️ **C'est aussi tout ce qui tient lieu de la porte humaine** que `decoupage` §6 impose une échelle
+plus haut (voir le préambule). Personne d'autre ne regardera ce découpage avant que le premier pas
+ne parte : ne pas expédier cette étape sous prétexte qu'elle est interne.
 
 **Fait quand** : l'ensemble a été relu comme ensemble, et ce qu'il manquait a été corrigé avant que
 la moindre carte n'existe.
