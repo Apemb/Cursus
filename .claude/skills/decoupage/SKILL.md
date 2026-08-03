@@ -49,11 +49,15 @@ devrait savoir pour l'exécuter. Si la réponse déborde, scinder plutôt que pu
 ## 4. Ordonner par les arêtes de blocage
 
 Chaque incrément porte son `blockedBy` — les incréments qui doivent être `Done` avant qu'il puisse
-commencer. Un incrément sans blocage naît en `Todo` ; un incrément avec un blocage ouvert naît en
-`Backlog` (`tickets.md` §6.2). Il n'y a pas d'ordre total à écrire, seulement des arêtes.
+commencer. Il n'y a pas d'ordre total à écrire, seulement des arêtes.
 
-**Critère** : chaque incrément porte une liste `blockedBy` explicite, vide ou non — et sa colonne de
-naissance en découle mécaniquement, sans arbitrage supplémentaire.
+⚠️ **Tous naissent en `Todo`, bloqués ou non** (`D-072`). N'envoie rien en `Backlog` : cette colonne
+est réservée à l'**entrée latérale** — ce qui arrive sans spec —, et un incrément que tu viens de
+découper en a une. C'est **celui qui tire** la carte qui vérifie que les `blockedBy` sont soldés ;
+ta responsabilité s'arrête à les écrire justes.
+
+**Critère** : chaque incrément porte une liste `blockedBy` explicite, vide ou non, et naît en
+`Todo`.
 
 ## 5. Déposer le hors-périmètre en nommant les frères
 
@@ -76,7 +80,7 @@ incrément — avant toute création de carte.
 ## 7. Créer les cartes, et ne toucher à rien d'autre
 
 Une fois l'accord obtenu : chaque incrément devient une issue rattachée au projet de la feature,
-`blockedBy` posé, née en `Todo` ou en `Backlog` selon l'étape 4.
+`blockedBy` posé, née en `Todo` — toutes, sans exception (étape 4).
 
 ⚠️ **Ne déplace pas la feature, et ne lui pose aucune étiquette.** Elle est déjà en `In Progress` —
 c'est l'humain qui l'y a tirée après l'accord sur la spec, et le découpage est le **premier**

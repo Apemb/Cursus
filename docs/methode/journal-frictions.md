@@ -673,3 +673,26 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     (« ces huit skills », « s'ajoutent aux huit »). ⚠️ **Un renvoi numérique s'écrit sous au moins
     trois formes dans ce dépôt** ; les chercher toutes, ou n'en écrire aucun.
     — *étape 5, dette de méthode*
+
+---
+
+## 2026-08-03 — les cartes naissent en `Todo` (`D-072`)
+
+73. **Une dette a été classée « à documenter » alors qu'elle était « à supprimer ».** L'audit de
+    `D-069` avait relevé que la frontière `Backlog` › `Todo` ne nommait aucun tireur, et l'avait
+    rangée parmi les manques de documentation — sans se demander si un tireur était seulement
+    **possible**. Il ne l'était pas : le déblocage n'est le travail de personne, il survient quand un
+    *autre* incrément passe `Done`. ⚠️ **Le tri « manque écrit » / « manque structurel » n'était pas
+    fait**, et le premier avale silencieusement le second : documenter un trou le rend plausible, et
+    la question de son existence ne se repose plus. Le test qui aurait suffi : *qui, nommément,
+    tirerait à travers cette frontière — et si la réponse est « personne, elle s'ouvre toute seule »,
+    la frontière est en trop.* — *étape 5, dette de méthode*
+
+74. **La colonne dupliquait une donnée que l'outil portait déjà, et avait divergé sans qu'on le
+    sache.** `Backlog` ré-encodait en statut ce que Linear tient en relation `blockedBy` ; `CUR-6`
+    s'est retrouvé en `Todo` en étant bloqué — un état que la colonne prétendait rendre impossible.
+    Le défaut avait été vu à l'époque et traité comme une **erreur de saisie** (tableau corrigé, règle
+    non assouplie), alors qu'il était le symptôme d'une redondance. ⚠️ **Une divergence entre deux
+    représentations du même fait se lit d'abord comme une faute de l'opérateur** ; c'est la seconde
+    occurrence qui révèle que le fait était représenté deux fois. Ne pas attendre la seconde :
+    demander, à la première, *qui d'autre porte cette information.* — *étape 5, dette de méthode*

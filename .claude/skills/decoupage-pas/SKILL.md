@@ -82,9 +82,12 @@ l'exécuter. Si la réponse déborde, scinder.
 
 ## 3. Ordonner par les arêtes de blocage
 
-Chaque pas porte son `blockedBy` — les pas qui doivent être `Done` avant qu'il puisse commencer. Un
-pas sans blocage ouvert naît en `Todo`, un pas bloqué naît en `Backlog` (`cycle-pas.md` §2–§3). Il
+Chaque pas porte son `blockedBy` — les pas qui doivent être `Done` avant qu'il puisse commencer. Il
 n'y a pas d'ordre total à écrire, seulement des arêtes.
+
+⚠️ **Tous naissent en `Todo`, bloqués ou non** (`D-072`). À ce niveau, `Backlog` n'existe même pas :
+la colonne est l'entrée latérale, réservée à ce qui arrive **sans parent**, et un pas en a toujours
+un (`cycle-pas.md` §2). C'est **celui qui tire** le pas qui vérifie que ses blocages sont soldés.
 
 ⚠️ **Une dépendance de fichier n'est pas une dépendance de pas.** Deux pas qui touchent le même
 fichier ne se bloquent pas l'un l'autre ; ce qui bloque, c'est un pas dont un autre a besoin du
@@ -148,8 +151,8 @@ Trancher toi-même produirait une décision de structure prise par celui qui ord
 
 ## 7. Créer les sous-tâches, et ne toucher à rien d'autre
 
-Chaque pas devient une **sous-tâche** de l'incrément, `blockedBy` posé, née en `Todo` ou en
-`Backlog` selon l'étape 3.
+Chaque pas devient une **sous-tâche** de l'incrément, `blockedBy` posé, née en `Todo` — toutes,
+sans exception (étape 3).
 
 ⚠️ **Sauf s'il n'y en a qu'un.** Un incrément qui n'a qu'un seul pas n'a pas besoin de sous-tâches
 (`tickets.md` §1) — on ne découpe pas pour découper. Dans ce cas, **écris-le en une phrase sur la

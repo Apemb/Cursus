@@ -73,16 +73,21 @@ FEATURE   Backlog ──► Discovery ──► Spec ──► In Progress ─�
                           │           │           │
                      (Canceled)   revue spec   découpage
                                                   │
-INCRÉMENT                          Backlog ◄──────┴──────► Todo
-                                                             │
-                                    ┌────────────────────────┘
+INCRÉMENT     (Backlog) ────────────────────────► Todo
+              entrée latérale                      │
+              — sans spec —                        │
+                                    ┌──────────────┘
                                     ▼
                           [Planning ──► Plan Review] ──► In Progress ──► Code Review ──► [QA Review] ──► Done
                                                               │                │
                                                       découpage en pas         │
                                                               │                │
-PAS                                              Backlog ──► Todo ──► In Progress ──► Done
+PAS                                                          Todo ──► In Progress ──► Done
 ```
+
+⚠️ **Les deux découpages n'ont plus qu'une sortie** (`D-072`) : une carte née d'un découpage naît en
+`Todo`, bloquée ou non. `Backlog` ne reçoit plus que l'**entrée latérale** — ce qui arrive sans
+spec —, et disparaît complètement au niveau du pas, qui a toujours un parent.
 
 ### La table maîtresse
 
@@ -127,10 +132,10 @@ pose son signal et s'arrête, et c'est l'aval nommé ci-dessous qui tire — en 
 | 1 | Un cap nommé | Un **besoin** établi, des pistes ouvertes, **aucun choix** | pose `Done` ; **l'humain tire** vers `Spec`, ou vers `Canceled` |
 | 2 | Un besoin | Une **spec** : options arbitrées, capacité énoncée, **recette définie** | pose `Review Requested` ; le relecteur tire à sa prise |
 | 3 | Une spec | Un verdict, ou des divergences à reprendre en 2 | pose `Rework Needed`, ou `Human Review Requested` si aucune remarque — **jamais un déplacement** ; après accord, **l'humain tire** vers `In Progress` |
-| 4 | Une spec validée | N **incréments** avec leurs **frontières** et leur ordre | ne pose **rien** sur la feature : elle reste en `In Progress` tant que ses incréments courent ; les incréments naissent en `Todo` ou `Backlog` |
+| 4 | Une spec validée | N **incréments** avec leurs **frontières** et leur ordre | ne pose **rien** sur la feature : elle reste en `In Progress` tant que ses incréments courent ; les incréments naissent tous en `Todo`, bloqués ou non |
 | 5 | Un incrément éligible | Un **plan de design** avec son schéma-delta, et la **maille visée** | pose `Done` ; **`revue-plan` tire** vers `Plan Review` à sa prise |
 | 6 | Un plan | Un accord, ou un litige | pose `Done`, ou **assigne l'humain** ; **`decoupage-pas` tire** vers `In Progress` |
-| 7 | Un incrément conçu | N **pas** avec leurs frontières et leurs arêtes de blocage | ne pose **rien** sur l'incrément : il reste en `In Progress` tant que ses pas courent ; les pas naissent en `Todo` ou `Backlog` |
+| 7 | Un incrément conçu | N **pas** avec leurs frontières et leurs arêtes de blocage | ne pose **rien** sur l'incrément : il reste en `In Progress` tant que ses pas courent ; les pas naissent tous en `Todo`, bloqués ou non |
 | 8 | Un pas | Une **test list**, des cycles TDD, un commit | pose `Done` ; **`revue-code` tire** vers `Code Review` à sa prise |
 | 9 | Le diff d'un pas | Un accord sur la **fonction**, ou un litige | pose `Done`, ou **assigne** ; **la fusion** de `pas/` dans `story/` bascule le pas en `Done` |
 | 10 | Un comportement complet | Un accord sur le **module**, ou un litige | pose `Done`, ou **assigne** ; **qui recette tire** vers `QA Review` — ou vers `Done` si elle se saute |
@@ -264,7 +269,8 @@ prompt qui l'a produit**, gagne nettement, et davantage encore sur les erreurs c
   documenté : en mode `--bare`, appelé à devenir le défaut de `claude -p`, **`CLAUDE.md` n'est
   pas chargé** (`docs/reference/skills.md` §1.2).
 - Le refacto orphelin entre par le `Backlog` des issues, mais **sans spec** — donc sans recette
-  de niveau feature. Aucune étape de ce flux ne le couvre. Un précédent existe : le skill
+  de niveau feature. Aucune étape de ce flux ne le couvre, et `D-072` **isole ce trou** en faisant
+  de cette population la seule que la colonne accueille. Un précédent existe : le skill
   `to-tickets` de Matt Pocock traite le refacto large comme **l'exception nommée** au découpage
   vertical, avec expand–migrate–contract sur des tickets séparés.
 - Les sept points laissés ouverts à dessein par `D-039` (`docs/reference/skills.md` §10) —

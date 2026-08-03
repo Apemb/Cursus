@@ -4390,3 +4390,65 @@ troisième serait la plus intéressante et la moins prévue.
 
 **Le sort du couple `correction` / `verification`**, toujours à écrire, que ce dispositif rendrait
 nécessaire ailleurs qu'en colonne de revue.
+
+---
+
+## D-072 — Les cartes naissent en `Todo` ; `Backlog` est rendu à la seule entrée latérale (2026-08-03)
+
+### 1. Ce qui est décidé
+
+Au découpage, une carte naît en **`Todo`**, qu'elle porte ou non un `blockedBy` ouvert. Aux deux
+échelles : les incréments issus d'une spec, les pas issus d'un plan de design.
+
+`Backlog` est **réservé à l'entrée latérale** — le refacto qu'aucune feature ne tire, la dette
+autonome, l'incrément explicitement déporté d'un découpage : la population qui manque d'une **spec**,
+donc d'une recette de niveau feature. Au niveau du **pas**, la colonne disparaît entièrement : entrer
+latéralement suppose une carte sans parent, et un pas en a toujours un.
+
+La vérification n'est pas perdue, elle change de porteur. Elle était déjà écrite comme *ce que l'aval
+vérifie avant de tirer* — c'est **celui qui tire** qui constate qu'aucun `blockedBy` n'est ouvert,
+jamais un déplacement de colonne.
+
+### 2. Pourquoi — le motif décisif est structurel
+
+**La frontière `Backlog` › `Todo` n'avait aucun tireur *possible*** — pas seulement aucun tireur
+écrit. `D-069` a posé que le flux est tiré : qui finit pose un signal, et c'est **l'aval qui prend le
+travail suivant** qui avance la carte. Or le déblocage n'est le travail de personne : il se produit
+quand un *autre* incrément passe `Done`, sans que quiconque prenne quoi que ce soit. Une frontière
+que le flux tiré ne peut structurellement pas servir n'a pas sa place dans un flux tiré.
+
+⚠️ **C'est la correction d'une dette d'abord mal classée.** En appliquant `D-069`, la frontière avait
+été relevée comme « nommant aucun tireur » et rangée parmi les choses **à documenter**. Le tri était
+faux : quand une frontière n'a pas de tireur *possible*, ce n'est pas le tireur qui manque, c'est la
+frontière qui est en trop. `D-069` avait pourtant écrit la moitié du diagnostic — *« la tentation de
+pousser vient d'un manque »* — sans voir que le manque pouvait être irréparable.
+
+Deux motifs de renfort, plus faibles mais convergents :
+
+- **C'est une duplication, et elle a déjà divergé.** La colonne ré-encodait ce que Linear porte en
+  relation `blockedBy`. `CUR-6` s'est retrouvé en `Todo` alors qu'il était bloqué — un état que la
+  colonne prétendait rendre impossible.
+- **`Backlog` y gagne un sens unique.** La colonne portait deux populations « qui n'ont pas les mêmes
+  manques » : l'une ne manquait de rien, l'autre manquait d'une spec. Une colonne qui mélange les
+  deux ne dit rien, et sa DoD devait se dédoubler pour en parler.
+
+### 3. Le coût, assumé
+
+**`Todo` cesse de se lire d'un coup d'œil comme « ce qui est prenable maintenant ».** C'est réel, et
+c'est le prix payé. Linear affiche les blocages sur la carte et sait filtrer dessus : la question se
+pose désormais à la relation, plus au nom de la colonne.
+
+Conséquence à retenir pour `CUR-5` : **le prédicat de déclenchement ne peut plus se contenter du
+statut**, il devra lire `blockedBy`. La question ouverte « quelle colonne porte exactement
+l'éligibilité » n'est pas tranchée par cette décision — elle est **durcie** par elle.
+
+### 4. Ce qui n'est pas décidé
+
+**Le sort du refacto orphelin**, qui reste sans recette de niveau feature (`flux.md` §5). Cette
+décision ne le résout pas ; elle l'**isole**, en faisant de cette population la seule que `Backlog`
+accueille. Le trou est désormais visible d'une colonne entière plutôt que dilué dans une salle
+d'attente à deux fonctions.
+
+**Faut-il une étiquette pour distinguer une carte tirable d'une carte bloquée dans `Todo`.** Non
+tranché : la relation Linear suffit tant qu'un humain regarde, et la question ne se posera vraiment
+qu'au premier déclenchement automatique — donc dans `CUR-5`, pas ici.

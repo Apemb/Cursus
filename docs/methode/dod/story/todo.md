@@ -13,8 +13,11 @@
 > l'incrément — humain ou agent — et qui **n'a pas eu la conversation du découpage**.
 >
 > Le *contenu* attendu d'un incrément est en `tickets.md` §3 (les six questions). Ici : uniquement
-> de quoi il faut s'être acquitté pour que `Todo` tienne sa promesse — **la colonne d'éligibilité**
-> (`tickets.md` §6.2).
+> de quoi il faut s'être acquitté pour que `Todo` tienne sa promesse.
+>
+> ⚠️ **`Todo` est la colonne de naissance** (`D-072`) : toute carte issue du découpage y naît,
+> **bloquée ou non**. Une carte peut donc y séjourner sans être tirable, et ce n'est pas une
+> anomalie — c'est le §1 ci-dessous qui départage, vérifié par celui qui tire.
 >
 > **C'est la DoD la plus consultée de ce dossier.** Elle est le référentiel pressenti du prédicat
 > de déclenchement machine (`CUR-5`) : le jour où un exécutant automatique décide seul si une carte
@@ -25,7 +28,11 @@
 
 - [ ] Chaque incrément listé en `blockedBy` est `Done`
 
-Mécanique, binaire — rien à juger.
+Mécanique, binaire — rien à juger. ⚠️ **C'est la seule clause de ce fichier qu'aucune colonne ne
+porte plus** (`D-072`) : elle se lit sur la relation Linear, qui l'affiche et sait la filtrer. La
+retirer de la structure du tableau pour la laisser à celui qui tire n'était pas un allègement mais
+une correction — le déblocage n'est le travail de personne, donc nul ne pouvait tirer une carte à
+travers une colonne d'attente.
 
 ## 2. Le contexte tient dans la carte — la clause la plus importante
 

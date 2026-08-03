@@ -442,13 +442,17 @@ documents de niveau ([feature](cycle-feature.md), [incrément](cycle-increment.m
 ```
 Feature     Backlog → Discovery → Spec → In Progress → Validation → Completed
 Incrément   [Backlog] → Todo → [Planning → Plan Review] → In Progress → Code Review → [QA Review] → Done
-Pas         [Backlog] → Todo → In Progress → Code Review → Done
+Pas         Todo → In Progress → Code Review → Done
 ```
 
 Les crochets marquent ce qui est **conditionnel** — voir les matrices. Un chemin court n'est
 pas un chemin bâclé : le pas n'a ni `Planning` (il aurait la taille d'un incrément) ni
 `QA Review` (rien n'y est observable par le rôle produit), mais il a **sa** `Code Review`, à
 l'échelle de la fonction (`D-069`).
+
+⚠️ **Et le `Backlog` d'un incrément n'est pas le début de son chemin, c'est une autre porte**
+(`D-072`, détaillé sous la matrice §6.2). D'où le crochet, et d'où son absence complète chez le
+pas : entrer latéralement suppose une carte sans parent, or un pas en a toujours un.
 
 Les features et les issues n'ont pas le même jeu de colonnes ; les mettre dans un seul tableau
 force à assimiler des étapes qui ne se correspondent pas. D'où deux matrices.
@@ -483,8 +487,8 @@ spec un contrat plutôt qu'un document d'intention.
 
 | Statut | **Incrément** (issue) | **Pas** (sous-tâche) |
 |---|---|---|
-| **Backlog** | Une **salle d'attente à deux populations** : ce qui est né du découpage mais **pas encore éligible** (un `blockedBy` ouvert), et ce qui **n'a pas de parent** — voir ci-dessous → [`dod/story/backlog.md`](dod/story/backlog.md) | Créé au découpage, son tour n'est pas venu |
-| **Todo** | **La colonne d'éligibilité** : plus aucun `blockedBy` ouvert, le contexte tient dans la carte → [`dod/story/todo.md`](dod/story/todo.md) | Son incrément est `In Progress` et ce pas est le suivant → [`dod/pas/todo.md`](dod/pas/todo.md) |
+| **Backlog** | **L'entrée latérale**, et rien d'autre : ce qui arrive **sans parent et sans spec** — le refacto qu'aucune feature ne tire, la dette autonome, l'incrément déporté. Une carte née d'un découpage n'y passe pas → [`dod/story/backlog.md`](dod/story/backlog.md) | — *(un pas a toujours un parent)* |
+| **Todo** | **La colonne de naissance** : toute carte issue du découpage naît ici, bloquée ou non. C'est celui qui tire qui vérifie que les `blockedBy` sont soldés et que le contexte tient dans la carte → [`dod/story/todo.md`](dod/story/todo.md) | Naît ici au découpage de son incrément ; se tire quand son incrément est `In Progress` et que ses `blockedBy` sont soldés → [`dod/pas/todo.md`](dod/pas/todo.md) |
 | **Planning** | C'est **ici que le plan de design s'écrit** — objets, responsabilités, schéma-delta, **maille visée** ; il ne découpe pas en pas (`D-070`). **Conditionnel** : seulement si le changement crée ou supprime une classe, traverse plusieurs modules, ou implique une découpe non évidente. Sinon la carte porte `Done` sans plan, et **`decoupage-pas`** la tire directement en `In Progress` | — *(un pas qui exigerait son plan de design aurait la taille d'un incrément)* |
 | **Plan Review** | Le plan de design est écrit, avec son **schéma-delta**, et il est **en cours de revue** — voir §6.3 → [`dod/story/plan-review.md`](dod/story/plan-review.md) | — |
 | **In Progress** | **Le découpage en pas ouvre la colonne**, puis la série de cycles TDD tourne ; la documentation se met à jour **au fil**, pas à la fin | Un cycle : rouge observé *pour la bonne raison*, vert, refactor. La test list s'écrit ici et vit ici |
@@ -493,12 +497,20 @@ spec un contrat plutôt qu'un document d'intention.
 | **Done** | L'acceptation est cochée **case par case**, la validation manuelle est faite si elle était due → [`dod/story/done.md`](dod/story/done.md) | Commit fait, suite verte, **0 warning** → [`dod/pas/done.md`](dod/pas/done.md) |
 
 **`Backlog` porte deux fonctions selon le niveau**, et c'est le piège du mot. Au niveau
-**projet**, c'est le début du flux nominal. Au niveau **issue**, c'est une salle d'attente : un
-incrément **éligible** n'y passe pas, puisqu'il naît en `Todo` au découpage de sa feature. Ce
-qui y séjourne, c'est ce qui attend une dépendance — et surtout ce qui **n'a pas de parent** :
-le refacto qu'aucune fonctionnalité ne tire, la dette autonome, plus les incréments
-explicitement déportés d'un découpage. C'est **l'entrée latérale du backlog**, la seule voie par
-laquelle un travail arrive sans passer par une spec.
+**projet**, c'est le début du flux nominal. Au niveau **issue**, c'est **l'entrée latérale** : la
+seule voie par laquelle un travail arrive sans passer par une spec — le refacto qu'aucune
+fonctionnalité ne tire, la dette autonome, l'incrément explicitement déporté d'un découpage. Ce
+qu'il lui manque n'est pas un tour de file mais une **recette de niveau feature**.
+
+⚠️ **Un `blockedBy` ouvert ne met plus une carte en `Backlog`** (`D-072`). Une carte issue du
+découpage naît en `Todo`, blocages compris, et c'est **celui qui tire** qui vérifie qu'ils sont
+soldés — la vérification était déjà écrite là (§1 de `dod/story/todo.md`), la colonne la
+doublait. Le motif décisif est structurel : dans un flux tiré, une frontière n'existe que si
+**quelqu'un tire à travers**, or le déblocage n'est le travail de personne — il se produit quand
+un *autre* incrément passe `Done`. `Backlog` › `Todo` était donc la seule frontière du dépôt
+qu'aucun tireur ne pouvait servir. Le coût assumé : `Todo` ne se lit plus d'un coup d'œil comme
+« ce qui est prenable maintenant » — Linear affiche et filtre les blocages, c'est là qu'on
+regarde.
 
 ### 6.3 Qui juge — trois régimes, selon la nature du jugement
 

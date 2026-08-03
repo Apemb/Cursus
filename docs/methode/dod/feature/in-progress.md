@@ -50,7 +50,7 @@ propre DoD.
 ## 4. Ce qui n'est *pas* un critère
 
 - **Tous les incréments démarrés, ou même terminés.** Un seul suffit ; les autres attendent leur
-  tour en `Todo` ou en `Backlog`, normalement.
+  tour en `Todo`, normalement — y compris ceux qu'un `blockedBy` retient (`D-072`).
 - **Un ordre total entre incréments.** Seules les arêtes de blocage (`blockedBy`) sont exigées.
 - **Le plan de design de l'incrément démarré.** Il vit dans sa propre DoD (`Planning` /
   `Plan Review`), pas ici.

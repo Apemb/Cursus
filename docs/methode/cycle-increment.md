@@ -24,6 +24,10 @@
 
 Les crochets marquent le **conditionnel**. Un chemin court n'est pas un chemin bâclé.
 
+⚠️ **`Backlog` n'est pas le début de ce chemin, c'est une autre porte** (`D-072`) : un incrément né
+du découpage de sa feature commence en `Todo`. Seule l'**entrée latérale** — ce qui arrive sans
+spec — passe par `Backlog` (§2).
+
 **Ici, la frontière écriture/revue est une frontière de colonne** — `Planning` › `Plan Review`,
 `In Progress` › `Code Review` — et c'est un choix, pas un héritage. Le processus de développement
 est stabilisé au point qu'on veuille le **mesurer** : Linear calcule ses temps de cycle sur les
@@ -42,26 +46,38 @@ le plan contre l'architecture, le code contre le standard.
 
 ---
 
-## 2. `Backlog` — une salle d'attente à deux populations
+## 2. `Backlog` — l'entrée latérale, et rien d'autre
 
-Rien ne s'y fait. Un incrément **éligible** n'y passe pas : il naît en `Todo` au découpage de sa
-feature. Ce qui y séjourne est de deux natures, et il faut les distinguer parce qu'elles n'ont pas
-les mêmes manques ([`dod/story/backlog.md`](dod/story/backlog.md)) :
+Rien ne s'y fait. **Aucun incrément né d'un découpage n'y passe** : ils naissent tous en `Todo`,
+bloqués ou non (`D-072`). Ce qui y séjourne arrive **latéralement** — le refacto qu'aucune feature
+ne tire, la dette autonome, l'incrément déporté d'un découpage antérieur
+([`dod/story/backlog.md`](dod/story/backlog.md)).
 
-| Population | Ce que c'est | Ce qui lui manque |
-|---|---|---|
-| **A** | Née du découpage, mais un `blockedBy` est encore ouvert | Rien — elle satisfait déjà tout ce que `Todo` exige, elle attend |
-| **B** | **L'entrée latérale** : le refacto qu'aucune feature ne tire, la dette autonome, l'incrément déporté d'un découpage | **Une spec**, donc une recette de niveau feature. Le trou est déclaré, pas caché |
+Ce qui manque à cette population n'est pas un tour de file : c'est **une spec**, donc une recette
+de niveau feature. Le trou est déclaré, pas caché — c'est la seule voie par laquelle un travail
+arrive **sans passer par une spec**, et sa DoD exige en compensation que l'acceptation soit écrite
+en entier sur la carte.
 
-La population B est la seule voie par laquelle un travail arrive **sans passer par une spec**.
+⚠️ **Pourquoi la colonne n'accueille plus les cartes bloquées.** Le flux tiré suppose que
+**quelqu'un tire** à travers chaque frontière. Or personne ne tirait à travers `Backlog` › `Todo` :
+le déblocage n'est le travail de personne — il arrive quand un *autre* incrément passe `Done`. Une
+frontière que le flux tiré ne peut structurellement pas servir n'a pas sa place dans un flux tiré.
+La vérification, elle, n'est pas perdue : elle était déjà écrite comme *ce que l'aval vérifie avant
+de tirer*, et c'est là qu'elle reste (§3).
 
 ---
 
-## 3. `Todo` — la colonne d'éligibilité
+## 3. `Todo` — la colonne de naissance, et l'état d'être prenable
 
-Rien ne s'y fait non plus : c'est un état, celui d'être prenable.
-[`dod/story/todo.md`](dod/story/todo.md) tient en deux exigences — plus aucun `blockedBy` ouvert,
-et **le contexte tient dans la carte sans la conversation**.
+Rien ne s'y fait : c'est un état. Toute carte issue du découpage y naît, **blocages compris**, et
+[`dod/story/todo.md`](dod/story/todo.md) tient en deux exigences que **celui qui tire** vérifie —
+plus aucun `blockedBy` ouvert, et **le contexte tient dans la carte sans la conversation**.
+
+⚠️ **La première est mécanique et n'appartient plus à la colonne.** Une carte peut séjourner en
+`Todo` en étant intirable ; ce n'est pas une anomalie, c'est le prix de la suppression d'une
+frontière que personne ne pouvait servir. Linear porte la relation `blockedBy` et sait filtrer
+dessus — c'est là qu'on regarde « qu'est-ce qui est prenable maintenant », plus dans le nom de la
+colonne.
 
 ⚠️ La seconde est la clause qui décide de tout le reste. Un agent arrive **sans avoir eu la
 conversation** : les six questions de `tickets.md` §3 doivent être répondues sur la carte,
@@ -151,7 +167,7 @@ dans chacun est dans [`cycle-pas.md`](cycle-pas.md).
 
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
-| `In Progress` + *aucune*, **aucun pas et rien d'écrit** | [`decoupage-pas`](../../.claude/skills/decoupage-pas/SKILL.md) | Les pas, avec leurs `blockedBy`, nés en `Todo` ou `Backlog` ; chacun répond aux trois questions de `tickets.md` §4. **Ou** la phrase disant qu'un seul pas suffit | *aucune* — la carte reste où elle est |
+| `In Progress` + *aucune*, **aucun pas et rien d'écrit** | [`decoupage-pas`](../../.claude/skills/decoupage-pas/SKILL.md) | Les pas, tous nés en `Todo` avec leurs `blockedBy` ; chacun répond aux trois questions de `tickets.md` §4. **Ou** la phrase disant qu'un seul pas suffit | *aucune* — la carte reste où elle est |
 | `In Progress` + *aucune*, **le découpage a eu lieu** | [`prendre-un-pas`](../../.claude/skills/prendre-un-pas/SKILL.md), **une fois par pas** | Chaque pas mené jusqu'à sa colonne `Done` : sa `Code Review` passée à l'échelle de la fonction, puis son commit arrivé en squash dans `story/`, suite verte, **0 warning** | `Done`, **posé par qui achève le dernier pas** |
 | `In Progress` + `Done` | — | — | **`revue-code` tire** vers `Code Review`, à l'échelle du module |
 
@@ -251,7 +267,9 @@ rendu inutile. Ils sont à reprendre **avant** de servir.
 **Questions ouvertes** :
 
 - **Quelle colonne exactement porte l'éligibilité au déclenchement automatique** — `Todo` seul, ou
-  `Todo` plus une étiquette (`CUR-5`).
+  `Todo` plus une étiquette (`CUR-5`). ⚠️ `D-072` **durcit cette question** : `Todo` contient
+  désormais des cartes bloquées, donc la colonne ne suffit plus à elle seule et le prédicat devra
+  lire la relation `blockedBy`.
 - **Une reprise après échec d'un gate automatisé** renvoie-t-elle la carte en `Todo`, ou la
   laisse-t-elle en `In Progress` marquée ? Question distincte de la boucle de revue, qui elle reste
   dans sa colonne.

@@ -19,7 +19,7 @@
 ## 1. Le chemin, et ce qu'il n'a pas
 
 ```
-[Backlog] ──► Todo ──► In Progress ──► Code Review ──► Done
+Todo ──► In Progress ──► Code Review ──► Done
 ```
 
 **Les mêmes étiquettes qu'à l'incrément** — les six états du groupe *Advancement Labels*
@@ -46,29 +46,40 @@ taille d'un incrément — c'est le signe qu'il a été mal découpé, pas qu'il
 un pas ne l'est pas, et c'est précisément ce qui le distingue d'un incrément
 ([`tickets.md`](tickets.md) §1).
 
+**Aucun `Backlog` non plus**, ce qui fait de ce chemin le plus court du dépôt — voir §2.
+
 Ce que le pas porte en propre : une **test list**, écrite à sa prise.
 
 ---
 
-## 2. `Backlog` — créé au découpage, son tour n'est pas venu
+## 2. `Backlog` — la colonne qui n'existe pas à ce niveau
 
-Rien ne s'y fait. Les pas naissent au **découpage de leur incrément**, à l'entrée de celui-ci en
-`In Progress` — porté par [`decoupage-pas`](../../.claude/skills/decoupage-pas/SKILL.md), jamais
-plus tôt (`D-070`).
+Elle existe dans Linear, mais **aucun pas n'y entre jamais**, et c'est un refus explicite, pas un
+oubli (`D-072`).
 
-⚠️ **Pas en `Planning`, donc** : le plan de design ne dit que la **maille visée**, il ne crée aucune
-sous-tâche. Un pas figé avant que le premier ne soit exécuté est un *waterfall* à petite échelle —
-c'est ce qu'on apprend au pas 1 qui donne sa forme au pas 4.
+Au niveau issue, `Backlog` est l'**entrée latérale** : ce qui arrive **sans parent**, donc sans
+spec, donc sans recette de niveau feature — un refacto autonome, une dette. Un pas a toujours un
+parent, par définition (`tickets.md` §1). Il n'y a donc rien qui puisse entrer par cette porte, et
+la garder ouverte ne ferait que suggérer un état que rien ne produit.
 
-Un pas naît ici quand un `blockedBy` est encore ouvert sur lui ; sinon il naît directement en
-`Todo` (§3).
+**Un pas bloqué naît donc en `Todo` comme les autres**, portant son `blockedBy`. Le motif complet
+est celui de l'incrément ([`cycle-increment.md`](cycle-increment.md) §2) : dans un flux tiré, une
+frontière n'existe que si quelqu'un tire à travers, et le déblocage n'est le travail de personne.
+
+⚠️ **Ce qui reste vrai du moment de la naissance** : les pas naissent au **découpage de leur
+incrément**, à l'entrée de celui-ci en `In Progress` — porté par
+[`decoupage-pas`](../../.claude/skills/decoupage-pas/SKILL.md), jamais plus tôt (`D-070`). **Pas en
+`Planning`** : le plan de design ne dit que la **maille visée**, il ne crée aucune sous-tâche. Un
+pas figé avant que le premier ne soit exécuté est un *waterfall* à petite échelle — c'est ce qu'on
+apprend au pas 1 qui donne sa forme au pas 4.
 
 ---
 
-## 3. `Todo` — le pas suivant d'un incrément en cours
+## 3. `Todo` — la colonne de naissance, et le pas suivant d'un incrément en cours
 
-Deux conditions mécaniques : l'incrément parent est `In Progress`, et plus aucun `blockedBy` n'est
-ouvert sur ce pas.
+Tous les pas y naissent, bloqués ou non. Deux conditions mécaniques décident ensuite de celui qui
+est **tirable** : l'incrément parent est `In Progress`, et plus aucun `blockedBy` n'est ouvert sur
+ce pas. Elles se vérifient par **celui qui tire**, jamais par un déplacement que personne ne ferait.
 
 Et une condition de fond, qui est la même qu'à l'incrément :
 [`dod/pas/todo.md`](dod/pas/todo.md) §1 — **le contexte tient dans la carte, sans la

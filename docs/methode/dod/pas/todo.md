@@ -11,6 +11,10 @@
 > manque le repose plutôt que de deviner.
 >
 > Le *contenu* attendu est en `tickets.md` §4. Ici : uniquement de quoi il faut s'être acquitté.
+>
+> ⚠️ **C'est la seule colonne d'attente d'un pas** (`D-072`) : il n'y a pas de `Backlog` à ce
+> niveau — l'entrée latérale suppose une carte sans parent, et un pas en a toujours un. Tous les pas
+> naissent donc ici, **bloqués ou non**, et §2 départage ceux qui sont tirables.
 
 ## 1. Le contexte tient dans la carte, sans la conversation
 
