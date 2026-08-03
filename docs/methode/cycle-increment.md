@@ -72,9 +72,11 @@ se fait par nom de type.
 
 ## 4. `Planning` — conditionnel
 
-**On y entre seulement si** le changement crée ou supprime une classe, traverse plusieurs modules,
-ou implique une découpe non évidente. Sinon on **saute** directement à `In Progress`, et le dire
-vaut mieux que traverser la colonne pour la forme.
+**On n'y écrit un plan que si** le changement crée ou supprime une classe, traverse plusieurs
+modules, ou implique une découpe non évidente. Sinon la carte **traverse la colonne sans plan** :
+elle y reçoit la phrase qui dit pourquoi il n'était pas dû, plus `Done`, et `decoupage-pas` l'en
+tire. Ce qui se saute est le **plan**, jamais la colonne — le dire vaut mieux que laisser croire à
+un oubli.
 
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
@@ -149,14 +151,19 @@ dans chacun est dans [`cycle-pas.md`](cycle-pas.md).
 
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
-| `In Progress` + *aucune*, **aucun pas** | [`decoupage-pas`](../../.claude/skills/decoupage-pas/SKILL.md) | Les pas, avec leurs `blockedBy`, nés en `Todo` ou `Backlog` ; chacun répond aux trois questions de `tickets.md` §4 | *aucune* — la carte reste où elle est |
-| `In Progress` + *aucune*, **des pas existent** | [`prendre-un-pas`](../../.claude/skills/prendre-un-pas/SKILL.md), **une fois par pas** | Chaque pas mené jusqu'à sa colonne `Done` : sa `Code Review` passée à l'échelle de la fonction, puis son commit arrivé en squash dans `story/`, suite verte, **0 warning** | `Done` quand tous les pas sont en `Done` |
+| `In Progress` + *aucune*, **aucun pas et rien d'écrit** | [`decoupage-pas`](../../.claude/skills/decoupage-pas/SKILL.md) | Les pas, avec leurs `blockedBy`, nés en `Todo` ou `Backlog` ; chacun répond aux trois questions de `tickets.md` §4. **Ou** la phrase disant qu'un seul pas suffit | *aucune* — la carte reste où elle est |
+| `In Progress` + *aucune*, **le découpage a eu lieu** | [`prendre-un-pas`](../../.claude/skills/prendre-un-pas/SKILL.md), **une fois par pas** | Chaque pas mené jusqu'à sa colonne `Done` : sa `Code Review` passée à l'échelle de la fonction, puis son commit arrivé en squash dans `story/`, suite verte, **0 warning** | `Done`, **posé par qui achève le dernier pas** |
 | `In Progress` + `Done` | — | — | **`revue-code` tire** vers `Code Review`, à l'échelle du module |
 
-⚠️ **Le découpage ne pose aucune étiquette et ne déplace rien** — il a déjà tiré la carte ici, c'est
-son unique geste de colonne. Un incrément qui vient d'être découpé est indiscernable d'un incrément
-dont le premier pas est en cours, et c'est voulu : la colonne dit *« ça se fait ici »*, la présence
-de sous-tâches dit où l'on en est.
+⚠️ **Le découpage ne pose aucune étiquette et n'avance rien** — il a déjà tiré la carte ici, c'est
+son unique geste d'avancement. Un incrément qui vient d'être découpé est indiscernable d'un
+incrément dont le premier pas est en cours, et c'est voulu : la colonne dit *« ça se fait ici »*, la
+présence de sous-tâches dit où l'on en est.
+
+**Un incrément qui n'a qu'un seul pas n'a pas de sous-tâche** (`tickets.md` §1) : le découpage
+l'écrit alors en une phrase sur la carte, et le cycle TDD se déroule sur l'incrément lui-même. Sans
+cette phrase, une carte sans sous-tâche est un découpage qui n'a pas eu lieu — c'est elle qui
+départage les deux premières lignes du tableau.
 
 **Si le découpage bute sur la structure** — une décision d'objets que le plan n'a pas prise —
 la carte **repose en `Planning`** avec le manque nommé. C'est le critère opposable de

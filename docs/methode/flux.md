@@ -62,7 +62,7 @@ que ce qui lui est propre. Trois lieux, aucune redondance.
 **remplit la seule case chorégraphie** — un niveau de travail unique, aucun découpage, un
 gabarit de prompt par dépôt, zéro skill. Il ne supprime pas le besoin de méthode, il le laisse
 à la charge de l'équipe, et déplace donc le goulot sur la qualité du ticket humain. Ce que ces
-huit skills portent est exactement ce qu'il laisse vide. Voir `docs/reference/symphony.md`.
+neuf skills portent est exactement ce qu'il laisse vide. Voir `docs/reference/symphony.md`.
 
 ---
 
@@ -78,6 +78,8 @@ INCRÉMENT                          Backlog ◄──────┴────
                                     ┌────────────────────────┘
                                     ▼
                           [Planning ──► Plan Review] ──► In Progress ──► Code Review ──► [QA Review] ──► Done
+                                                              │                │
+                                                      découpage en pas         │
                                                               │                │
 PAS                                              Backlog ──► Todo ──► In Progress ──► Done
 ```
@@ -198,12 +200,12 @@ il a été rédigé d'après l'état de l'art au lieu d'être récolté sur une 
 que prescrit la sous-section suivante. Chaque draft porte cet aveu en tête. Le premier usage réel
 promeut ou corrige, et c'est le journal des frictions qui tranche — pas le fichier.
 
-Deux **primitifs** s'ajoutent aux huit, parce que trois skills réinventaient le même geste :
+Deux **primitifs** s'ajoutent aux neuf, parce que trois skills réinventaient le même geste :
 [`interrogatoire`](../../.claude/skills/interrogatoire/SKILL.md) porte l'entretien — les *faits* sont à la
 charge de l'agent, les *décisions* reviennent à l'humain, une question à la fois — et
 [`revue`](../../.claude/skills/revue/SKILL.md) porte la mécanique commune aux trois relectures :
-deux axes jamais fondus, citation obligatoire du référentiel et de l'extrait, abstention explicite
-quand le référentiel manque. Les autres les invoquent au lieu de les recopier.
+**au moins deux** axes jamais fondus — `revue-spec` en fournit deux, `revue-plan` trois —, citation
+obligatoire du référentiel et de l'extrait, abstention explicite quand le référentiel manque. Les autres les invoquent au lieu de les recopier.
 
 **Ordre** : `prendre-un-pas` d'abord. C'est le plus petit périmètre, l'erreur y coûte un commit,
 il ne dépend d'aucun autre — on peut lui tendre un pas écrit à la main — et il rend tout de

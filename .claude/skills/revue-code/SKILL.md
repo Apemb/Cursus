@@ -1,7 +1,7 @@
 ---
 name: revue-code
 description: Relit contre un point fixe, à deux échelles — la fonction pour un pas, le module pour
-  un incrément (`flux.md` #8 et #9). Use quand une carte de pas ou d'incrément porte `Done` et
+  un incrément (`flux.md` #9 et #10). Use quand une carte de pas ou d'incrément porte `Done` et
   attend sa revue, quand on demande une revue de code, une relecture de PR `pas/` ou `story/`, ou
   de raffiner une test list après un cycle TDD.
 ---

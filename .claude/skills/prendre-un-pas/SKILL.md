@@ -20,9 +20,11 @@ tenir.
 
 - **Tirer la carte** : le pas t'attend en `Todo` ; déplace-le en `In Progress` et retire son
   étiquette s'il en porte une. Un ticket n'est jamais poussé — c'est celui qui prend le travail qui
-  déplace la carte (`cycle.md` §4). ⚠️ **Tu ne touches pas à l'incrément parent** : il est déjà en
-  `In Progress`, `decoupage-pas` l'y a tiré pour y créer ce pas. Ne lui pose aucune étiquette — son
-  `Done` viendra quand tous ses pas seront faits.
+  déplace la carte (`cycle.md` §4). ⚠️ **Tu ne déplaces pas l'incrément parent** : il est déjà en
+  `In Progress`, `decoupage-pas` l'y a tiré pour y créer ce pas. Tu ne lui poses pas non plus
+  d'étiquette — **sauf si ce pas est le dernier** : celui qui achève le dernier pas pose `Done` sur
+  l'incrément, et s'arrête là ; c'est `revue-code` qui le tire ensuite vers `Code Review`, à
+  l'échelle du module (`cycle-increment.md` §6).
 - Lire la carte en entier : le pas, le pourquoi à cette place, le piège local s'il existe.
 - Créer, ou reprendre, la branche `pas/<identifiant>-slug` depuis la branche de la story.
 - Le pas touche-t-il un objet déjà modélisé, ou en nomme-t-il un nouveau ? Si oui, relire la

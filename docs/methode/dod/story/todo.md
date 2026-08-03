@@ -4,8 +4,9 @@
 > `D-039` demande l'inverse. À confronter au premier usage ; en cas de désaccord,
 > `docs/methode/journal-frictions.md` prime sur ce fichier.
 
-> **La question** : cet incrément peut-il être **tiré** en `Planning` (ou directement en
-> `In Progress`, si aucun plan de design n'est requis) ?
+> **La question** : cet incrément peut-il être **tiré** en `Planning` ? Il y passe toujours — ce
+> qui se saute quand aucun plan n'est requis, c'est le **plan**, jamais la colonne : la carte y
+> reçoit la phrase qui le dit, plus `Done`, et `decoupage-pas` l'en tire (`cycle-increment.md` §4).
 >
 > **Le flux est tiré.** Une DoD n'est pas une condition de sortie que l'amont s'applique à
 > lui-même : c'est **ce que l'aval vérifie avant de tirer**. Ici, l'aval est celui qui prend

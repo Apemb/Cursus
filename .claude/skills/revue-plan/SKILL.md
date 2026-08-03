@@ -1,6 +1,6 @@
 ---
 name: revue-plan
-description: Valider la conformité d'un plan de design contre `docs/methode/dod/story/plan-review.md`, en bouclant entre agent de plan et agent de revue jusqu'à accord, et escalader le litige — en s'assignant la carte — après deux ou trois tours sans convergence. Use when un incrément est en Plan Review, quand un incrément attend en Planning portant `Done`, quand on relance une revue de plan après une correction, ou quand une carte de Plan Review porte déjà un tour précédent à reprendre.
+description: Valider la conformité d'un plan de design contre `docs/methode/dod/story/plan-review.md`, en bouclant entre agent de plan et agent de revue jusqu'à accord, et escalader le litige — en s'assignant la carte — après deux ou trois tours sans convergence. Use when un incrément est en Plan Review, quand un incrément attend en Planning portant `Done` **avec un plan écrit**, quand on relance une revue de plan après une correction, ou quand une carte de Plan Review porte déjà un tour précédent à reprendre. Un incrément qui attend en Planning **sans plan** — parce qu'il n'était pas dû — ne relève pas de ce skill mais de `decoupage-pas`.
 ---
 
 > **Draft non éprouvé.** Écrit d'après l'état de l'art, pas récolté sur une exécution réelle —
@@ -21,6 +21,11 @@ arrêté là, parce qu'un ticket n'est jamais poussé (`cycle.md` §4). **Tire-l
 retire l'étiquette `Done`** — un seul geste, à la prise. La colonne dit *« ça se fait ici »*, donc
 elle ne doit basculer qu'au moment où tu commences réellement.
 
+⚠️ **Vérifie d'abord qu'un plan existe.** Le même état — `Planning` + `Done` — se produit quand le
+plan **n'était pas dû** : la carte porte alors une phrase qui le dit, et **aucun document**. Il n'y
+a rien à relire, et c'est `decoupage-pas` qui tire, pas toi (`cycle-increment.md` §4). Ne prends la
+carte que si l'artefact existe.
+
 ⚠️ **C'est le seul déplacement de carte de ce skill.** Il a lieu à la **prise**, jamais à la sortie :
 une fois le verdict rendu, la carte reste en `Plan Review` portant `Done`, et c'est `decoupage-pas`
 qui la tirera vers `In Progress` pour y découper les pas (`cycle-increment.md` §5).
@@ -30,7 +35,8 @@ qui la tirera vers `In Progress` pour y découper les pas (`cycle-increment.md` 
 ## 1. Invoquer `revue`, sur ces axes
 
 Fournir l'artefact — le document `Planning` attaché à l'incrément — et exactement **trois** axes.
-Deux sont adossés à la DoD, le troisième n'a pas de clause et c'est assumé.
+Le premier et le troisième sont adossés à la DoD ; **le deuxième n'a pas de clause**, et c'est
+assumé.
 
 **Axe Conformité** (référentiel : `docs/methode/dod/story/plan-review.md` §1, clause par clause).
 Une clause non tenue **et** non déclarée sans objet est une **violation dure**. Les deux qui se

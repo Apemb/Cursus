@@ -34,10 +34,14 @@ L'incrément t'attend, portant **`Done`**, dans l'une de ces deux colonnes :
 n'est jamais poussé : `Done` n'avance pas une carte, elle **autorise** qu'on l'avance (`cycle.md`
 §4).
 
-⚠️ **C'est le seul déplacement d'incrément de ce skill.** Le découpage en pas est le **premier**
+⚠️ **C'est le seul déplacement d'incrément du cas nominal.** Le découpage en pas est le **premier**
 travail de `In Progress`, pas ce qui la clôt — exactement comme le découpage d'une feature est le
 premier travail de son `In Progress` à elle (`decoupage` §7). Ne repose aucune étiquette sur
-l'incrément en sortant : son `Done` viendra quand tous ses pas seront faits.
+l'incrément en sortant : son `Done` sera posé par qui achèvera le dernier pas.
+
+L'unique autre mouvement possible est un **retour en arrière**, et il est écrit en §6 : quand le
+plan a laissé une décision de structure ouverte, la carte repose en `Planning`. Reposer n'est pas
+avancer — c'est le seul cas où ce skill rend une carte au lieu de la faire progresser.
 
 **Fait quand** : la carte est en `In Progress`, sans étiquette.
 
@@ -133,6 +137,12 @@ Trancher toi-même produirait une décision de structure prise par celui qui ord
 
 Chaque pas devient une **sous-tâche** de l'incrément, `blockedBy` posé, née en `Todo` ou en
 `Backlog` selon l'étape 3.
+
+⚠️ **Sauf s'il n'y en a qu'un.** Un incrément qui n'a qu'un seul pas n'a pas besoin de sous-tâches
+(`tickets.md` §1) — on ne découpe pas pour découper. Dans ce cas, **écris-le en une phrase sur la
+carte de l'incrément** et arrête-toi : le cycle TDD se déroulera sur l'incrément lui-même. La phrase
+n'est pas une politesse, c'est ce qui rend l'état lisible — sans elle, une carte sans sous-tâche est
+indiscernable d'un découpage qui n'a jamais eu lieu, et le lecteur suivant te réinvoquera.
 
 ⚠️ **Ne pose aucune étiquette sur l'incrément, et ne le déplace plus.** Il est en `In Progress`, tu
 l'y as tiré à l'étape 0, et il y reste tant que ses pas courent. C'est `prendre-un-pas` qui prend la
