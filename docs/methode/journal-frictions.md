@@ -966,3 +966,22 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     À voir si le cas se répète : la parade serait une clause de `prendre-un-pas` — après le vert,
     balayer les cartes d'état avant de clore —, pas une liste plus longue en amont. — *étape 5,
     dette de méthode*
+
+96. ⚖️ **À TRANCHER** — **Personne ne crée la PR, et la règle de push l'interdirait de toute façon.**
+    Le corpus **suppose** la PR partout — `flux.md` §6 la met dans sa table (« un niveau, une
+    branche, une PR »), `tickets.md` la range dans les adresses d'un ticket, et surtout §6 justifie
+    l'existence même de la strate `pas/` par le fait que « la revue d'un pas peut avoir lieu après
+    le commit, **sur la PR** ». Mais **aucun document ne dit qui l'ouvre ni quand** :
+    `prendre-un-pas` §5 s'arrête à poser `Done`, `revue-code` la trouve déjà là, et aucun des deux
+    ne touche à git au-delà de la branche.
+    ⚠️ **Et le geste est bloqué par défaut** : ouvrir une PR exige de pousser, or la convention de
+    commit dit « ne jamais pousser sans demande explicite ». Écrire le geste dans un skill ne
+    suffirait donc pas — il faut d'abord distinguer *pousser une branche de travail* de *pousser sur
+    `main`*, ce que la règle ne fait pas.
+    **Ce qui n'est pas bloqué, en revanche** : `revue-code` n'a pas besoin d'une PR GitHub. Il relit
+    un `git diff <base>...HEAD` contre un point fixe, et les remarques vivent sur la **carte
+    Linear** (`D-045`), pas dans le fil de la PR. Une revue de pas peut donc tourner sur la branche
+    locale, aujourd'hui. La PR est nécessaire à la **fusion**, pas à la relecture.
+    À trancher : PR ouverte en fin de pas (ce que le motif de la strate `pas/` réclame), ou à la
+    fusion (moins de bruit sur un dépôt public, mais §6 perd sa justification). — *frontière
+    pas → revue, dette de méthode*
