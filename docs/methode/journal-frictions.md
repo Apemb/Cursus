@@ -821,3 +821,29 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     est inutilisable ici puisqu'il ne rendrait rien. ⚠️ **Le format de sortie d'un outil de revue est
     une décision de méthode** : ce qu'il rend difficile à lire, l'étape suivante le lira mal.
     — *étape 7, dette d'outillage*
+
+---
+
+## 2026-08-03 — écrire la fiche de la boucle, et découvrir deux dettes du dossier `rex/`
+
+87. **Une fiche de REX écrite après compaction perd la rubrique que le README juge la moins
+    bureaucratique.** Le dossier exige que la commande figure **verbatim et rejouable**, parce que le
+    mode d'échec redouté — *« la méthode a l'air en place et n'est pas chargée »* — est muet. Or les
+    mandats des quatre temps n'étaient plus en contexte au moment d'écrire la fiche. ⚠️ **Le remède
+    est mécanique et il a marché** : extraire du transcript de session le seul champ `prompt` des
+    invocations de sous-agents, par grep ciblé — jamais lire le transcript en entier, qui noierait le
+    contexte du rédacteur. À écrire comme clause du `rex/README.md`. ⚠️ **Mais il ne couvre pas
+    tout** : un geste mené **en session**, sans sous-agent, n'a aucun prompt à extraire. Le mandat de
+    la correction est irrécupérable **par construction**, pas par accident — et c'est un argument de
+    plus pour que les gestes qu'on veut mesurer passent par un sous-agent.
+    — *étape 7, dette du dossier `rex/`*
+
+88. **La règle de comptage des « constats de fond » n'existe pas, et la mesure de l'essai en dépend.**
+    La table qui oppose les trois dispositifs de relecture compare **4 · 10 · 11** quand les
+    dispositifs ont matériellement rendu **5 · 10 · 12** : l'écart vient d'un tri implicite entre
+    constat de fond et constat procédural, que personne n'a écrit. La conclusion de l'essai ne bouge
+    pas — l'ordre de grandeur tient dans les deux dénombrements — mais **un dénombrement non
+    reproductible ne se compare pas au tour suivant**. Même famille que la friction 65 : deux
+    dispositifs de fiabilité différente rendent un chiffre que rien ne qualifie. ⚠️ **Écrire la règle
+    de tri avant le prochain essai, pas après** — écrite après, elle se choisira sur les nombres
+    qu'elle doit départager. — *étape 7, dette du dossier `rex/`*
