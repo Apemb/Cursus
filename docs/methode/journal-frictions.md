@@ -989,3 +989,34 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     un problème de plomberie. ⚠️ **Le même trou subsiste un cran plus haut** : ni la branche de
     story ni sa PR n'ont de porteur, et la question attend la première fusion d'incrément — la
     légiférer maintenant serait de la méthode sur cas imaginé. — *frontière pas → revue, tranché*
+
+## 2026-08-03 — ouvrir la première PR, et ce que le geste a fait tomber
+
+97. **Le travail de méthode récolté *pendant* un pas se commite sur la branche du pas, par
+    défaut.** Les frictions 92 à 96 et `D-075` ont d'abord atterri sur
+    `pas/CUR-65-…`, avant d'en être retirées et reportées sur `main`. La règle existe pourtant, et
+    elle est claire : le travail sur la façon de travailler n'est porté par aucune carte, donc
+    aucune branche ne lui correspond. ⚠️ **Elle est écrite pour un travail de méthode *délibéré*,
+    jamais pour celui qui **tombe en cours de route** — et c'est le cas le plus fréquent, puisque
+    `D-039` veut que les skills s'écrivent depuis ce qu'un tour réel fait apparaître. Aucun skill ne
+    dit « change de branche avant d'écrire au journal ». Sans le rattrapage, la PR du pas aurait
+    présenté au relecteur cinq entrées de journal et un ADR sans rapport avec le diff.
+    — *clôture du pas, dette de méthode*
+
+98. **`decisions.md` est append-only *et* partagé entre branches, ce qui en fait un point de
+    conflit systématique.** `D-074` appartient au pas (le plan le lui avait confié) et vit donc sur
+    sa branche ; `D-075` est de la méthode et vit sur `main`. Les deux s'ajoutent **au même endroit**
+    — la fin du fichier —, donc le report a produit un conflit, et la fusion du pas en produira un
+    second. ⚠️ **Le conflit est bénin mais il est certain**, et il croît avec le nombre de branches
+    vivantes. Il n'appelle pas de règle aujourd'hui : deux branches, deux entrées, une résolution
+    triviale (l'ordre est celui des numéros). À rouvrir si une fusion de story fait se croiser trois
+    entrées ou plus. — *clôture du pas, mesure à suivre*
+
+99. **Rattacher une PR à une carte Linear l'assigne, et une carte assignée n'est plus tirable.**
+    Le simple fait de poser le lien de la PR sur `CUR-65` lui a mis un assigné, sans que rien ne le
+    demande. Or le flux tiré veut qu'une carte achevée portant `Done` reste **libre** : c'est ce qui
+    permet à l'aval de la tirer. Une carte assignée dit « quelqu'un s'en occupe » exactement quand
+    elle veut dire « à prendre ». ⚠️ **Le geste que `D-075` vient d'ajouter au skill en produit donc
+    un quatrième, non écrit** : désassigner après avoir posé le lien. Fait à la main ici ; à inscrire
+    dans `prendre-un-pas` §5 au prochain tour, une fois vérifié que le comportement est constant et
+    non un réglage d'espace. — *clôture du pas, dette de méthode*
