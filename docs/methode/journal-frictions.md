@@ -654,3 +654,22 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     référentiels. ⚠️ **Ce que le dispositif n'a pas su faire** : ces deux clauses étaient cohérentes
     entre elles et se citaient l'une l'autre, ce qui les rendait indétectables par une relecture
     croisée. Seul un humain qui connaît son intention pouvait les démentir. — *étape 7, correction*
+
+71. **La règle écrite l'avant-veille a été re-commise en l'appliquant.** `D-069` a établi qu'une
+    interdiction sans son geste positif produit la transgression. Deux jours plus tard, le chantier
+    de `D-070` écrit dans `prendre-un-pas` *« ne pose aucune étiquette sur l'incrément »* — une
+    interdiction — **sans réattribuer le `Done` qu'elle supprimait**, laissant la frontière
+    `In Progress` › `Code Review` avec un tireur et plus aucun poseur. Exactement la forme que
+    l'audit de `D-069` avait relevée neuf fois. ⚠️ **Connaître une règle n'empêche pas de la
+    re-commettre au moment de l'appliquer** : elle avait été lue, citée dans le commit, et enfreinte
+    dans le même diff. C'est l'argument le plus concret pour faire relire un chantier de méthode par
+    un tiers plutôt que par son auteur — et c'est ce que `D-071` a inscrit le lendemain.
+    — *étape 5, dette de méthode*
+
+72. **Un décalage de numérotation ne se rattrape pas au `grep` naïf.** L'insertion d'une étape dans
+    `flux.md` a décalé les six suivantes. Le balayage a cherché `étape N` et `| N |`, et manqué la
+    troisième forme — `#N`, employée dans les *descriptions* de skills (`revue-code` renvoyait à
+    `flux.md #8 et #9`, devenus #9 et #10). Deux comptes en toutes lettres ont survécu de même
+    (« ces huit skills », « s'ajoutent aux huit »). ⚠️ **Un renvoi numérique s'écrit sous au moins
+    trois formes dans ce dépôt** ; les chercher toutes, ou n'en écrire aucun.
+    — *étape 5, dette de méthode*
