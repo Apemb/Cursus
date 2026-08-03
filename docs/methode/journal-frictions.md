@@ -738,3 +738,32 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     présence du relecteur, qui portait le gain. Le réflexe à garder : quand un skill prescrit un
     sous-agent, se demander **combien**, et contre **quels axes** — jamais laisser le singulier par
     défaut. — *étape 6, correction*
+
+---
+
+## 2026-08-03 — première correction de plan, à la main (`correction` n'existe pas)
+
+79. **Deux remarques se sont soldées en faisant *disparaître* l'écart, pas en le documentant.** La
+    revue avait posé la question ouverte — *« l'invariant couvre-t-il la racine multi-projets ? si
+    oui, ce qui l'en sépare ; si non, l'écart mérite d'être écrit »* — et la bonne réponse n'était
+    ni l'une ni l'autre : `ProjectsTool` n'avait besoin que du **registre**, donc la dépendance à la
+    racine a été supprimée et la question est devenue sans objet. ⚠️ **Une remarque qui offre deux
+    issues en a souvent une troisième, et c'est la meilleure.** Le réflexe à écrire dans
+    `correction` : avant de choisir entre les branches proposées, chercher ce qui rend le choix
+    inutile. — *étape 6, correction*
+
+80. **Les remarques ne sont pas indépendantes, et les traiter dans l'ordre les fait mentir.**
+    Reprendre `ProjectsTool → ProjectRegistry` a rendu une remarque voisine sans objet (la cellule
+    qui devait déclarer une lecture qui n'existe plus) et **déplacé** une troisième (la course
+    n'était pas sur `ProjectWorkspaces` mais sur le registre). Un correcteur qui aurait répondu fil
+    par fil dans l'ordre de la liste aurait écrit trois réponses incohérentes entre elles, chacune
+    juste isolément. ⚠️ **Lire les remarques *toutes* avant d'en reprendre *une*** — et le dire dans
+    la réponse quand une reprise en déplace une autre, sinon le vérificateur relit un fil dont la
+    justification vit ailleurs. C'est l'exact symétrique de l'axe d'ensemble en revue.
+    — *étape 6, dette de méthode*
+
+81. **Un identifiant de remarque tronqué échoue *sans* arrêter le lot.** Un `id` recopié à huit
+    caractères depuis un affichage abrégé a fait répondre à Linear *« Entity not found: Comment »*,
+    et le script a poursuivi en affichant sa ligne de fin — `set -e` ne voit pas l'échec, la CLI
+    sortant en 0. ⚠️ **Vérifier le compteur `open` après un lot, jamais la sortie du script** :
+    c'est la seule mesure qui ne ment pas. — *étape 6, dette d'outillage*
