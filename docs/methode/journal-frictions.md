@@ -719,3 +719,22 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     ⚠️ **Une remarque de conformité peut mettre en cause son propre référentiel** ; l'interdire
     reviendrait à faire de la DoD une source infaillible, ce qu'aucun document du dépôt n'est.
     — *étape 6, dette de méthode*
+
+77. **Deux relectures du même artefact, contre le même référentiel, ont divergé sur la
+    conformité.** `revue-plan` a posé trois remarques d'axe Conformité — dont une arête de schéma
+    tenue pour inversée et une bijection schéma ↔ table tenue pour rompue ; la relecture interne à
+    trois axes a déclaré les **six clauses tenues**, bijection comprise, après l'avoir appariée
+    nœud par nœud. ⚠️ **`tickets.md` §6.3 déclare la conformité délégable parce qu'il existe un
+    référentiel opposable** — le fait est vrai, mais il n'entraîne pas que deux agents y
+    convergeront. Ce qui se délègue est la **question**, pas la réponse. À garder en tête avant de
+    traiter un verdict de conformité comme une mesure plutôt que comme un avis.
+    — *étape 6, dette de méthode*
+
+78. **Le dispositif d'une relecture pèse plus que sa position dans le flux.** Même artefact, même
+    modèle, même référentiel : un relecteur unique rend quatre constats, trois axes parallèles en
+    rendent dix — et les deux plus graves n'apparaissent qu'à trois. ⚠️ **Un dispositif inscrit au
+    singulier parce que le pluriel n'avait pas été mesuré coûte le plus gros de sa valeur.**
+    `D-071` avait été écrit sur un essai à un agent ; c'est le nombre de lentilles, pas la
+    présence du relecteur, qui portait le gain. Le réflexe à garder : quand un skill prescrit un
+    sous-agent, se demander **combien**, et contre **quels axes** — jamais laisser le singulier par
+    défaut. — *étape 6, correction*

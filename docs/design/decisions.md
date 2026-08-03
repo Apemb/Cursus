@@ -4452,3 +4452,68 @@ d'attente à deux fonctions.
 **Faut-il une étiquette pour distinguer une carte tirable d'une carte bloquée dans `Todo`.** Non
 tranché : la relation Linear suffit tant qu'un humain regarde, et la question ne se posera vraiment
 qu'au premier déclenchement automatique — donc dans `CUR-5`, pas ici.
+
+---
+
+## D-073 — Le relecteur interne est multi-axes, sur les axes de la revue qui suit (2026-08-03) — amende `D-071`
+
+### 1. Ce qui est amendé
+
+`D-071` prescrit sur `discovery` et `spec` un **sous-agent relecteur** avant la pose du signal. Le
+singulier était une supposition. Il devient : **un agent de relecture qui lance un sous-agent par
+axe, en parallèle, jamais fusionnés** — et les axes sont ceux de la **revue qui suivra**, soit les
+trois de `revue-discovery` (Complétude, Non-arbitrage, Adresse au lecteur) et les deux de
+`revue-spec` (Conformité, Découpabilité).
+
+**L'agrégateur est distinct du binôme**, et il n'est pas un greffier : il revérifie les citations
+porteuses et peut affaiblir ou retirer un constat de ses propres axes. Celui qui a écrit le document
+ne peut pas être celui qui décide lesquels survivent.
+
+Le reste de `D-071` est inchangé : le rapport se dépose **avant toute correction**, aucune remarque
+Linear n'est posée à ce stade, et c'est le binôme qui solde.
+
+### 2. Ce que la mesure a montré
+
+Le protocole a tourné sur le plan de design de `CUR-47`, en trois temps sur le **même artefact non
+corrigé**, même modèle :
+
+| Dispositif | Position | Constats de fond |
+|---|---|---|
+| Un relecteur | interne | **4** |
+| Trois axes parallèles | interne | **10** |
+| Trois axes parallèles (`revue-plan`) | colonne | **11** |
+
+**C'est le dispositif qui explique l'écart, pas la position** : de la première ligne à la deuxième,
+seul le nombre de lentilles change, et la récolte est multipliée par deux et demi. Les deux constats
+les plus graves — la clé de la garde des hosts, et les deux instances possibles de `ProjectRegistry`
+qui rendraient la lecture périmée pour toute la session — n'apparaissent qu'à partir de trois axes.
+
+L'agrégation a fait un travail réel et vérifiable : elle a retiré un sous-point faux (une ligne
+d'`architecture.md` déjà périmée par le document lui-même, donc pas du fait du plan) et produit la
+contre-preuve d'un autre (l'invariant de sens unique de §7.12 ne se transpose pas mécaniquement à
+une racine multi-projets, que §7.15.4 déclare résolue par deux portes).
+
+### 3. Ce que la mesure ne dit pas — et pourquoi la colonne survit
+
+**La relecture interne ne rend pas la revue inutile**, et l'écart de 10 à 11 le cache. Les deux
+récoltes ne se recouvrent pas : les trois axes internes ont **manqué quatre** constats de la revue
+et en ont **produit trois** qu'elle n'avait pas vus. Le gain de la colonne n'est donc pas quantitatif
+mais **combinatoire** — deux relectures indépendantes du même artefact contre les mêmes référentiels
+ne trouvent pas la même chose.
+
+⚠️ **Et l'axe Conformité a divergé.** La revue y a posé trois remarques ; la relecture interne à
+trois axes a déclaré les six clauses tenues, dont la bijection schéma ↔ table que la revue jugeait
+rompue. Laquelle a raison n'est pas tranché à cette date. **La conformité n'est donc pas le jugement
+mécanique que `tickets.md` §6.3 suppose en la déclarant délégable** — elle l'est au sens où un
+référentiel existe, pas au sens où deux agents y convergeraient d'office.
+
+### 4. Ce qui n'est pas décidé
+
+**La généralisation aux sept autres skills de production**, toujours en attente. `D-071` la
+conditionnait à un essai ; l'essai a eu lieu, mais il a mesuré le **dispositif** de la relecture, pas
+l'**opportunité** d'en ajouter une là où une colonne de revue existe déjà. La question posée par
+`D-071` reste donc entière.
+
+**Le coût.** Trois axes plus un agrégateur là où il y avait un agent : le dispositif est quatre fois
+plus cher, et il s'ajoute à la revue qu'il ne remplace pas. Aucun budget n'est fixé ici ; si le coût
+devient le grief, c'est la **combinatoire** du §3 qu'il faudra rejuger, pas le nombre d'axes.

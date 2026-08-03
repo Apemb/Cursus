@@ -91,13 +91,30 @@ L'étape 6 est une **auto-évaluation**, et elle a la limite de toutes : elle ne
 auteur ne peut pas voir. Ce que le développement obtient de sa suite de tests, un document ne
 l'obtient que d'un relecteur.
 
-**Lancer un sous-agent relecteur**, sur le document seul :
+**Lancer un agent de relecture**, qui lance lui-même **un sous-agent par axe, en parallèle** :
 
-- **session neuve, artefact seul** (`D-039`) — lui donner le document et le référentiel
-  (`docs/methode/dod/feature/discovery.md`), **jamais** le raisonnement qui a produit le document,
-  ni ce qu'on soupçonne d'être faible. Un relecteur à qui on annonce la réponse la trouve ;
+- **les axes sont ceux de la revue qui suivra** — ici les **trois** de
+  [`revue-discovery`](../revue-discovery/SKILL.md) §2 : Complétude, Non-arbitrage, Adresse au
+  lecteur. Relire contre les axes qu'on subira ensuite est ce qui rend la relecture comparable à la
+  revue ;
+- **session neuve, artefact seul** (`D-039`), pour l'agrégateur comme pour chaque axe — leur donner
+  le document et le référentiel (`docs/methode/dod/feature/discovery.md`), **jamais** le
+  raisonnement qui a produit le document, ni ce qu'on soupçonne d'être faible. Un relecteur à qui on
+  annonce la réponse la trouve ;
+- **jamais fusionnés** : chaque constat garde son axe, sa citation et sa nature ;
 - **il relit, il ne réécrit pas** : il liste les divergences, chacune avec son extrait et sa clause,
   et s'abstient explicitement là où le référentiel manque.
+
+⚠️ **L'agrégateur n'est pas un greffier, et il n'est pas toi.** Il revérifie les citations porteuses
+avant de rendre, et il a le droit d'affaiblir ou de retirer un constat de ses propres axes —
+mesuré : sur le premier essai, il a retiré un sous-point faux et produit la contre-preuve d'un
+autre. C'est aussi pour cela qu'il est **distinct du binôme** : celui qui a écrit le document ne
+peut pas être celui qui décide quels constats survivent à l'agrégation.
+
+**Le motif du nombre est mesuré, pas supposé** (`D-073`). Sur le même artefact et le même modèle, un
+relecteur unique a rendu **quatre** constats de fond ; trois axes parallèles en ont rendu **dix**,
+dont les deux plus graves — que le relecteur unique n'avait pas vus. Un seul agent n'est pas une
+version économique de ce dispositif, c'en est une version qui rate l'essentiel.
 
 **Son rapport se dépose avant toute correction.** ⚠️ C'est la clause qui compte, et elle n'est pas
 une formalité : un cycle interne qui converge en silence supprime la trace de ce qu'il a rattrapé,
