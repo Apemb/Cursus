@@ -1,7 +1,8 @@
 namespace Cursus.Application.Tests;
 
 /// <summary>
-/// Le même invariant que celui du noyau (§7.12), tenu ici pour le socle : toute
+/// Le même invariant que celui du noyau (`docs/design/architecture.md` §7.12), tenu
+/// ici pour le socle : toute
 /// la logique doit rester atteignable sans Avalonia. L'enjeu est plus dur pour
 /// le socle que pour le noyau — il est partagé par les deux portes, et une
 /// dépendance UI qui s'y glisserait rendrait la seconde porte inconstructible.
