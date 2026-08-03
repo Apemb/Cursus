@@ -1899,7 +1899,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 **Qualité, non négociable, à chaque commit** : `dotnet build` sans le moindre warning, y compris dans les tests ; `dotnet test` entièrement vert.
 
-**Commits.** Un commit = un comportement terminé. **Un commit = une idée** : les refactors de forme sont commités seuls (le passage sync → async l'a été, sans changer un comportement, les tests de traversée restant verts). Message argumenté en français : le pourquoi et les alternatives écartées. Travail sur `main`, **ne jamais pousser sans demande explicite**.
+**Commits.** Un commit = un comportement terminé. **Un commit = une idée** : les refactors de forme sont commités seuls (le passage sync → async l'a été, sans changer un comportement, les tests de traversée restant verts). Message argumenté en français : le pourquoi et les alternatives écartées. **Pousser une branche de travail est un geste ordinaire ; pousser sur `main` reste interdit sans demande explicite** (`D-075`) — la formule antérieure ne distinguait pas les deux, ayant été écrite quand tout le travail vivait sur `main` et qu'aucune branche n'existait. Aujourd'hui le code n'arrive sur `main` que par une PR (`D-042`), et la PR d'un pas s'ouvre à la clôture du pas.
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 

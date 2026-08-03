@@ -939,7 +939,7 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     table n'autorise pas littéralement — alors que la phrase juste au-dessus d'elle (« le nom porte
     l'identifiant Linear, ce qui suffit à Linear pour rattacher seul la branche ») l'exige.
     ⚠️ **La table et sa propre justification se contredisent** ; c'est la table qui a vieilli.
-    — *étape 1, incohérence de corpus*
+    — *étape 1, incohérence de corpus, corrigée le jour même avec `D-075`*
 
 94. **Un test de garde ne peut pas être rouge tout seul, et aucun skill ne dit qu'on a le droit de
     le falsifier.**
@@ -967,7 +967,9 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     balayer les cartes d'état avant de clore —, pas une liste plus longue en amont. — *étape 5,
     dette de méthode*
 
-96. ⚖️ **À TRANCHER** — **Personne ne crée la PR, et la règle de push l'interdirait de toute façon.**
+96. **Personne ne crée la PR, et la règle de push l'interdirait de toute façon.** — *tranché le
+    jour même par `D-075` : `prendre-un-pas` l'ouvre en fin de pas, et pousser une branche de travail
+    cesse d'être un geste à demander.*
     Le corpus **suppose** la PR partout — `flux.md` §6 la met dans sa table (« un niveau, une
     branche, une PR »), `tickets.md` la range dans les adresses d'un ticket, et surtout §6 justifie
     l'existence même de la strate `pas/` par le fait que « la revue d'un pas peut avoir lieu après
@@ -982,6 +984,8 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     un `git diff <base>...HEAD` contre un point fixe, et les remarques vivent sur la **carte
     Linear** (`D-045`), pas dans le fil de la PR. Une revue de pas peut donc tourner sur la branche
     locale, aujourd'hui. La PR est nécessaire à la **fusion**, pas à la relecture.
-    À trancher : PR ouverte en fin de pas (ce que le motif de la strate `pas/` réclame), ou à la
-    fusion (moins de bruit sur un dépôt public, mais §6 perd sa justification). — *frontière
-    pas → revue, dette de méthode*
+    **Retenu** : PR ouverte en fin de pas — c'est ce que le motif de la strate `pas/` réclame, et
+    l'ouvrir à la fusion aurait obligé à réécrire cette justification, donc à rouvrir `D-042` pour
+    un problème de plomberie. ⚠️ **Le même trou subsiste un cran plus haut** : ni la branche de
+    story ni sa PR n'ont de porteur, et la question attend la première fusion d'incrément — la
+    légiférer maintenant serait de la méthode sur cas imaginé. — *frontière pas → revue, tranché*

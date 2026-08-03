@@ -289,11 +289,23 @@ logé dans `decisions.md`, qui est append-only et donc incorrigible.*
 Un niveau de ticket, une branche, une PR. Le nom porte l'identifiant Linear, ce qui suffit à Linear
 pour rattacher seul la branche et la PR à sa carte — une couture de moins à coder.
 
+**Qui ouvre la PR d'un pas, et quand** (`D-075`) : `prendre-un-pas`, **juste après avoir posé
+`Done`**. Le pas se clôt sur trois gestes — l'étiquette, la branche poussée, la PR ouverte vers la
+branche de story — et la carte reçoit le lien. Le motif est celui qui fonde la strate elle-même : si
+la revue d'un pas a lieu sur la PR (voir plus bas), la PR doit exister **avant** la revue. ⚠️ **Le
+même geste, un cran plus haut, n'a toujours pas de porteur** — ni la branche de story, ni sa PR ; la
+question attend la première fusion d'incrément.
+
 | Niveau | Branche | PR vers | Fusion |
 |---|---|---|---|
-| Pas | `pas/CUR-45-3-slug` | la story | **squash** |
+| Pas | `pas/CUR-46-slug` | la story | **squash** |
 | Incrément *(story)* | `story/CUR-45-slug` | la feature | **rebase puis fast-forward** |
 | Feature | `feature/CUR-xx-slug` | `main` | **rebase puis `--no-ff`** |
+
+⚠️ **L'identifiant d'un pas n'est pas celui de sa story.** La table portait `pas/CUR-45-3-slug` — un
+identifiant de story suivi d'un **rang** —, forme écrite quand un pas n'avait pas de carte à lui.
+`D-069` lui en a donné une, et `decoupage-pas` les crée comme sous-tâches que Linear numérote : le
+nom porte donc l'identifiant **du pas**, ce que la règle juste au-dessus exigeait déjà.
 
 **`feature/` n'est pas systématique.** Elle se décide **en Spec**, feature par feature, sur une
 seule question : *cette feature expose-t-elle une surface qui doit apparaître d'un bloc ?* Si non,

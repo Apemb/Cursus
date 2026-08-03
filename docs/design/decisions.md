@@ -4517,3 +4517,54 @@ l'**opportunité** d'en ajouter une là où une colonne de revue existe déjà. 
 **Le coût.** Trois axes plus un agrégateur là où il y avait un agent : le dispositif est quatre fois
 plus cher, et il s'ajoute à la revue qu'il ne remplace pas. Aucun budget n'est fixé ici ; si le coût
 devient le grief, c'est la **combinatoire** du §3 qu'il faudra rejuger, pas le nombre d'axes.
+
+---
+
+## D-075 — La PR d'un pas s'ouvre en fin de pas, et pousser une branche de travail cesse d'être un geste à demander (2026-08-03)
+
+**Contexte.** Le premier tour de `prendre-un-pas` a buté sur un geste que tout le corpus suppose et
+que personne ne porte : **la PR**. `flux.md` la met dans sa table des niveaux, `tickets.md` la range
+dans les adresses d'un ticket, et surtout `flux.md` justifie l'existence même de la strate `pas/`
+par le fait que la revue d'un pas « peut avoir lieu après le commit, **sur la PR** ». Aucun document
+ne disait qui l'ouvre. C'est la troisième occurrence du même motif en un tour — la branche de story
+n'a pas de créateur non plus (journal 92) — et toutes trois portent sur git.
+
+### 1. La décision
+
+**`prendre-un-pas` pousse la branche et ouvre la PR juste après avoir posé `Done`.** Le pas se clôt
+donc sur trois gestes et non deux : l'étiquette, la branche poussée, la PR ouverte vers la branche
+de story. La carte reçoit le lien.
+
+Le motif est celui qui fondait déjà la strate : si la revue d'un pas a lieu sur la PR, la PR doit
+exister **avant** la revue, pas à la fusion. Ouvrir à la fusion aurait obligé à réécrire la
+justification de la strate `pas/` — c'est-à-dire à rouvrir `D-042` pour un problème de plomberie.
+
+### 2. Ce que cela oblige à distinguer, et qui n'était pas distingué
+
+**Pousser une branche de travail est désormais un geste ordinaire ; pousser sur `main` reste
+interdit sans demande explicite.** La règle antérieure ne faisait pas la différence — elle disait
+« ne jamais pousser sans demande explicite », écrite quand tout le travail vivait sur `main` et
+qu'aucune branche n'existait. Elle n'a pas été relue quand les branches sont arrivées, et elle
+rendait la décision ci-dessus inapplicable.
+
+⚠️ **Le dépôt est public** : une branche poussée est visible de tous. C'est déjà vrai de chaque
+commit, et la contrainte qui compte est inchangée — jamais de jeton ni de chemin personnel dans un
+fichier versionné.
+
+### 3. Ce que la PR n'est pas
+
+**Elle n'est pas le lieu des remarques.** Une revue de code relit un `git diff <base>...HEAD` contre
+un point fixe, et ses remarques vivent sur la **carte Linear** (`D-045`) — jamais dans le fil de la
+PR. La PR est la surface du **diff** et le véhicule de la **fusion** ; scinder le dossier de revue
+entre GitHub et Linear le rendrait illisible.
+
+Conséquence pratique : une revue de pas peut tourner sans PR, sur la branche locale. La PR ne la
+débloque pas, elle lui donne un point d'observation stable et laisse Linear rattacher seul la
+branche et la PR à la carte.
+
+### 4. Ce que cette décision ne tranche pas
+
+**Qui ouvre la PR d'une story, et qui crée la branche de story.** Le même trou existe un cran plus
+haut, et le premier pas d'un incrément l'a comblé en passant, sans que ce soit écrit nulle part
+(journal 92). Le combler ici serait légiférer sur un cas qu'aucun tour n'a encore éprouvé — la
+fusion d'une story n'a jamais eu lieu. À reprendre quand le premier incrément se fusionnera.
