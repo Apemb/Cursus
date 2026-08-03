@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Cursus.App.ViewModels;
+using Cursus.Application;
 using Cursus.Core.Projects;
 using Cursus.Core.Secrets;
 using Cursus.Core.Tasks;
@@ -10,7 +11,11 @@ using Cursus.Trackers.Linear;
 
 namespace Cursus.App;
 
-public partial class App : Application
+// La classe de base est qualifiée : depuis le namespace Cursus.App, le simple nom
+// « Application » se résout d'abord sur les membres de Cursus — donc sur le
+// namespace Cursus.Application, jamais sur le using d'Avalonia. Sans la
+// qualification, CS0118 (« namespace employé comme un type »).
+public partial class App : Avalonia.Application
 {
     public override void Initialize()
     {

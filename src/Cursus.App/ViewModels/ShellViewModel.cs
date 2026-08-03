@@ -6,6 +6,7 @@ using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+using Cursus.Application;
 using Cursus.Core.Projects;
 
 namespace Cursus.App.ViewModels;
