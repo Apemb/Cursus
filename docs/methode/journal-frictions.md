@@ -767,3 +767,57 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     et le script a poursuivi en affichant sa ligne de fin — `set -e` ne voit pas l'échec, la CLI
     sortant en 0. ⚠️ **Vérifier le compteur `open` après un lot, jamais la sortie du script** :
     c'est la seule mesure qui ne ment pas. — *étape 6, dette d'outillage*
+
+---
+
+## 2026-08-03 — première vérification de plan, à la main (`verification` n'existe pas)
+
+82. **Répondre et solder sont le même geste, donc le compteur cesse de mesurer quoi que ce soit.**
+    `cursus linear comment resolve` est le seul verbe qui écrit dans un fil : la correction a donc
+    soldé les douze remarques *en y répondant*, et le compteur affichait `open: 0 / total: 12`
+    **avant** que la vérification commence. Or `cycle-increment.md` §5 lui donne pour critère de
+    sortie « `Done` si `open` vaut 0 » — un critère déjà satisfait, qu'un vérificateur qui n'aurait
+    rien lu aurait rempli à l'identique. ⚠️ **L'état Linear est structurellement incapable de
+    distinguer « soldé » de « soldé et vérifié ».** Deux issues, et il faut en choisir une avant
+    d'écrire les skills : donner à la CLI un verbe qui répond **sans** solder — et alors c'est la
+    vérification qui solde, ce qui rend le compteur exact —, ou renoncer au compteur comme critère
+    et exiger du vérificateur une trace écrite par fil. La première est meilleure : elle rétablit
+    l'accord entre le geste et la mesure au lieu d'ajouter une cérémonie.
+    — *étape 7, dette d'outillage · dette de méthode*
+
+83. **Une reprise s'est justifiée par un document que le vérificateur n'a pas le droit d'ouvrir.**
+    Une réponse se concluait sur « consigné en frictions 75 et 76 de `journal-frictions.md` », et le
+    mandat de la vérification interdit ce fichier — il raconte le tour en cours, donc il souffle.
+    Ici le solde tenait sans cette pièce, et le vérificateur l'a dit ; mais la forme est fautive.
+    ⚠️ **Une reprise ne peut se fonder que sur des artefacts que l'étape suivante peut ouvrir** — le
+    plan, le code, un référentiel de méthode, une entrée `decisions.md`. Le journal des frictions et
+    les fiches de REX n'en sont pas : ils décrivent l'exécution, pas l'objet.
+    — *étape 6, dette de méthode*
+
+84. **Il existe une troisième façon de solder, et aucun référentiel ne la prévoit.** `D-067` en
+    nomme deux — la reprise faite, ou le refus motivé. Une remarque s'est soldée par la troisième :
+    **amender le référentiel qu'elle invoquait**, la clause de DoD s'étant révélée fautive en
+    cochant une mise en page plutôt qu'un contenu. Ni la DoD ni `cycle-increment.md` §5 ne disent ce
+    qu'un vérificateur en fait — ce n'est ni une reprise de l'artefact ni un refus. Il a tranché sur
+    le fait matériel que la DoD *avait* changé et que la contrepartie promise existait, ce qui est le
+    bon critère : **vérifier l'amendement, pas la remarque.** À écrire dans `verification`.
+    — *étape 7, trou de référentiel*
+
+85. **La mémoire a de nouveau fuité d'office dans un mandat qui l'interdisait — et pour la première
+    fois, la parade s'est laissée mesurer.** Septième occurrence de la friction 43 : un extrait de
+    `MEMORY.md` a été présenté au vérificateur dans son rappel d'ouverture, alors que son mandat
+    nommait ce fichier en interdit. Nouveauté : l'extrait annonçait **l'état** (colonne, étiquette,
+    « zéro remarque ouverte sur douze », reprise menée à la main) et **pas la réponse** — aucun fil
+    n'y était jugé, parce que la mémoire avait été délibérément vidée de son contenu avant le tour.
+    Le vérificateur a pu le constater et le déclarer. ⚠️ **C'est la confirmation directe de la
+    friction 64** : puisqu'on ne peut pas empêcher la fuite, la seule variable qu'on tienne est *ce
+    qu'il y a à fuiter*. Une mémoire qui ne dit que l'état ne contamine pas un jugement.
+    — *étape 7, dette d'outillage*
+
+86. **`cursus linear comment list` rend les fils à plat, et l'appariement est manuel.** Trente-sept
+    kilo-octets de JSON non groupé, remarques et réponses mêlées dans un ordre qui n'est ni celui du
+    document ni celui des fils ; le vérificateur a reconstitué les douze couples à la main par
+    `parentId`, au prix d'un aller-retour de plus (la sortie déborde et part en fichier). `--unresolved`
+    est inutilisable ici puisqu'il ne rendrait rien. ⚠️ **Le format de sortie d'un outil de revue est
+    une décision de méthode** : ce qu'il rend difficile à lire, l'étape suivante le lira mal.
+    — *étape 7, dette d'outillage*
