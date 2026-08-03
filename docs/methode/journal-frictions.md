@@ -847,3 +847,37 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     dispositifs de fiabilité différente rendent un chiffre que rien ne qualifie. ⚠️ **Écrire la règle
     de tri avant le prochain essai, pas après** — écrite après, elle se choisira sur les nombres
     qu'elle doit départager. — *étape 7, dette du dossier `rex/`*
+
+---
+
+## 2026-08-03 — premier tour de `decoupage-pas` (`CUR-47`)
+
+89. **Le plan avait nommé quatre gestes « pour qu'aucun ne se perde au découpage », et le découpage
+    les a perdus.** La section « Ce que cet incrément met à jour dans la documentation » existait
+    précisément parce qu'une remarque de revue l'avait exigée ; au moment de couper, aucun des huit
+    pas ne la portait — chacun décrivait du code, et les quatre mises à jour d'`architecture.md` et
+    de `decisions.md` n'appartenaient à aucun. Seule **l'étape 5** — la relecture de l'**ensemble**,
+    qui cherche le geste qu'aucune pièce ne porte — les a rattrapées. ⚠️ **Une précaution écrite dans
+    l'artefact amont ne se transmet pas toute seule à l'aval** : elle survit parce qu'une étape la
+    cherche, jamais parce qu'elle est écrite. C'est la meilleure justification de l'axe d'ensemble
+    qu'on ait eue, et elle est arrivée à son premier tour. — *étape 8, méthode éprouvée*
+
+90. **L'étape 5 n'a aucun dispositif, et c'est devenu une incohérence du corpus le jour même.**
+    `decoupage-pas` §5 rend la relecture d'ensemble **obligatoire** et lui confie explicitement ce
+    qui « tient lieu de la porte humaine » — mais elle est faite par le producteur, en session, sur
+    son propre découpage. Or `D-073`, écrit quelques heures plus tôt, vient d'établir l'inverse pour
+    `discovery` et `spec` : sous-agent par axe, en session neuve, agrégateur **distinct du binôme**,
+    au motif mesuré qu'une auto-évaluation « ne voit pas ce que son auteur ne peut pas voir ».
+    ⚠️ **Le seul endroit du flux qui n'a *aucun* relecteur en aval est aussi le seul dont la
+    relecture est faite par l'auteur.** Ici le tour s'en est bien sorti (friction 89), mais un
+    succès ne mesure pas un dispositif. À trancher : généraliser `D-073` à `decoupage-pas` §5, ou
+    écrire pourquoi ce cas s'en dispense. — *étape 8, dette de méthode*
+
+91. **La maille visée par le plan était basse de 40 %, et l'écart n'était pas une erreur.** Le plan
+    annonçait « cinq à six pas » ; le découpage en a rendu **huit**. Trois pas que la maille comptait
+    pour un — la naissance du projet socle, la garde des workspaces, la protection du registre —
+    portent des acceptations de natures différentes (un déménagement, une non-régression de
+    sélection, un invariant de collection), et les fondre aurait produit un pas qu'aucune fenêtre
+    fraîche ne tient. ⚠️ **Un point de mesure, pas une règle** : à retenir pour savoir, au troisième
+    ou quatrième découpage, si la maille d'un plan sous-estime **systématiquement**. Si oui, c'est
+    `plan-design` §4 qu'il faudra corriger, pas les découpages. — *étape 8, mesure à suivre*
