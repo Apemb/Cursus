@@ -43,9 +43,10 @@
 
 ## 2. La boucle a eu lieu et son issue est lisible
 
-- [ ] `revue` a tourné sur les axes de `revue-plan` (le plan contre `architecture.md`, la maille
-      visée contre ce que le plan structure, le schéma-delta contre `schemas.md`), en sous-agents
-      parallèles **jamais fusionnés**
+- [ ] `revue` a tourné sur les **trois axes** de `revue-plan` — **Conformité** (§1 de ce document,
+      clause par clause), **Architecture** (`docs/design/architecture.md`, où seul un écart **tu**
+      est opposable), **Découpabilité** (§3 de ce document) — en sous-agents parallèles **jamais
+      fusionnés**
 - [ ] Chaque divergence relevée porte sa **citation** (référentiel + extrait), ou son
       **abstention explicite** si le référentiel manquait
 - [ ] Le document de boucle existe si au moins un tour a eu lieu, et chacune de ses entrées est
@@ -75,6 +76,11 @@ n'a pas prise, le manque est dans le plan — pas dans le découpage, pas dans l
 - **Les pas eux-mêmes, ni leur test list.** Les pas naissent à l'entrée en `In Progress` (`D-070`),
   la test list à la prise de chacun (`tickets.md` §4) — un plan qui les anticipe a mangé les étapes
   suivantes, il ne les a pas mieux préparées.
+- **Un écart à `architecture.md`.** Le document décrit ce qui **est**, pas ce qui doit rester : un
+  incrément a le droit de faire évoluer l'architecture, et `CLAUDE.md` demande qu'il mette le
+  document à jour dans le commit qui le rend nécessaire. Ce qui est opposable, c'est l'écart **tu** —
+  une question tranchée rouverte, un invariant contredit ou une frontière de couches déplacée **sans
+  le dire**. Un écart nommé et motivé est conforme (`D-049`).
 - **L'unanimité sur la forme.** `revue` liste les divergences, elle ne réécrit pas ; un désaccord
   de jugement documenté et assumé peut sortir en `Done` s'il n'est pas une violation dure.
 

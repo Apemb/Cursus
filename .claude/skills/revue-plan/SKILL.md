@@ -1,6 +1,6 @@
 ---
 name: revue-plan
-description: Boucle la relecture d'un plan de design entre agent de plan et agent de revue jusqu'à accord, et escalade le litige — en s'assignant la carte — après deux ou trois tours sans convergence. Use when un incrément est en Plan Review, quand on relance une revue de plan après une correction, ou quand une carte de Plan Review porte déjà un tour précédent à reprendre.
+description: Valider la conformité d'un plan de design contre `docs/methode/dod/story/plan-review.md`, en bouclant entre agent de plan et agent de revue jusqu'à accord, et escalader le litige — en s'assignant la carte — après deux ou trois tours sans convergence. Use when un incrément est en Plan Review, quand un incrément attend en Planning portant `Done`, quand on relance une revue de plan après une correction, ou quand une carte de Plan Review porte déjà un tour précédent à reprendre.
 ---
 
 > **Draft non éprouvé.** Écrit d'après l'état de l'art, pas récolté sur une exécution réelle —
@@ -29,18 +29,37 @@ qui la tirera vers `In Progress` pour y découper les pas (`cycle-increment.md` 
 
 ## 1. Invoquer `revue`, sur ces axes
 
-Deux ou trois, pas plus — au-delà, aucun ne reçoit assez d'attention :
+Fournir l'artefact — le document `Planning` attaché à l'incrément — et exactement **trois** axes.
+Deux sont adossés à la DoD, le troisième n'a pas de clause et c'est assumé.
 
-- **Le plan contre `architecture.md`** — l'état présent, les invariants, les trois registres
-  (construit / tranché non construit / question ouverte). Un plan qui rouvre une question déjà
-  tranchée, ou ignore un invariant listé, est une divergence ici.
-- **La maille visée contre ce que le plan structure** — l'ordre de grandeur annoncé est-il tenable
-  avec des pas qui tiennent chacun dans une fenêtre de contexte fraîche (`plan-design` §4) ? Les
-  frontières annoncées tombent-elles bien des objets, ou sont-ce des ordres d'exécution déguisés ?
-  ⚠️ Le plan ne porte **pas** les pas eux-mêmes — ils naissent à l'entrée en `In Progress`
-  (`D-070`) ; un plan qui les énumère est en trop, pas en avance.
-- **Le schéma-delta contre `schemas.md` §6** — couleurs correctes, anatomie du nœud respectée, la
-  ligne `+` présente sur chaque bloc modifié.
+**Axe Conformité** (référentiel : `docs/methode/dod/story/plan-review.md` §1, clause par clause).
+Une clause non tenue **et** non déclarée sans objet est une **violation dure**. Les deux qui se
+manquent le plus facilement, parce qu'elles portent sur ce qui **n'est pas** dans le document :
+
+- ⚠️ **le plan ne porte pas les pas eux-mêmes**, seulement la **maille visée** — ils naissent à
+  l'entrée en `In Progress` (`D-070`) ; un plan qui les énumère est en trop, pas en avance ;
+- ⚠️ **les pièges connus sont accrochés à leur objet**, jamais à un pas. Un piège rattaché à un pas
+  qui n'existe pas encore est un piège perdu, et c'est précisément ce que la clause protège.
+
+La clause du schéma-delta renvoie à `docs/design/schemas.md` §6 (couleurs, anatomie du nœud, ligne
+`+` sur chaque bloc modifié) : **aller la lire**, ne pas juger de mémoire.
+
+**Axe Architecture** (référentiel : `docs/design/architecture.md` — l'état présent, les invariants,
+les trois registres). ⚠️ **Un écart n'est pas une divergence ; un écart tu en est une.**
+`architecture.md` décrit ce qui est, pas ce qui doit rester : un incrément a le droit de le faire
+évoluer, et `CLAUDE.md` demande même qu'il le mette à jour dans le commit qui le rend nécessaire.
+Ce qui est opposable, c'est donc le **silence** — un plan qui rouvre une question tranchée, contredit
+un invariant listé ou déplace une frontière de couches **sans le dire** ; jamais le fait qu'il le
+fasse. Un écart nommé, motivé, et dont la mise à jour du document est prévue, est conforme (`D-049`).
+Ce sont par nature des **jugements** : il n'existe pas de clause à citer pour « cet écart n'est pas
+justifié ».
+
+**Axe Découpabilité** (référentiel : `docs/methode/dod/story/plan-review.md` §3, le critère
+opposable). Ce n'est pas cochable : tenter réellement de tracer les frontières entre pas, puis
+d'écrire la test list du premier, et signaler **chaque endroit où il faudrait revenir demander
+comment c'est structuré**. Ce que cet axe trouve, c'est ce sur quoi `decoupage-pas` buterait ensuite
+— et un manque trouvé ici coûte un tour de revue, là où le même manque trouvé plus tard renvoie la
+carte en `Planning` (`decoupage-pas` §6).
 
 `revue` tourne ces axes en sous-agents parallèles, jamais fusionnés, chacun citant le référentiel
 et l'extrait, s'abstenant si l'un manque. Il pose `Done` ou `Rework Needed` — il ne déplace jamais
