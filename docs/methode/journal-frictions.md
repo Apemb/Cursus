@@ -696,3 +696,26 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     représentations du même fait se lit d'abord comme une faute de l'opérateur** ; c'est la seconde
     occurrence qui révèle que le fait était représenté deux fois. Ne pas attendre la seconde :
     demander, à la première, *qui d'autre porte cette information.* — *étape 5, dette de méthode*
+
+---
+
+## 2026-08-03 — premier tour de `revue-plan`, et l'essai de `D-071`
+
+75. **Une clause de DoD a durci sa règle en la recopiant, et le durcissement n'est apparu qu'à la
+    première application réelle.** La règle « un piège s'accroche à son objet, jamais à un pas »
+    s'énonce en cinq endroits ; `dod/story/plan-review.md` §1 était le seul à ajouter *« dans la
+    table »*. Le tour a produit une **violation dure** sur un plan qui tenait pourtant l'invariant —
+    ses huit pièges nommaient chacun leur objet, dans une section dédiée. ⚠️ **Le test qui manquait
+    à la clause : est-ce qu'elle teste le mal qu'elle vise ?** « Dans la table » testait une mise en
+    page. Et le durcissement était doublement piégeux, parce que `CLAUDE.md` — chargé d'office, donc
+    le seul texte que l'auteur d'un plan a réellement sous les yeux — ne l'exige pas : une DoD qui
+    demande plus que la règle chargée d'office fabrique des violations chez qui suit les règles.
+    Tranché : la clause coche le **nom de l'objet**, jamais l'endroit. — *étape 6, correction*
+
+76. **Le relecteur a eu l'honnêteté de dire que le mal visé était absent — et c'est ce qui a rendu
+    la remarque utile.** Au lieu de trancher seul entre les deux formulations, il a posé *« à
+    trancher : lequel des deux documents change »*, en citant les trois. Sans cette forme, la
+    remarque se serait soldée par une correction du plan et le dépôt garderait sa divergence.
+    ⚠️ **Une remarque de conformité peut mettre en cause son propre référentiel** ; l'interdire
+    reviendrait à faire de la DoD une source infaillible, ce qu'aucun document du dépôt n'est.
+    — *étape 6, dette de méthode*

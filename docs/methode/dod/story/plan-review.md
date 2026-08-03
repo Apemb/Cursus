@@ -34,8 +34,12 @@
 - [ ] La **maille visée** est dite : l'ordre de grandeur de pas, les frontières qui tombent des
       objets, et l'ordre là où il est contraint — ⚠️ **pas les pas eux-mêmes**, qui naissent à
       l'entrée en `In Progress` (`D-070`). Un plan qui les énumère est en trop, pas en avance
-- [ ] Les **pièges connus** sont accrochés à leur **objet** dans la table, jamais à un pas — un
-      piège rattaché à un pas qui n'existe pas encore est un piège perdu
+- [ ] Les **pièges connus** sont accrochés à leur **objet**, jamais à un pas — chacun **nomme
+      l'objet** dont il est une propriété. Un piège rattaché à un pas qui n'existe pas encore est un
+      piège perdu. ⚠️ **L'endroit ne fait pas partie de la clause** : la cellule de la table ou une
+      section « objet par objet » servent l'invariant aussi bien, et une table à quatre colonnes
+      cesse d'être lisible passé quelques pièges. Ce qui se coche est le **nom de l'objet**, jamais
+      la mise en page
 - [ ] Le plan vit **au bon endroit** (`CLAUDE.md` §Où vit le plan) : document attaché si une carte
       porte le travail, fichier avec `> Fichier : <chemin>` en tout premier sinon
 - [ ] Le plan ne contient **ni test list, ni instructions ligne à ligne** — la conception s'arrête

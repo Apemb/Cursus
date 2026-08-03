@@ -81,9 +81,14 @@ retrouverait pas :
 
 **Les pièges restent ici, accrochés à leur objet.** Un piège local — une connexion non thread-safe,
 un arrêt qu'il faut attendre, un chemin qu'il ne faut pas recomposer à la main — est une propriété
-de l'**objet**, pas du pas qui le touche. L'écrire dans la table « Objets impactés » le préserve
-quelle que soit la façon dont le découpage coupera ensuite. Le renvoyer à un pas qui n'existe pas
-encore, c'est le perdre.
+de l'**objet**, pas du pas qui le touche. Le renvoyer à un pas qui n'existe pas encore, c'est le
+perdre.
+
+**Ce qui le préserve est le nom de l'objet, pas l'endroit où tu l'écris.** Dans la cellule de la
+table « Objets impactés » quand il tient en une ligne ; dans une section « objet par objet » quand
+il y en a plusieurs ou qu'ils demandent un paragraphe — une table à quatre colonnes cesse d'être
+lisible passé quelques pièges, et un lecteur saute alors la colonne entière. Les deux formes
+satisfont la DoD, qui ne coche que le nom de l'objet.
 
 **Fait quand** : un lecteur sait en quel ordre de grandeur de pas cet incrément se fait, quelles
 frontières tombent de la conception, et aucun piège connu ne dépend d'un pas pour survivre.
