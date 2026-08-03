@@ -7,6 +7,33 @@
 > **Ce fichier ne dit pas si ça progresse** — il n'a aucune structure qui permette de comparer deux
 > passages. C'est [`rex/`](rex/README.md) qui le fait : une fiche par exécution, rubriques fixes.
 > Une fiche renvoie ici par numéro d'entrée, et ne recopie jamais.
+>
+> ## ⚖️ Le marqueur des décisions en attente
+>
+> Une entrée qui **attend une décision** porte la balance et la mention en capitales juste après son
+> numéro. Le balayage **est** l'index des arbitrages ouverts — il reste dérivé du journal, donc il ne
+> peut pas diverger de lui, là où un registre séparé le pourrait : une copie d'un référentiel diverge
+> en silence (entrée 54).
+>
+> ```bash
+> grep -n "^[0-9]\+\. ⚖️" docs/methode/journal-frictions.md
+> ```
+>
+> L'ancre `^<numéro>.` est ce qui rend l'index exact : elle ne prend que les entrées, jamais les
+> mentions du marqueur en prose — à commencer par ce préambule. Retirer le marqueur quand la
+> décision est prise, en renvoyant à l'entrée `decisions.md` qui la porte.
+>
+> ⚠️ **Il ne vise qu'un cas : une décision dont les branches sont ouvertes.** Pas une tâche dont la
+> réponse est connue et qui attend son tour (« à écrire dans tel skill »), pas une mesure à suivre,
+> pas un constat. Un marqueur qui couvre les deux rendra vingt résultats dans un mois et redeviendra
+> illisible — c'est exactement ce qui est arrivé à « question ouverte » dans `decisions.md`.
+>
+> ⚠️ **Une décision, un marqueur** — même quand elle a été rencontrée plusieurs fois. L'entrée
+> marquée nomme alors ses occurrences antérieures ; celles-ci restent nues.
+>
+> **Convention posée le 2026-08-03.** Les entrées antérieures à la 62 n'ont pas été balayées : la
+> plupart ont été tranchées depuis par une entrée de `decisions.md`, et les marquer après coup
+> produirait des faux positifs que rien ne permet de vérifier.
 
 ## 2026-07-26 — Discovery de « un agent pilote Cursus »
 
@@ -772,7 +799,8 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
 
 ## 2026-08-03 — première vérification de plan, à la main (`verification` n'existe pas)
 
-82. **Répondre et solder sont le même geste, donc le compteur cesse de mesurer quoi que ce soit.**
+82. ⚖️ **À TRANCHER** — **Répondre et solder sont le même geste, donc le compteur cesse de mesurer
+    quoi que ce soit.**
     `cursus linear comment resolve` est le seul verbe qui écrit dans un fil : la correction a donc
     soldé les douze remarques *en y répondant*, et le compteur affichait `open: 0 / total: 12`
     **avant** que la vérification commence. Or `cycle-increment.md` §5 lui donne pour critère de
@@ -838,7 +866,8 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     plus pour que les gestes qu'on veut mesurer passent par un sous-agent.
     — *étape 7, dette du dossier `rex/`*
 
-88. **La règle de comptage des « constats de fond » n'existe pas, et la mesure de l'essai en dépend.**
+88. ⚖️ **À TRANCHER** — **La règle de comptage des « constats de fond » n'existe pas, et la mesure
+    de l'essai en dépend.**
     La table qui oppose les trois dispositifs de relecture compare **4 · 10 · 11** quand les
     dispositifs ont matériellement rendu **5 · 10 · 12** : l'écart vient d'un tri implicite entre
     constat de fond et constat procédural, que personne n'a écrit. La conclusion de l'essai ne bouge
@@ -846,7 +875,15 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     reproductible ne se compare pas au tour suivant**. Même famille que la friction 65 : deux
     dispositifs de fiabilité différente rendent un chiffre que rien ne qualifie. ⚠️ **Écrire la règle
     de tri avant le prochain essai, pas après** — écrite après, elle se choisira sur les nombres
-    qu'elle doit départager. — *étape 7, dette du dossier `rex/`*
+    qu'elle doit départager.
+
+    ⚠️ **Cette entrée porte le marqueur pour toute une famille**, rencontrée trois fois avant d'être
+    nommée : la **62** (la métrique compte les appels d'attente et ignore ceux de *préparation* à
+    l'attente) et la **65** (« zéro constat écarté » rend la même valeur qu'un tour ait vérifié ses
+    assertions ou non) en sont les deux occurrences antérieures, laissées nues. La décision est la
+    même dans les trois cas : **une ligne de mesure doit porter son mode d'obtention**, sans quoi
+    deux dispositifs de fiabilité différente rendent un chiffre identique.
+    — *étape 7, dette du dossier `rex/`*
 
 ---
 
@@ -862,7 +899,8 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     cherche, jamais parce qu'elle est écrite. C'est la meilleure justification de l'axe d'ensemble
     qu'on ait eue, et elle est arrivée à son premier tour. — *étape 8, méthode éprouvée*
 
-90. **L'étape 5 n'a aucun dispositif, et c'est devenu une incohérence du corpus le jour même.**
+90. ⚖️ **À TRANCHER** — **L'étape 5 n'a aucun dispositif, et c'est devenu une incohérence du corpus
+    le jour même.**
     `decoupage-pas` §5 rend la relecture d'ensemble **obligatoire** et lui confie explicitement ce
     qui « tient lieu de la porte humaine » — mais elle est faite par le producteur, en session, sur
     son propre découpage. Or `D-073`, écrit quelques heures plus tôt, vient d'établir l'inverse pour
