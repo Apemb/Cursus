@@ -43,6 +43,7 @@
 | Noyau déterministe | `src/Cursus.Core/Workflows/` (rangé en vocabulaire racine + 8 sous-namespaces — voir §4) | Moteur de traversée, runner de process réel (+ stratégie `PATH`, 6c·3c), contexte de run, validateur de graphe, format de fichier JSON bidirectionnel, vocabulaire d'événements de journal (le flux porte le `runId` dès l'ouverture, 6c·3c), puits de sortie en flux (6a), provisionnement de workspace isolé par worktree git (6b), **deux projections sœurs** (`Projection/`, event-fed) : `RunProjection` plie le flux en trajectoire + statut + contrôle 3 positions (6c·3c), `GraphProjection` le plie en overlay de graphe qui montre le **non-parcouru** (vue graphe) ; à côté, `GraphLayout` en dispose la structure sur une grille par couches (calcul **pur**, statique, arêtes-retour comprises) ; et une **surface d'édition mutable** (`Editing/`) qui **construit** un graphe depuis rien autant qu'elle le **remanie**, en tenant l'unicité d'id (§4.19–4.20), plus `Slug` (libellé → id), `ArgumentLine` (ligne d'arguments ⟷ argv, à guillemets, `D-024`) et `CommandLine` (ligne de commande ⟷ binaire + arguments, `D-029`) — des transformations pures que l'éditeur consomme. **Trois kinds d'étape** désormais (`D-030`, `D-032`) : `StepDefinition` abstraite, `ScriptStep`/`AgentStep`/`TaskStep`, chacun exécuté par un `IStepExecutor` que le moteur choisit par type ; l'agent tourne en headless (`AgentStepExecutor` → `claude --model … -p …`), son harness étant un concept nommé (`AgenticHarness`) ; la tâche agit sur le tableau (`TaskStepExecutor` → port `ITaskTracker`, geste `TaskOperation`), la clé de la tâche du run lui parvenant par un `StepExecutionContext`. **232 tests.** Fonctionne bout en bout, sans UI ; plusieurs runs de front sur un même projet. |
 | Projet & catalogue | `src/Cursus.Core/Projects/` (11 fichiers) | La disposition `.cursus/`, sa création et sa relecture, la liste et le chargement des workflows **depuis le disque**, l'emplacement des worktrees, le registre machine des projets connus (6c·1) et `ProjectHost` — la racine de composition d'un projet ouvert : lire le passé, **lancer** (6c·3b), **relire les événements** d'un run (`ReadEvents`, 6c·3c), **énumérer les runs d'un workflow** (`RunsOf`, jalon page du workflow) ; le catalogue sait aussi **créer depuis un titre** (`CreateFromTitle`, ·3b). **57 tests.** Voir §4.11, §4.14, §4.16, §4.17, §4.21, §4.23. |
 | Persistance | `src/Cursus.Persistence/` | Journal SQLite (écriture sérialisée), magasin d'artefacts sur disque avec **suiveur de tail** qui voit la sortie **en direct** (flush par écriture, jambe 1), et le préréglage SQLite de `ProjectHost`. **29 tests.** Un run survit au process ; le flux live d'un run et sa relecture donnent la **même** projection (preuve end-to-end, 6c·3c). |
+| Socle applicatif | `src/Cursus.Application/` | Le socle partagé par les portes, né en `CUR-65` (`D-074`) : il référence noyau et persistance, et **rien ne le référence sinon des portes**. N'y vit encore que `ProjectWorkspace` — host + magasin d'artefacts + catalogue d'un projet ouvert, montés d'un bloc —, qui a quitté `Cursus.App/ViewModels/` sans avoir jamais rien eu d'un ViewModel. **1 test** : la garantie « atteignable sans Avalonia », étendue du noyau à lui (§7.12). La racine multi-projets et la couche applicative y naîtront ; **elles n'existent pas encore**. |
 | Surface projet (run · éditeur) & sessions | `src/Cursus.App/` (+ `src/Cursus.Core/Sessions/`) | App Avalonia qui ouvre de vrais terminaux via RoyalTerminal, et la **surface d'un projet** à modules sans routeur (liste ⇄ run ⇄ **page du workflow**, `D-016`) : l'**écran de run** (6c·3c) — un workflow lancé, sa trajectoire se déroule, le log de la visite se suit en direct, un contrôle à trois positions l'arrête, un run passé se rouvre en relecture ; la **page du workflow** (`D-026`) — atteinte en cliquant une ligne, elle compose en onglets l'**historique** de ses runs (chacun rouvrable en relecture) et l'**éditeur** (·3b, onglet *Étapes*) — ajouter étapes et arêtes gardées, poser l'entrée, régler un script, valider en direct, enregistrer ; la liste, elle, sait **créer/renommer/supprimer** un workflow (·3b). Présentation non testée (§7.12) ; logique de sessions testée (**13 tests**). |
 
 | Outillage de méthode | `cursus-cli/` (TypeScript, hors solution) | La ligne de commande `cursus linear …` : `login`/`logout`, `whoami`, `doc list|show`, `comment add|list|resolve`. Elle donne aux revues le geste que le MCP Linear ne sait pas faire — poser une divergence **située** sur un passage d'un document, et la solder en nommant ce qui la solde. Les remarques visent la **carte** qui porte le document, l'ancrage d'un commentaire de document étant impossible par l'API (`D-045`). **61 tests** (vitest), le gros portant sur `anchor.ts` et `reference.ts` : l'API Linear ne vérifie aucune citation, et le repère de section est calculé. Ne participe pas au produit ; partage le trousseau et le registre machine avec l'app. Voir §7.14 et `D-044`. |
@@ -53,7 +54,7 @@ Le noyau et la persistance se connaissent (le second implémente les contrats du
 
 ### 1.2 Solution, projets, dépendances
 
-`Cursus.slnx` (format XML .NET 10) regroupe `src/Cursus.App` (Avalonia, `OutputType=WinExe`), `src/Cursus.Core` (bibliothèque), `src/Cursus.Persistence` (bibliothèque) et deux projets de tests xUnit. Tous en `net10.0`, `Nullable` activé partout, `ImplicitUsings` sur tout sauf App.
+`Cursus.slnx` (format XML .NET 10) regroupe `src/Cursus.App` (Avalonia, `OutputType=WinExe`), `src/Cursus.Core`, `src/Cursus.Persistence`, `src/Cursus.Trackers` et `src/Cursus.Application` (bibliothèques), plus leurs projets de tests xUnit. Tous en `net10.0`, `Nullable` activé partout, `ImplicitUsings` sur tout sauf App.
 
 ```mermaid
 graph TD
@@ -64,13 +65,20 @@ graph TD
     end
     Projects --> Workflows
     Persistence["Cursus.Persistence<br/>SqliteRunJournal, RunEventCodec,<br/>RunArtifactStore, SqliteProjectHost<br/><i>(Microsoft.Data.Sqlite)</i>"] --> CoreLib
+    Trackers["Cursus.Trackers<br/>LinearTaskBoard"] --> CoreLib
+    Application["Cursus.Application<br/>ProjectWorkspace<br/><i>(socle des portes, CUR-65)</i>"] --> CoreLib
+    Application --> Persistence
     App["Cursus.App<br/>(Avalonia, RoyalTerminal)"] --> CoreLib
     App -- "lecture du journal (6c·3a)" --> Persistence
+    App --> Trackers
+    App -- "le socle, jamais l'inverse" --> Application
     Sessions -. "aucune référence,<br/>dans aucun sens" .- Workflows
 
     style Workflows fill:#1f6f4a,color:#fff
     style Projects fill:#1f6f4a,color:#fff
     style Persistence fill:#1f6f4a,color:#fff
+    style Application fill:#1f6f4a,color:#fff
+    style Trackers fill:#1f6f4a,color:#fff
     style Sessions fill:#5a4b8a,color:#fff
 ```
 
@@ -1396,7 +1404,7 @@ qu'un critère si :
 | **Un module par capacité** | La façade n'accueille que ce qui demande une **composition** : lancer/observer/annuler un run. Lister, charger, **ouvrir pour éditer** (`Open`, `D-020`) **et écrire** (créer/sauver/supprimer/renommer, `D-019`) restent `WorkflowCatalog`, déjà testés |
 | **Le flux d'événements fait foi** | Pendant un run, le `WorkflowRun` rendu par `ExecuteAsync` ne sert qu'à savoir que la tâche est finie. Sinon deux écrivains sur le même état |
 | **Un run à la fois** | Non par confort : c'est la seule configuration que le code supporte sans synchronisation (§9.2-14). ⚠️ **Révisé par le parcours** — la cible exige des runs concurrents ; voir §7.13 |
-| **Deux tests rendent le critère exécutable** | (a) `Cursus.Core` ne référence aucun assembly `Avalonia.*` — **construit au 6c·1** (`ArchitectureTests`, §4.14) ; (b) un end-to-end **headless** qui ouvre sans instancier Avalonia — **construit au 6c·3a (lire), étendu au 6c·3b (lancer puis lire)** (§4.16, §4.17). Le second *force* `ProjectHost` à être suffisant |
+| **Deux tests rendent le critère exécutable** | (a) aucun assembly du périmètre testé ne référence `Avalonia.*` — **construit au 6c·1** pour `Cursus.Core` (`ArchitectureTests`, §4.14), **étendu à `Cursus.Application` en `CUR-65`** ; chaque assembly porte la garantie dans **son propre** projet de tests, une liste centralisée ferait référencer le socle par les tests du noyau ; (b) un end-to-end **headless** qui ouvre sans instancier Avalonia — **construit au 6c·3a (lire), étendu au 6c·3b (lancer puis lire)** (§4.16, §4.17). Le second *force* `ProjectHost` à être suffisant |
 
 **Écarts à retenir, parce qu'ils se rediscuteraient sinon :**
 
@@ -1404,8 +1412,16 @@ qu'un critère si :
   grandirait par construction (tracker au jalon 7, éditeur au jalon 8) et serait aux trois cinquièmes
   faite de délégations d'une ligne vers du noyau déjà testé. Retenu : **une racine unique, plusieurs
   modules**.
-- **Un quatrième projet de composition** — écarté : `Cursus.Persistence` est déjà le seul endroit qui
-  connaît les deux mondes.
+- **Un quatrième projet de composition** — écarté d'abord, **retenu depuis** (`D-074`, CONSTRUIT en
+  `CUR-65`). Le motif de l'écart — `Cursus.Persistence` est déjà le seul endroit qui connaît les deux
+  mondes — reposait sur une prémisse numérique : il existait **un** appelant. La seconde porte en
+  fait deux, qui partagent la racine multi-projets et le `ProjectWorkspace` qu'elle résout ; et la
+  couche applicative à venir (commandes, verrou global, registre des runs en vol) ne peut pas vivre
+  dans un projet nommé *Persistence* sans que le nom mente. Le socle est donc **`Cursus.Application`**,
+  qui référence `Cursus.Core` et `Cursus.Persistence` ; `Cursus.App` et `Cursus.Mcp` le référencent
+  tous deux, jamais l'inverse. ⚠️ **Le nom crée un piège de résolution** : depuis le namespace
+  `Cursus.App`, le simple nom `Application` désigne le namespace `Cursus.Application` et non
+  `Avalonia.Application` — la classe de base d'`App` est qualifiée pour cette seule raison.
 - **Retirer `CommunityToolkit.Mvvm` de `Cursus.Core`** en réimplémentant `INotifyPropertyChanged` à la
   main (il est dans la BCL) — écarté : n'achète **rien** de fonctionnel, le noyau resterait tout aussi
   orienté affichage avec plus de code écrit à la main. C'est de la pureté de graphe de dépendances, pas
@@ -1780,9 +1796,13 @@ deux se touchent sans se recouvrir, et le repackage reste hors périmètre.
 
 `ProjectHost` reste la racine de composition d'un projet (§7.12), mais **une racine multi-projets
 descend hors de `Cursus.App`** : deux portes la résolvent, et la présentation ne peut plus la posséder.
-⚠️ **Ce qui descend est plus large que « la racine »** — `App.axaml.cs` résout aujourd'hui un
-`ProjectWorkspace` (host + `RunArtifactStore` + `WorkflowCatalog`), et ce type vit dans
-`Cursus.App/ViewModels/`.
+⚠️ **Ce qui descend est plus large que « la racine »** — `App.axaml.cs` résout un `ProjectWorkspace`
+(host + `RunArtifactStore` + `WorkflowCatalog`), qui descend donc avec elle.
+
+**Le socle où tout cela atterrit est `Cursus.Application`** — CONSTRUIT en `CUR-65` (`D-074`), qui y a
+déjà déménagé `ProjectWorkspace` et y a étendu la garantie « atteignable sans Avalonia ». Il référence
+`Cursus.Core` et `Cursus.Persistence` ; `Cursus.App` et `Cursus.Mcp` le référencent tous deux, jamais
+l'inverse. La racine multi-projets elle-même y naîtra, **elle n'existe pas encore**.
 
 **Les hosts sont gardés** : la racine construit à la première résolution et conserve (`D-057`). Ce
 n'est pas du confort. `SqliteProjectHost.Open` construit un `SqliteRunJournal` dont le **constructeur**
@@ -1869,8 +1889,6 @@ pour terminé, et le run part sur un dossier inexistant. À porter en carte prop
 
 #### 7.15.7 Questions ouvertes de cette section
 
-- **Où le socle atterrit** — dans quel projet vivent la couche applicative, la racine multi-projets et
-  le registre des runs en vol. Relève d'un plan de design, pas de la spec.
 - **Où vivent les hosts gardés**, qui les possède, et si un host inactif se ferme.
 - **La forme de la publication** de l'endpoint et du jeton — fichier de configuration, réglage affiché
   à copier, ou les deux.
@@ -1903,7 +1921,7 @@ Ces règles sont **prescrites par `CLAUDE.md`** (racine du dépôt), pas déduit
 
 > Cette dernière règle est à préserver pour une raison technique, pas de style : **une part significative du raisonnement d'architecture n'existe que dans les messages de commit**. Le blocage des tubes à 64 Kio, l'argument de l'aller-retour JSON/YAML, la racine obligatoire à cause de `/Applications`, le fait que le garde-fou de chemin n'est pas un confinement — rien de tout cela n'est déductible du code seul.
 
-Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **363 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`f4be0fa`, `6c9d7fa`).
+Les comptes de tests cités dans l'historique (13 → 27 → 40 → 43) sont des jalons, **pas l'état courant** : la suite est aujourd'hui à **375 verts**, chiffre à réobtenir par `dotnet test`. La mention « build 0 warning » figure explicitement aux clôtures des jalons 1 et 2 (`f4be0fa`, `6c9d7fa`).
 
 ---
 
