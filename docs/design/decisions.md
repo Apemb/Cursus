@@ -4326,3 +4326,67 @@ La **maille** d'un pas reste inconnue, et `D-070` ne la découvre pas : elle ré
 coûte — on ne fige plus qu'un ordre de grandeur — mais seule l'exécution réelle de pas par un agent
 la mesurera. Reste ouvert également le sort des cartes déjà décrites dans le plan de `CUR-47`, dont
 la reprise est le premier usage de la règle neuve.
+
+---
+
+## D-071 — Un skill de production fait relire son artefact avant de poser son signal (2026-08-03)
+
+**Contexte.** La vérification du chantier `D-070` — un agent, trois lectures, en régime *Vérification*
+— a rendu **huit contradictions** sur des documents que leur auteur venait de relire et de croire
+finis. L'une d'elles reproduisait `D-069` deux jours après son écriture. L'utilisateur en a tiré une
+généralisation : *et si un agent ne posait son étiquette qu'après avoir fait valider son travail ?*
+Sa formulation dit l'analogie qui fonde la décision — **en développement il y a les tests ; sur un
+document, il faut l'accord d'un relecteur.**
+
+### 1. La décision, et son périmètre exact
+
+**`discovery` et `spec` font relire leur document par un sous-agent avant de poser
+`Review Requested`.** Session neuve, artefact seul, contre la **même DoD** que la revue de colonne
+appliquera ensuite (`D-039`). Le relecteur liste et ne réécrit pas.
+
+Ce que cela remplace est nommé : les deux skills finissaient par un **auto-passage contre la DoD**,
+et une auto-évaluation ne voit pas ce que son auteur ne peut pas voir. En `Spec`, trois cases le
+montrent en creux — *le document ne se contredit pas*, *les faits allégués sont vrais*, *toute règle
+cite sa décision* : elles se vérifient en confrontant **deux endroits**, et l'auteur a écrit les
+deux. Ce sont celles que les tours réels attrapent le plus.
+
+⚠️ **Ce n'est pas un vérificateur au sens du cycle court.** `cycle-feature.md` §3 dit « ni
+correcteur, ni vérificateur », et cela reste vrai : le relecteur ne prononce rien, ne pose aucune
+étiquette, ne touche pas à la carte. C'est une **relecture interne à la production** — la
+distinction tranchée la veille avec `D-070` §4, dont c'est le second emploi.
+
+### 2. La clause qui empêche le dispositif de se retourner
+
+**Le rapport se dépose avant toute correction.** Un cycle interne qui converge en silence supprime
+la trace de ce qu'il a rattrapé — or `D-039` fait du **journal des frictions la source qui écrit les
+skills**. Corriger sans déposer tarit la seule boucle d'amélioration du dépôt, et le fait d'autant
+plus sûrement que le dispositif marche bien. Ce qui a valeur d'enseignement va au journal ; le
+rapport reste sous les yeux du binôme.
+
+⚠️ **Et rien ne se pose en remarque Linear** : les remarques de carte appartiennent au cycle de
+revue et **se comptent** (`--unresolved`). En poser avant `Review Requested` fausserait le compteur
+de la revue qui suit.
+
+### 3. Ce qui est écarté de la proposition initiale
+
+La proposition portait **deux** sous-agents — un relecteur et un correcteur — convergeant avant la
+pose du signal. Le correcteur est écarté **à ce niveau** : en `Discovery` comme en `Spec`, reprendre
+c'est **arbitrer**, et l'arbitrage appartient au binôme (`D-053`) ; la spec **enregistre** cet
+arbitrage au lieu de le rendre. C'est aussi ce que `cycle-feature.md` §4 avait déjà établi par la
+mesure — cinq des douze remarques d'un tour réel portaient littéralement « la question à reposer »,
+et un agent correcteur n'a rien à y faire. Un constat qu'on ne sait pas trancher **empêche de poser
+le signal** et remonte à l'humain, qui est déjà à la table.
+
+### 4. Ce qui n'est pas décidé
+
+**La généralisation aux sept autres skills de production.** Elle est l'intention, pas la décision :
+`D-039` interdit d'écrire un dispositif d'avance, et celui-ci a tourné **une fois**, sur un chantier
+de documentation. Les deux skills de feature l'adoptent parce que leur régime est déjà éprouvé et
+que l'humain y est dans la boucle. Pour le reste, un **essai mesuré** est prévu sur `plan-design` et
+`CUR-47` : lancer la relecture interne sur le plan existant, puis laisser `revue-plan` tourner
+normalement, et **comparer les deux récoltes**. Trois issues possibles, et aucune n'est devinable —
+la colonne devient une formalité, elle double la relecture interne, ou elle voit autre chose. La
+troisième serait la plus intéressante et la moins prévue.
+
+**Le sort du couple `correction` / `verification`**, toujours à écrire, que ce dispositif rendrait
+nécessaire ailleurs qu'en colonne de revue.

@@ -67,6 +67,13 @@ tient ce rôle, en relisant l'artefact repris. Le binôme solde donc ses propres
 serait complaisant dans un cycle complet — ici c'est tenable parce qu'un tour de revue de plus
 suit toujours, et parce que le relecteur voit le fil entier.
 
+⚠️ **Le binôme fait relire avant de poser `Review Requested`** (`D-071`) — un sous-agent relecteur,
+sur l'artefact seul, contre la même DoD que la revue appliquera. Ce n'est **pas** un vérificateur au
+sens ci-dessus : il ne prononce rien, ne pose aucune étiquette, ne touche pas à la carte, et son
+rapport se dépose **avant** que le binôme ne corrige. Ce que le développement obtient de sa suite de
+tests, un document ne l'obtient que d'un relecteur ; l'auto-passage contre la DoD, seul, ne voit pas
+ce que son auteur ne peut pas voir. Le geste vit dans les skills `discovery` §7 et `spec` §8.
+
 **Les axes de `revue-discovery` étaient déjà écrits** avant lui, dans
 [`dod/feature/discovery.md`](dod/feature/discovery.md) : *l'artefact est complet* (§1), *aucun
 arbitrage n'a été rendu* (§2) — et *l'artefact s'adresse à son lecteur* (§5), que ce paragraphe
@@ -86,6 +93,13 @@ mérite une phrase disant pourquoi — un abandon non expliqué se re-proposera.
 **Cycle court**, comme `Discovery` — et ce n'est plus une exception mais la règle des deux colonnes
 où l'humain est dans la production (`cycle.md` §6, `D-050`). Ni correcteur ni vérificateur : le
 binôme reprend et repose `Review Requested`, la revue suivante rattrape.
+
+⚠️ **Ici aussi, le binôme fait relire avant de poser `Review Requested`** (`D-071`, §3 pour le
+motif ; le geste est en `spec` §8). La charge y est plus lourde qu'en `Discovery` : trois des cases
+de la DoD — *le document ne se contredit pas*, *les faits allégués sont vrais*, *toute règle cite sa
+décision* — se vérifient en confrontant **deux endroits** du document, et l'auteur a écrit les deux.
+Ce sont celles que les tours réels attrapent le plus, et celles qu'une auto-relecture ne peut pas
+attraper.
 
 ⚠️ **Ce fichier prescrivait l'inverse jusqu'au 2026-07-31.** Deux tours réels ont montré que la
 moitié des remarques d'une revue de spec ne se corrigent pas mais **se décident** — cinq des douze

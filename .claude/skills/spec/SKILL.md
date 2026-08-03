@@ -183,3 +183,39 @@ une décision à la fois — voir `cycle-feature.md` §4.
 
 Complet quand : les cases ont été passées sur le document fini, et en reprise, chaque décision neuve
 a été balayée contre le reste du document.
+
+## 8. Faire relire par un tiers — avant de lâcher la carte
+
+L'étape 7 est une **auto-évaluation**, et elle a la limite de toutes : elle ne voit pas ce que son
+auteur ne peut pas voir. Ce que le développement obtient de sa suite de tests, un document ne
+l'obtient que d'un relecteur. Les trois cases signalées ci-dessus comme les plus manquées — le
+document ne se contredit pas, les faits allégués sont vrais, toute règle cite sa décision — sont
+exactement celles qu'un tiers attrape et que l'auteur ne peut pas voir : elles se vérifient en
+confrontant deux endroits, et l'auteur les a écrits tous les deux.
+
+**Lancer un sous-agent relecteur**, sur le document seul :
+
+- **session neuve, artefact seul** (`D-039`) — lui donner le document et le référentiel
+  (`docs/methode/dod/feature/spec.md`), **jamais** le raisonnement qui a produit le document, ni ce
+  qu'on soupçonne d'être faible. Un relecteur à qui on annonce la réponse la trouve ;
+- **il relit, il ne réécrit pas** : il liste les divergences, chacune avec son extrait et sa clause,
+  et s'abstient explicitement là où le référentiel manque.
+
+**Son rapport se dépose avant toute correction.** ⚠️ C'est la clause qui compte, et elle n'est pas
+une formalité : un cycle interne qui converge en silence supprime la trace de ce qu'il a rattrapé,
+et `D-039` fait du **journal des frictions la source qui écrit les skills**. Corriger sans déposer
+tarit la seule boucle d'amélioration du dépôt. Ce qui a valeur d'enseignement va dans
+`docs/methode/journal-frictions.md` ; le rapport lui-même reste sous les yeux du binôme.
+
+⚠️ **Pas de remarque Linear ici.** Les remarques posées sur la carte appartiennent au cycle de revue
+et se comptent (`cursus linear comment list --unresolved`) : en poser avant `Review Requested`
+fausserait le compteur de la revue qui suit.
+
+**Puis solder, une par une** — reprise faite, ou refus motivé. C'est le **binôme** qui solde, jamais
+un sous-agent : en `Spec`, reprendre c'est arbitrer, et la spec **enregistre** l'arbitrage du binôme
+au lieu de le rendre (`D-053`). Un constat qu'on ne sait pas trancher **empêche de poser
+`Review Requested`** : il remonte à l'humain, qui est déjà à la table — et le remède est alors de
+retourner interroger, pas de réécrire.
+
+Complet quand : le rapport existe, chaque constat est soldé ou explicitement remonté, et
+`Review Requested` n'a été posée qu'après.
