@@ -103,6 +103,9 @@ flowchart TB
   subgraph APP["APP · présentation"]
     App["<b>Cursus.App</b><br/><small>coquille rail | surface, ViewModels, RoyalTerminal</small>"]
   end
+  subgraph APPLI["APPLICATION · le socle que les portes partagent"]
+    Appli["<b>Cursus.Application</b><br/><small>ProjectWorkspace — ce qu'un projet ouvert monte d'un bloc</small>"]
+  end
   subgraph DOMAIN["DOMAIN · noyau déterministe — zéro dépendance externe"]
     Workflows["<b>Workflows/</b> <i>(namespace)</i><br/><small>orchestre l'exécution déterministe d'un workflow — modèle §3, services §4</small>"]
     Projects["<b>Projects/</b> <i>(namespace)</i><br/><small>ancre les workflows sur le disque et compose un projet ouvert</small>"]
@@ -115,16 +118,21 @@ flowchart TB
 
   App --> Projects
   App --> Workflows
-  App -. "composition (racine) : la seule entorse, câbler le concret" .-> Persist
+  App --> Appli
+  App -. "composition (racine) : câbler le concret" .-> Persist
+  Appli --> Projects
+  Appli -. "nomme RunArtifactStore, ne le construit pas" .-> Persist
   Persist -. "implémente les ports" .-> Workflows
   Persist -. "rend un ProjectHost" .-> Projects
   Sessions -. "aucune référence, dans aucun sens" .- Workflows
 
   classDef pres fill:#3b4b66,color:#fff,stroke:#22304a;
+  classDef appl fill:#4a6b3b,color:#fff,stroke:#2e4a22;
   classDef dom fill:#1f6f4a,color:#fff,stroke:#12432c;
   classDef inf fill:#2a5b7a,color:#fff,stroke:#173a52;
   classDef disc fill:#5a4b8a,color:#fff,stroke:#382c5c;
   class App pres;
+  class Appli appl;
   class Workflows,Projects dom;
   class Sessions disc;
   class Persist inf;
@@ -135,9 +143,15 @@ flowchart TB
   certains adaptateurs (`ProcessRunner`, `GitWorkspaceProvisioner`, les doubles
   `InMemory…`) **vivent dans l'assembly Core** tout en étant infra *par rôle* —
   ils ne tirent que le framework (voir §2.1).
-- L'unique `App → Persistence` est l'**entorse de la racine de composition** :
-  `App.axaml.cs` est le seul lieu autorisé à nommer le concret, pour l'injecter à
-  ce qui ne connaît que des ports (`architecture.md` §7.12).
+- `App → Persistence` est l'**entorse de la racine de composition** : `App.axaml.cs`
+  est le seul lieu autorisé à **construire** le concret, pour l'injecter à ce qui ne
+  connaît que des ports (`architecture.md` §7.12). ⚠️ **La flèche du socle est d'une
+  autre nature** : `ProjectWorkspace` *nomme* `RunArtifactStore` dans sa signature,
+  il ne l'instancie jamais — il n'est pas une seconde racine.
+- **La couche APPLICATION n'a qu'un habitant** (`CUR-65`, `D-074`). Elle existe
+  parce que deux portes vont la partager : y loger le socle évite qu'une porte
+  référence l'autre. La racine multi-projets et la couche de commandes y viendront ;
+  tant qu'elles n'y sont pas, cette couche est **une adresse plus qu'un contenu**.
 
 ### 2.1 Ports & adaptateurs — le couplage par interfaces
 

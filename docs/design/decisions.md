@@ -4517,3 +4517,58 @@ l'**opportunité** d'en ajouter une là où une colonne de revue existe déjà. 
 **Le coût.** Trois axes plus un agrégateur là où il y avait un agent : le dispositif est quatre fois
 plus cher, et il s'ajoute à la revue qu'il ne remplace pas. Aucun budget n'est fixé ici ; si le coût
 devient le grief, c'est la **combinatoire** du §3 qu'il faudra rejuger, pas le nombre d'axes.
+
+---
+
+## D-074 — Le socle applicatif est un projet dédié, `Cursus.Application` (2026-08-03) — renverse un écart d'`architecture.md`
+
+**Contexte.** `architecture.md`, là où il décide que la présentation ne compose pas et que la racine
+d'un projet ouvert vit dans le noyau, avait **écarté** l'idée d'un quatrième projet de composition,
+d'une ligne : `Cursus.Persistence` est déjà le seul endroit qui connaît les deux mondes, un projet
+de plus n'achèterait rien. Le plan de design de `CUR-47` renverse cet écart.
+
+### 1. Ce qui a changé, et qui n'est pas un changement d'avis
+
+Le motif d'alors tenait à une prémisse **numérique** : il existait **un** appelant. La seconde porte
+en fait deux — `Cursus.App` et `Cursus.Mcp` partagent désormais la racine multi-projets et le
+`ProjectWorkspace` qu'elle résout. Un socle logé dans la persistance serait référencé par les deux
+portes pour ce qu'il n'est pas.
+
+Et la suite le rend intenable : `CUR-48` apporte la couche applicative — commandes, verrou global,
+registre des runs en vol — qui **ne peut pas vivre dans un projet nommé `Persistence` sans que le
+nom mente**. Le renversement se paie donc une fois, au moment où le second appelant naît, plutôt
+que deux fois.
+
+### 2. La décision
+
+**`Cursus.Application` est le socle partagé.** Il référence `Cursus.Core` et `Cursus.Persistence` ;
+`Cursus.App` et `Cursus.Mcp` le référencent tous deux, et **jamais l'inverse**. Il accueille
+`ProjectWorkspace`, qui vivait jusque-là dans `Cursus.App/ViewModels/` sans avoir jamais rien eu
+d'un ViewModel.
+
+**La garantie « atteignable sans Avalonia » descend avec lui.** Elle n'est exécutable que par un
+test d'assembly, qui ne couvrait que le noyau ; elle couvre maintenant deux assemblies. C'est elle
+qui rend le déménagement opposable : un socle partagé par les deux portes qui laisserait entrer
+Avalonia rendrait la seconde porte inconstructible.
+
+**Chaque assembly porte cette garantie dans son propre projet de tests.** L'alternative — une liste
+centralisée dans les tests du noyau — est écartée : elle ferait référencer le socle par les tests du
+noyau, donc **remonter une couche**, ce que l'invariant existe précisément pour surveiller. Le prix
+est une classe de test dupliquée, et le risque assumé qu'un futur assembly du périmètre soit oublié.
+
+**Coût payé** : deux `.csproj` de plus, bibliothèque et tests.
+
+### 3. Le piège que le nom crée
+
+Depuis le namespace `Cursus.App`, le simple nom `Application` se résout sur les **membres de
+`Cursus`** avant de consulter les `using` — donc sur le namespace `Cursus.Application`, jamais sur
+`Avalonia.Application`. La classe de base d'`App` doit être qualifiée, sans quoi le compilateur rend
+CS0118, *« namespace employé comme un type »*. Le nom a été gardé malgré cela : il dit la couche, et
+le coût est une qualification à un seul endroit du dépôt.
+
+### 4. Ce que cette décision ne tranche pas
+
+**Le contenu de la couche applicative.** `CUR-47` livre l'**adresse**, pas la couche : il ne
+construit ni commande ni requête, une requête qui ne ferait que déléguer au registre étant
+exactement la façade de délégations d'une ligne qu'`architecture.md` a écartée en refusant une porte
+d'entrée unique. Elles naissent en `CUR-48`, avec l'écriture qu'il y a à protéger.

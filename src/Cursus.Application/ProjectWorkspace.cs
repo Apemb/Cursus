@@ -3,16 +3,16 @@ using System;
 using Cursus.Core.Projects;
 using Cursus.Persistence;
 
-namespace Cursus.App.ViewModels;
+namespace Cursus.Application;
 
 /// <summary>
 /// Ce dont l'écran d'un projet ouvert a besoin, monté d'un bloc : son
 /// <see cref="ProjectHost"/> (lancer, relire), son magasin d'artefacts (suivre
 /// le log d'une visite) et son <see cref="WorkflowCatalog"/> (créer, renommer,
-/// supprimer, ouvrir pour éditer). Regroupés ici pour que la coquille les tienne
+/// supprimer, ouvrir pour éditer). Regroupés ici pour qu'un appelant les tienne
 /// comme un tout — un projet à la fois, disposé quand on en change — sans apprendre
-/// que c'est du SQLite ni du disque : c'est la racine de composition (App) qui lie
-/// ce bundle au préréglage concret.
+/// que c'est du SQLite ni du disque : c'est la racine de composition qui lie ce
+/// bundle au préréglage concret.
 ///
 /// <para>
 /// Le catalogue vit ici, et non dans le host : « lister et charger restent
