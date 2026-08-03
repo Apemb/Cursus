@@ -109,6 +109,13 @@ Une fois `Done` posé sur le pas :
    story**. C'est le seul instant où la branche de story contient réellement tout l'incrément — le
    poser plus tôt ferait relire un diff incomplet à la revue de module.
 
+⚠️ **Le prédicat du « dernier pas » se lit, il ne se devine pas.** Ce n'est **pas** le pas au plus
+grand numéro ni celui que le découpage avait mis en fin de chaîne : c'est *« tous les frères de cet
+incrément sont dans leur colonne terminale »*, évalué **au moment où tu fusionnes**. Le découpage
+n'est pas figé — la revue d'un incrément peut réclamer des pas supplémentaires (`cycle-pas.md` §5),
+et un pas né en cours de route déplace la fin sans prévenir personne. Interroge l'état, jamais
+l'ordre prévu.
+
 ⚠️ **À l'échelle de l'incrément, tu ne fusionnes rien.** Une story a des étapes **après** ta revue —
 `QA Review`, puis sa colonne terminale : fusionner à ton accord y ferait entrer un incrément que la
 recette n'a pas vu. Qui fusionne `story/` n'a pas encore de porteur, et c'est écrit (`D-076` §4).
