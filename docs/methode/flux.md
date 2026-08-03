@@ -289,12 +289,30 @@ logé dans `decisions.md`, qui est append-only et donc incorrigible.*
 Un niveau de ticket, une branche, une PR. Le nom porte l'identifiant Linear, ce qui suffit à Linear
 pour rattacher seul la branche et la PR à sa carte — une couture de moins à coder.
 
+**Qui crée quelle branche** (`D-076`) — une règle : **une branche naît avec l'`In Progress` de son
+niveau, créée par le skill qui y travaille en premier**. C'est la même main qui crée les cartes du
+niveau en dessous.
+
+| Branche | Créée par | Depuis |
+|---|---|---|
+| `feature/` — **seulement si la spec en a décidé une** | `decoupage` | `main` |
+| `story/` | `decoupage-pas` | la branche de feature s'il y en a une, sinon `main` |
+| `pas/` | `prendre-un-pas` | la branche de story |
+
 **Qui ouvre la PR d'un pas, et quand** (`D-075`) : `prendre-un-pas`, **juste après avoir posé
 `Done`**. Le pas se clôt sur trois gestes — l'étiquette, la branche poussée, la PR ouverte vers la
 branche de story — et la carte reçoit le lien. Le motif est celui qui fonde la strate elle-même : si
-la revue d'un pas a lieu sur la PR (voir plus bas), la PR doit exister **avant** la revue. ⚠️ **Le
-même geste, un cran plus haut, n'a toujours pas de porteur** — ni la branche de story, ni sa PR ; la
-question attend la première fusion d'incrément.
+la revue d'un pas a lieu sur la PR (voir plus bas), la PR doit exister **avant** la revue.
+
+**Qui fusionne un pas, et ouvre la PR d'une story** (`D-076`) : `revue-code`, **à l'accord**. La
+fusion *est* ce qui tire le pas vers `Done`, et un pas accordé n'a aucun autre aval — il n'existe
+pas d'étape après sa revue. Si c'était le **dernier** pas, la même main pose `Done` sur l'incrément
+et ouvre la PR de la story : c'est le seul instant où la branche de story contient tout l'incrément.
+
+⚠️ **La symétrie s'arrête là.** Un incrément a des étapes **après** sa `Code Review` — `QA Review`,
+puis sa colonne terminale —, donc fusionner à l'accord de la revue de module ferait entrer une
+story que la recette n'a pas vue. **Qui fusionne `story/` et qui ouvre la PR d'une feature n'a donc
+pas de porteur**, et l'aura quand le premier incrément atteindra sa colonne terminale.
 
 | Niveau | Branche | PR vers | Fusion |
 |---|---|---|---|

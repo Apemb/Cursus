@@ -4568,3 +4568,61 @@ branche et la PR à la carte.
 haut, et le premier pas d'un incrément l'a comblé en passant, sans que ce soit écrit nulle part
 (journal 92). Le combler ici serait légiférer sur un cas qu'aucun tour n'a encore éprouvé — la
 fusion d'une story n'a jamais eu lieu. À reprendre quand le premier incrément se fusionnera.
+
+---
+
+## D-076 — Chaque branche a un porteur, et la fusion d'un pas appartient à la revue qui l'accorde (2026-08-03) — complète `D-075`, amende `cycle-increment.md`
+
+**Contexte.** `D-075` a donné un porteur à la PR d'un pas et laissé, en §4, la branche de story et
+celle de feature sans propriétaire — au motif qu'aucun tour ne les avait éprouvées. L'utilisateur a
+refusé le report : laisser le trou reproduit exactement le défaut que `D-075` venait de corriger.
+En cherchant les porteurs manquants, il s'en est révélé cinq, plus une contradiction.
+
+### 1. Les branches — une règle, trois applications
+
+**Une branche naît avec l'`In Progress` de son niveau, créée par le skill qui y travaille en
+premier.** C'est la même main qui crée les cartes du niveau en dessous : le geste est déjà là, il
+lui manquait sa moitié git.
+
+| Branche | Créée par | Depuis |
+|---|---|---|
+| `feature/` — **seulement si la spec en a décidé une** | `decoupage` | `main` |
+| `story/` | `decoupage-pas` | la branche de feature s'il y en a une, sinon `main` |
+| `pas/` | `prendre-un-pas` | la branche de story |
+
+Le motif du choix contre l'alternative *« créée à la demande par qui en a besoin »* : c'est
+précisément ce qui s'est produit au premier tour réel, et le geste, correct, n'était écrit nulle
+part — un skill de bas niveau fabriquant la branche de deux niveaux au-dessus de lui.
+
+### 2. La fusion d'un pas appartient à `revue-code`
+
+**Quand `revue-code` accorde un pas, elle fusionne sa branche dans la story.** Ce n'est pas une
+entorse au flux tiré : `cycle-pas.md` dit déjà que la fusion **est** ce qui tire le pas vers `Done`,
+et un pas accordé n'a **aucun autre aval** pour le tirer — il n'existe pas d'étape après sa revue.
+Nommer un geste distinct aurait créé un acteur sans travail propre.
+
+**Et si c'était le dernier pas, la même main pose `Done` sur l'incrément et ouvre la PR de la
+story.** C'est le seul instant où la branche de story contient réellement tout l'incrément.
+
+### 3. La contradiction que cela corrige
+
+Deux documents disaient l'inverse l'un de l'autre sur le `Done` d'un incrément.
+`cycle-increment.md` le faisait poser par « qui achève le dernier pas », en définissant *achever*
+comme *revue passée **puis** commit arrivé en squash dans la story*. Mais `prendre-un-pas` le faisait
+poser par lui-même, alors qu'il lui est explicitement interdit de fusionner. Le même skill ne
+pouvait pas achever au sens du premier et s'arrêter au sens du second : en pratique, le `Done` d'un
+incrément se posait **avant** que sa branche contienne le dernier pas, et la revue de module aurait
+relu un diff incomplet.
+
+**`prendre-un-pas` ne pose donc plus aucune étiquette sur l'incrément.** Il ne touche qu'à son pas.
+
+### 4. Où la symétrie s'arrête, et pourquoi
+
+**La fusion d'une story n'appartient pas à sa revue**, contrairement à celle d'un pas. Un incrément
+a des étapes **après** sa `Code Review` — `QA Review`, conditionnelle, puis sa colonne terminale —
+alors qu'un pas n'en a aucune. Fusionner à l'accord de la revue de module ferait entrer dans la
+story un incrément que la recette n'a pas encore vu.
+
+**Restent donc sans porteur, et c'est écrit plutôt que supposé** : qui fusionne `story/`, et qui
+ouvre la PR d'une feature. Les deux se poseront au même moment — quand le premier incrément
+atteindra sa colonne terminale —, et aucun tour ne l'a encore éprouvé.

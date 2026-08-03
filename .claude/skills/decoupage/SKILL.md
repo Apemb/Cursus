@@ -23,6 +23,13 @@ aucun incrément, le découpage a un trou » (`tickets.md` §3 q.5).
 **Critère** : chaque clause de la recette est assignée à un incrément nommé. Une clause sans
 incrément est un trou à combler avant de continuer.
 
+⚠️ **La spec dit aussi si cette feature a une branche** (`flux.md` §6) — la question *expose-t-elle
+une surface qui doit apparaître d'un bloc ?*, dont le défaut est **non**. Si elle en a une, crée
+`feature/<identifiant>-slug` depuis `main` avant de continuer : une branche naît avec l'`In Progress`
+de son niveau, et le découpage est le premier travail de cette colonne (`D-076`). Ne la pousse pas.
+Si la spec ne dit rien, c'est **non** — les stories iront sur `main`, et l'écrire vaut mieux que le
+déduire en silence.
+
 ## 2. Trancher verticalement, jamais par couche
 
 Chaque incrément candidat traverse **toutes** les couches qu'il touche — jamais une couche isolée

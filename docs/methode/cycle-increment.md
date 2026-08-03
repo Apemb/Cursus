@@ -168,7 +168,7 @@ dans chacun est dans [`cycle-pas.md`](cycle-pas.md).
 | État observé | Skill invoqué | Livrable | État posé |
 |---|---|---|---|
 | `In Progress` + *aucune*, **aucun pas et rien d'écrit** | [`decoupage-pas`](../../.claude/skills/decoupage-pas/SKILL.md) | Les pas, tous nés en `Todo` avec leurs `blockedBy` ; chacun répond aux trois questions de `tickets.md` §4. **Ou** la phrase disant qu'un seul pas suffit | *aucune* — la carte reste où elle est |
-| `In Progress` + *aucune*, **le découpage a eu lieu** | [`prendre-un-pas`](../../.claude/skills/prendre-un-pas/SKILL.md), **une fois par pas** | Chaque pas mené jusqu'à sa colonne `Done` : sa `Code Review` passée à l'échelle de la fonction, puis son commit arrivé en squash dans `story/`, suite verte, **0 warning** | `Done`, **posé par qui achève le dernier pas** |
+| `In Progress` + *aucune*, **le découpage a eu lieu** | [`prendre-un-pas`](../../.claude/skills/prendre-un-pas/SKILL.md), **une fois par pas** | Chaque pas mené jusqu'à sa colonne `Done` : sa `Code Review` passée à l'échelle de la fonction, puis son commit arrivé en squash dans `story/`, suite verte, **0 warning** | `Done`, **posé par `revue-code` en fusionnant le dernier pas** (`D-076`) |
 | `In Progress` + `Done` | — | — | **`revue-code` tire** vers `Code Review`, à l'échelle du module |
 
 ⚠️ **Le découpage ne pose aucune étiquette et n'avance rien** — il a déjà tiré la carte ici, c'est
@@ -191,8 +191,11 @@ structurant bouge ou qu'une frontière entre couches change ; `decisions.md` dè
 structurante est prise ou renversée. Reporter à `Code Review` ce qui se documente au fil produit
 une reconstitution de mémoire, jamais le *pourquoi* qui avait cours au moment du choix.
 
-**La branche** : `story/<identifiant>`, dans laquelle chaque `pas/` arrive **en squash** — voir
-`flux.md` §6 et `D-042`. Sur une branche de pas, commiter librement ; le squash produit le commit
+**La branche** : `story/<identifiant>`, **créée par le découpage** en même temps qu'il tire la carte
+ici (`D-076`), et dans laquelle chaque `pas/` arrive **en squash** — voir `flux.md` §6 et `D-042`.
+⚠️ **`prendre-un-pas` ne pose plus rien sur l'incrément** : le `Done` ci-dessus arrive avec la fusion
+du dernier pas, seul instant où la branche contient tout l'incrément. Le poser à la fin du codage du
+dernier pas ferait relire un diff incomplet à la revue de module. Sur une branche de pas, commiter librement ; le squash produit le commit
 propre, et son corps se **réécrit à la main** (GitHub y colle par défaut la concaténation des
 messages de WIP, et c'est ce commit-là qui reste dans l'histoire).
 

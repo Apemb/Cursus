@@ -95,11 +95,29 @@ humain — non assignée, elle continue de boucler ; assignée, elle attend un a
 compteur de tours sur la carte, garde à chaque tour un verdict structuré (accord/désaccord et le
 point en litige, jamais de prose libre) pour qu'un tiers reconstitue le litige en une minute.
 
+## À l'accord d'un pas — fusionner, et rien d'autre
+
+⚠️ **Cette section ne vaut qu'à l'échelle du pas** (`D-076`). Un pas que tu accordes n'a **aucun
+aval** : il n'existe pas d'étape après sa revue, et `cycle-pas.md` §5 dit que la fusion *est* ce qui
+le tire vers `Done`. Nommer un tiers pour ce seul geste aurait créé un acteur sans travail propre.
+Une fois `Done` posé sur le pas :
+
+1. **Fusionne** `pas/` dans `story/`, en **squash**, corps réécrit à la main — GitHub y colle par
+   défaut la concaténation des WIP, et c'est ce commit-là qui reste dans l'histoire. Le corps dit le
+   comportement ajouté et les alternatives écartées, pas la liste des commits.
+2. **Si c'était le dernier pas** de l'incrément : pose `Done` sur l'incrément et **ouvre la PR de la
+   story**. C'est le seul instant où la branche de story contient réellement tout l'incrément — le
+   poser plus tôt ferait relire un diff incomplet à la revue de module.
+
+⚠️ **À l'échelle de l'incrément, tu ne fusionnes rien.** Une story a des étapes **après** ta revue —
+`QA Review`, puis sa colonne terminale : fusionner à ton accord y ferait entrer un incrément que la
+recette n'a pas vu. Qui fusionne `story/` n'a pas encore de porteur, et c'est écrit (`D-076` §4).
+
 ## Critère d'achèvement
 
 La carte porte `Done` ou `Rework Needed` avec le point de désaccord écrit — et elle **n'a pas
-bougé** depuis que tu l'as tirée. Ce que `Done` autorise ensuite, c'est un **autre** qui l'exerce :
-au pas, la fusion de `pas/` dans `story/` ; à l'incrément, celui qui recette, vers `QA Review` ou
-vers `Done` selon `tickets.md` §6.2.
+bougé** depuis que tu l'as tirée. Ce que `Done` autorise ensuite, c'est un **autre** qui l'exerce —
+sauf au pas, où la fusion ci-dessus t'appartient. À l'incrément, c'est celui qui recette, vers
+`QA Review` ou vers `Done` selon `tickets.md` §6.2.
 Avant de poser l'étiquette : la [DoD `code-review`](../../../docs/methode/dod/story/code-review.md)
 est cochée case par case, pas résumée.

@@ -52,7 +52,15 @@ L'unique autre mouvement possible est un **retour en arrière**, et il est écri
 plan a laissé une décision de structure ouverte, la carte repose en `Planning`. Reposer n'est pas
 avancer — c'est le seul cas où ce skill rend une carte au lieu de la faire progresser.
 
-**Fait quand** : la carte est en `In Progress`, sans étiquette.
+**Puis crée la branche de l'incrément** : `story/<identifiant>-slug`, depuis la branche de feature
+s'il en existe une, sinon depuis `main` (`D-076`). Une branche naît avec l'`In Progress` de son
+niveau, et c'est toi qui l'ouvres. Ne la pousse pas — le premier pas le fera en poussant la sienne.
+
+⚠️ **Ce n'est pas un détail d'intendance.** Sans elle, le premier `prendre-un-pas` la fabriquerait
+en passant : un skill de bas niveau créant la branche de deux niveaux au-dessus de lui, geste
+correct mais écrit nulle part. C'est arrivé au premier tour réel.
+
+**Fait quand** : la carte est en `In Progress`, sans étiquette, et sa branche existe.
 
 ## 1. Reprendre la maille visée, sans s'y croire tenu
 

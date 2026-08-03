@@ -20,15 +20,15 @@ tenir.
 
 - **Tirer la carte** : le pas t'attend en `Todo` ; déplace-le en `In Progress` et retire son
   étiquette s'il en porte une. Un ticket n'est jamais poussé — c'est celui qui prend le travail qui
-  déplace la carte (`cycle.md` §4). ⚠️ **Tu ne déplaces pas l'incrément parent** : il est déjà en
-  `In Progress`, `decoupage-pas` l'y a tiré pour y créer ce pas. Tu ne lui poses pas non plus
-  d'étiquette — **sauf si ce pas est le dernier** : celui qui achève le dernier pas pose `Done` sur
-  l'incrément, et s'arrête là ; c'est `revue-code` qui le tire ensuite vers `Code Review`, à
-  l'échelle du module (`cycle-increment.md` §6).
+  déplace la carte (`cycle.md` §4). ⚠️ **Tu ne touches jamais à l'incrément parent** — ni sa
+  colonne, ni ses étiquettes. Il est déjà en `In Progress`, `decoupage-pas` l'y a tiré pour y créer
+  ce pas, et son `Done` appartient à `revue-code`, qui le pose en fusionnant le **dernier** pas
+  (`D-076`). Le poser toi-même le poserait trop tôt : ta branche n'est pas encore dans la story, et
+  la revue de module relirait un diff incomplet.
 - Lire la carte en entier : le pas, le pourquoi à cette place, le piège local s'il existe.
 - Créer, ou reprendre, la branche `pas/<identifiant du pas>-slug` depuis la branche de la story.
-  ⚠️ **Si la branche de story n'existe pas, crée-la d'abord** : aucun skill ne la porte aujourd'hui,
-  et le trou est écrit (`D-075` §4). Ne pas le combler en silence — le dire dans le rapport de fin.
+  Celle-ci existe : `decoupage-pas` l'a créée en tirant l'incrément (`D-076`). Si elle manque, c'est
+  une anomalie — la créer pour ne pas bloquer, et **le dire dans le rapport de fin**.
 - Le pas touche-t-il un objet déjà modélisé, ou en nomme-t-il un nouveau ? Si oui, relire la
   section concernée de `docs/design/architecture.md` — et le vocabulaire §3 de
   `docs/design/schemas.md` s'il s'agit de définition vs exécution — juste ce qui nomme ce que le

@@ -130,7 +130,7 @@ mécanique.
 | `Code Review` + *aucune* | [`revue-code`](../../.claude/skills/revue-code/SKILL.md), **à l'échelle du pas** | Les remarques posées sur la carte du pas, chacune citant son référentiel | `Rework Needed` \| `Done` si aucune |
 | `Code Review` + `Rework Needed` | `correction` **(à écrire)** | Le pas repris, une réponse dans chaque fil | `Rework Done` |
 | `Code Review` + `Rework Done` | `verification` **(à écrire)** | Chaque remarque soldée, ou rouverte avec ce qui manque | `Rework Needed` \| `Done` si `open` vaut 0 |
-| `Code Review` + `Done` | — | — | **la fusion** de `pas/` dans `story/` tire vers `Done` |
+| `Code Review` + `Done` | — | — | **`revue-code` fusionne** `pas/` dans `story/` à l'accord, ce qui tire vers `Done` (`D-076`) |
 
 **Ce qui se relit ici** : la validité des tests — prouvent-ils ce que leur titre annonce —, la
 formulation des noms de test contre la convention `étant donné / quand / alors`, le nommage, la

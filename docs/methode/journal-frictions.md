@@ -1020,3 +1020,17 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     un quatrième, non écrit** : désassigner après avoir posé le lien. Fait à la main ici ; à inscrire
     dans `prendre-un-pas` §5 au prochain tour, une fois vérifié que le comportement est constant et
     non un réglage d'espace. — *clôture du pas, dette de méthode*
+
+100. **`D-075` §4 a nommé un trou plutôt que de le combler, et ça n'a pas tenu une heure.**
+    L'entrée disait « qui ouvre la PR d'une story, et qui crée la branche de story » restent
+    ouverts, au motif qu'aucun tour ne les avait éprouvés — le même motif qui, ailleurs, sert à ne
+    pas faire de méthode sur cas imaginé. L'utilisateur a refusé : laisser le trou reproduisait
+    exactement le défaut que la décision venait de corriger. ⚠️ **Nommer un manque n'est pas le
+    même geste selon qu'il porte sur une *décision* ou sur un *porteur*.** Une décision qu'aucun
+    cas n'éclaire mérite d'attendre ; un porteur manquant, non — il se comble tout seul, en
+    silence, par celui qui passe, et c'est précisément ce qu'on cherche à empêcher.
+    ⚠️ **Et le trou était plus grand que ce que `D-075` en voyait** : en cherchant les porteurs, il
+    s'en est révélé **cinq** (les deux branches, la fusion d'un pas, les deux PR amont) plus une
+    contradiction entre `cycle-increment.md` et `prendre-un-pas` sur le moment du `Done` d'un
+    incrément. Nommer un trou sans le mesurer en sous-estime la taille. — *suite de `D-075`,
+    tranché par `D-076`*
