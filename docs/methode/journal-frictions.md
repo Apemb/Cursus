@@ -919,3 +919,50 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     fraîche ne tient. ⚠️ **Un point de mesure, pas une règle** : à retenir pour savoir, au troisième
     ou quatrième découpage, si la maille d'un plan sous-estime **systématiquement**. Si oui, c'est
     `plan-design` §4 qu'il faudra corriger, pas les découpages. — *étape 8, mesure à suivre*
+
+## 2026-08-03 — premier tour de `prendre-un-pas` (`CUR-65`)
+
+92. **La branche de story n'a pas de créateur écrit, et le premier pas la fabrique en passant.**
+    `prendre-un-pas` §1 dit « créer, ou reprendre, la branche `pas/<identifiant>-slug` **depuis la
+    branche de la story** ». Or aucune branche de story n'existait, et **aucun skill ne dit qui la
+    crée** : `decoupage-pas` ne touche pas à git, `plan-design` non plus. Le premier pas l'a donc
+    créée lui-même, en silence, avant de créer la sienne. ⚠️ **C'est exactement le motif de la
+    tentation de pousser** (`CLAUDE.md`, moitié aval de `D-069`) transposé à git : quand une
+    frontière ne nomme personne, celui qui passe fait le geste sans que ce soit écrit nulle part.
+    Le geste est bon ; c'est son silence qui est le défaut. — *étape 1, dette de méthode*
+
+93. **La convention de nom de branche d'un pas date d'avant que les pas aient des cartes.**
+    `flux.md` §6 donne `pas/CUR-45-3-slug` — un identifiant de story suivi d'un **rang**. Cette
+    forme suppose que le pas n'a pas d'identité propre, ce qui a cessé d'être vrai : `D-069` a donné
+    aux pas leurs propres étiquettes et leur propre `Code Review`, et `decoupage-pas` les crée
+    comme sous-tâches numérotées par Linear. La branche a donc été nommée `pas/CUR-65-…`, ce que la
+    table n'autorise pas littéralement — alors que la phrase juste au-dessus d'elle (« le nom porte
+    l'identifiant Linear, ce qui suffit à Linear pour rattacher seul la branche ») l'exige.
+    ⚠️ **La table et sa propre justification se contredisent** ; c'est la table qui a vieilli.
+    — *étape 1, incohérence de corpus*
+
+94. **Un test de garde ne peut pas être rouge tout seul, et aucun skill ne dit qu'on a le droit de
+    le falsifier.**
+    Le seul comportement neuf du pas était un test d'architecture — « cet assembly ne référence pas
+    Avalonia ». Il est vert dès qu'il est écrit, par construction : c'est ce qu'il garde qui est
+    déjà vrai. Le rendre rouge a exigé de **casser volontairement** le code de production, d'observer
+    l'assertion tomber, puis de retirer la casse. ⚠️ **`prendre-un-pas` §3 interdit le rouge « pour
+    la mauvaise raison » mais ne prévoit pas le cas où il n'y a *aucune* bonne raison disponible**,
+    et sa clause d'échappement — « un test vert du premier coup est légitime » — invite à sauter
+    l'étape. Or c'est précisément ici qu'il ne faut pas : un test de garde jamais vu rouge peut être
+    silencieusement inopérant, et celui-ci l'aurait été si l'on s'était contenté d'ajouter une
+    `PackageReference` (le reflet ne rend que les assemblies **employées**). — *étape 3, dette de
+    méthode*
+
+95. **La liste de mises à jour documentaires du plan était nommée « pour qu'aucune ne se perde », et
+    elle était incomplète.**
+    Le plan de design nommait quatre gestes ; le découpage les a répartis (friction 89). Mais en
+    exécutant le premier pas, **trois autres documents sont devenus faux** que personne n'avait
+    nommés : l'inventaire des projets et le graphe de dépendances d'`architecture.md`, et la carte
+    des couches de `schemas.md` — un assembly qui naît change les trois par construction.
+    ⚠️ **Une liste écrite en amont protège de l'oubli, pas de son propre angle mort** : le plan a
+    listé ce que *sa décision* rendait faux, jamais ce que *l'existence d'un nouvel objet* rend
+    faux. Les cartes d'état ne se déduisent pas des arbitrages, elles se déduisent du dépôt.
+    À voir si le cas se répète : la parade serait une clause de `prendre-un-pas` — après le vert,
+    balayer les cartes d'état avant de clore —, pas une liste plus longue en amont. — *étape 5,
+    dette de méthode*
