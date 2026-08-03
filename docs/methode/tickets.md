@@ -600,9 +600,11 @@ humain du projet sait sans qu'on le lui dise :
 - **Le régime TDD** — rouge observé *pour la bonne raison* d'abord, jamais de code de
   production sans test qui le réclame. Un ticket qui demanderait « implémente puis teste »
   contredirait le dépôt.
-- **La frontière testé / non testé** — la couche présentation est hors du périmètre testé
+- **La frontière testé / non testé** — la couche présentation est hors du périmètre **unitaire**
   (`architecture.md` §7.12) et validée à la main. Un ticket qui touche l'UI doit le dire,
-  sinon l'agent écrira des tests là où le dépôt n'en veut pas — ou l'inverse.
+  sinon l'agent écrira des tests là où le dépôt n'en veut pas — ou l'inverse. ⚠️ **Hors périmètre
+  unitaire ne veut pas dire hors de portée d'un test** : un harnais de bout en bout teste
+  l'application assemblée, pas Avalonia, et rien ne l'interdit (`D-077`).
 - **Les conventions de modélisation** — en particulier : pas de nullable pour distinguer des
   **types** d'objets. C'est la règle la plus facile à violer de bonne foi.
 

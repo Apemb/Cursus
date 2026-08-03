@@ -1034,3 +1034,25 @@ Le découpage a créé du neuf sans inventorier ce qui existait déjà dans le p
     contradiction entre `cycle-increment.md` et `prendre-un-pas` sur le moment du `Done` d'un
     incrément. Nommer un trou sans le mesurer en sous-estime la taille. — *suite de `D-075`,
     tranché par `D-076`*
+
+101. **Un adverbe tenait lieu de décision, et il disait le contraire de la trajectoire.**
+    `cycle-increment.md` déclarait la recette d'un incrément « humaine, **irréductiblement** ».
+    Personne ne l'avait décidé : le mot est une glose sur la frontière testé/non-testé, écrite en
+    passant, et il fermait la porte au harnais de bout en bout que la trajectoire prévoit. Il n'a
+    été vu qu'en lisant les deux ensemble — l'un décrit une colonne, l'autre est une intention non
+    écrite. ⚠️ **Un adverbe de nature (« irréductiblement », « par construction », « jamais ») dans
+    un document de méthode est une décision déguisée** : il n'a pas d'entrée, donc rien ne le
+    supersède, et il survit à ce qui aurait dû le tuer.
+    ⚠️ **Le fond était plus utile que la correction** : la frontière porte sur la **nature du
+    test**, pas sur la couche. Ne pas descendre en présentation *en unitaire* est un choix qui
+    tient ; en déduire qu'aucun test ne peut exercer l'application était une extrapolation que le
+    raccourci « présentation non testée » rendait invisible. Un raccourci qui abrège une clause en
+    abrège aussi les limites. — *lecture croisée, tranché par `D-077`*
+
+102. **Une citation de section fausse a survécu dans un skill sans gêner personne.**
+    `revue-code` renvoyait à `tickets.md` §7.12 pour la frontière testé/non-testé — or §7.12 est
+    dans `architecture.md`, et `tickets.md` n'a pas de §7.12. Le renvoi désignait le bon *contenu*
+    par le mauvais *document*, ce qui le rendait invérifiable sans le chercher. ⚠️ **Le corpus
+    interdit les renvois de section depuis `decisions.md` parce qu'ils périment ; celui-ci montre
+    l'autre défaillance — un renvoi peut être faux dès l'écriture** et n'être découvert qu'au
+    hasard d'une lecture voisine. — *lecture croisée, corrigé*

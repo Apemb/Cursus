@@ -225,8 +225,11 @@ seul critère de cette colonne qu'un vérificateur complaisant peut valider sans
 
 ## 8. `QA Review` — conditionnel, et le dire vaut mieux que le traverser
 
-Régime **Œil** : humain, irréductiblement — la couche présentation est hors du périmètre testé
-(`architecture.md` §7.12).
+Régime **Œil** : humain **aujourd'hui**, par manque d'outil et non par nature (`D-077`). La couche
+présentation est hors du périmètre **unitaire** — la vue ne fait que binder, et l'y descendre
+n'achèterait rien —, mais rien n'exclut un harnais de bout en bout qui lancerait l'application et
+rejouerait le parcours. Ce harnais n'existe pas ; **cette colonne tient sa place** en attendant, et
+le jour où il arrivera, c'est ce régime-ci qui changera, pas la frontière.
 
 **Le test décisif** : le diff touche-t-il un fichier de la couche présentation ? Si oui, `QA Review`
 est **obligatoire**. Sinon elle est **sautée**, et la carte porte une ligne explicite —

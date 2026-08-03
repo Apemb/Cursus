@@ -48,8 +48,9 @@ déplacer la carte.
 - **Standards** — sans le ticket ni la DoD, jamais. Référentiel : `CLAUDE.md` (0 warning,
   `étant donné/quand/alors`, section `// arrange` `// act` `// assert`, pas de nullable pour
   distinguer des types, commentaires qui expliquent le pourquoi), `docs/design/architecture.md`,
-  la frontière testé/non-testé (`tickets.md` §7.12 — un test manquant en présentation n'est pas
-  une violation). Les douze code smells de Fowler restent un vocabulaire de secours à citer par
+  la frontière testé/non-testé (`architecture.md` §7.12 — un test **unitaire** manquant en
+  présentation n'est pas une violation ; la frontière porte sur la nature du test, pas sur la
+  couche, `D-077`). Les douze code smells de Fowler restent un vocabulaire de secours à citer par
   leur nom quand un smell touche le diff sans être couvert par ces documents écrits — pas une
   annexe à charger : l'agent les connaît déjà, et nos standards écrits et opposables couvrent
   l'essentiel que Fowler laisse générique.

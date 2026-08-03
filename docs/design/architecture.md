@@ -1398,6 +1398,23 @@ qu'un critère si :
 | **Un run à la fois** | Non par confort : c'est la seule configuration que le code supporte sans synchronisation (§9.2-14). ⚠️ **Révisé par le parcours** — la cible exige des runs concurrents ; voir §7.13 |
 | **Deux tests rendent le critère exécutable** | (a) `Cursus.Core` ne référence aucun assembly `Avalonia.*` — **construit au 6c·1** (`ArchitectureTests`, §4.14) ; (b) un end-to-end **headless** qui ouvre sans instancier Avalonia — **construit au 6c·3a (lire), étendu au 6c·3b (lancer puis lire)** (§4.16, §4.17). Le second *force* `ProjectHost` à être suffisant |
 
+**Ce que « la présentation n'est pas testée » veut dire exactement (`D-077`)** — la frontière porte
+sur la **nature du test**, jamais sur la couche :
+
+- **en test unitaire**, on ne descend pas dans la présentation : instancier des contrôles Avalonia
+  pour vérifier qu'un binding relie deux propriétés n'achète rien, puisque le comportement qu'on
+  voudrait prouver vit dans le ViewModel ou plus bas, où il est déjà testé. C'est ce que l'écart
+  contre VIPER assume, et cela ne change pas ;
+- **en test de bout en bout**, rien n'est exclu. Un harnais qui lance l'application et rejoue un
+  parcours ne teste pas *Avalonia* — il teste **l'application assemblée**, ce qui n'est pas la même
+  chose. Ce § ne l'a jamais interdit ; il n'en avait pas parlé.
+
+⚠️ **Le test (a) ci-dessus ne bloque pas un tel harnais** : il porte sur les dépendances de
+**production** d'un assembly du périmètre, pas sur celles d'un projet de tests — lequel référencera
+nécessairement l'application, donc Avalonia, sans rien violer. La recette manuelle d'un incrément
+(`cycle-increment.md` §8) tient lieu de ce harnais tant qu'il n'existe pas : elle est humaine par
+manque d'outil, pas par nature.
+
 **Écarts à retenir, parce qu'ils se rediscuteraient sinon :**
 
 - **« Une porte d'entrée unique »** était la formulation de départ. Écarté : une façade absorbant tout

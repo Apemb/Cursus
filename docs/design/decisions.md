@@ -4626,3 +4626,39 @@ story un incrément que la recette n'a pas encore vu.
 **Restent donc sans porteur, et c'est écrit plutôt que supposé** : qui fusionne `story/`, et qui
 ouvre la PR d'une feature. Les deux se poseront au même moment — quand le premier incrément
 atteindra sa colonne terminale —, et aucun tour ne l'a encore éprouvé.
+
+---
+
+## D-077 — La frontière testé / non testé porte sur la nature du test, pas sur la couche (2026-08-03) — précise `architecture.md`
+
+**Contexte.** `cycle-increment.md` déclarait la recette d'un incrément « humaine,
+**irréductiblement** », en s'adossant à la frontière qu'`architecture.md` pose en écartant VIPER :
+*la vue ne fait que binder, et ne pas la tester est assumé*. Or la trajectoire prévoit un **harnais
+de test de bout en bout** qui rejouerait ce que la recette fait à la main. Le mot fermait une porte
+que la trajectoire ouvre, et la contradiction n'apparaissait que quand on les lisait ensemble.
+
+### 1. Ce que la formule abrégeait, et ce qu'elle a fini par dire
+
+« La présentation est hors du périmètre testé » est un raccourci. Ce qu'il abrège :
+
+- **En test unitaire, on ne descend pas dans la présentation.** Instancier des contrôles Avalonia
+  pour vérifier qu'un binding relie deux propriétés n'achète rien — la vue ne fait que binder, et
+  le comportement qu'on voudrait prouver vit dans le ViewModel ou plus bas, où il est déjà testé.
+  C'est ce que l'écart contre VIPER assumait, et cela ne change pas.
+- **En test de bout en bout, rien n'est exclu.** Un harnais qui lance l'application et rejoue un
+  parcours ne teste pas *Avalonia* : il teste **l'application assemblée**. Ce n'est pas la même
+  chose, et la frontière ne l'a jamais interdit — elle n'en avait simplement jamais parlé.
+
+**La recette manuelle tient lieu de ce harnais tant qu'il n'existe pas.** Elle est humaine par
+**manque d'outil**, pas par nature : c'est ce que le mot « irréductiblement » affirmait à tort.
+
+### 2. Ce que cela ne déplace pas
+
+**L'invariant de dépendance est intact.** Le test exécutable dit qu'un assembly du périmètre —
+le noyau, le socle — ne référence aucun assembly Avalonia. Il porte sur les **dépendances de
+production**, pas sur les tests : un projet de tests de bout en bout référencera nécessairement
+l'application, donc Avalonia, sans rien violer. Confondre les deux ferait croire le harnais
+interdit par un test qui ne le regarde pas.
+
+**Le périmètre unitaire ne s'élargit pas.** Aucune obligation neuve n'est créée : cette entrée
+lève un interdit imaginaire, elle ne prescrit pas d'écrire des tests de bout en bout.
